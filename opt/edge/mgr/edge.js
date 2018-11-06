@@ -288,7 +288,7 @@ function updateUplinks(done)
 		let p = physical[physDev];
 		if (p.name) {
 			let rl = routerListeners[p.name];
-			let ap = (wlanConfig[physDev])&&(p.mode == 'ap');
+			let ap = (!!wlanConfig[physDev])&&(p.mode == 'ap');
 			if (rl) {
 				if (Array.isArray(p.autoconf)) {
 					rl.setDhcp4Enabled((p.autoconf.indexOf('dhcp4') >= 0)&&(!ap));
