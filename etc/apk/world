@@ -30,7 +30,6 @@ flex
 fping
 git
 haveged
-hostapd
 hping3
 htop
 hwdata-usb
@@ -44,6 +43,7 @@ iw
 joe
 lftp
 libc-utils
+libnl
 libpcap-dev
 libtool
 linux-firmware-rtl8192e

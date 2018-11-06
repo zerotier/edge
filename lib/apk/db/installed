@@ -1240,31 +1240,6 @@ R:tty
 a:0:0:755
 Z:Q1rrvxPytoK5RO1mrGHDEVv2juNNw=
 
-C:Q126G55HqCQs3U6hsuFFdi2zWHh7M=
-P:dbus-libs
-V:1.10.24-r1
-A:aarch64
-S:107515
-I:270336
-T:D-BUS access libraries
-U:http://www.freedesktop.org/Software/dbus
-L:AFL-2.1 OR GPL-2.0+
-o:dbus
-m:Natanael Copa <ncopa@alpinelinux.org>
-t:1517987324
-c:f2625e8f31bb237d49e60a33eb1665b4979ead80
-D:so:libc.musl-aarch64.so.1
-p:so:libdbus-1.so.3=3.14.14
-r:dbus
-F:usr
-F:usr/lib
-R:libdbus-1.so.3
-a:0:0:777
-Z:Q1KfGd7PCjOfdbpjtg3duMZaCOV9U=
-R:libdbus-1.so.3.14.14
-a:0:0:755
-Z:Q1UB03dbKTGsjB6LnGqFuryQmNzMU=
-
 C:Q1K4TAuhSG9FONjBbuASgrmNM+Rp4=
 P:bzip2
 V:1.0.6-r6
@@ -1315,41 +1290,6 @@ Z:Q1oHz3MdhO9cdZ97Et8lYyvw5bpdY=
 R:bzcmp
 a:0:0:777
 Z:Q1wvSjF9Wy/3zh2DSaR+YmqPpc77E=
-
-C:Q10wnjNbudgB+9dVTpHZNoEFOUE0M=
-P:pcsc-lite-libs
-V:1.8.23-r1
-A:aarch64
-S:22087
-I:81920
-T:Middleware to access a smart card using SCard API (PC/SC) (libraries)
-U:http://pcsclite.alioth.debian.org/pcsclite.html
-L:Custom
-o:pcsc-lite
-m:Timo Teräs <timo.teras@iki.fi>
-t:1518446676
-c:75ba1c056ea64eb1aaa0a0f20019294a0c634d56
-D:so:libc.musl-aarch64.so.1
-p:so:libpcsclite.so.1=1.0.0 so:libpcscspy.so.0=0.0.0
-F:usr
-F:usr/lib
-R:libpcsclite.so.1
-a:0:0:777
-Z:Q1JOgS7x+xWhCTvu5NKCnJxgIdDsk=
-R:libpcsclite.so.1.0.0
-a:0:0:755
-Z:Q1tS4b5/YjU3hlKP25sYFNhq/Z7bQ=
-R:libpcscspy.so.0
-a:0:0:777
-Z:Q1tu+9TgPSqJj/2/aHwIu4TfeCWHc=
-R:libpcscspy.so.0.0.0
-a:0:0:755
-Z:Q14nQk8kSpNWdJdmTRZuhVFyXQ4lo=
-R:libpcsclite.so
-a:0:0:777
-Z:Q1JOgS7x+xWhCTvu5NKCnJxgIdDsk=
-F:usr/lib/pcsc
-F:usr/lib/pcsc/drivers
 
 C:Q1lh3srN6+7DBaE3bc83u4IE0SiCo=
 P:pcre2
@@ -2309,64 +2249,6 @@ Z:Q1D2bctUiR7ouD4db7CotuX/7bOl8=
 R:libssh2.so.1.0.1
 a:0:0:755
 Z:Q1dbdhzIS3oUV4VYU0L7UIyagZC8Y=
-
-C:Q1dI0mP4l2HBjKobykd4Yq1seA/RA=
-P:hostapd
-V:2.6-r4
-A:aarch64
-S:400650
-I:958464
-T:daemon for wireless software access points
-U:http://hostap.epitest.fi/hostapd/
-L:custom
-o:hostapd
-m:Natanael Copa <ncopa@alpinelinux.org>
-t:1523009822
-c:d1d940636b26b200f991e48525737fd511f271d3
-D:so:libc.musl-aarch64.so.1 so:libcrypto.so.43 so:libnl-3.so.200 so:libnl-genl-3.so.200 so:libssl.so.45
-p:cmd:hostapd cmd:hostapd_cli cmd:nt_password_hash
-F:etc
-F:etc/hostapd
-R:hostapd.deny
-a:0:0:755
-Z:Q1yaoIXoSbD2q2cwJ2mG8gN380Rqk=
-R:hostapd.wpa_psk
-a:0:0:755
-Z:Q1wzb2PRtFtvh9cY86MQCodj1tYwM=
-R:hostapd.radius_clients
-a:0:0:755
-Z:Q1HkrjuVA+pTqLuqvau/ymHaUb3OE=
-R:hostapd.conf
-a:0:0:755
-Z:Q1awW3iiM43It8WuzJr4brT0Umkvo=
-R:hostapd.accept
-a:0:0:755
-Z:Q18vaufEcDSnMCamnmbYMLjI4MD1g=
-R:hostapd.sim_db
-a:0:0:755
-Z:Q1zCoJ0R8obfqnZjW/y/FwasxdMFY=
-R:hostapd.eap_user
-a:0:0:755
-Z:Q14oso3+w8d7Emjiy/wdd364/edqo=
-F:etc/init.d
-R:hostapd
-a:0:0:755
-Z:Q1uVsJaTIbtNnh6hh0BJGIja1qY7I=
-F:etc/conf.d
-R:hostapd
-Z:Q11sN1ylU2x3dM7ET7p+2yUuhMKXo=
-F:usr
-F:usr/bin
-R:hostapd_cli
-a:0:0:755
-Z:Q1iwXE5IUObEeRK5KQdJyu4N2bS1M=
-R:nt_password_hash
-a:0:0:755
-Z:Q1jwcQXvu82q0oZSii7Ya3jJ3mJMQ=
-F:usr/sbin
-R:hostapd
-a:0:0:755
-Z:Q1k7wFefISIkOoArKjxKgjZS1afgo=
 
 C:Q1EJ2OUgtgOFOf2wha9pVGqM1r0L4=
 P:tcpdump
@@ -4671,82 +4553,6 @@ F:usr/lib
 R:libssl.so.1.0.0
 a:0:0:777
 Z:Q1ke5dnHGVWcEyRpOe0/lKEqizHHQ=
-
-C:Q1dD/QWyQ5soGua3k/kn/nYZ8AU9E=
-P:wpa_supplicant
-V:2.6-r14
-A:aarch64
-S:1316966
-I:2985984
-T:A utility providing key negotiation for WPA wireless networks
-U:https://w1.fi/wpa_supplicant/
-L:BSD
-o:wpa_supplicant
-m:Natanael Copa <ncopa@alpinelinux.org>
-t:1534859993
-c:e8d8474d33d0e259cb6f4119f43db233eac5002c
-D:so:libc.musl-aarch64.so.1 so:libcrypto.so.43 so:libdbus-1.so.3 so:libnl-3.so.200 so:libnl-genl-3.so.200 so:libpcsclite.so.1 so:libssl.so.45
-p:cmd:eapol_test cmd:wpa_cli cmd:wpa_passphrase cmd:wpa_supplicant
-F:etc
-F:etc/dbus-1
-F:etc/dbus-1/system.d
-R:wpa_supplicant.conf
-Z:Q1DquZetF/YiEJuiM4ctuM3lAOMmE=
-F:etc/wpa_supplicant
-R:wpa_cli.sh
-a:0:0:755
-Z:Q1LzqXJmpkq5npDmtu77OJljIGyk8=
-F:sbin
-R:wpa_passphrase
-a:0:0:755
-Z:Q1RCUtfpCJ1VBelYC9CbmjDKxEi1s=
-R:wpa_supplicant
-a:0:0:755
-Z:Q1rIlcYgtUlFVtLEh2eMHHxyvkIHo=
-R:eapol_test
-a:0:0:755
-Z:Q1Puy9ZOZ0NXYm3Nh9wwGjVjbb/pI=
-R:wpa_cli
-a:0:0:755
-Z:Q1dlljYZDBRY+33D6pnZF+MXT4ItE=
-F:usr
-F:usr/share
-F:usr/share/dbus-1
-F:usr/share/dbus-1/system-services
-R:fi.epitest.hostap.WPASupplicant.service
-a:0:0:755
-Z:Q1MR6VJVfJ8IXKhvywW31FxR7IC4w=
-F:var
-F:var/run
-F:var/run/wpa_supplicant
-
-C:Q1d+F3tlObJJtpe5nDX+qHu1QuH8g=
-P:wpa_supplicant-openrc
-V:2.6-r14
-A:aarch64
-S:2528
-I:32768
-T:A utility providing key negotiation for WPA wireless networks (OpenRC init scripts)
-U:https://w1.fi/wpa_supplicant/
-L:BSD
-o:wpa_supplicant
-m:Natanael Copa <ncopa@alpinelinux.org>
-t:1534859993
-c:e8d8474d33d0e259cb6f4119f43db233eac5002c
-i:openrc wpa_supplicant=2.6-r14
-F:etc
-F:etc/init.d
-R:wpa_supplicant
-a:0:0:755
-Z:Q1yS55a87JfqxescMysn3xiggMLWA=
-R:wpa_cli
-a:0:0:755
-Z:Q1BkVb9YBtL8nKsiKUpYCeJefOtsE=
-F:etc/conf.d
-R:wpa_supplicant
-Z:Q1Kg/nzJ9EfGAENxtxLvslgdBSCUQ=
-R:wpa_cli
-Z:Q1brqUStshPKyCwZa+p6NE4XqR5/Q=
 
 C:Q1ijFX7B5wvqIcyiB5PEcpW7jneVg=
 P:xz-libs
@@ -41670,4 +41476,140 @@ Z:Q1yB2NOfDSIDRssT6WvFe7S1Vx+zU=
 R:null.pm
 a:0:0:444
 Z:Q1oc7mJUsjMo3eSU15HfdoV3Da320=
+
+C:Q126G55HqCQs3U6hsuFFdi2zWHh7M=
+P:dbus-libs
+V:1.10.24-r1
+A:aarch64
+S:107515
+I:270336
+T:D-BUS access libraries
+U:http://www.freedesktop.org/Software/dbus
+L:AFL-2.1 OR GPL-2.0+
+o:dbus
+m:Natanael Copa <ncopa@alpinelinux.org>
+t:1517987324
+c:f2625e8f31bb237d49e60a33eb1665b4979ead80
+D:so:libc.musl-aarch64.so.1
+p:so:libdbus-1.so.3=3.14.14
+r:dbus
+F:usr
+F:usr/lib
+R:libdbus-1.so.3
+a:0:0:777
+Z:Q1KfGd7PCjOfdbpjtg3duMZaCOV9U=
+R:libdbus-1.so.3.14.14
+a:0:0:755
+Z:Q1UB03dbKTGsjB6LnGqFuryQmNzMU=
+
+C:Q10wnjNbudgB+9dVTpHZNoEFOUE0M=
+P:pcsc-lite-libs
+V:1.8.23-r1
+A:aarch64
+S:22087
+I:81920
+T:Middleware to access a smart card using SCard API (PC/SC) (libraries)
+U:http://pcsclite.alioth.debian.org/pcsclite.html
+L:Custom
+o:pcsc-lite
+m:Timo Teräs <timo.teras@iki.fi>
+t:1518446676
+c:75ba1c056ea64eb1aaa0a0f20019294a0c634d56
+D:so:libc.musl-aarch64.so.1
+p:so:libpcsclite.so.1=1.0.0 so:libpcscspy.so.0=0.0.0
+F:usr
+F:usr/lib
+R:libpcsclite.so.1
+a:0:0:777
+Z:Q1JOgS7x+xWhCTvu5NKCnJxgIdDsk=
+R:libpcsclite.so.1.0.0
+a:0:0:755
+Z:Q1tS4b5/YjU3hlKP25sYFNhq/Z7bQ=
+R:libpcscspy.so.0
+a:0:0:777
+Z:Q1tu+9TgPSqJj/2/aHwIu4TfeCWHc=
+R:libpcscspy.so.0.0.0
+a:0:0:755
+Z:Q14nQk8kSpNWdJdmTRZuhVFyXQ4lo=
+R:libpcsclite.so
+a:0:0:777
+Z:Q1JOgS7x+xWhCTvu5NKCnJxgIdDsk=
+F:usr/lib/pcsc
+F:usr/lib/pcsc/drivers
+
+C:Q1dD/QWyQ5soGua3k/kn/nYZ8AU9E=
+P:wpa_supplicant
+V:2.6-r14
+A:aarch64
+S:1316966
+I:2985984
+T:A utility providing key negotiation for WPA wireless networks
+U:https://w1.fi/wpa_supplicant/
+L:BSD
+o:wpa_supplicant
+m:Natanael Copa <ncopa@alpinelinux.org>
+t:1534859993
+c:e8d8474d33d0e259cb6f4119f43db233eac5002c
+D:so:libc.musl-aarch64.so.1 so:libcrypto.so.43 so:libdbus-1.so.3 so:libnl-3.so.200 so:libnl-genl-3.so.200 so:libpcsclite.so.1 so:libssl.so.45
+p:cmd:eapol_test cmd:wpa_cli cmd:wpa_passphrase cmd:wpa_supplicant
+F:etc
+F:etc/dbus-1
+F:etc/dbus-1/system.d
+R:wpa_supplicant.conf
+Z:Q1DquZetF/YiEJuiM4ctuM3lAOMmE=
+F:etc/wpa_supplicant
+R:wpa_cli.sh
+a:0:0:755
+Z:Q1LzqXJmpkq5npDmtu77OJljIGyk8=
+F:sbin
+R:wpa_passphrase
+a:0:0:755
+Z:Q1RCUtfpCJ1VBelYC9CbmjDKxEi1s=
+R:wpa_supplicant
+a:0:0:755
+Z:Q1rIlcYgtUlFVtLEh2eMHHxyvkIHo=
+R:eapol_test
+a:0:0:755
+Z:Q1Puy9ZOZ0NXYm3Nh9wwGjVjbb/pI=
+R:wpa_cli
+a:0:0:755
+Z:Q1dlljYZDBRY+33D6pnZF+MXT4ItE=
+F:usr
+F:usr/share
+F:usr/share/dbus-1
+F:usr/share/dbus-1/system-services
+R:fi.epitest.hostap.WPASupplicant.service
+a:0:0:755
+Z:Q1MR6VJVfJ8IXKhvywW31FxR7IC4w=
+F:var
+F:var/run
+F:var/run/wpa_supplicant
+
+C:Q1d+F3tlObJJtpe5nDX+qHu1QuH8g=
+P:wpa_supplicant-openrc
+V:2.6-r14
+A:aarch64
+S:2528
+I:32768
+T:A utility providing key negotiation for WPA wireless networks (OpenRC init scripts)
+U:https://w1.fi/wpa_supplicant/
+L:BSD
+o:wpa_supplicant
+m:Natanael Copa <ncopa@alpinelinux.org>
+t:1534859993
+c:e8d8474d33d0e259cb6f4119f43db233eac5002c
+i:openrc wpa_supplicant=2.6-r14
+F:etc
+F:etc/init.d
+R:wpa_supplicant
+a:0:0:755
+Z:Q1yS55a87JfqxescMysn3xiggMLWA=
+R:wpa_cli
+a:0:0:755
+Z:Q1BkVb9YBtL8nKsiKUpYCeJefOtsE=
+F:etc/conf.d
+R:wpa_supplicant
+Z:Q1Kg/nzJ9EfGAENxtxLvslgdBSCUQ=
+R:wpa_cli
+Z:Q1brqUStshPKyCwZa+p6NE4XqR5/Q=
 
