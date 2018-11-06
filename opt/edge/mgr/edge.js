@@ -70,10 +70,6 @@ function updateBridgeTables(done)
 	cmd.get('ebtables -F',() => {
 		async.eachSeries(Object.keys(physical),(physDev,nextPhysDev) => {
 			let mac = physMac[physDev];
-			if (!mac) {
-				console.log('WARNING: MAC address not known for '+physDev);
-				mac = '02:ff:ff:ff:ff:ff';
-			}
 
 			let prohibit = physical[physDev].prohibit;
 			if (!Array.isArray(prohibit))
@@ -86,6 +82,11 @@ function updateBridgeTables(done)
 			prohibit = ptmp;
 
 			console.log('Updating bridge tables for '+physDev+' ('+mac+') to prohibit: '+JSON.stringify(parr));
+
+			if (!mac) {
+				console.log('WARNING: MAC address not known for '+physDev);
+				mac = '02:ff:ff:ff:ff:ff';
+			}
 
 			async.series([
 				// These block general bridge forwarding of DHCP, DHCP6, or SLAAC if it is not desired.
@@ -143,7 +144,10 @@ function updateBridgeTables(done)
 					cmd.get('ebtables -A FORWARD -d '+mac+' --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP',() => { next(); });
 				}
 			],nextPhysDev);
-		},done);
+		},() => {
+			if (done)
+				done();
+		});
 	});
 }
 
@@ -182,7 +186,6 @@ function leaveVirtual(nwid,done)
 
 function assignZtAddresses(ifname,config,done)
 {
-	console.log('Assigning IP information to virtual interface '+ifname);
 	async.eachSeries(config.assignedAddresses||[],(addr,nextAddr) => {
 		if (addr) {
 			if (addr.indexOf(':') < 0) {
@@ -241,8 +244,13 @@ function refreshVirtual(done)
 
 						async.eachSeries(Object.keys(v.physical),(physDev,nextPhysDev) => {
 							let p = v.physical[physDev];
+							let pairName = virtualPort+physDev.charAt(0)+physDev.charAt(physDev.length - 1);
+							let physBr = physDev;
+							if (wlanConfig[physDev])
+								physBr = physDev+'br'; // wlans in AP mode get a bridge, while phy# ports are always bridges
+
 							if (p.layer == 3) {
-								cmd.get('ip link del Z'+virtualPort+physDev,() => {
+								cmd.get('ip link del Z'+pairName,() => {
 									cmd.get('ip link del B'+virtualPort,() => {
 										assignZtAddresses(virtualPort,config,nextPhysDev);
 									});
@@ -251,15 +259,15 @@ function refreshVirtual(done)
 								async.series([
 									(next) => { cmd.get('brctl addbr B'+virtualPort,() => { next(); }); },
 									(next) => { cmd.get('brctl stp B'+virtualPort+' off',() => { next(); }); },
-									(next) => { cmd.get('ip link add Z'+virtualPort+physDev+' type veth peer P'+virtualPort+physDev,() => { next(); }); },
-									(next) => { cmd.get('sysctl -w net.ipv6.conf.Z'+virtualPort+physDev+'.disable_ipv6=1',() => { next(); }); },
-									(next) => { cmd.get('sysctl -w net.ipv6.conf.P'+virtualPort+physDev+'.disable_ipv6=1',() => { next(); }); },
-									(next) => { cmd.get('ip link set Z'+virtualPort+physDev+' mtu '+mtu+' up',() => { next(); }); },
-									(next) => { cmd.get('ip link set P'+virtualPort+physDev+' mtu '+mtu+' up',() => { next(); }); },
+									(next) => { cmd.get('ip link add Z'+pairName+' type veth peer P'+pairName,() => { next(); }); },
+									(next) => { cmd.get('sysctl -w net.ipv6.conf.Z'+pairName+'.disable_ipv6=1',() => { next(); }); },
+									(next) => { cmd.get('sysctl -w net.ipv6.conf.P'+pairName+'.disable_ipv6=1',() => { next(); }); },
+									(next) => { cmd.get('ip link set Z'+pairName+' mtu '+mtu+' up',() => { next(); }); },
+									(next) => { cmd.get('ip link set P'+pairName+' mtu '+mtu+' up',() => { next(); }); },
 									(next) => { cmd.get('ip link set B'+virtualPort+' address '+config.mac+' mtu '+mtu+' up',() => { next(); }); },
 									(next) => { cmd.get('brctl addif B'+virtualPort+' '+virtualPort,() => { next(); }); },
-									(next) => { cmd.get('brctl addif B'+virtualPort+' Z'+virtualPort+physDev,() => { next(); }); },
-									(next) => { cmd.get('brctl addif '+physDev+' P'+virtualPort+physDev,() => { next(); }); },
+									(next) => { cmd.get('brctl addif B'+virtualPort+' Z'+pairName,() => { next(); }); },
+									(next) => { cmd.get('brctl addif '+physBr+' P'+pairName,() => { next(); }); },
 									(next) => { assignZtAddresses('B'+virtualPort,config,() => { next(); }); }
 								],nextPhysDev);
 							}
@@ -280,11 +288,12 @@ function updateUplinks(done)
 		let p = physical[physDev];
 		if (p.name) {
 			let rl = routerListeners[p.name];
+			let ap = (wlanConfig[physDev])&&(p.mode == 'ap');
 			if (rl) {
 				if (Array.isArray(p.autoconf)) {
-					rl.setDhcp4Enabled(p.autoconf.indexOf('dhcp4') >= 0);
-					rl.setDhcp6Enabled(p.autoconf.indexOf('dhcp6') >= 0);
-					rl.setSlaacEnabled(p.autoconf.indexOf('slaac') >= 0);
+					rl.setDhcp4Enabled((p.autoconf.indexOf('dhcp4') >= 0)&&(!ap));
+					rl.setDhcp6Enabled((p.autoconf.indexOf('dhcp6') >= 0)&&(!ap));
+					rl.setSlaacEnabled((p.autoconf.indexOf('slaac') >= 0)&&(!ap));
 				}
 			}
 		}
@@ -298,13 +307,18 @@ function updateWirelessPorts(done)
 	for (let physDev in wlanConfig) {
 		let p = physical[physDev];
 		let essid = sanitizeField((p.essid||'ZeroTierEdge').trim());
+		let channel = 40;
+		let mode = (p.mode == 'ap') ? 'ap' : 'client';
+
 		if (!deepequal(wlanConfig[physDev],p)) {
 			if (wlanDaemons[physDev]) {
 				wlanDaemons[physDev].kill('SIGTERM');
 				wlanDaemons[physDev] = null;
 			}
 
-			if ((p)&&(p.mode == 'ap')) {
+			if (mode == 'ap') {
+				// Source of channel+6 magic:
+				// http://blog.fraggod.net/2017/04/27/wifi-hostapd-configuration-for-80211ac-networks.html
 
 				console.log('Configurating wireless port '+physDev+' for AP mode');
 				fs.writeFileSync('/dev/shm/hostap-psk-'+physDev,'00:00:00:00:00:00 '+p.psk||'');
@@ -314,10 +328,11 @@ logger_syslog=0
 logger_syslog_level=4
 logger_stdout=-1
 logger_stdout_level=2
+driver=nl80211
 ctrl_interface=/var/run/hostapd-`+physDev+`
 ssid2="`+essid+`"
 hw_mode=a
-channel=40
+channel=`+channel+`
 beacon_int=250
 dtim_period=2
 max_num_sta=2007
@@ -360,15 +375,36 @@ wpa_key_mgmt=WPA-PSK WPA-PSK-SHA256
 wpa_pairwise=TKIP CCMP
 rsn_pairwise=CCMP
 `);
+
 				cmd.get('ip link set '+physDev+' down',() => {
 					cmd.get('ip link set '+physDev+' up',() => {
 						wlanDaemons[physDev] = spawn('/usr/sbin/hostapd',['/dev/shm/hostap-'+physDev+'.conf'],{
 							stdio: 'inherit'
 						});
+
+						/* For AP mode we have to create a bridge that will be used to connect virtual interfaces */
+						async.series([
+							(next) => {
+								cmd.get('sysctl -w net.ipv6.conf.'+physDev+'.disable_ipv6=1',() => { next(); });
+							},
+							(next) => {
+								cmd.get('brctl addbr '+physDev+'br',() => { next(); });
+							},
+							(next) => {
+								cmd.get('brctl stp '+physDev+'br off',() => { next(); });
+							},
+							(next) => {
+								cmd.get('brctl addif '+physDev+'br '+physDev,() => { next(); });
+							},
+							(next) => {
+								cmd.get('ip link set '+physDev+'br address '+physMac[physDev]+' up',() => { next(); });
+							}
+						],() => {
+						});
 					});
 				});
 
-			} else if ((p)&&(p.mode == 'client')) {
+			} else { // mode == client
 
 				console.log('Configuring wireless port '+physDev+' for client mode');
 				let psk = '';
@@ -380,17 +416,32 @@ rsn_pairwise=CCMP
 					}
 				}
 				fs.writeFileSync('/dev/shm/wpa_supplicant-'+physDev+'.conf',
-`network={
+`ap_scan=1
+device_name=ZeroTier Edge
+manufacturer=ZeroTier, Inc.
+model_name=Edge
+model_number=0
+serial_number=0
+device_type=6-0050F204-1
+p2p_disabled=1
+network={
 	ssid="`+essid+`"
 	scan_ssid=1
 	key_mgmt=WPA-PSK
+	group=CCMP TKIP WEP104 WEP40
 	psk="`+psk+`"
 }
 `);
-				cmd.get('ip link set '+physDev+' down',() => {
-					cmd.get('ip link set '+physDev+' up',() => {
-						wlanDaemons[physDev] = spawn('/sbin/wpa_supplicant',['-i'+physDev,'-Dnl80211','-c/dev/shm/wpa_supplicant-'+physDev+'.conf'],{
-							stdio: 'inherit'
+
+				/* For client mode we delete any bridges and reset port config to normal. */
+				cmd.get('ip link del '+physDev+'br',() => {
+					cmd.get('ip link set '+physDev+' down',() => {
+						cmd.get('sysctl -w net.ipv6.conf.'+physDev+'.disable_ipv6=0',() => {
+							cmd.get('ip link set '+physDev+' up',() => {
+								wlanDaemons[physDev] = spawn('/sbin/wpa_supplicant',['-i'+physDev,'-Dnl80211','-c/dev/shm/wpa_supplicant-'+physDev+'.conf'],{
+									stdio: 'inherit'
+								});
+							});
 						});
 					});
 				});
@@ -425,7 +476,7 @@ function refreshConfig()
 						let p = physicalList[ii];
 						if ((p)&&(p.name)) {
 							newPhysical[p.name] = p;
-							if ((typeof p.virtual === 'string')&&(p.virtual.length === 16)) {
+							if ((typeof p.virtual === 'string')&&(p.virtual.length === 16)&&(p.mode != 'ap')) {
 								let v = virtual[p.virtual];
 								if (!v) {
 									v = {
@@ -569,6 +620,7 @@ function onExit()
 	for(let physDev in wlanDaemons) {
 		if (wlanDaemons[physDev])
 			wlanDaemons[physDev].kill('SIGTERM');
+		cmd.get('ip link del '+physDev+'br',() => {}); // destroy any AP mode bridge devices
 	}
 	for(let physDev in physical) {
 		let p = physical[physDev];
@@ -611,5 +663,4 @@ process.on('SIGQUIT',onExit);
 process.on('uncaughtException',(err) => { console.error('WARNING: uncaught exception: '+err.toString()); });
 
 initialize();
-refreshConfig();
 setInterval(refreshConfig,REFRESH_INTERVAL);
