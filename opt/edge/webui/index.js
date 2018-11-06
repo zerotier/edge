@@ -114528,6 +114528,12 @@ module.exports = {
     message: 'First user is already initialized'
   }),
 
+  NO_ROOT: TypedError({
+    type: 'client.4xx',
+    statusCode: 403,
+    message: 'root username is not allowed'
+  }),
+
   LOGIN: TypedError({
     type: 'client.4xx',
     statusCode: 401,
@@ -114772,6 +114778,7 @@ module.exports = Init
 },{"../errors/":652,"../users/users-data-help":693,"assert":undefined}],659:[function(require,module,exports){
 var Router = require('express').Router
 var json = require('body-parser').json
+var NO_ROOT = require('../errors/').NO_ROOT
 
 module.exports = usersRoutes
 
@@ -114800,6 +114807,9 @@ function isInitialized (init) {
 function create (init) {
   return function (req, res, next) {
     var user = req.body
+    if (user.username === 'root') {
+      return next(NO_ROOT())
+    }
     return init.firstUser(user, function (err, data) {
       if (err) return next(err)
 
@@ -114810,7 +114820,7 @@ function create (init) {
   }
 }
 
-},{"body-parser":111,"express":200}],660:[function(require,module,exports){
+},{"../errors/":652,"body-parser":111,"express":200}],660:[function(require,module,exports){
 module.exports = {
   // Wired interfaces
   wired: ['phy0', 'phy1', 'phy2'],
@@ -115452,6 +115462,7 @@ var Router = require('express').Router
 var json = require('body-parser').json
 
 var UNAUTHORIZED = require('../errors/').UNAUTHORIZED
+var NO_ROOT = require('../errors/').NO_ROOT
 var LOGIN = require('../errors/').LOGIN
 
 module.exports = function sessionRouter (session, emitter) {
@@ -115490,6 +115501,10 @@ function find (finder) {
 
 function create (kreate) {
   return function (req, res, next) {
+    if (req.body.username === 'root') {
+      return next(NO_ROOT())
+    }
+
     kreate(req.body, function (err, data) {
       if (err) {
         return next(LOGIN())
