@@ -1,0 +1,862 @@
+'\" et
+.TH FWSCANF "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fwscanf,
+swscanf,
+wscanf
+\(em convert formatted wide-character input
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+#include <wchar.h>
+.P
+int fwscanf(FILE *restrict \fIstream\fP, const wchar_t *restrict \fIformat\fP, ...);
+int swscanf(const wchar_t *restrict \fIws\fP,
+    const wchar_t *restrict \fIformat\fP, ...);
+int wscanf(const wchar_t *restrict \fIformat\fP, ...);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIfwscanf\fR()
+function shall read from the named input
+.IR stream .
+The
+\fIwscanf\fR()
+function shall read from the standard input stream
+.IR stdin .
+The
+\fIswscanf\fR()
+function shall read from the wide-character string
+.IR ws .
+Each function reads wide characters, interprets them according to a
+format, and stores the results in its arguments. Each expects, as
+arguments, a control wide-character string
+.IR format
+described below, and a set of
+.IR pointer
+arguments indicating where the converted input should be stored. The
+result is undefined if there are insufficient arguments for the
+format. If the
+.IR format
+is exhausted while arguments remain, the excess arguments are
+evaluated but are otherwise ignored.
+.P
+Conversions can be applied to the
+.IR n th
+argument after the
+.IR format
+in the argument list, rather than to the next unused argument. In this
+case, the conversion specifier wide character
+.BR %
+(see below) is replaced by the sequence
+.BR \(dq%n$\(dq ,
+where
+.IR n
+is a decimal integer in the range [1,{NL_ARGMAX}].
+This feature provides for the definition of
+.IR format
+wide-character strings that select arguments in an order appropriate
+to specific languages. In
+.IR format
+wide-character strings containing the \fR"%\fIn\fR$"\fR form of
+conversion specifications,
+it is unspecified whether numbered arguments in the argument list can
+be referenced from the
+.IR format
+wide-character string more than once.
+.P
+The
+.IR format
+can contain either form of a conversion specification\(emthat is,
+.BR %
+or \fR"%\fIn\fR$"\fR\(em but the two forms cannot normally be mixed
+within a single
+.IR format
+wide-character string. The only exception to this is that
+.BR %%
+or
+.BR %*
+can be mixed with the \fR"%\fIn\fR$"\fR form. When numbered argument
+specifications are used, specifying the
+.IR N th
+argument requires that all the leading arguments, from the first to
+the (\c
+.IR N \(mi1)th,
+are pointers.
+.P
+The
+\fIfwscanf\fR()
+function in all its forms allows for detection of a language-dependent
+radix character in the input string, encoded as a wide-character
+value. The radix character is defined in the current locale (category
+.IR LC_NUMERIC ).
+In the POSIX locale, or in a locale where the radix character is not
+defined, the radix character shall default to a
+<period>
+(\c
+.BR '.' ).
+.P
+The
+.IR format
+is a wide-character string composed of zero or more directives. Each
+directive is composed of one of the following:
+one or more white-space wide characters (\c
+<space>,
+<tab>,
+<newline>,
+<vertical-tab>,
+or
+<form-feed>);
+an ordinary wide character (neither
+.BR '%' 
+nor a white-space character); or a conversion specification.
+.P
+Each conversion specification is introduced by the
+.BR '%' 
+or by the character sequence \fR"%\fIn\fR$"\fR,
+after which the following appear in sequence:
+.IP " *" 4
+An optional assignment-suppressing character
+.BR '*' .
+.IP " *" 4
+An optional non-zero decimal integer that specifies the maximum field
+width.
+.IP " *" 4
+An optional assignment-allocation character
+.BR 'm' .
+.IP " *" 4
+An optional length modifier that specifies the size of the receiving
+object.
+.IP " *" 4
+A conversion specifier wide character that specifies the type of
+conversion to be applied. The valid conversion specifiers are described
+below.
+.P
+The
+\fIfwscanf\fR()
+functions shall execute each directive of the format in turn. If a
+directive fails, as detailed below, the function shall return. Failures
+are described as input failures (due to the unavailability of input
+bytes) or matching failures (due to inappropriate input).
+.P
+A directive composed of one or more white-space wide characters is
+executed by reading input until no more valid input can be read, or up
+to the first wide character which is not a white-space wide character,
+which remains unread.
+.P
+A directive that is an ordinary wide character shall be executed as
+follows. The next wide character is read from the input and compared
+with the wide character that comprises the directive; if the comparison
+shows that they are not equivalent, the directive shall fail, and the
+differing and subsequent wide characters remain unread. Similarly, if
+end-of-file, an encoding error, or a read error prevents a wide
+character from being read, the directive shall fail.
+.P
+A directive that is a conversion specification defines a set of
+matching input sequences, as described below for each conversion wide
+character. A conversion specification is executed in the following
+steps.
+.P
+Input white-space wide characters (as specified by
+.IR "\fIiswspace\fR\^(\|)")
+shall be skipped, unless the conversion specification includes a
+.BR [ ,
+.BR c ,
+or
+.BR n
+conversion specifier.
+.P
+An item shall be read from the input, unless the conversion
+specification includes an
+.BR n
+conversion specifier wide character. An input item is defined as the
+longest sequence of input wide characters, not exceeding any specified
+field width, which is an initial subsequence of a matching sequence.
+The first wide character, if any, after the input item shall remain
+unread. If the length of the input item is zero, the execution of the
+conversion specification shall fail; this condition is a matching
+failure, unless end-of-file, an encoding error, or a read error
+prevented input from the stream, in which case it is an input failure.
+.P
+Except in the case of a
+.BR %
+conversion specifier, the input item (or, in the case of a
+.BR %n
+conversion specification, the count of input wide characters) shall be
+converted to a type appropriate to the conversion wide character. If
+the input item is not a matching sequence, the execution of the
+conversion specification shall fail; this condition is a matching
+failure. Unless assignment suppression was indicated by a
+.BR '*' ,
+the result of the conversion shall be placed in the object pointed to
+by the first argument following the
+.IR format
+argument that has not already received a conversion result if the
+conversion specification is introduced by
+.BR % ,
+or in the
+.IR n th
+argument if introduced by the wide-character sequence
+\fR"%\fIn\fR$"\fR.
+If this object does not have an appropriate type, or if the result
+of the conversion cannot be represented in the space provided, the
+behavior is undefined.
+.P
+The
+.BR %c ,
+.BR %s ,
+and
+.BR %[
+conversion specifiers shall accept an optional assignment-allocation
+character
+.BR 'm' ,
+which shall cause a memory buffer to be allocated to hold the
+wide-character string converted including a terminating null wide
+character. In such a case, the argument corresponding to the conversion
+specifier should be a reference to a pointer value that will receive a
+pointer to the allocated buffer. The system shall allocate a buffer as if
+\fImalloc\fR()
+had been called. The application shall be responsible for freeing the
+memory after usage. If there is insufficient memory to allocate a buffer,
+the function shall set
+.IR errno
+to
+.BR [ENOMEM] 
+and a conversion error shall result. If the function returns EOF, any
+memory successfully allocated for parameters using assignment-allocation
+character
+.BR 'm' 
+by this call shall be freed before the function returns.
+.br
+.P
+The length modifiers and their meanings are:
+.IP "\fRhh\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+or
+.BR n
+conversion specifier applies to an argument with type pointer to
+.BR "signed char"
+or
+.BR "unsigned char" .
+.IP "\fRh\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+or
+.BR n
+conversion specifier applies to an argument with type pointer to
+.BR "short"
+or
+.BR "unsigned short" .
+.IP "\fRl\fR\ (ell)" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+or
+.BR n
+conversion specifier applies to an argument with type pointer to
+.BR "long"
+or
+.BR "unsigned long" ;
+that a following
+.BR a ,
+.BR A ,
+.BR e ,
+.BR E ,
+.BR f ,
+.BR F ,
+.BR g ,
+or
+.BR G
+conversion specifier applies to an argument with type pointer to
+.BR double ;
+or that a following
+.BR c ,
+.BR s ,
+or
+.BR [
+conversion specifier applies to an argument with type pointer to
+.BR wchar_t .
+If the
+.BR 'm' 
+assignment-allocation character is specified, the conversion applies
+to an argument with the type pointer to a pointer to
+.BR wchar_t .
+.IP "\fRll\fR\ (ell-ell)" 8
+.br
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+or
+.BR n
+conversion specifier applies to an argument with type pointer to
+.BR "long long"
+or
+.BR "unsigned long long" .
+.IP "\fRj\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+or
+.BR n
+conversion specifier applies to an argument with type pointer to
+.BR intmax_t
+or
+.BR uintmax_t .
+.IP "\fRz\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+or
+.BR n
+conversion specifier applies to an argument with type pointer to
+.BR size_t
+or the corresponding signed integer type.
+.IP "\fRt\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+or
+.BR n
+conversion specifier applies to an argument with type pointer to
+.BR ptrdiff_t
+or the corresponding
+.BR unsigned
+type.
+.IP "\fRL\fR" 8
+Specifies that a following
+.BR a ,
+.BR A ,
+.BR e ,
+.BR E ,
+.BR f ,
+.BR F ,
+.BR g ,
+or
+.BR G
+conversion specifier applies to an argument with type pointer to
+.BR "long double" .
+.P
+If a length modifier appears with any conversion specifier other than
+as specified above, the behavior is undefined.
+.P
+The following conversion specifier wide characters are valid:
+.IP "\fRd\fP" 8
+Matches an optionally signed decimal integer, whose format is the same
+as expected for the subject sequence of
+\fIwcstol\fR()
+with the value 10 for the
+.IR base
+argument. In the absence of a size modifier, the application shall ensure
+that the corresponding argument is a pointer to
+.BR int .
+.IP "\fRi\fP" 8
+Matches an optionally signed integer, whose format is the same as
+expected for the subject sequence of
+\fIwcstol\fR()
+with 0 for the
+.IR base
+argument. In the absence of a size modifier, the application shall
+ensure that the corresponding argument is a pointer to
+.BR int .
+.IP "\fRo\fP" 8
+Matches an optionally signed octal integer, whose format is the same as
+expected for the subject sequence of
+\fIwcstoul\fR()
+with the value 8 for the
+.IR base
+argument. In the absence of a size modifier, the application shall
+ensure that the corresponding argument is a pointer to
+.BR unsigned .
+.IP "\fRu\fP" 8
+Matches an optionally signed decimal integer, whose format is the same
+as expected for the subject sequence of
+\fIwcstoul\fR()
+with the value 10 for the
+.IR base
+argument. In the absence of a size modifier, the application shall
+ensure that the corresponding argument is a pointer to
+.BR unsigned .
+.IP "\fRx\fP" 8
+Matches an optionally signed hexadecimal integer, whose format is the
+same as expected for the subject sequence of
+\fIwcstoul\fR()
+with the value 16 for the
+.IR base
+argument. In the absence of a size modifier, the application shall
+ensure that the corresponding argument is a pointer to
+.BR unsigned .
+.IP "\fRa\fR,\ \fRe\fP,\ \fRf\fP,\ \fRg\fP" 8
+.br
+Matches an optionally signed floating-point number, infinity, or NaN
+whose format is the same as expected for the subject sequence of
+\fIwcstod\fR().
+In the absence of a size modifier, the application shall ensure that
+the corresponding argument is a pointer to
+.BR float .
+.RS 8 
+.P
+If the
+\fIfwprintf\fR()
+family of functions generates character string representations for
+infinity and NaN (a symbolic entity encoded in floating-point
+format) to support IEEE\ Std\ 754\(hy1985, the
+\fIfwscanf\fR()
+family of functions shall recognize them as input.
+.RE
+.IP "\fRs\fP" 8
+Matches a sequence of non-white-space wide characters. If no
+.BR l
+(ell) qualifier is present, characters from the input field shall be
+converted as if by repeated calls to the
+\fIwcrtomb\fR()
+function, with the conversion state described by an
+.BR mbstate_t
+object initialized to zero before the first wide character is
+converted. If the
+.BR 'm' 
+assignment-allocation character is not specified, the application shall
+ensure that the corresponding argument is a pointer to a character array
+large enough to accept the sequence and the terminating null character,
+which shall be added automatically.
+Otherwise, the application shall ensure that the corresponding
+argument is a pointer to a pointer to a
+.BR wchar_t .
+.RS 8 
+.P
+If the
+.BR l
+(ell) qualifier is present and the
+.BR 'm' 
+assignment-allocation character is not specified, the application shall
+ensure that the corresponding argument is a pointer to an array of
+.BR wchar_t
+large enough to accept the sequence and the terminating null wide
+character, which shall be added automatically.
+If the
+.BR l
+(ell) qualifier is present and the
+.BR 'm' 
+assignment-allocation character is present, the application shall
+ensure that the corresponding argument is a pointer to a pointer
+to a
+.BR wchar_t .
+.RE
+.IP "\fR[\fR" 8
+Matches a non-empty sequence of wide characters from a set of expected
+wide characters (the
+.IR scanset ).
+If no
+.BR l
+(ell) qualifier is present, wide characters from the input field shall
+be converted as if by repeated calls to the
+\fIwcrtomb\fR()
+function, with the conversion state described by an
+.BR mbstate_t
+object initialized to zero before the first wide character is
+converted. If the
+.BR 'm' 
+assignment-allocation character is not specified, the application shall
+ensure that the corresponding argument is a pointer to a character array
+large enough to accept the sequence and the terminating null character,
+which shall be added automatically.
+Otherwise, the application shall ensure that the corresponding
+argument is a pointer to a pointer to a
+.BR wchar_t .
+.RS 8 
+.P
+If an
+.BR l
+(ell) qualifier is present and the
+.BR 'm' 
+assignment-allocation character is not specified, the application shall
+ensure that the corresponding argument is a pointer to an array of
+.BR wchar_t
+large enough to accept the sequence and the terminating null
+wide character.
+If an
+.BR l
+(ell) qualifier is present and the
+.BR 'm' 
+assignment-allocation character is specified, the application shall
+ensure that the corresponding argument is a pointer to a pointer
+to a
+.BR wchar_t .
+.P
+The conversion specification includes all subsequent wide characters in
+the
+.IR format
+string up to and including the matching
+<right-square-bracket>
+(\c
+.BR ']' ).
+The wide characters between the square brackets (the
+.IR scanlist )
+comprise the scanset, unless the wide character after the
+<left-square-bracket>
+is a
+<circumflex>
+(\c
+.BR '^' ),
+in which case the scanset contains all wide characters that do not
+appear in the scanlist between the
+<circumflex>
+and the
+<right-square-bracket>.
+If the conversion specification begins with
+.BR \(dq[\|]\(dq 
+or
+.BR \(dq[^]\(dq ,
+the
+<right-square-bracket>
+is included in the scanlist and the next
+<right-square-bracket>
+is the matching
+<right-square-bracket>
+that ends the conversion specification; otherwise, the first
+<right-square-bracket>
+is the one that ends the conversion specification. If a
+.BR '\(mi' 
+is in the scanlist and is not the first wide character, nor the second
+where the first wide character is a
+.BR '^' ,
+nor the last wide character, the behavior is implementation-defined.
+.RE
+.IP "\fRc\fP" 8
+Matches a sequence of wide characters of exactly the number specified
+by the field width (1 if no field width is present in the conversion
+specification).
+.RS 8 
+.P
+If no
+.BR l
+(ell) length modifier is present, characters from the input field shall
+be converted as if by repeated calls to the
+\fIwcrtomb\fR()
+function, with the conversion state described by an
+.BR mbstate_t
+object initialized to zero before the first wide character is
+converted. No null character is added. If the
+.BR 'm' 
+assignment-allocation character is not specified, the application
+shall ensure that the corresponding argument is a pointer to the
+initial element of a character array large enough to accept the sequence.
+Otherwise, the application shall ensure that the corresponding
+argument is a pointer to a pointer to a
+.BR char .
+.P
+No null wide character is added. If an
+.BR l
+(ell) length modifier is present and the
+.BR 'm' 
+assignment-allocation character is not specified, the application shall
+ensure that the corresponding argument shall be a pointer to the initial
+element of an array of
+.BR wchar_t
+large enough to accept the sequence.
+If an
+.BR l
+(ell) qualifier is present and the
+.BR 'm' 
+assignment-allocation character is specified, the application shall
+ensure that the corresponding argument is a pointer to a pointer
+to a
+.BR wchar_t .
+.RE
+.IP "\fRp\fP" 8
+Matches an implementation-defined set of sequences, which shall be
+the same as the set of sequences that is produced by the
+.BR %p
+conversion specification of the corresponding
+\fIfwprintf\fR()
+functions. The application shall ensure that the corresponding argument
+is a pointer to a pointer to
+.BR void .
+The interpretation of the input item is implementation-defined. If
+the input item is a value converted earlier during the same program
+execution, the pointer that results shall compare equal to that value;
+otherwise, the behavior of the
+.BR %p
+conversion is undefined.
+.IP "\fRn\fP" 8
+No input is consumed. The application shall ensure that the
+corresponding argument is a pointer to the integer into which is to be
+written the number of wide characters read from the input so far by
+this call to the
+\fIfwscanf\fR()
+functions. Execution of a
+.BR %n
+conversion specification shall not increment the assignment count
+returned at the completion of execution of the function. No argument
+shall be converted, but one shall be consumed. If the conversion
+specification includes an assignment-suppressing wide character or a
+field width, the behavior is undefined.
+.IP "\fRC\fP" 8
+Equivalent to
+.BR lc .
+.IP "\fRS\fP" 8
+Equivalent to
+.BR ls .
+.IP "\fR%\fR" 8
+Matches a single
+.BR '%' 
+wide character; no conversion or assignment shall occur. The complete
+conversion specification shall be
+.BR %% .
+.P
+If a conversion specification is invalid, the behavior is undefined.
+.P
+The conversion specifiers
+.BR A ,
+.BR E ,
+.BR F ,
+.BR G ,
+and
+.BR X
+are also valid and shall be equivalent to, respectively,
+.BR a ,
+.BR e ,
+.BR f ,
+.BR g ,
+and
+.BR x .
+.P
+If end-of-file is encountered during input, conversion is terminated.
+If end-of-file occurs before any wide characters matching the current
+conversion specification (except for
+.BR %n )
+have been read (other than leading white-space, where permitted),
+execution of the current conversion specification shall terminate with
+an input failure. Otherwise, unless execution of the current conversion
+specification is terminated with a matching failure, execution of the
+following conversion specification (if any) shall be terminated with an
+input failure.
+.P
+Reaching the end of the string in
+\fIswscanf\fR()
+shall be equivalent to encountering end-of-file for
+\fIfwscanf\fR().
+.P
+If conversion terminates on a conflicting input, the offending input
+shall be left unread in the input. Any trailing white space (including
+<newline>)
+shall be left unread unless matched by a conversion specification. The
+success of literal matches and suppressed assignments is only directly
+determinable via the
+.BR %n
+conversion specification.
+.P
+The
+\fIfwscanf\fR()
+and
+\fIwscanf\fR()
+functions may mark the last data access timestamp of the file
+associated with
+.IR stream
+for update. The last data access timestamp shall be marked for update
+by the first successful execution of
+\fIfgetwc\fR(),
+\fIfgetws\fR(),
+\fIfwscanf\fR(),
+\fIgetwc\fR(),
+\fIgetwchar\fR(),
+\fIvfwscanf\fR(),
+\fIvwscanf\fR(),
+or
+\fIwscanf\fR()
+using
+.IR stream
+that returns data not supplied by a prior call to
+\fIungetwc\fR().
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return the number of
+successfully matched and assigned input items; this number can be zero
+in the event of an early matching failure. If the input ends before the
+first matching failure or conversion, EOF shall be returned.
+If any error occurs, EOF shall be returned,
+and
+.IR errno
+shall be set to indicate the error.
+If a read error occurs, the error indicator for the stream shall be set.
+.SH ERRORS
+For the conditions under which the
+\fIfwscanf\fR()
+functions shall fail and may fail, refer to
+.IR "\fIfgetwc\fR\^(\|)".
+.P
+In addition, the
+\fIfwscanf\fR()
+function shall fail if:
+.TP
+.BR EILSEQ
+Input byte sequence does not form a valid character.
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.P
+In addition, the
+\fIfwscanf\fR()
+function may fail if:
+.TP
+.BR EINVAL
+There are insufficient arguments.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+The call:
+.sp
+.RS 4
+.nf
+\fB
+int i, n; float x; char name[50];
+n = wscanf(L"%d%f%s", &i, &x, name);
+.fi \fR
+.P
+.RE
+.P
+with the input line:
+.sp
+.RS 4
+.nf
+\fB
+25 54.32E\(mi1 Hamster
+.fi \fR
+.P
+.RE
+.P
+assigns to
+.IR n
+the value 3, to
+.IR i
+the value 25, to
+.IR x
+the value 5.432, and
+.IR name
+contains the string
+.BR \(dqHamster\(dq .
+.P
+The call:
+.sp
+.RS 4
+.nf
+\fB
+int i; float x; char name[50];
+(void) wscanf(L"%2d%f%*d %[0123456789]", &i, &x, name);
+.fi \fR
+.P
+.RE
+.P
+with input:
+.sp
+.RS 4
+.nf
+\fB
+56789 0123 56a72
+.fi \fR
+.P
+.RE
+.P
+assigns 56 to
+.IR i ,
+789.0 to
+.IR x ,
+skips 0123, and places the string
+.BR \(dq56\e0\(dq 
+in
+.IR name .
+The next call to
+\fIgetchar\fR()
+shall return the character
+.BR 'a' .
+.SH "APPLICATION USAGE"
+In format strings containing the
+.BR '%' 
+form of conversion specifications, each argument in the argument
+list is used exactly once.
+.P
+For functions that allocate memory as if by
+\fImalloc\fR(),
+the application should release such memory when it is no longer
+required by a call to
+\fIfree\fR().
+For
+\fIfwscanf\fR(),
+this is memory allocated via use of the
+.BR 'm' 
+assignment-allocation character.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIgetwc\fR\^(\|)",
+.IR "\fIfwprintf\fR\^(\|)",
+.IR "\fIsetlocale\fR\^(\|)",
+.IR "\fIwcstod\fR\^(\|)",
+.IR "\fIwcstol\fR\^(\|)",
+.IR "\fIwcstoul\fR\^(\|)",
+.IR "\fIwcrtomb\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<wchar.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,153 @@
+'\" et
+.TH STRIP "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+strip
+\(em remove unnecessary information from strippable files
+(\fBDEVELOPMENT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+strip \fIfile\fR...
+.fi
+.SH DESCRIPTION
+A strippable file is defined as a relocatable, object, or executable
+file.
+On XSI-conformant systems, a strippable file can also be an archive
+of object or relocatable files.
+.P
+The
+.IR strip
+utility shall remove from strippable files named by the
+.IR file
+operands any information the implementor deems unnecessary for
+execution of those files. The nature of that information is
+unspecified. The effect of
+.IR strip
+on object and executable files shall be similar to the use of the
+.BR \(mis
+option to
+.IR c99
+or
+.IR fort77 .
+The effect of
+.IR strip
+on an archive of object files shall be similar to the use of the
+.BR \(mis
+option to
+.IR c99
+or
+.IR fort77
+for each object file in the archive.
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname referring to a strippable file.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+The input files shall be in the form of strippable files successfully
+produced by any compiler defined by this volume of POSIX.1\(hy2008
+or produced by creating or updating an archive of such files
+using the
+.IR ar
+utility.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR strip :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The
+.IR strip
+utility shall produce strippable files of unspecified format.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+Historically, this utility has been used to remove the symbol table
+from a strippable file. It was included since it is known that the
+amount of symbolic information can amount to several megabytes; the
+ability to remove it in a portable manner was deemed important,
+especially for smaller systems.
+.P
+The behavior of
+.IR strip
+on object and executable files is said to be the same as the
+.BR \(mis
+option to a compiler. While the end result is essentially the same,
+it is not required to be identical.
+.P
+XSI-conformant systems support use of
+.IR strip
+on archive files containing object files or relocatable files.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIar\fR\^",
+.IR "\fIc99\fR\^",
+.IR "\fIfort77\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

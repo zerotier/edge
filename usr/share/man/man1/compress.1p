@@ -1,0 +1,258 @@
+'\" et
+.TH COMPRESS "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+compress
+\(em compress data
+.SH SYNOPSIS
+.LP
+.nf
+compress \fB[\fR\(mifv\fB] [\fR\(mib \fIbits\fB] [\fIfile\fR...\fB]\fR
+.P
+compress \fB[\fR\(micfv\fB] [\fR\(mib \fIbits\fB] [\fIfile\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR compress
+utility shall attempt to reduce the size of the named files by using
+adaptive Lempel-Ziv coding algorithm.
+.TP 10
+.BR Note:
+Lempel-Ziv is US Patent 4464650, issued to William Eastman, Abraham
+Lempel, Jacob Ziv, Martin Cohn on August 7th, 1984, and assigned to
+Sperry Corporation.
+.RS 10 
+.P
+Lempel-Ziv-Welch compression is covered by US Patent 4558302, issued to
+Terry A. Welch on December 10th, 1985, and assigned to Sperry
+Corporation.
+.RE
+.P
+On systems not supporting adaptive Lempel-Ziv coding algorithm, the
+input files shall not be changed and an error value greater than two
+shall be returned. Except when the output is to the standard output,
+each file shall be replaced by one with the extension
+.BR .Z .
+If the invoking process has appropriate privileges, the ownership,
+modes, access time, and modification time of the original file are
+preserved. If appending the
+.BR .Z
+to the filename would make the name exceed
+{NAME_MAX}
+bytes, the command shall fail. If no files are specified, the standard
+input shall be compressed to the standard output.
+.SH OPTIONS
+The
+.IR compress
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mib\ \fIbits\fR" 10
+Specify the maximum number of bits to use in a code. For a conforming
+application, the
+.IR bits
+argument shall be:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+9 <= \fIbits\fP <= 14
+.fi \fR
+.P
+.RE
+.P
+The implementation may allow
+.IR bits
+values of greater than 14. The default is 14, 15, or 16.
+.RE
+.IP "\fB\(mic\fP" 10
+Cause
+.IR compress
+to write to the standard output; the input file is not changed, and no
+.BR .Z
+files are created.
+.IP "\fB\(mif\fP" 10
+Force compression of
+.IR file ,
+even if it does not actually reduce the size of the file, or if the
+corresponding
+.IR file \c
+.BR .Z
+file already exists. If the
+.BR \(mif
+option is not given, and the process is not running in the background,
+the user is prompted as to whether an existing
+.IR file \c
+.BR .Z
+file should be overwritten. If the response is affirmative, the existing
+file will be overwritten.
+.IP "\fB\(miv\fP" 10
+Write the percentage reduction of each file to standard error.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a file to be compressed.
+.SH STDIN
+The standard input shall be used only if no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' .
+.SH "INPUT FILES"
+If
+.IR file
+operands are specified, the input files contain the data to be
+compressed.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR compress :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements used in the extended regular
+expression defined for the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of text
+data as characters (for example, single-byte as opposed to multi-byte
+characters in arguments), the behavior of character classes used in the
+extended regular expression defined for the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale used to process affirmative responses, and the
+locale used to affect the format and contents of diagnostic messages,
+prompts, and the output from the
+.BR \(miv
+option written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' ,
+or if the
+.BR \(mic
+option is specified, the standard output contains the compressed
+output.
+.SH STDERR
+The standard error shall be used only for diagnostic and prompt
+messages and the output from
+.BR \(miv .
+.SH "OUTPUT FILES"
+The output files shall contain the compressed output. The format of
+compressed files is unspecified and interchange of such files between
+implementations (including access via unspecified file sharing
+mechanisms) is not required by POSIX.1\(hy2008.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP "\01" 6
+An error occurred.
+.IP "\02" 6
+One or more files were not compressed because they would have increased
+in size (and the
+.BR \(mif
+option was not specified).
+.IP >2 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+The input file shall remain unmodified.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The amount of compression obtained depends on the size of the input,
+the number of
+.IR bits
+per code, and the distribution of common substrings. Typically, text
+such as source code or English is reduced by 50\(hy60%. Compression is
+generally much better than that achieved by Huffman coding
+or adaptive Huffman coding (\c
+.IR compact ),
+and takes less time to compute.
+.P
+Although
+.IR compress
+strictly follows the default actions upon receipt of a signal or when
+an error occurs, some unexpected results may occur. In some
+implementations it is likely that a partially compressed file is left
+in place, alongside its uncompressed input file. Since the general
+operation of
+.IR compress
+is to delete the uncompressed file only after the
+.BR .Z
+file has been successfully filled, an application should always
+carefully check the exit status of
+.IR compress
+before arbitrarily deleting files that have like-named neighbors with
+.BR .Z
+suffixes.
+.P
+The limit of 14 on the
+.IR bits
+option-argument is to achieve portability to all systems (within the
+restrictions imposed by the lack of an explicit published file
+format). Some implementations based on 16-bit architectures cannot
+support 15 or 16-bit uncompression.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIuncompress\fR\^",
+.IR "\fIzcat\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

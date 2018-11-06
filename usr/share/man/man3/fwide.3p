@@ -1,0 +1,107 @@
+'\" et
+.TH FWIDE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fwide
+\(em set stream orientation
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+#include <wchar.h>
+.P
+int fwide(FILE *\fIstream\fP, int \fImode\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIfwide\fR()
+function shall determine the orientation of the stream pointed to by
+.IR stream .
+If
+.IR mode
+is greater than zero, the function first attempts to make the stream
+wide-oriented. If
+.IR mode
+is less than zero, the function first attempts to make the stream
+byte-oriented. Otherwise,
+.IR mode
+is zero and the function does not alter the orientation of the stream.
+.P
+If the orientation of the stream has already been determined,
+\fIfwide\fR()
+shall not change it.
+.P
+The
+\fIfwide\fR()
+function shall not change the setting of
+.IR errno
+if successful.
+.P
+Since no return value is reserved to indicate an error, an
+application wishing to check for error situations should set
+.IR errno
+to 0, then call
+\fIfwide\fR(),
+then check
+.IR errno ,
+and if it is non-zero, assume an error has occurred.
+.SH "RETURN VALUE"
+The
+\fIfwide\fR()
+function shall return a value greater than zero if, after the call, the
+stream has wide-orientation, a value less than zero if the stream has
+byte-orientation, or zero if the stream has no orientation.
+.SH ERRORS
+The
+\fIfwide\fR()
+function may fail if:
+.TP
+.BR EBADF
+The
+.IR stream
+argument is not a valid stream.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+A call to
+\fIfwide\fR()
+with
+.IR mode
+set to zero can be used to determine the current orientation of a
+stream.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<wchar.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

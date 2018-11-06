@@ -1,0 +1,375 @@
+'\" et
+.TH fcntl.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fcntl.h
+\(em file control options
+.SH SYNOPSIS
+.LP
+.nf
+#include <fcntl.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constants for the
+.IR cmd
+argument used by
+\fIfcntl\fR().
+The values shall be unique and shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP F_DUPFD 12
+Duplicate file descriptor.
+.IP F_DUPFD_CLOEXEC 12
+.br
+Duplicate file descriptor with the close-on-\c
+.IR exec
+flag FD_CLOEXEC set.
+.IP F_GETFD 12
+Get file descriptor flags.
+.IP F_SETFD 12
+Set file descriptor flags.
+.IP F_GETFL 12
+Get file status flags and file access modes.
+.IP F_SETFL 12
+Set file status flags.
+.IP F_GETLK 12
+Get record locking information.
+.IP F_SETLK 12
+Set record locking information.
+.IP F_SETLKW 12
+Set record locking information; wait if blocked.
+.IP F_GETOWN 12
+Get process or process group ID to receive SIGURG signals.
+.IP F_SETOWN 12
+Set process or process group ID to receive SIGURG signals.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constant used for the
+\fIfcntl\fR()
+file descriptor flags, which shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP FD_CLOEXEC 12
+Close the file descriptor upon execution of an
+.IR exec
+family function.
+.P
+The
+.IR <fcntl.h> 
+header shall also define the following symbolic constants for the
+.IR l_type
+argument used for record locking with
+\fIfcntl\fR().
+The values shall be unique and shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP F_RDLCK 12
+Shared or read lock.
+.IP F_UNLCK 12
+Unlock.
+.IP F_WRLCK 12
+Exclusive or write lock.
+.P
+The
+.IR <fcntl.h> 
+header shall define the values used for
+.IR l_whence ,
+SEEK_SET, SEEK_CUR, and SEEK_END
+as described in
+.IR <stdio.h> .
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constants as file creation
+flags for use in the
+.IR oflag
+value to
+\fIopen\fR()
+and
+\fIopenat\fR().
+The values shall be bitwise-distinct and shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP O_CLOEXEC 12
+The FD_CLOEXEC flag associated with the new descriptor shall be
+set to close the file descriptor upon execution of an
+.IR exec
+family function.
+.IP O_CREAT 12
+Create file if it does not exist.
+.IP O_DIRECTORY 12
+Fail if not a directory.
+.IP O_EXCL 12
+Exclusive use flag.
+.IP O_NOCTTY 12
+Do not assign controlling terminal.
+.IP O_NOFOLLOW 12
+Do not follow symbolic links.
+.IP O_TRUNC 12
+Truncate flag.
+.IP O_TTY_INIT 12
+Set the
+.BR termios
+structure terminal parameters to a state that provides conforming
+behavior; see
+.IR "Section 11.2" ", " "Parameters that Can be Set".
+.P
+The O_TTY_INIT flag can have the value zero and in this case it need
+not be bitwise-distinct from the other flags.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constants for use as
+file status flags for
+\fIopen\fR(),
+\fIopenat\fR(),
+and
+\fIfcntl\fR().
+The values shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP O_APPEND 12
+Set append mode.
+.IP O_DSYNC 12
+Write according to synchronized I/O data integrity completion.
+.IP O_NONBLOCK 12
+Non-blocking mode.
+.IP O_RSYNC 12
+Synchronized read I/O operations.
+.IP O_SYNC 12
+Write according to synchronized I/O file integrity completion.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constant for use as the mask
+for file access modes. The value shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP O_ACCMODE 12
+Mask for file access modes.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constants for use as
+the file access modes for
+\fIopen\fR(),
+\fIopenat\fR(),
+and
+\fIfcntl\fR().
+The values shall be unique, except that O_EXEC and O_SEARCH may have
+equal values. The values shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP O_EXEC 12
+Open for execute only (non-directory files). The result is unspecified
+if this flag is applied to a directory.
+.IP O_RDONLY 12
+Open for reading only.
+.IP O_RDWR 12
+Open for reading and writing.
+.IP O_SEARCH 12
+Open directory for search only. The result is unspecified if this flag
+is applied to a non-directory file.
+.IP O_WRONLY 12
+Open for writing only.
+.P
+The
+.IR <fcntl.h> 
+header shall define the symbolic constants for file modes for use as
+values of
+.BR mode_t
+as described in
+.IR <sys/stat.h> .
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constant as a special value
+used in place of a file descriptor for the
+.IR *at (\|)
+functions which take a directory file descriptor as a parameter:
+.IP AT_FDCWD 12
+Use the current working directory to determine the target of relative
+file paths.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constant as a value for the
+.IR flag
+used by
+\fIfaccessat\fR():
+.IP AT_EACCESS 12
+Check access using effective user and group ID.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constant as a value for the
+.IR flag
+used by
+\fIfstatat\fR(),
+\fIfchmodat\fR(),
+\fIfchownat\fR(),
+and
+\fIutimensat\fR():
+.IP AT_SYMLINK_NOFOLLOW 12
+.br
+Do not follow symbolic links.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constant as a value for
+the flag used by
+\fIlinkat\fR():
+.IP AT_SYMLINK_FOLLOW 12
+.br
+Follow symbolic link.
+.br
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constant as a value
+for the flag used by
+\fIunlinkat\fR():
+.IP AT_REMOVEDIR 12
+.br
+Remove directory instead of file.
+.P
+The
+.IR <fcntl.h> 
+header shall define the following symbolic constants for the
+.IR advice
+argument used by
+\fIposix_fadvise\fR():
+.IP POSIX_FADV_DONTNEED 6
+.br
+The application expects that it will not access the specified data in
+the near future.
+.IP POSIX_FADV_NOREUSE 6
+.br
+The application expects to access the specified data once and then not
+reuse it thereafter.
+.IP POSIX_FADV_NORMAL 6
+.br
+The application has no advice to give on its behavior with respect to
+the specified data. It is the default characteristic if no advice is
+given for an open file.
+.IP POSIX_FADV_RANDOM 6
+.br
+The application expects to access the specified data in a random
+order.
+.IP POSIX_FADV_SEQUENTIAL 6
+.br
+The application expects to access the specified data sequentially from
+lower offsets to higher offsets.
+.IP POSIX_FADV_WILLNEED 6
+.br
+The application expects to access the specified data in the near
+future.
+.P
+The
+.IR <fcntl.h> 
+header shall define the
+.BR flock
+structure describing a file lock. It shall include the following members:
+.sp
+.RS 4
+.nf
+\fB
+short  l_type   \fRType of lock; F_RDLCK, F_WRLCK, F_UNLCK.\fR
+short  l_whence \fRFlag for starting offset.\fR
+off_t  l_start  \fRRelative offset in bytes.\fR
+off_t  l_len    \fRSize; if 0 then until EOF.\fR
+pid_t  l_pid    \fRProcess ID of the process holding the lock; returned with F_GETLK.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <fcntl.h> 
+header shall define the
+.BR mode_t ,
+.BR off_t ,
+and
+.BR pid_t
+types as described in
+.IR <sys/types.h> .
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int  creat(const char *, mode_t);
+int  fcntl(int, int, ...);
+int  open(const char *, int, ...);
+int  openat(int, const char *, int, ...);
+int  posix_fadvise(int, off_t, off_t, int);
+int  posix_fallocate(int, off_t, off_t);
+.fi \fR
+.P
+.RE
+.P
+Inclusion of the
+.IR <fcntl.h> 
+header may also make visible all symbols from
+.IR <sys/stat.h> 
+and
+.IR <unistd.h> .
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Although no existing implementation defines AT_SYMLINK_FOLLOW and
+AT_SYMLINK_NOFOLLOW as the same numeric value, POSIX.1\(hy2008 does not prohibit
+that as the two constants are not used with the same interfaces.
+.SH RATIONALE
+While many of the symbolic constants introduced in the
+.IR <fcntl.h> 
+header do not strictly need to be used in
+.BR #if
+preprocessor directives, widespread historic practice has defined
+them as macros that are usable in such constructs, and examination
+of existing applications has shown that they are occasionally used in
+such a way. Therefore it was decided to retain this requirement on an
+implementation in POSIX.1\(hy2008.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<sys_stat.h>\fP",
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIcreat\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIfutimens\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIposix_fadvise\fR\^(\|)",
+.IR "\fIposix_fallocate\fR\^(\|)",
+.IR "\fIposix_madvise\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

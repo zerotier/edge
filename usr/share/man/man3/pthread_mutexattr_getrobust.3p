@@ -1,0 +1,160 @@
+'\" et
+.TH PTHREAD_MUTEXATTR_GETROBUST "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_mutexattr_getrobust,
+pthread_mutexattr_setrobust
+\(em get and set the mutex robust attribute
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_mutexattr_getrobust(const pthread_mutexattr_t *restrict
+    \fIattr\fP, int *restrict \fIrobust\fP);
+int pthread_mutexattr_setrobust(pthread_mutexattr_t *\fIattr\fP,
+    int \fIrobust\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_mutexattr_getrobust\fR()
+and
+\fIpthread_mutexattr_setrobust\fR()
+functions, respectively, shall get and set the mutex
+.IR robust
+attribute. This attribute is set in the
+.IR robust
+parameter. Valid values for
+.IR robust
+include:
+.IP PTHREAD_MUTEX_STALLED 6
+.br
+No special actions are taken if the owner of the mutex is terminated
+while holding the mutex lock. This can lead to deadlocks if no other
+thread can unlock the mutex.
+.br
+This is the default value.
+.IP PTHREAD_MUTEX_ROBUST 6
+.br
+If the process containing the owning thread of a robust mutex
+terminates while holding the mutex lock, the next thread that acquires
+the mutex shall be notified about the termination by the return value
+.BR [EOWNERDEAD] 
+from the locking function. If the owning thread of a robust mutex
+terminates while holding the mutex lock, the next thread that acquires
+the mutex may be notified about the termination by the return value
+.BR [EOWNERDEAD] .
+The notified thread can then attempt to mark the state protected by the
+mutex as consistent again by a call to
+\fIpthread_mutex_consistent\fR().
+After a subsequent successful call to
+\fIpthread_mutex_unlock\fR(),
+the mutex lock shall be released and can be used normally by other
+threads. If the mutex is unlocked without a call to
+\fIpthread_mutex_consistent\fR(),
+it shall be in a permanently unusable state and all attempts to lock
+the mutex shall fail with the error
+.BR [ENOTRECOVERABLE] .
+The only permissible operation on such a mutex is
+\fIpthread_mutex_destroy\fR().
+.P
+The behavior is undefined if the value specified by the
+.IR attr
+argument to
+\fIpthread_mutexattr_getrobust\fR()
+or
+\fIpthread_mutexattr_setrobust\fR()
+does not refer to an initialized mutex attributes object.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIpthread_mutexattr_getrobust\fR()
+function shall return zero and store the value of the
+.IR robust
+attribute of
+.IR attr
+into the object referenced by the
+.IR robust
+parameter. Otherwise, an error value shall be returned to indicate the
+error. If successful, the
+\fIpthread_mutexattr_setrobust\fR()
+function shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_mutexattr_setrobust\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value of
+.IR robust
+is invalid.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The actions required to make the state protected by the mutex
+consistent again are solely dependent on the application. If it is not
+possible to make the state of a mutex consistent, robust mutexes can be
+used to notify this situation by calling
+\fIpthread_mutex_unlock\fR()
+without a prior call to
+\fIpthread_mutex_consistent\fR().
+.P
+If the state is declared inconsistent by calling
+\fIpthread_mutex_unlock\fR()
+without a prior call to
+\fIpthread_mutex_consistent\fR(),
+a possible approach could be to destroy the mutex and then reinitialize
+it. However, it should be noted that this is possible only in certain
+situations where the state protected by the mutex has to be
+reinitialized and coordination achieved with other threads blocked on
+the mutex, because otherwise a call to a locking function with a
+reference to a mutex object invalidated by a call to
+\fIpthread_mutex_destroy\fR()
+results in undefined behavior.
+.SH RATIONALE
+If an implementation detects that the value specified by the
+.IR attr
+argument to
+\fIpthread_mutexattr_getrobust\fR()
+or
+\fIpthread_mutexattr_setrobust\fR()
+does not refer to an initialized mutex attributes object, it is
+recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIpthread_mutex_consistent\fR\^(\|)",
+.IR "\fIpthread_mutex_destroy\fR\^(\|)",
+.IR "\fIpthread_mutex_lock\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

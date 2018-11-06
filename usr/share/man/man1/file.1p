@@ -1,0 +1,829 @@
+'\" et
+.TH FILE "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+file
+\(em determine file type
+.SH SYNOPSIS
+.LP
+.nf
+file \fB[\fR\(midh\fB] [\fR\(miM \fIfile\fB] [\fR\(mim \fIfile\fB] \fIfile\fR...
+.P
+file \(mii \fB[\fR\(mih\fB] \fIfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR file
+utility shall perform a series of tests in sequence on each specified
+.IR file
+in an attempt to classify it:
+.IP " 1." 4
+If
+.IR file
+does not exist, cannot be read, or its file status could not be
+determined, the output shall indicate that the file was processed, but
+that its type could not be determined.
+.IP " 2." 4
+If the file is not a regular file, its file type shall be identified.
+The file types directory, FIFO, socket, block special, and character
+special shall be identified as such. Other implementation-defined file
+types may also be identified. If
+.IR file
+is a symbolic link, by default the link shall be resolved and
+.IR file
+shall test the type of file referenced by the symbolic link. (See the
+.BR \(mih
+and
+.BR \(mii
+options below.)
+.IP " 3." 4
+If the length of
+.IR file
+is zero, it shall be identified as an empty file.
+.IP " 4." 4
+The
+.IR file
+utility shall examine an initial segment of
+.IR file
+and shall make a guess at identifying its contents based on
+position-sensitive tests. (The answer is not guaranteed to be correct;
+see the
+.BR \(mid ,
+.BR \(miM ,
+and
+.BR \(mim
+options below.)
+.IP " 5." 4
+The
+.IR file
+utility shall examine
+.IR file
+and make a guess at identifying its contents based on context-sensitive
+default system tests. (The answer is not guaranteed to be correct.)
+.IP " 6." 4
+The file shall be identified as a data file.
+.P
+If
+.IR file
+does not exist, cannot be read, or its file status could not be
+determined, the output shall indicate that the file was processed, but
+that its type could not be determined.
+.P
+If
+.IR file
+is a symbolic link, by default the link shall be resolved and
+.IR file
+shall test the type of file referenced by the symbolic link.
+.SH OPTIONS
+The
+.IR file
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that the order of the
+.BR \(mim ,
+.BR \(mid ,
+and
+.BR \(miM
+options shall be significant.
+.P
+The following options shall be supported by the implementation:
+.IP "\fB\(mid\fP" 10
+Apply any position-sensitive default system tests and
+context-sensitive default system tests to the file. This is the
+default if no
+.BR \(miM
+or
+.BR \(mim
+option is specified.
+.IP "\fB\(mih\fP" 10
+When a symbolic link is encountered, identify the file as a symbolic
+link. If
+.BR \(mih
+is not specified and
+.IR file
+is a symbolic link that refers to a nonexistent file,
+.IR file
+shall identify the file as a symbolic link, as if
+.BR \(mih
+had been specified.
+.IP "\fB\(mii\fP" 10
+If a file is a regular file, do not attempt to classify the type of the
+file further, but identify the file as specified in the STDOUT section.
+.IP "\fB\(miM\ \fIfile\fR" 10
+Specify the name of a file containing position-sensitive tests that
+shall be applied to a file in order to classify it (see the EXTENDED
+DESCRIPTION). No position-sensitive default system tests nor
+context-sensitive default system tests shall be applied unless the
+.BR \(mid
+option is also specified.
+.IP "\fB\(mim\ \fIfile\fR" 10
+Specify the name of a file containing position-sensitive tests that
+shall be applied to a file in order to classify it (see the EXTENDED
+DESCRIPTION).
+.P
+If the
+.BR \(mim
+option is specified without specifying the
+.BR \(mid
+option or the
+.BR \(miM
+option, position-sensitive default system tests shall be applied after
+the position-sensitive tests specified by the
+.BR \(mim
+option. If the
+.BR \(miM
+option is specified with the
+.BR \(mid
+option, the
+.BR \(mim
+option, or both, or the
+.BR \(mim
+option is specified with the
+.BR \(mid
+option, the concatenation of the position-sensitive tests specified by
+these options shall be applied in the order specified by the appearance
+of these options. If a
+.BR \(miM
+or
+.BR \(mim
+.IR file
+option-argument is
+.BR \(mi ,
+the results are unspecified.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a file to be tested.
+.SH STDIN
+The standard input shall be used if a
+.IR file
+operand is
+.BR '\(mi' 
+and the implementation treats the
+.BR '\(mi' 
+as meaning standard input.
+Otherwise, the standard input shall not be used.
+.SH "INPUT FILES"
+The
+.IR file
+can be any file type.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR file :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+In the POSIX locale, the following format shall be used to identify
+each operand,
+.IR file
+specified:
+.sp
+.RS 4
+.nf
+\fB
+"%s: %s\en", <\fIfile\fR>, <\fItype\fR>
+.fi \fR
+.P
+.RE
+.P
+The values for <\fItype\fP> are unspecified, except that in the POSIX
+locale, if
+.IR file
+is identified as one of the types listed in the following table,
+<\fItype\fP> shall contain (but is not limited to) the corresponding
+string, unless the file is identified by a position-sensitive test
+specified by a
+.BR \(miM
+or
+.BR \(mim
+option. Each
+<space>
+shown in the strings shall be exactly one
+<space>.
+.br
+.sp
+.ce 1
+\fBTable 4-9: File Utility Output Strings\fR
+.TS
+center tab(@) box;
+cB | cB | cB
+l | l | l.
+If \fIfile\fP is:@<\fItype\fP> shall contain the string:@Notes
+_
+Nonexistent@cannot open
+.P
+Block special@block special@1
+Character special@character special@1
+Directory@directory@1
+FIFO@fifo@1
+Socket@socket@1
+Symbolic link@symbolic link to@1
+Regular file@regular file@1,2
+Empty regular file@empty@3
+Regular file that cannot be read@cannot open@3
+.P
+Executable binary@executable@3,4,6
+\fIar\fR archive library (see \fIar\fP)@archive@3,4,6
+Extended \fIcpio\fP format (see \fIpax\fP)@cpio archive@3,4,6
+Extended \fItar\fP format (see \fBustar\fP in \fIpax\fP)@tar archive@3,4,6
+.P
+Shell script@commands text@3,5,6
+C-language source@c program text@3,5,6
+FORTRAN source@fortran program text@3,5,6
+.P
+Regular file whose type cannot be determined@data@3
+.TE
+.TP 10
+.BR Notes:
+.RS 10 
+.IP " 1." 4
+This is a file type test.
+.IP " 2." 4
+This test is applied only if the
+.BR \(mii
+option is specified.
+.IP " 3." 4
+This test is applied only if the
+.BR \(mii
+option is not specified.
+.IP " 4." 4
+This is a position-sensitive default system test.
+.IP " 5." 4
+This is a context-sensitive default system test.
+.IP " 6." 4
+Position-sensitive default system tests and context-sensitive
+default system tests are not applied if the
+.BR \(miM
+option is specified unless the
+.BR \(mid
+option is also specified.
+.RE
+.P
+.P
+In the POSIX locale, if
+.IR file
+is identified as a symbolic link (see the
+.BR \(mih
+option), the following alternative output format shall be used:
+.sp
+.RS 4
+.nf
+\fB
+"%s: %s %s\en", <\fIfile\fR>, <\fItype\fR>, <\fIcontents of link\fR>"
+.fi \fR
+.P
+.RE
+.P
+If the file named by the
+.IR file
+operand does not exist, cannot be read, or the type of the file named
+by the
+.IR file
+operand cannot be determined, this shall not be considered an error
+that affects the exit status.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+A file specified as an option-argument to the
+.BR \(mim
+or
+.BR \(miM
+options shall contain one position-sensitive test per line, which shall
+be applied to the file. If the test succeeds, the message field of the
+line shall be printed and no further tests shall be applied, with the
+exception that tests on immediately following lines beginning with a
+single
+.BR '>' 
+character shall be applied.
+.P
+Each line shall be composed of the following four
+<tab>-separated
+fields. (Implementations may allow any combination of one or more
+white-space characters other than
+<newline>
+to act as field separators.)
+.IP "\fIoffset\fP" 10
+An unsigned number (optionally preceded by a single
+.BR '>' 
+character) specifying the
+.IR offset ,
+in bytes, of the value in the file that is to be compared against the
+.IR value
+field of the line. If the file is shorter than the specified offset,
+the test shall fail.
+.RS 10 
+.P
+If the
+.IR offset
+begins with the character
+.BR '>' ,
+the test contained in the line shall not be applied to the file unless
+the test on the last line for which the
+.IR offset
+did not begin with a
+.BR '>' 
+was successful. By default, the
+.IR offset
+shall be interpreted as an unsigned decimal number. With a leading 0x
+or 0X, the
+.IR offset
+shall be interpreted as a hexadecimal number; otherwise, with a leading
+0, the
+.IR offset
+shall be interpreted as an octal number.
+.RE
+.IP "\fItype\fP" 10
+The type of the value in the file to be tested. The type shall consist
+of the type specification characters
+.BR d ,
+.BR s ,
+and
+.BR u ,
+specifying signed decimal, string, and unsigned decimal, respectively.
+.RS 10 
+.P
+The
+.IR type
+string shall be interpreted as the bytes from the file starting at the
+specified
+.IR offset
+and including the same number of bytes specified by the
+.IR value
+field. If insufficient bytes remain in the file past the
+.IR offset
+to match the
+.IR value
+field, the test shall fail.
+.P
+The type specification characters
+.BR d
+and
+.BR u
+can be followed by an optional unsigned decimal integer that specifies
+the number of bytes represented by the type. The type specification
+characters
+.BR d
+and
+.BR u
+can be followed by an optional
+.BR C ,
+.BR S ,
+.BR I ,
+or
+.BR L ,
+indicating that the value is of type
+.BR char ,
+.BR short ,
+.BR int ,
+or
+.BR long ,
+respectively.
+.P
+The default number of bytes represented by the type specifiers
+.BR d ,
+.BR f ,
+and
+.BR u
+shall correspond to their respective C-language types as follows. If
+the system claims conformance to the C-Language Development Utilities
+option, those specifiers shall correspond to the default sizes used in
+the
+.IR c99
+utility. Otherwise, the default sizes shall be implementation-defined.
+.P
+For the type specifier characters
+.BR d
+and
+.BR u ,
+the default number of bytes shall correspond to the size of a basic
+integer type of the implementation. For these specifier
+characters, the implementation shall support values of the optional
+number of bytes to be converted corresponding to the number of bytes in
+the C-language types
+.BR char ,
+.BR short ,
+.BR int ,
+or
+.BR long .
+These numbers can also be specified by an application as the characters
+.BR C ,
+.BR S ,
+.BR I ,
+and
+.BR L ,
+respectively. The byte order used when interpreting numeric values is
+implementation-defined, but shall correspond to the order in which a
+constant of the corresponding type is stored in memory on the system.
+.P
+All type specifiers, except for
+.BR s ,
+can be followed by a mask specifier of the form &\fInumber\fP. The mask
+value shall be AND'ed with the value of the input file before the
+comparison with the
+.IR value
+field of the line is made. By default, the mask shall be interpreted as
+an unsigned decimal number. With a leading 0x or 0X, the mask shall be
+interpreted as an unsigned hexadecimal number; otherwise, with a
+leading 0, the mask shall be interpreted as an unsigned octal number.
+.P
+The strings
+.BR byte ,
+.BR short ,
+.BR long ,
+and
+.BR string
+shall also be supported as type fields, being interpreted as
+.BR dC ,
+.BR dS ,
+.BR dL ,
+and
+.BR s ,
+respectively.
+.RE
+.IP "\fIvalue\fP" 10
+The
+.IR value
+to be compared with the value from the file.
+.RS 10 
+.P
+If the specifier from the type field is
+.BR s
+or
+.BR string ,
+then interpret the value as a string. Otherwise, interpret it as a
+number. If the value is a string, then the test shall succeed only when
+a string value exactly matches the bytes from the file.
+.P
+If the
+.IR value
+is a string, it can contain the following sequences:
+.IP "\e\fIcharacter\fR" 12
+The
+<backslash>-escape
+sequences as specified in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Table 5-1" ", " "Escape Sequences and Associated Actions"
+(\c
+.BR '\e\e' ,
+.BR '\ea' ,
+.BR '\eb' ,
+.BR '\ef' ,
+.BR '\en' ,
+.BR '\er' ,
+.BR '\et' ,
+.BR '\ev' ).
+In addition, the escape sequence
+.BR '\e\ ' 
+(the
+<backslash>
+character followed by a
+<space>
+character) shall be recognized to represent a
+<space>
+character. The results of using any other character, other than an
+octal digit, following the
+<backslash>
+are unspecified.
+.IP "\e\fIoctal\fR" 12
+Octal sequences that can be used to represent characters with specific
+coded values. An octal sequence shall consist of a
+<backslash>
+followed by the longest sequence of one, two, or three octal-digit
+characters (01234567).
+.P
+By default, any value that is not a string shall be interpreted as a
+signed decimal number. Any such value, with a leading 0x or 0X, shall
+be interpreted as an unsigned hexadecimal number; otherwise, with a
+leading zero, the value shall be interpreted as an unsigned octal
+number.
+.P
+If the value is not a string, it can be preceded by a character
+indicating the comparison to be performed. Permissible characters and
+the comparisons they specify are as follows:
+.IP "\fR=\fP" 6
+The test shall succeed if the value from the file equals the
+.IR value
+field.
+.IP "\fR<\fP" 6
+The test shall succeed if the value from the file is less than the
+.IR value
+field.
+.IP "\fR>\fP" 6
+The test shall succeed if the value from the file is greater than the
+.IR value
+field.
+.IP "\fR&\fP" 6
+The test shall succeed if all of the set bits in the
+.IR value
+field are set in the value from the file.
+.IP "\fR^\fP" 6
+The test shall succeed if at least one of the set bits in the
+.IR value
+field is not set in the value from the file.
+.IP "\fRx\fP" 6
+The test shall succeed if the file is large enough to contain a value
+of the type specified starting at the offset specified.
+.RE
+.IP "\fImessage\fP" 10
+The
+.IR message
+to be printed if the test succeeds. The
+.IR message
+shall be interpreted using the notation for the
+.IR printf
+formatting specification; see
+.IR printf .
+If the
+.IR value
+field was a string, then the value from the file shall be the argument
+for the
+.IR printf
+formatting specification; otherwise, the value from the file shall be
+the argument.
+.br
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.IR file
+utility can only be required to guess at many of the file types because
+only exhaustive testing can determine some types with certainty. For
+example, binary data on some implementations might match the initial
+segment of an executable or a
+.IR tar
+archive.
+.P
+Note that the table indicates that the output contains the stated
+string. Systems may add text before or after the string. For
+executables, as an example, the machine architecture and various facts
+about how the file was link-edited may be included. Note also that on
+systems that recognize shell script files starting with
+.BR \(dq#!\(dq 
+as executable files, these may be identified as executable binary files
+rather than as shell scripts.
+.SH EXAMPLES
+Determine whether an argument is a binary executable file:
+.sp
+.RS 4
+.nf
+\fB
+file \(mi\|\(mi "$1" | grep \(miq ':.*executable' &&
+    printf "%s is executable.\en$1"
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The
+.BR \(mif
+option was omitted because the same effect can (and should) be obtained
+using the
+.IR xargs
+utility.
+.P
+Historical versions of the
+.IR file
+utility attempt to identify the following types of files: symbolic
+link, directory, character special, block special, socket,
+.IR tar
+archive,
+.IR cpio
+archive, SCCS archive, archive library, empty,
+.IR compress
+output,
+.IR pack
+output, binary data, C source, FORTRAN source, assembler source,
+.IR nroff /\c
+.IR troff /\c
+.IR eqn /\c
+.IR tbl
+source
+.IR troff
+output, shell script, C shell script, English text, ASCII text, various
+executables, APL workspace, compiled terminfo entries, and CURSES
+screen images. Only those types that are reasonably well specified in
+POSIX or are directly related to POSIX utilities are listed in the
+table.
+.P
+Historical systems have used a ``magic file'' named
+.BR /etc/magic
+to help identify file types. Because it is generally useful for users
+and scripts to be able to identify special file types, the
+.BR \(mim
+flag and a portable format for user-created magic files has been
+specified. No requirement is made that an implementation of
+.IR file
+use this method of identifying files, only that users be permitted to
+add their own classifying tests.
+.P
+In addition, three options have been added to historical practice. The
+.BR \(mid
+flag has been added to permit users to cause their tests to follow any
+default system tests. The
+.BR \(mii
+flag has been added to permit users to test portably for regular files
+in shell scripts. The
+.BR \(miM
+flag has been added to permit users to ignore any default system
+tests.
+.P
+The POSIX.1\(hy2008 description of default system tests and the interaction
+between the
+.BR \(mid ,
+.BR \(miM ,
+and
+.BR \(mim
+options did not clearly indicate that there were two types of ``default
+system tests''. The ``position-sensitive tests'' determine file types
+by looking for certain string or binary values at specific offsets in
+the file being examined. These position-sensitive tests were
+implemented in historical systems using the magic file described above.
+Some of these tests are now built into the
+.IR file
+utility itself on some implementations so the output can provide more
+detail than can be provided by magic files. For example, a magic file
+can easily identify a
+.BR core
+file on most implementations, but cannot name the program file that
+dropped the core. A magic file could produce output such as:
+.sp
+.RS 4
+.nf
+\fB
+/home/dwc/core: ELF 32-bit MSB core file SPARC Version 1
+.fi \fR
+.P
+.RE
+.P
+but by building the test into the
+.IR file
+utility, you could get output such as:
+.sp
+.RS 4
+.nf
+\fB
+/home/dwc/core: ELF 32-bit MSB core file SPARC Version 1, from 'testprog'
+.fi \fR
+.P
+.RE
+.P
+These extended built-in tests are still to be treated as
+position-sensitive default system tests even if they are not listed in
+.BR /etc/magic
+or any other magic file.
+.P
+The context-sensitive default system tests were always built into the
+.IR file
+utility. These tests looked for language constructs in text files
+trying to identify shell scripts, C, FORTRAN, and other computer
+language source files, and even plain text files. With the addition of
+the
+.BR \(mim
+and
+.BR \(miM
+options the distinction between position-sensitive and
+context-sensitive default system tests became important because the
+order of testing is important. The context-sensitive system default
+tests should never be applied before any position-sensitive tests even
+if the
+.BR \(mid
+option is specified before a
+.BR \(mim
+option or
+.BR \(miM
+option due to the high probability that the context-sensitive system
+default tests will incorrectly identify arbitrary text files as text
+files before position-sensitive tests specified by the
+.BR \(mim
+or
+.BR \(miM
+option would be applied to give a more accurate identification.
+.P
+Leaving the meaning of
+.BR "\(miM \(mi"
+and
+.BR "\(mim \(mi"
+unspecified allows an existing prototype of these options to continue
+to work in a backwards-compatible manner. (In that implementation,
+.BR "\(miM \(mi"
+was roughly equivalent to
+.BR \(mid
+in POSIX.1\(hy2008.)
+.P
+The historical
+.BR \(mic
+option was omitted as not particularly useful to users or portable
+shell scripts. In addition, a reasonable implementation of the
+.IR file
+utility would report any errors found each time the magic file is
+read.
+.P
+The historical format of the magic file was the same as that specified
+by the Rationale in the ISO\ POSIX\(hy2:\|1993 standard for the
+.IR offset ,
+.IR value ,
+and
+.IR message
+fields; however, it used less precise type fields than the format
+specified by the current normative text. The new type field values are
+a superset of the historical ones.
+.P
+The following is an example magic file:
+.sp
+.RS 4
+.nf
+\fB
+0  short     070707              cpio archive
+0  short     0143561             Byte-swapped cpio archive
+0  string    070707              ASCII cpio archive
+0  long      0177555             Very old archive
+0  short     0177545             Old archive
+0  short     017437              Old packed data
+0  string    \e037\e036            Packed data
+0  string    \e377\e037            Compacted data
+0  string    \e037\e235            Compressed data
+>2 byte&0x80 >0                  Block compressed
+>2 byte&0x1f x                   %d bits
+0  string    \e032\e001            Compiled Terminfo Entry
+0  short     0433                Curses screen image
+0  short     0434                Curses screen image
+0  string    <ar>                System V Release 1 archive
+0  string    !<arch>\en__.SYMDEF  Archive random library
+0  string    !<arch>             Archive
+0  string    ARF_BEGARF          PHIGS clear text archive
+0  long      0x137A2950          Scalable OpenFont binary
+0  long      0x137A2951          Encrypted scalable OpenFont binary
+.fi \fR
+.P
+.RE
+.P
+The use of a basic integer data type is intended to allow the
+implementation to choose a word size commonly used by applications
+on that architecture.
+.P
+Earlier versions of this standard allowed for implementations with
+bytes other than eight bits, but this has been modified in this
+version.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIar\fR\^",
+.IR "\fIls\fR\^",
+.IR "\fIpax\fR\^",
+.IR "\fIprintf\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Table 5-1" ", " "Escape Sequences and Associated Actions",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

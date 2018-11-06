@@ -1,0 +1,196 @@
+'\" et
+.TH SEMGET "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+semget
+\(em get set of XSI semaphores
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/sem.h>
+.P
+int semget(key_t \fIkey\fP, int \fInsems\fP, int \fIsemflg\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsemget\fR()
+function operates on XSI semaphores (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.16" ", " "Semaphore").
+It is unspecified whether this function interoperates with the
+realtime interprocess communication facilities defined in
+.IR "Section 2.8" ", " "Realtime".
+.P
+The
+\fIsemget\fR()
+function shall return the semaphore identifier associated with
+.IR key .
+.P
+A semaphore identifier with its associated
+.BR semid_ds
+data structure and its associated set of
+.IR nsems
+semaphores (see
+.IR <sys/sem.h> )
+is created for
+.IR key
+if one of the following is true:
+.IP " *" 4
+The argument
+.IR key
+is equal to IPC_PRIVATE.
+.IP " *" 4
+The argument
+.IR key
+does not already have a semaphore identifier associated with it and
+(\fIsemflg\fP &IPC_CREAT) is non-zero.
+.P
+Upon creation, the
+.BR semid_ds
+data structure associated with the new semaphore identifier is
+initialized as follows:
+.IP " *" 4
+In the operation permissions structure
+.IR sem_perm.cuid ,
+.IR sem_perm.uid ,
+.IR sem_perm.cgid ,
+and
+.IR sem_perm.gid
+shall be set to the effective user ID and effective group ID,
+respectively, of the calling process.
+.IP " *" 4
+The low-order 9 bits of
+.IR sem_perm.mode
+shall be set to the low-order 9 bits of
+.IR semflg .
+.IP " *" 4
+The variable
+.IR sem_nsems
+shall be set to the value of
+.IR nsems .
+.IP " *" 4
+The variable
+.IR sem_otime
+shall be set to 0 and
+.IR sem_ctime
+shall be set to the current time, as described in
+.IR "Section 2.7.1" ", " "IPC General Description".
+.IP " *" 4
+The data structure associated with each semaphore in the set need not
+be initialized. The
+\fIsemctl\fR()
+function with the command SETVAL or SETALL
+can be used to initialize each semaphore.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsemget\fR()
+shall return a non-negative integer, namely a semaphore identifier;
+otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIsemget\fR()
+function shall fail if:
+.TP
+.BR EACCES
+A semaphore identifier exists for
+.IR key ,
+but operation permission as specified by the low-order 9 bits of
+.IR semflg
+would not be granted; see
+.IR "Section 2.7" ", " "XSI Interprocess Communication".
+.TP
+.BR EEXIST
+A semaphore identifier exists for the argument
+.IR key
+but ((\fIsemflg\fP &IPC_CREAT) &&(\fIsemflg\fP &IPC_EXCL))
+is non-zero.
+.TP
+.BR EINVAL
+The value of
+.IR nsems
+is either less than or equal to 0 or greater than the system-imposed
+limit, or a semaphore identifier exists for the argument
+.IR key ,
+but the number of semaphores in the set associated with it is less than
+.IR nsems
+and
+.IR nsems
+is not equal to 0.
+.TP
+.BR ENOENT
+A semaphore identifier does not exist for the argument
+.IR key
+and (\fIsemflg\fP &IPC_CREAT) is equal to 0.
+.TP
+.BR ENOSPC
+A semaphore identifier is to be created but the system-imposed limit on
+the maximum number of allowed semaphores system-wide would be
+exceeded.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+Refer to
+.IR "\fIsemop\fR\^(\|)".
+.SH "APPLICATION USAGE"
+The POSIX Realtime Extension defines alternative interfaces for interprocess
+communication. Application developers who need to use IPC should
+design their applications so that modules using the IPC routines
+described in
+.IR "Section 2.7" ", " "XSI Interprocess Communication"
+can be easily modified to use the alternative interfaces.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+A future version may require that the value of the
+.IR semval ,
+.IR sempid ,
+.IR semncnt ,
+and
+.IR semzcnt
+members of all semaphores in a semaphore set be initialized to zero when
+a call to
+\fIsemget\fR()
+creates a semaphore set. Many semaphore implementations already do this
+and it greatly simplifies what an application must do to initialize a
+semaphore set.
+.SH "SEE ALSO"
+.IR "Section 2.7" ", " "XSI Interprocess Communication",
+.IR "Section 2.8" ", " "Realtime",
+.IR "\fIftok\fR\^(\|)",
+.IR "\fIsemctl\fR\^(\|)",
+.IR "\fIsemop\fR\^(\|)",
+.IR "\fIsem_close\fR\^(\|)",
+.IR "\fIsem_destroy\fR\^(\|)",
+.IR "\fIsem_getvalue\fR\^(\|)",
+.IR "\fIsem_init\fR\^(\|)",
+.IR "\fIsem_open\fR\^(\|)",
+.IR "\fIsem_post\fR\^(\|)",
+.IR "\fIsem_trywait\fR\^(\|)",
+.IR "\fIsem_unlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.16" ", " "Semaphore",
+.IR "\fB<sys_sem.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,175 @@
+'\" et
+.TH PTHREAD_ONCE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_once
+\(em dynamic package initialization
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_once(pthread_once_t *\fIonce_control\fP,
+    void (*\fIinit_routine\fP)(void));
+pthread_once_t \fIonce_control\fP = PTHREAD_ONCE_INIT;
+.fi
+.SH DESCRIPTION
+The first call to
+\fIpthread_once\fR()
+by any thread in a process, with a given
+.IR once_control ,
+shall call the
+.IR init_routine
+with no arguments. Subsequent calls of
+\fIpthread_once\fR()
+with the same
+.IR once_control
+shall not call the
+.IR init_routine .
+On return from
+\fIpthread_once\fR(),
+.IR init_routine
+shall have completed. The
+.IR once_control
+parameter shall determine whether the associated initialization
+routine has been called.
+.P
+The
+\fIpthread_once\fR()
+function is not a cancellation point. However, if
+.IR init_routine
+is a cancellation point and is canceled, the effect on
+.IR once_control
+shall be as if
+\fIpthread_once\fR()
+was never called.
+.P
+The constant PTHREAD_ONCE_INIT is defined in the
+.IR <pthread.h> 
+header.
+.P
+The behavior of
+\fIpthread_once\fR()
+is undefined if
+.IR once_control
+has automatic storage duration or is not initialized by
+PTHREAD_ONCE_INIT.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIpthread_once\fR()
+shall return zero; otherwise, an error number shall be returned to
+indicate the error.
+.SH ERRORS
+The
+\fIpthread_once\fR()
+function shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+Some C libraries are designed for dynamic initialization. That is, the
+global initialization for the library is performed when the first
+procedure in the library is called. In a single-threaded program, this
+is normally implemented using a static variable whose value is checked
+on entry to a routine, as follows:
+.sp
+.RS 4
+.nf
+\fB
+static int random_is_initialized = 0;
+extern int initialize_random();
+.P
+int random_function()
+{
+    if (random_is_initialized == 0) {
+        initialize_random();
+        random_is_initialized = 1;
+    }
+    ... /* Operations performed after initialization. */
+}
+.fi \fR
+.P
+.RE
+.P
+To keep the same structure in a multi-threaded program, a new primitive
+is needed. Otherwise, library initialization has to be accomplished by
+an explicit call to a library-exported initialization function prior to
+any use of the library.
+.P
+For dynamic library initialization in a multi-threaded process, a
+simple initialization flag is not sufficient; the flag needs to be
+protected against modification by multiple threads simultaneously
+calling into the library. Protecting the flag requires the use of a
+mutex; however, mutexes have to be initialized before they are used.
+Ensuring that the mutex is only initialized once requires a recursive
+solution to this problem.
+.P
+The use of
+\fIpthread_once\fR()
+not only supplies an implementation-guaranteed means of dynamic
+initialization, it provides an aid to the reliable construction of
+multi-threaded and realtime systems. The preceding example then
+becomes:
+.sp
+.RS 4
+.nf
+\fB
+#include <pthread.h>
+static pthread_once_t random_is_initialized = PTHREAD_ONCE_INIT;
+extern int initialize_random();
+.P
+int random_function()
+{
+    (void) pthread_once(&random_is_initialized, initialize_random);
+    ... /* Operations performed after initialization. */
+}
+.fi \fR
+.P
+.RE
+.P
+Note that a
+.BR pthread_once_t
+cannot be an array because some compilers do not accept the construct
+\fB&<array_name>\fP.
+.P
+If an implementation detects that the value specified by the
+.IR once_control
+argument to
+\fIpthread_once\fR()
+does not refer to a
+.BR pthread_once_t
+object initialized by PTHREAD_ONCE_INIT, it is recommended that the
+function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,348 @@
+'\" et
+.TH TAIL "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+tail
+\(em copy the last part of a file
+.SH SYNOPSIS
+.LP
+.nf
+tail \fB[\fR\(mif\fB] [\fR\(mic \fInumber\fR|\(min \fInumber\fB] [\fIfile\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR tail
+utility shall copy its input file to the standard output beginning at a
+designated place.
+.P
+Copying shall begin at the point in the file indicated by the
+.BR \(mic
+.IR number
+or
+.BR \(min
+.IR number
+options. The option-argument
+.IR number
+shall be counted in units of lines or bytes, according to the options
+.BR \(min
+and
+.BR \(mic .
+Both line and byte counts start from 1.
+.P
+Tails relative to the end of the file may be saved in an internal
+buffer, and thus may be limited in length. Such a buffer, if any,
+shall be no smaller than
+{LINE_MAX}*10
+bytes.
+.SH OPTIONS
+The
+.IR tail
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that
+.BR '\(pl' 
+may be recognized as an option delimiter as well as
+.BR '\(mi' .
+.P
+The following options shall be supported:
+.IP "\fB\(mic\ \fInumber\fR" 10
+The application shall ensure that the
+.IR number
+option-argument is a decimal integer, optionally including a sign.
+The sign shall affect the location in the file, measured in bytes,
+to begin the copying:
+.TS
+center tab(@) box;
+cB | cB
+cf5 | l.
+Sign@Copying Starts
+_
++@Relative to the beginning of the file.
+\(mi@Relative to the end of the file.
+\fInone\fP@Relative to the end of the file.
+.TE
+.RS 10 
+.P
+The application shall ensure that if the sign of the
+.IR number
+option-argument is
+.BR '\(pl' ,
+the
+.IR number
+option-argument is a non-zero decimal integer.
+.P
+The origin for counting shall be 1; that is,
+.BR \(mic
++1 represents the first byte of the file,
+.BR \(mic
+\(mi1 the last.
+.RE
+.IP "\fB\(mif\fP" 10
+If the input file is a regular file or if the
+.IR file
+operand specifies a FIFO, do not terminate after the last line of the
+input file has been copied, but read and copy further bytes from the
+input file when they become available. If no
+.IR file
+operand is specified and standard input is a pipe or FIFO, the
+.BR \(mif
+option shall be ignored. If the input file is not a FIFO, pipe, or
+regular file, it is unspecified whether or not the
+.BR \(mif
+option shall be ignored.
+.IP "\fB\(min\ \fInumber\fR" 10
+This option shall be equivalent to
+.BR \(mic
+.IR number ,
+except the starting location in the file shall be measured in lines
+instead of bytes. The origin for counting shall be 1; that is,
+.BR \(min
++1 represents the first line of the file,
+.BR \(min
+\(mi1 the last.
+.P
+If neither
+.BR \(mic
+nor
+.BR \(min
+is specified,
+.BR \(min
+10 shall be assumed.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an input file. If no
+.IR file
+operand is specified, the standard input shall be used.
+.SH STDIN
+The standard input shall be used if no
+.IR file
+operand is specified, and shall be used if the
+.IR file
+operand is
+.BR '\(mi' 
+and the implementation treats the
+.BR '\(mi' 
+as meaning standard input.
+Otherwise, the standard input shall not be used.
+See the INPUT FILES section.
+.SH "INPUT FILES"
+If the
+.BR \(mic
+option is specified, the input file can contain arbitrary data;
+otherwise, the input file shall be a text file.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR tail :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The designated portion of the input file shall be written to standard
+output.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.BR \(mic
+option should be used with caution when the input is a text file
+containing multi-byte characters; it may produce output that does not
+start on a character boundary.
+.P
+Although the input file to
+.IR tail
+can be any type, the results might not be what would be expected on
+some character special device files or on file types not described by
+the System Interfaces volume of POSIX.1\(hy2008. Since this volume of POSIX.1\(hy2008 does not specify the block size used when doing
+input,
+.IR tail
+need not read all of the data from devices that only perform block
+transfers.
+.SH EXAMPLES
+The
+.BR \(mif
+option can be used to monitor the growth of a file that is being
+written by some other process. For example, the command:
+.sp
+.RS 4
+.nf
+\fB
+tail \(mif fred
+.fi \fR
+.P
+.RE
+.P
+prints the last ten lines of the file
+.BR fred ,
+followed by any lines that are appended to
+.BR fred
+between the time
+.IR tail
+is initiated and killed. As another example, the command:
+.sp
+.RS 4
+.nf
+\fB
+tail \(mif \(mic 15 fred
+.fi \fR
+.P
+.RE
+.P
+prints the last 15 bytes of the file
+.BR fred ,
+followed by any bytes that are appended to
+.BR fred
+between the time
+.IR tail
+is initiated and killed.
+.SH RATIONALE
+This version of
+.IR tail
+was created to allow conformance to the Utility Syntax Guidelines. The
+historical
+.BR \(mib
+option was omitted because of the general non-portability of block-sized
+units of text. The
+.BR \(mic
+option historically meant ``characters'', but this volume of POSIX.1\(hy2008 indicates
+that it means ``bytes''. This was selected to allow reasonable
+implementations when multi-byte characters are possible; it was not
+named
+.BR \(mib
+to avoid confusion with the historical
+.BR \(mib .
+.P
+The origin of counting both lines and bytes is 1, matching all
+widespread historical implementations. Hence
+.IR tail
+.BR \(min
++0 is not conforming usage because it attempts to output line zero; but
+note that
+.IR tail
+.BR \(min
+0 does conform, and outputs nothing.
+.P
+Earlier versions of this standard allowed the following forms in the
+SYNOPSIS:
+.sp
+.RS 4
+.nf
+\fB
+tail \(mi\fB[\fRnumber\fB][\fRb|c|l\fB][\fRf\fB] [\fIfile\fB]\fR
+tail \(pl\fB[\fRnumber\fB][\fRb|c|l\fB][\fRf\fB] [\fIfile\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+These forms are no longer specified by POSIX.1\(hy2008, but may be
+present in some implementations.
+.P
+The restriction on the internal buffer is a compromise between the
+historical System V implementation of 4\|096 bytes and the BSD 32\|768
+bytes.
+.P
+The
+.BR \(mif
+option has been implemented as a loop that sleeps for 1 second and
+copies any bytes that are available. This is sufficient, but if more
+efficient methods of determining when new data are available are
+developed, implementations are encouraged to use them.
+.P
+Historical documentation indicates that
+.IR tail
+ignores the
+.BR \(mif
+option if the input file is a pipe (pipe and FIFO on systems that
+support FIFOs). On BSD-based systems, this has been true; on System
+V-based systems, this was true when input was taken from standard
+input, but it did not ignore the
+.BR \(mif
+flag if a FIFO was named as the
+.IR file
+operand. Since the
+.BR \(mif
+option is not useful on pipes and all historical implementations ignore
+.BR \(mif
+if no
+.IR file
+operand is specified and standard input is a pipe, this volume of POSIX.1\(hy2008 requires this
+behavior. However, since the
+.BR \(mif
+option is useful on a FIFO, this volume of POSIX.1\(hy2008 also requires that
+if a FIFO is named, the
+.BR \(mif
+option shall not be ignored. Earlier versions of this standard did
+not state any requirement for the case where no
+.IR file
+operand is specified and standard input is a FIFO. The standard has
+been updated to reflect current practice which is to treat this case
+the same as a pipe on standard input.
+Although historical behavior does not ignore the
+.BR \(mif
+option for other file types, this is unspecified so that
+implementations are allowed to ignore the
+.BR \(mif
+option if it is known that the file cannot be extended.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIhead\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

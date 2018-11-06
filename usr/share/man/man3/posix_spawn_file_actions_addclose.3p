@@ -1,0 +1,328 @@
+'\" et
+.TH POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+posix_spawn_file_actions_addclose,
+posix_spawn_file_actions_addopen
+\(em add close or open action to spawn file actions object
+(\fBADVANCED REALTIME\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <spawn.h>
+.P
+int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t
+    *\fIfile_actions\fP, int \fIfildes\fP);
+int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t
+    *restrict \fIfile_actions\fP, int \fIfildes\fP,
+    const char *restrict \fIpath\fP, int \fIoflag\fP, mode_t \fImode\fP);
+.fi
+.SH DESCRIPTION
+These functions shall add or delete a close or open action to a
+spawn file actions object.
+.P
+A spawn file actions object is of type
+.BR posix_spawn_file_actions_t
+(defined in
+.IR <spawn.h> )
+and is used to specify a series of actions to be performed by a
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+operation in order to arrive at the set of open file descriptors for
+the child process given the set of open file descriptors of the parent.
+POSIX.1\(hy2008 does not define comparison or assignment operators for the type
+.BR posix_spawn_file_actions_t .
+.P
+A spawn file actions object, when passed to
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR(),
+shall specify how the set of open file descriptors in the calling
+process is transformed into a set of potentially open file descriptors
+for the spawned process. This transformation shall be as if the
+specified sequence of actions was performed exactly once, in the
+context of the spawned process (prior to execution of the new process
+image), in the order in which the actions were added to the object;
+additionally, when the new process image is executed, any file
+descriptor (from this new set) which has its FD_CLOEXEC
+flag set shall be closed (see
+.IR "\fIposix_spawn\fR\^(\|)").
+.P
+The
+\fIposix_spawn_file_actions_addclose\fR()
+function shall add a
+.IR close
+action to the object referenced by
+.IR file_actions
+that shall cause the file descriptor
+.IR fildes
+to be closed (as if
+.IR close (\c
+.IR fildes )
+had been called) when a new process is spawned using this file actions
+object.
+.P
+The
+\fIposix_spawn_file_actions_addopen\fR()
+function shall add an
+.IR open
+action to the object referenced by
+.IR file_actions
+that shall cause the file named by
+.IR path
+to be opened (as if
+.IR open (\c
+.IR path ,
+.IR oflag ,
+.IR mode )
+had been called, and the returned file descriptor, if not
+.IR fildes ,
+had been changed to
+.IR fildes )
+when a new process is spawned using this file actions object. If
+.IR fildes
+was already an open file descriptor, it shall be closed before the new
+file is opened.
+.P
+The string described by
+.IR path
+shall be copied by the
+\fIposix_spawn_file_actions_addopen\fR()
+function.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return zero;
+otherwise, an error number shall be returned to indicate the error.
+.SH ERRORS
+The
+\fIposix_spawn_file_actions_addopen\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The value specified by
+.IR fildes
+is negative or greater than or equal to
+{OPEN_MAX}.
+.P
+The
+\fIposix_spawn_file_actions_addclose\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The value specified by
+.IR fildes
+is negative.
+.br
+.P
+These functions may fail if:
+.TP
+.BR EINVAL
+The value specified by
+.IR file_actions
+is invalid.
+.TP
+.BR ENOMEM
+Insufficient memory exists to add to the spawn file actions object.
+.P
+It shall not be considered an error for the
+.IR fildes
+argument passed to these functions to specify a file descriptor for
+which the specified operation could not be performed at the time of the
+call. Any such error will be detected when the associated file actions
+object is later used during a
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+operation.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+These functions are part of the Spawn option and need not be provided
+on all implementations.
+.P
+Implementations may use file descriptors that must be inherited into
+child processes for the child process to remain conforming, such as for
+message catalog or tracing purposes. Therefore, an application that calls
+\fIposix_spawn_file_actions_addclose\fR()
+with an arbitrary integer risks non-conforming behavior, and this
+function can only portably be used to close file descriptor values that
+the application has obtained through explicit actions, or for the three
+file descriptors corresponding to the standard file streams. In order
+to avoid a race condition of leaking an unintended file descriptor
+into a child process, an application should consider opening all file
+descriptors with the FD_CLOEXEC bit set unless the file descriptor is
+intended to be inherited across
+.IR exec .
+.SH RATIONALE
+A spawn file actions object may be initialized to contain an ordered
+sequence of
+\fIclose\fR(),
+\fIdup2\fR(),
+and
+\fIopen\fR()
+operations to be used by
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+to arrive at the set of open file descriptors inherited by the spawned
+process from the set of open file descriptors in the parent at the time
+of the
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+call. It had been suggested that the
+\fIclose\fR()
+and
+\fIdup2\fR()
+operations alone are sufficient to rearrange file descriptors, and that
+files which need to be opened for use by the spawned process can be
+handled either by having the calling process open them before the
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+call (and close them after), or by passing pathnames to the spawned
+process (in
+.IR argv )
+so that it may open them itself. The standard developers recommend that
+applications use one of these two methods when practical, since
+detailed error status on a failed open operation is always available to
+the application this way. However, the standard developers feel that
+allowing a spawn file actions object to specify open operations is
+still appropriate because:
+.IP " 1." 4
+It is consistent with equivalent POSIX.5 (Ada) functionality.
+.IP " 2." 4
+It supports the I/O redirection paradigm commonly employed by POSIX
+programs designed to be invoked from a shell. When such a program is
+the child process, it may not be designed to open files on its own.
+.IP " 3." 4
+It allows file opens that might otherwise fail or violate file
+ownership/access rights if executed by the parent process.
+.P
+Regarding 2. above, note that the spawn open file action provides to
+\fIposix_spawn\fR()
+and
+\fIposix_spawnp\fR()
+the same capability that the shell redirection operators provide to
+\fIsystem\fR(),
+only without the intervening execution of a shell; for example:
+.sp
+.RS 4
+.nf
+\fB
+system ("myprog <file1 3<file2");
+.fi \fR
+.P
+.RE
+.P
+Regarding 3. above, note that if the calling process needs to open one
+or more files for access by the spawned process, but has insufficient
+spare file descriptors, then the open action is necessary to allow the
+\fIopen\fR()
+to occur in the context of the child process after other file
+descriptors have been closed (that must remain open in the parent).
+.P
+Additionally, if a parent is executed from a file having a
+``set-user-id'' mode bit set and the POSIX_SPAWN_RESETIDS flag is set
+in the spawn attributes, a file created within the parent process will
+(possibly incorrectly) have the parent's effective user ID as its
+owner, whereas a file created via an
+\fIopen\fR()
+action during
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+will have the parent's real ID as its owner; and an open by the parent
+process may successfully open a file to which the real user should not
+have access or fail to open a file to which the real user should have
+access.
+.SS "File Descriptor Mapping"
+.P
+The standard developers had originally proposed using an array which
+specified the mapping of child file descriptors back to those of the
+parent. It was pointed out by the ballot group that it is not possible
+to reshuffle file descriptors arbitrarily in a library implementation
+of
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+without provision for one or more spare file descriptor entries (which
+simply may not be available). Such an array requires that an
+implementation develop a complex strategy to achieve the desired
+mapping without inadvertently closing the wrong file descriptor at the
+wrong time.
+.P
+It was noted by a member of the Ada Language Bindings working group
+that the approved Ada Language
+.IR Start_Process
+family of POSIX process primitives use a caller-specified set of file
+actions to alter the normal
+\fIfork\fR()/\c
+.IR exec
+semantics for inheritance of file descriptors in a very flexible way,
+yet no such problems exist because the burden of determining how to
+achieve the final file descriptor mapping is completely on the
+application. Furthermore, although the file actions interface appears
+frightening at first glance, it is actually quite simple to implement
+in either a library or the kernel.
+.P
+The
+\fIposix_spawn_file_actions_addclose\fR()
+function is not required to check whether the file descriptor is less than
+{OPEN_MAX}
+because on some implementations
+{OPEN_MAX}
+reflects the RLIMIT_NOFILE soft limit and therefore calling
+\fIsetrlimit\fR()
+to reduce this limit can result in an
+{OPEN_MAX}
+value less than or equal to an already open file descriptor.
+Applications need to be able to close such file descriptors on spawn.
+On implementations where
+{OPEN_MAX}
+does not change, it is recommended that
+\fIposix_spawn_file_actions_addclose\fR()
+should return
+.BR [EBADF] 
+if
+.IR fildes
+is greater than or equal to
+{OPEN_MAX}.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIdup\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIposix_spawn\fR\^(\|)",
+.IR "\fIposix_spawn_file_actions_adddup2\fR\^(\|)",
+.IR "\fIposix_spawn_file_actions_destroy\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<spawn.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

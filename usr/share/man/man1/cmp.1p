@@ -1,0 +1,269 @@
+'\" et
+.TH CMP "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cmp
+\(em compare two files
+.SH SYNOPSIS
+.LP
+.nf
+cmp \fB[\fR\(mil|\(mis\fB] \fIfile1 file2\fR
+.fi
+.SH DESCRIPTION
+The
+.IR cmp
+utility shall compare two files. The
+.IR cmp
+utility shall write no output if the files are the same. Under default
+options, if they differ, it shall write to standard output the byte and
+line number at which the first difference occurred. Bytes and lines
+shall be numbered beginning with 1.
+.SH OPTIONS
+The
+.IR cmp
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mil\fP" 10
+(Lowercase ell.) Write the byte number (decimal) and the differing
+bytes (octal) for each difference.
+.IP "\fB\(mis\fP" 10
+Write nothing for differing files; return exit status only.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIfile1\fR" 10
+A pathname of the first file to be compared. If
+.IR file1
+is
+.BR '\(mi' ,
+the standard input shall be used.
+.IP "\fIfile2\fR" 10
+A pathname of the second file to be compared. If
+.IR file2
+is
+.BR '\(mi' ,
+the standard input shall be used.
+.P
+If both
+.IR file1
+and
+.IR file2
+refer to standard input or refer to the same FIFO special, block
+special, or character special file, the results are undefined.
+.SH STDIN
+The standard input shall be used only if the
+.IR file1
+or
+.IR file2
+operand refers to standard input. See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files can be any file type.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR cmp :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+In the POSIX locale, results of the comparison shall be written to
+standard output. When no options are used, the format shall be:
+.sp
+.RS 4
+.nf
+\fB
+"%s %s differ: char %d, line %d\en", \fIfile1\fR, \fIfile2\fR,
+    <\fIbyte number\fR>, <\fIline number\fR>
+.fi \fR
+.P
+.RE
+.P
+When the
+.BR \(mil
+option is used, the format shall be:
+.sp
+.RS 4
+.nf
+\fB
+"%d %o %o\en", <\fIbyte number\fR>, <\fIdiffering byte\fR>,
+    <\fIdiffering byte\fR>
+.fi \fR
+.P
+.RE
+.P
+for each byte that differs. The first <\fIdiffering\ byte\fP> number is
+from
+.IR file1
+while the second is from
+.IR file2 .
+In both cases, <\fIbyte\ number\fP> shall be relative to the beginning
+of the file, beginning with 1.
+.P
+No output shall be written to standard output when the
+.BR \(mis
+option is used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages. If the
+.BR \(mil
+option is used and
+.IR file1
+and
+.IR file2
+differ in length, or if the
+.BR \(mis
+option is not used and
+.IR file1
+and
+.IR file2
+are identical for the entire length of the shorter file, in the POSIX
+locale the following diagnostic message shall be written:
+.sp
+.RS 4
+.nf
+\fB
+"cmp: EOF on %s%s\en", <\fIname of shorter file\fR>, <\fIadditional info\fR>
+.fi \fR
+.P
+.RE
+.P
+The <\fIadditional\ info\fP> field shall either be null or a string
+that starts with a
+<blank>
+and contains no
+<newline>
+characters. Some implementations report on the number of lines in
+this case.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The files are identical.
+.IP "\01" 6
+The files are different; this includes the case where one file is
+identical to the first part of the other.
+.IP >1 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Although input files to
+.IR cmp
+can be any type, the results might not be what would be expected on
+character special device files or on file types not described by the
+System Interfaces volume of POSIX.1\(hy2008. Since this volume of POSIX.1\(hy2008 does not specify the block size used when doing
+input, comparisons of character special files need not compare all of
+the data in those files.
+.P
+For files which are not text files, line numbers simply reflect the
+presence of a
+<newline>,
+without any implication that the file is organized into lines.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The global language in
+.IR "Section 1.4" ", " "Utility Description Defaults"
+indicates that using two mutually-exclusive options together produces
+unspecified results. Some System V implementations consider the option
+usage:
+.sp
+.RS 4
+.nf
+\fB
+cmp \(mil \(mis ...
+.fi \fR
+.P
+.RE
+.P
+to be an error. They also treat:
+.sp
+.RS 4
+.nf
+\fB
+cmp \(mis \(mil ...
+.fi \fR
+.P
+.RE
+.P
+as if no options were specified. Both of these behaviors are
+considered bugs, but are allowed.
+.P
+The word
+.BR char
+in the standard output format comes from historical usage, even though
+it is actually a byte number. When
+.IR cmp
+is supported in other locales, implementations are encouraged to use
+the word
+.IR byte
+or its equivalent in another language. Users should not interpret this
+difference to indicate that the functionality of the utility changed
+between locales.
+.P
+Some implementations report on the number of lines in the
+identical-but-shorter file case. This is allowed by the inclusion of
+the <\fIadditional\ info\fP> fields in the output format. The
+restriction on having a leading
+<blank>
+and no
+<newline>
+characters is to make parsing for the filename easier. It is recognized
+that some filenames containing white-space characters make parsing
+difficult anyway, but the restriction does aid programs used on systems
+where the names are predominantly well behaved.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIcomm\fR\^",
+.IR "\fIdiff\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

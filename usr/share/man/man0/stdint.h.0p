@@ -1,0 +1,644 @@
+'\" et
+.TH stdint.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.EQ
+delim $$
+.EN
+.SH NAME
+stdint.h
+\(em integer types
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdint.h>
+.fi
+.SH DESCRIPTION
+Some of the functionality described on this reference page extends the
+ISO\ C standard. Applications shall define the appropriate feature test macro
+(see the System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment")
+to enable the visibility of these symbols in this header.
+.P
+The
+.IR <stdint.h> 
+header shall declare sets of integer types having specified widths, and
+shall define corresponding sets of macros. It shall also define macros
+that specify limits of integer types corresponding to types defined in
+other standard headers.
+.TP 10
+.BR Note:
+The ``width'' of an integer type is the number of bits used to store
+its value in a pure binary system; the actual type may use more bits
+than that (for example, a 28-bit type could be stored in 32 bits of
+actual storage). An
+.IR N -bit
+signed type has values in the range \(mi2\s-3\u\fIN\fR\(mi1\d\s+3 or
+1\(mi2\s-3\u\fIN\fR\(mi1\d\s+3 to 2\s-3\u\fIN\fR\(mi1\d\s+3\(mi1, while
+an
+.IR N -bit
+unsigned type has values in the range 0 to 2\s-3\u\fIN\fR\d\s+3\(mi1.
+.P
+.P
+Types are defined in the following categories:
+.IP " *" 4
+Integer types having certain exact widths
+.IP " *" 4
+Integer types having at least certain specified widths
+.IP " *" 4
+Fastest integer types having at least certain specified widths
+.IP " *" 4
+Integer types wide enough to hold pointers to objects
+.IP " *" 4
+Integer types having greatest width
+.P
+(Some of these types may denote the same type.)
+.P
+Corresponding macros specify limits of the declared types and construct
+suitable constants.
+.P
+For each type described herein that the implementation provides, the
+.IR <stdint.h> 
+header shall declare that
+.BR typedef
+name and define the associated macros. Conversely, for each type
+described herein that the implementation does not provide, the
+.IR <stdint.h> 
+header shall not declare that
+.BR typedef
+name, nor shall it define the associated macros. An implementation
+shall provide those types described as required, but need not provide
+any of the others (described as optional).
+.SS "Integer Types"
+.P
+When
+.BR typedef
+names differing only in the absence or presence of the initial
+.IR u
+are defined, they shall denote corresponding signed and unsigned types
+as described in the ISO/IEC\ 9899:\|1999 standard, Section 6.2.5; an implementation providing
+one of these corresponding types shall also provide the other.
+.P
+In the following descriptions, the symbol
+.IR N
+represents an unsigned decimal integer with no leading zeros (for
+example, 8 or 24, but not 04 or 048).
+.IP " *" 4
+Exact-width integer types
+.RS 4 
+.P
+The
+.BR typedef
+name
+.BR int \c
+.IR N \c
+.BR _t
+designates a signed integer type with width
+.IR N ,
+no padding bits, and a two's-complement representation. Thus,
+.BR int8_t
+denotes a signed integer type with a width of exactly 8 bits.
+.P
+The
+.BR typedef
+name
+.BR uint \c
+.IR N \c
+.BR _t
+designates an unsigned integer type with width
+.IR N .
+Thus,
+.BR uint24_t
+denotes an unsigned integer type with a width of exactly 24 bits.
+.P
+The following types are required:
+.P
+.nf
+.BR int8_t
+.BR int16_t
+.BR int32_t
+.BR uint8_t
+.BR uint16_t
+.BR uint32_t
+.fi
+.P
+If an implementation provides integer types with width 64 that
+meet these requirements, then the following types are required:
+.BR int64_t
+.BR uint64_t
+.P
+In particular, this will be the case if any of the following are
+true:
+.IP -- 4
+The implementation supports the _POSIX_V7_ILP32_OFFBIG programming
+environment and the application is being built in the
+_POSIX_V7_ILP32_OFFBIG programming environment (see the Shell and Utilities volume of POSIX.1\(hy2008,
+.IR c99 ,
+Programming Environments).
+.IP -- 4
+The implementation supports the _POSIX_V7_LP64_OFF64 programming
+environment and the application is being built in the
+_POSIX_V7_LP64_OFF64 programming environment.
+.IP -- 4
+The implementation supports the _POSIX_V7_LPBIG_OFFBIG programming
+environment and the application is being built in the
+_POSIX_V7_LPBIG_OFFBIG programming environment.
+.P
+All other types of this form are optional.
+.RE
+.IP " *" 4
+Minimum-width integer types
+.RS 4 
+.P
+The
+.BR typedef
+name
+.BR int_least \c
+.IR N \c
+.BR _t
+designates a signed integer type with a width of at least
+.IR N ,
+such that no signed integer type with lesser size has at least the
+specified width. Thus,
+.BR int_least32_t
+denotes a signed integer type with a width of at least 32 bits.
+.P
+The
+.BR typedef
+name
+.BR uint_least \c
+.IR N \c
+.BR _t
+designates an unsigned integer type with a width of at least
+.IR N ,
+such that no unsigned integer type with lesser size has at least the
+specified width. Thus,
+.BR uint_least16_t
+denotes an unsigned integer type with a width of at least 16 bits.
+.P
+The following types are required:
+.BR int_least8_t
+.BR int_least16_t
+.BR int_least32_t
+.BR int_least64_t
+.BR uint_least8_t
+.BR uint_least16_t
+.BR uint_least32_t
+.BR uint_least64_t
+.P
+All other types of this form are optional.
+.RE
+.IP " *" 4
+Fastest minimum-width integer types
+.RS 4 
+.P
+Each of the following types designates an integer type that is usually
+fastest to operate with among all integer types that have at least the
+specified width.
+.P
+The designated type is not guaranteed to be fastest for all purposes;
+if the implementation has no clear grounds for choosing one type over
+another, it will simply pick some integer type satisfying the
+signedness and width requirements.
+.P
+The
+.BR typedef
+name
+.BR int_fast \c
+.IR N \c
+.BR _t
+designates the fastest signed integer type with a width of at least
+.IR N .
+The
+.BR typedef
+name
+.BR uint_fast \c
+.IR N \c
+.BR _t
+designates the fastest unsigned integer type with a width of at least
+.IR N .
+.P
+The following types are required:
+.BR int_fast8_t
+.BR int_fast16_t
+.BR int_fast32_t
+.BR int_fast64_t
+.BR uint_fast8_t
+.BR uint_fast16_t
+.BR uint_fast32_t
+.BR uint_fast64_t
+.P
+All other types of this form are optional.
+.RE
+.IP " *" 4
+Integer types capable of holding object pointers
+.RS 4 
+.P
+The following type designates a signed integer type with the property
+that any valid pointer to
+.BR void
+can be converted to this type, then converted back to a pointer to
+.BR void ,
+and the result will compare equal to the original pointer:
+.BR intptr_t
+.P
+The following type designates an unsigned integer type with the
+property that any valid pointer to
+.BR void
+can be converted to this type, then converted back to a pointer to
+.BR void ,
+and the result will compare equal to the original pointer:
+.BR uintptr_t
+.P
+On XSI-conformant systems, the
+.BR intptr_t
+and
+.BR uintptr_t
+types are required;
+otherwise, they are optional.
+.RE
+.IP " *" 4
+Greatest-width integer types
+.RS 4 
+.P
+The following type designates a signed integer type capable of
+representing any value of any signed integer type:
+.BR intmax_t
+.P
+The following type designates an unsigned integer type capable of
+representing any value of any unsigned integer type:
+.BR uintmax_t
+.P
+These types are required.
+.RE
+.TP 10
+.BR Note:
+Applications can test for optional types by using the corresponding
+limit macro from
+.IR "Limits of Specified-Width Integer Types".
+.P
+.SS "Limits of Specified-Width Integer Types"
+.P
+The following macros specify the minimum and maximum limits of the
+types declared in the
+.IR <stdint.h> 
+header. Each macro name corresponds to a similar type name in
+.IR "Integer Types".
+.P
+Each instance of any defined macro shall be replaced by a constant
+expression suitable for use in
+.BR #if
+preprocessing directives, and this expression shall have the same type
+as would an expression that is an object of the corresponding type
+converted according to the integer promotions. Its
+implementation-defined value shall be equal to or greater in magnitude
+(absolute value) than the corresponding value given below, with the
+same sign, except where stated to be exactly the given value.
+.IP " *" 4
+Limits of exact-width integer types
+.RS 4 
+.IP -- 4
+Minimum values of exact-width signed integer types:
+.RS 4 
+.IP "{INT\fIN\fR_MIN}" 16
+Exactly \(mi($2"^" N\(mi1$)
+.RE
+.IP -- 4
+Maximum values of exact-width signed integer types:
+.RS 4 
+.IP "{INT\fIN\fR_MAX}" 16
+Exactly $2"^" N\(mi1$ \(mi1
+.RE
+.IP -- 4
+Maximum values of exact-width unsigned integer types:
+.RS 4 
+.IP "{UINT\fIN\fR_MAX}" 16
+Exactly $2"^" N$ \(mi1
+.RE
+.RE
+.IP " *" 4
+Limits of minimum-width integer types
+.RS 4 
+.IP -- 4
+Minimum values of minimum-width signed integer types:
+.RS 4 
+.IP "{INT_LEAST\fIN\fR_MIN}" 16
+\(mi($2"^" N\(mi1$ \(mi1)
+.RE
+.IP -- 4
+Maximum values of minimum-width signed integer types:
+.RS 4 
+.IP "{INT_LEAST\fIN\fR_MAX}" 16
+$2"^" N\(mi1$ \(mi1
+.RE
+.IP -- 4
+Maximum values of minimum-width unsigned integer types:
+.RS 4 
+.IP "{UINT_LEAST\fIN\fR_MAX}" 16
+$2"^" N$ \(mi1
+.RE
+.RE
+.IP " *" 4
+Limits of fastest minimum-width integer types
+.RS 4 
+.IP -- 4
+Minimum values of fastest minimum-width signed integer types:
+.RS 4 
+.IP "{INT_FAST\fIN\fR_MIN}" 16
+\(mi($2"^" N\(mi1$ \(mi1)
+.RE
+.IP -- 4
+Maximum values of fastest minimum-width signed integer types:
+.RS 4 
+.IP "{INT_FAST\fIN\fR_MAX}" 16
+$2"^" N\(mi1$ \(mi1
+.RE
+.IP -- 4
+Maximum values of fastest minimum-width unsigned integer types:
+.RS 4 
+.IP "{UINT_FAST\fIN\fR_MAX}" 16
+$2"^" N$ \(mi1
+.RE
+.RE
+.IP " *" 4
+Limits of integer types capable of holding object pointers
+.RS 4 
+.IP -- 4
+Minimum value of pointer-holding signed integer type:
+.RS 4 
+.IP {INTPTR_MIN} 16
+\(mi($2"^" 15$ \(mi1)
+.RE
+.IP -- 4
+Maximum value of pointer-holding signed integer type:
+.RS 4 
+.IP {INTPTR_MAX} 16
+$2"^" 15$ \(mi1
+.RE
+.IP -- 4
+Maximum value of pointer-holding unsigned integer type:
+.RS 4 
+.IP {UINTPTR_MAX} 16
+$2"^" 16$ \(mi1
+.RE
+.RE
+.IP " *" 4
+Limits of greatest-width integer types
+.RS 4 
+.IP -- 4
+Minimum value of greatest-width signed integer type:
+.RS 4 
+.IP {INTMAX_MIN} 16
+\(mi($2"^" 63$ \(mi1)
+.RE
+.IP -- 4
+Maximum value of greatest-width signed integer type:
+.RS 4 
+.IP {INTMAX_MAX} 16
+$2"^" 63$ \(mi1
+.RE
+.IP -- 4
+Maximum value of greatest-width unsigned integer type:
+.RS 4 
+.IP {UINTMAX_MAX} 16
+$2"^" 64$ \(mi1
+.RE
+.RE
+.SS "Limits of Other Integer Types"
+.P
+The following macros specify the minimum and maximum limits of integer
+types corresponding to types defined in other standard headers.
+.P
+Each instance of these macros shall be replaced by a constant
+expression suitable for use in
+.BR #if
+preprocessing directives, and this expression shall have the same type
+as would an expression that is an object of the corresponding type
+converted according to the integer promotions. Its
+implementation-defined value shall be equal to or greater in magnitude
+(absolute value) than the corresponding value given below, with the
+same sign.
+.IP " *" 4
+Limits of \fBptrdiff_t\fR:
+.RS 4 
+.IP {PTRDIFF_MIN} 16
+\(mi65\|535
+.IP {PTRDIFF_MAX} 16
++65\|535
+.RE
+.IP " *" 4
+Limits of \fBsig_atomic_t\fR:
+.RS 4 
+.IP {SIG_ATOMIC_MIN} 16
+See below.
+.IP {SIG_ATOMIC_MAX} 16
+See below.
+.RE
+.IP " *" 4
+Limit of \fBsize_t\fR:
+.RS 4 
+.IP {SIZE_MAX} 16
+65\|535
+.RE
+.IP " *" 4
+Limits of \fBwchar_t\fR:
+.RS 4 
+.IP {WCHAR_MIN} 16
+See below.
+.IP {WCHAR_MAX} 16
+See below.
+.RE
+.IP " *" 4
+Limits of \fBwint_t\fR:
+.RS 4 
+.IP {WINT_MIN} 16
+See below.
+.IP {WINT_MAX} 16
+See below.
+.RE
+.P
+If
+.BR sig_atomic_t
+(see the
+.IR <signal.h> 
+header) is defined as a signed integer type, the value of
+{SIG_ATOMIC_MIN}
+shall be no greater than \(mi127 and the value of
+{SIG_ATOMIC_MAX}
+shall be no less than 127; otherwise,
+.BR sig_atomic_t
+shall be defined as an unsigned integer type, and the value of
+{SIG_ATOMIC_MIN}
+shall be 0 and the value of
+{SIG_ATOMIC_MAX}
+shall be no less than 255.
+.P
+If
+.BR wchar_t
+(see the
+.IR <stddef.h> 
+header) is defined as a signed integer type, the value of
+{WCHAR_MIN}
+shall be no greater than \(mi127 and the value of
+{WCHAR_MAX}
+shall be no less than 127; otherwise,
+.BR wchar_t
+shall be defined as an unsigned integer type, and the value of
+{WCHAR_MIN}
+shall be 0 and the value of
+{WCHAR_MAX}
+shall be no less than 255.
+.P
+If
+.BR wint_t
+(see the
+.IR <wchar.h> 
+header) is defined as a signed integer type, the value of
+{WINT_MIN}
+shall be no greater than \(mi32\|767 and the value of
+{WINT_MAX}
+shall be no less than 32\|767; otherwise,
+.BR wint_t
+shall be defined as an unsigned integer type, and the value of
+{WINT_MIN}
+shall be 0 and the value of
+{WINT_MAX}
+shall be no less than 65\|535.
+.SS "Macros for Integer Constant Expressions"
+.P
+The following macros expand to integer constant expressions suitable for
+initializing objects that have integer types corresponding to types
+defined in the
+.IR <stdint.h> 
+header. Each macro name corresponds to a similar type name listed under
+\fIMinimum-width integer types\fR and \fIGreatest-width integer
+types\fR.
+.P
+Each invocation of one of these macros shall expand to an integer
+constant expression suitable for use in
+.BR #if
+preprocessing directives. The type of the expression shall have the
+same type as would an expression that is an object of the corresponding
+type converted according to the integer promotions. The value of the
+expression shall be that of the argument.
+.P
+The argument in any instance of these macros shall be an unsuffixed
+integer constant with a value that does not exceed the limits for the
+corresponding type.
+.IP " *" 4
+Macros for minimum-width integer constant expressions
+.RS 4 
+.P
+The macro
+.IR INTN_C (\c
+.IR value )
+shall expand to an integer constant expression corresponding to the
+type
+.BR int_least \c
+.IR N \c
+.BR _t .
+The macro
+.IR UINTN_C (\c
+.IR value )
+shall expand to an integer constant expression corresponding to the
+type
+.BR uint_least \c
+.IR N \c
+.BR _t .
+For example, if
+.BR uint_least64_t
+is a name for the type
+.BR "unsigned long long" ,
+then
+.IR UINT64_C (0x123)
+might expand to the integer constant 0x123ULL.
+.RE
+.IP " *" 4
+Macros for greatest-width integer constant expressions
+.RS 4 
+.P
+The following macro expands to an integer constant expression having
+the value specified by its argument and the type
+.BR intmax_t :
+INTMAX_C(\fIvalue\fR)
+.P
+The following macro expands to an integer constant expression having
+the value specified by its argument and the type
+.BR uintmax_t :
+UINTMAX_C(\fIvalue\fR)
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The
+.IR <stdint.h> 
+header is a subset of the
+.IR <inttypes.h> 
+header more suitable for use in freestanding environments, which might
+not support the formatted I/O functions. In some environments, if the
+formatted conversion support is not wanted, using this header instead
+of the
+.IR <inttypes.h> 
+header avoids defining such a large number of macros.
+.br
+.P
+As a consequence of adding
+.BR int8_t ,
+the following are true:
+.IP " *" 4
+A byte is exactly 8 bits.
+.IP " *" 4
+{CHAR_BIT}
+has the value 8,
+{SCHAR_MAX}
+has the value 127,
+{SCHAR_MIN}
+has the value \(mi128, and
+{UCHAR_MAX}
+has the value 255.
+.P
+(The POSIX standard explicitly requires 8-bit char and
+two's-complement arithmetic.)
+.SH "FUTURE DIRECTIONS"
+.BR typedef
+names beginning with
+.BR int
+or
+.BR uint
+and ending with _t may be added to the types defined in the
+.IR <stdint.h> 
+header. Macro names beginning with INT or UINT and ending with _MAX,
+_MIN, or _C may be added to the macros defined in the
+.IR <stdint.h> 
+header.
+.SH "SEE ALSO"
+.IR "\fB<inttypes.h>\fP",
+.IR "\fB<signal.h>\fP",
+.IR "\fB<stddef.h>\fP",
+.IR "\fB<wchar.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

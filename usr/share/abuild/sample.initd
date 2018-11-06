@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+
+# Sample init.d file for alpine linux.
+
+name=
+command="/usr/sbin/$name"
+command_args="$sample_opts"
+command_background="yes"
+
+start_stop_daemon_args="--user $sample_user:$sample_group"
+pidfile="/run/$name.pid"
+
+depend() {
+	need net
+	after firewall
+}

@@ -1,0 +1,140 @@
+'\" et
+.TH PTHREAD_GETCONCURRENCY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_getconcurrency,
+pthread_setconcurrency
+\(em get and set the level of concurrency
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_getconcurrency(void);
+int pthread_setconcurrency(int \fInew_level\fP);
+.fi
+.SH DESCRIPTION
+Unbound threads in a process may or may not be required to be
+simultaneously active. By default, the threads implementation ensures
+that a sufficient number of threads are active so that the process can
+continue to make progress. While this conserves system resources, it
+may not produce the most effective level of concurrency.
+.P
+The
+\fIpthread_setconcurrency\fR()
+function allows an application to inform the threads implementation of
+its desired concurrency level,
+.IR new_level .
+The actual level of concurrency provided by the implementation as a
+result of this function call is unspecified.
+.P
+If
+.IR new_level
+is zero, it causes the implementation to maintain the concurrency level
+at its discretion as if
+\fIpthread_setconcurrency\fR()
+had never been called.
+.P
+The
+\fIpthread_getconcurrency\fR()
+function shall return the value set by a previous call to the
+\fIpthread_setconcurrency\fR()
+function. If the
+\fIpthread_setconcurrency\fR()
+function was not previously called, this function shall return zero to
+indicate that the implementation is maintaining the concurrency level.
+.P
+A call to
+\fIpthread_setconcurrency\fR()
+shall inform the implementation of its desired concurrency level.
+The implementation shall use this as a hint, not a requirement.
+.P
+If an implementation does not support multiplexing of user threads on
+top of several kernel-scheduled entities, the
+\fIpthread_setconcurrency\fR()
+and
+\fIpthread_getconcurrency\fR()
+functions are provided for source code compatibility but they shall
+have no effect when called. To maintain the function semantics, the
+.IR new_level
+parameter is saved when
+\fIpthread_setconcurrency\fR()
+is called so that a subsequent call to
+\fIpthread_getconcurrency\fR()
+shall return the same value.
+.SH "RETURN VALUE"
+If successful, the
+\fIpthread_setconcurrency\fR()
+function shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.P
+The
+\fIpthread_getconcurrency\fR()
+function shall always return the concurrency level set by a previous
+call to
+\fIpthread_setconcurrency\fR().
+If the
+\fIpthread_setconcurrency\fR()
+function has never been called,
+\fIpthread_getconcurrency\fR()
+shall return zero.
+.SH ERRORS
+The
+\fIpthread_setconcurrency\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value specified by
+.IR new_level
+is negative.
+.TP
+.BR EAGAIN
+The value specified by
+.IR new_level
+would cause a system resource to be exceeded.
+.P
+The
+\fIpthread_setconcurrency\fR()
+function shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Application developers should note that an implementation can always
+ignore any calls to
+\fIpthread_setconcurrency\fR()
+and return a constant for
+\fIpthread_getconcurrency\fR().
+For this reason, it is not recommended that portable applications
+use this function.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+These functions may be removed in a future version.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

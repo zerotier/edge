@@ -1,0 +1,256 @@
+'\" et
+.TH TIMER_GETOVERRUN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+timer_getoverrun,
+timer_gettime,
+timer_settime
+\(em per-process timers
+.SH SYNOPSIS
+.LP
+.nf
+#include <time.h>
+.P
+int timer_getoverrun(timer_t \fItimerid\fP);
+int timer_gettime(timer_t \fItimerid\fP, struct itimerspec *\fIvalue\fP);
+int timer_settime(timer_t \fItimerid\fP, int \fIflags\fP,
+    const struct itimerspec *restrict \fIvalue\fP,
+    struct itimerspec *restrict \fIovalue\fP);
+.fi
+.SH DESCRIPTION
+The
+\fItimer_gettime\fR()
+function shall store the amount of time until the specified timer,
+.IR timerid ,
+expires and the reload value of the timer into the space pointed to by
+the
+.IR value
+argument. The
+.IR it_value
+member of this structure shall contain the amount of time before the timer
+expires, or zero if the timer is disarmed. This value is returned as
+the interval until timer expiration, even if the timer was armed with
+absolute time. The
+.IR it_interval
+member of
+.IR value
+shall contain the reload value last set by
+\fItimer_settime\fR().
+.P
+The
+\fItimer_settime\fR()
+function shall set the time until the next expiration of the timer
+specified by
+.IR timerid
+from the
+.IR it_value
+member of the
+.IR value
+argument and arm the timer if the
+.IR it_value
+member of
+.IR value
+is non-zero. If the specified timer was already armed when
+\fItimer_settime\fR()
+is called, this call shall reset the time until next expiration to the
+.IR value
+specified. If the
+.IR it_value
+member of
+.IR value
+is zero, the timer shall be disarmed. The effect of disarming or
+resetting a timer with pending expiration notifications is unspecified.
+.P
+If the flag TIMER_ABSTIME is not set in the argument
+.IR flags ,
+\fItimer_settime\fR()
+shall behave as if the time until next expiration is set to be equal
+to the interval specified by the
+.IR it_value
+member of
+.IR value .
+That is, the timer shall expire in
+.IR it_value
+nanoseconds from when the call is made. If the flag TIMER_ABSTIME is
+set in the argument
+.IR flags ,
+\fItimer_settime\fR()
+shall behave as if the time until next expiration is set to be equal
+to the difference between the absolute time specified by the
+.IR it_value
+member of
+.IR value
+and the current value of the clock associated with
+.IR timerid .
+That is, the timer shall expire when the clock reaches the value
+specified by the
+.IR it_value
+member of
+.IR value .
+If the specified time has already passed, the function shall succeed
+and the expiration notification shall be made.
+.P
+The reload value of the timer shall be set to the value specified by the
+.IR it_interval
+member of
+.IR value .
+When a timer is armed with a non-zero
+.IR it_interval ,
+a periodic (or repetitive) timer is specified.
+.P
+Time values that are between two consecutive non-negative integer
+multiples of the resolution of the specified timer shall be rounded up
+to the larger multiple of the resolution. Quantization error shall not
+cause the timer to expire earlier than the rounded time value.
+.P
+If the argument
+.IR ovalue
+is not NULL, the
+\fItimer_settime\fR()
+function shall store, in the location referenced by
+.IR ovalue ,
+a value representing the previous amount of time before the timer would
+have expired, or zero if the timer was disarmed, together with the
+previous timer reload value. Timers shall not expire before their
+scheduled time.
+.P
+Only a single signal shall be queued to the process for a given timer
+at any point in time. When a timer for which a signal is still pending
+expires, no signal shall be queued, and a timer overrun shall occur.
+When a timer expiration signal is delivered to or accepted by a
+process, the
+\fItimer_getoverrun\fR()
+function shall return the timer expiration overrun count for the
+specified timer. The overrun count returned contains the number of
+extra timer expirations that occurred between the time the signal was
+generated (queued) and when it was delivered or accepted, up to but not
+including an implementation-defined maximum of
+{DELAYTIMER_MAX}.
+If the number of such extra expirations is greater than or equal to
+{DELAYTIMER_MAX},
+then the overrun count shall be set to
+{DELAYTIMER_MAX}.
+The value returned by
+\fItimer_getoverrun\fR()
+shall apply to the most recent expiration signal delivery or acceptance
+for the timer. If no expiration signal has been delivered for the timer,
+the return value of
+\fItimer_getoverrun\fR()
+is unspecified.
+.SH "RETURN VALUE"
+If the
+\fItimer_getoverrun\fR()
+function succeeds, it shall return the timer expiration overrun count
+as explained above.
+.P
+If the
+\fItimer_gettime\fR()
+or
+\fItimer_settime\fR()
+functions succeed, a value of 0 shall be returned.
+.P
+If an error occurs for any of these functions, the value \(mi1 shall be
+returned, and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fItimer_settime\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+A
+.IR value
+structure specified a nanosecond value less than zero or greater than
+or equal to 1\|000 million, and the
+.IR it_value
+member of that structure did not specify zero seconds and nanoseconds.
+.P
+These functions may fail if:
+.TP
+.BR EINVAL
+The
+.IR timerid
+argument does not correspond to an ID returned by
+\fItimer_create\fR()
+but not yet deleted by
+\fItimer_delete\fR().
+.P
+The
+\fItimer_settime\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The
+.IR it_interval
+member of
+.IR value
+is not zero and the timer was created with notification by creation of
+a new thread (\c
+.IR sigev_sigev_notify
+was SIGEV_THREAD) and a fixed stack address has been set in the thread
+attribute pointed to by
+.IR sigev_notify_attributes .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Using fixed stack addresses is problematic when timer expiration is
+signaled by the creation of a new thread. Since it cannot be assumed
+that the thread created for one expiration is finished before the next
+expiration of the timer, it could happen that two threads use the same
+memory as a stack at the same time. This is invalid and produces
+undefined results.
+.SH RATIONALE
+Practical clocks tick at a finite rate, with rates of 100 hertz and
+1\|000 hertz being common. The inverse of this tick rate is the clock
+resolution, also called the clock granularity, which in either case is
+expressed as a time duration, being 10 milliseconds and 1 millisecond
+respectively for these common rates. The granularity of practical
+clocks implies that if one reads a given clock twice in rapid
+succession, one may get the same time value twice; and that timers must
+wait for the next clock tick after the theoretical expiration time, to
+ensure that a timer never returns too soon. Note also that the
+granularity of the clock may be significantly coarser than the
+resolution of the data format used to set and get time and interval
+values. Also note that some implementations may choose to adjust time
+and/or interval values to exactly match the ticks of the underlying
+clock.
+.P
+This volume of POSIX.1\(hy2008 defines functions that allow an application to determine
+the implementation-supported resolution for the clocks and requires an
+implementation to document the resolution supported for timers and
+\fInanosleep\fR()
+if they differ from the supported clock resolution. This is more of a
+procurement issue than a runtime application issue.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIclock_getres\fR\^(\|)",
+.IR "\fItimer_create\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

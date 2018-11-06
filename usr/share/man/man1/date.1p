@@ -1,0 +1,627 @@
+'\" et
+.TH DATE "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+date
+\(em write the date and time
+.SH SYNOPSIS
+.LP
+.nf
+date \fB[\fR\(miu\fB] [\fR+\fIformat\fB]\fR
+.P
+date \fB[\fR\(miu\fB] \fImmddhhmm\fB[[\fIcc\fB]\fIyy\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR date
+utility shall write the date and time to standard output
+or attempt to set the system date and time.
+By default, the current date and time shall be written. If an operand
+beginning with
+.BR '\(pl' 
+is specified, the output format of
+.IR date
+shall be controlled by the conversion specifications and other text
+in the operand.
+.SH OPTIONS
+The
+.IR date
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(miu\fP" 10
+Perform operations as if the
+.IR TZ
+environment variable was set to the string
+.BR \(dqUTC0\(dq ,
+or its equivalent historical value of
+.BR \(dqGMT0\(dq .
+Otherwise,
+.IR date
+shall use the timezone indicated by the
+.IR TZ
+environment variable or the system default if that variable is
+unset or null.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "+\fIformat\fR" 10
+When the format is specified, each conversion specifier shall be
+replaced in the standard output by its corresponding value. All other
+characters shall be copied to the output without change. The output
+shall always be terminated with a
+<newline>.
+.SS "Conversion Specifications"
+.RS 10 
+.IP "\fR%a\fR" 8
+Locale's abbreviated weekday name.
+.IP "\fR%A\fR" 8
+Locale's full weekday name.
+.IP "\fR%b\fR" 8
+Locale's abbreviated month name.
+.IP "\fR%B\fR" 8
+Locale's full month name.
+.IP "\fR%c\fR" 8
+Locale's appropriate date and time representation.
+.IP "\fR%C\fR" 8
+Century (a year divided by 100 and truncated to an integer) as a
+decimal number [00,99].
+.IP "\fR%d\fR" 8
+Day of the month as a decimal number [01,31].
+.IP "\fR%D\fR" 8
+Date in the format \fImm\fP/\fIdd\fP/\fIyy\fR.
+.IP "\fR%e\fR" 8
+Day of the month as a decimal number [1,31] in a two-digit field
+with leading
+<space>
+character fill.
+.IP "\fR%h\fR" 8
+A synonym for
+.BR %b .
+.IP "\fR%H\fR" 8
+Hour (24-hour clock) as a decimal number [00,23].
+.IP "\fR%I\fR" 8
+Hour (12-hour clock) as a decimal number [01,12].
+.IP "\fR%j\fR" 8
+Day of the year as a decimal number [001,366].
+.IP "\fR%m\fR" 8
+Month as a decimal number [01,12].
+.IP "\fR%M\fR" 8
+Minute as a decimal number [00,59].
+.IP "\fR%n\fR" 8
+A
+<newline>.
+.IP "\fR%p\fR" 8
+Locale's equivalent of either AM or PM.
+.IP "\fR%r\fR" 8
+12-hour clock time [01,12] using the AM/PM notation; in the POSIX
+locale, this shall be equivalent to
+.BR %I :\c
+.BR %M :\c
+.BR %S
+.BR %p .
+.IP "\fR%S\fR" 8
+Seconds as a decimal number [00,60].
+.IP "\fR%t\fR" 8
+A
+<tab>.
+.IP "\fR%T\fR" 8
+24-hour clock time [00,23] in the format \fIHH\fP:\fIMM\fP:\fISS\fP.
+.IP "\fR%u\fR" 8
+Weekday as a decimal number [1,7] (1=Monday).
+.IP "\fR%U\fR" 8
+Week of the year (Sunday as the first day of the week) as a decimal
+number [00,53]. All days in a new year preceding the first Sunday
+shall be considered to be in week 0.
+.IP "\fR%V\fR" 8
+Week of the year (Monday as the first day of the week) as a decimal
+number [01,53]. If the week containing January 1 has four or more
+days in the new year, then it shall be considered week 1; otherwise, it
+shall be the last week of the previous year, and the next week shall be
+week 1.
+.IP "\fR%w\fR" 8
+Weekday as a decimal number [0,6] (0=Sunday).
+.IP "\fR%W\fR" 8
+Week of the year (Monday as the first day of the week) as a decimal
+number [00,53]. All days in a new year preceding the first Monday
+shall be considered to be in week 0.
+.IP "\fR%x\fR" 8
+Locale's appropriate date representation.
+.IP "\fR%X\fR" 8
+Locale's appropriate time representation.
+.IP "\fR%y\fR" 8
+Year within century [00,99].
+.IP "\fR%Y\fR" 8
+Year with century as a decimal number.
+.IP "\fR%Z\fR" 8
+Timezone name, or no characters if no timezone is determinable.
+.IP "\fR%%\fR" 8
+A
+<percent-sign>
+character.
+.P
+See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 7.3.5" ", " "LC_TIME"
+for the conversion specifier values in the POSIX locale.
+.SS "Modified Conversion Specifications"
+.P
+Some conversion specifiers can be modified by the
+.BR E
+and
+.BR O
+modifier characters to indicate a different format or specification as
+specified in the
+.IR LC_TIME
+locale description (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 7.3.5" ", " "LC_TIME").
+If the corresponding keyword (see
+.BR era ,
+.BR era_year ,
+.BR era_d_fmt ,
+and
+.BR alt_digits
+in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 7.3.5" ", " "LC_TIME")
+is not specified or not supported for the current locale,
+the unmodified conversion specifier value shall be used.
+.IP "\fR%Ec\fR" 8
+Locale's alternative appropriate date and time representation.
+.IP "\fR%EC\fR" 8
+The name of the base year (period) in the locale's alternative
+representation.
+.IP "\fR%Ex\fR" 8
+Locale's alternative date representation.
+.IP "\fR%EX\fR" 8
+Locale's alternative time representation.
+.IP "\fR%Ey\fR" 8
+Offset from
+.BR %EC
+(year only) in the locale's alternative representation.
+.IP "\fR%EY\fR" 8
+Full alternative year representation.
+.IP "\fR%Od\fR" 8
+Day of month using the locale's alternative numeric symbols.
+.IP "\fR%Oe\fR" 8
+Day of month using the locale's alternative numeric symbols.
+.IP "\fR%OH\fR" 8
+Hour (24-hour clock) using the locale's alternative numeric symbols.
+.IP "\fR%OI\fR" 8
+Hour (12-hour clock) using the locale's alternative numeric symbols.
+.IP "\fR%Om\fR" 8
+Month using the locale's alternative numeric symbols.
+.IP "\fR%OM\fR" 8
+Minutes using the locale's alternative numeric symbols.
+.IP "\fR%OS\fR" 8
+Seconds using the locale's alternative numeric symbols.
+.IP "\fR%Ou\fR" 8
+Weekday as a number in the locale's alternative representation (Monday
+= 1).
+.IP "\fR%OU\fR" 8
+Week number of the year (Sunday as the first day of the week) using the
+locale's alternative numeric symbols.
+.IP "\fR%OV\fR" 8
+Week number of the year (Monday as the first day of the week, rules
+corresponding to
+.BR %V ),
+using the locale's alternative numeric symbols.
+.IP "\fR%Ow\fR" 8
+Weekday as a number in the locale's alternative representation (Sunday
+= 0).
+.IP "\fR%OW\fR" 8
+Week number of the year (Monday as the first day of the week) using the
+locale's alternative numeric symbols.
+.IP "\fR%Oy\fR" 8
+Year (offset from
+.BR %C )
+in alternative representation.
+.RE
+.IP "\fImmddhhmm\fB[[\fIcc\fB]\fIyy\fB]\fR" 10
+.br
+Attempt to set the system date and time from the value given in the
+operand. This is only possible if the user has appropriate privileges
+and the system permits the setting of the system date and time. The
+first
+.IR mm
+is the month (number);
+.IR dd
+is the day (number);
+.IR hh
+is the hour (number, 24-hour system); the second
+.IR mm
+is the minute (number);
+.IR cc
+is the century and is the first two digits of the year (this is
+optional);
+.IR yy
+is the last two digits of the year and is optional. If century is not
+specified, then values in the range [69,99] shall refer to years
+1969 to 1999 inclusive, and values in the range [00,68] shall refer
+to years 2000 to 2068 inclusive. The current year is the default if
+.IR yy
+is omitted.
+.RS 10 
+.TP 10
+.BR Note:
+It is expected that in a future version of this standard the default
+century inferred from a 2-digit year will change. (This would apply
+to all commands accepting a 2-digit year as input.)
+.P
+.RE
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR date :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fILC_TIME\fP" 10
+Determine the format and contents of date and time strings written by
+.IR date .
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fITZ\fP" 10
+Determine the timezone in which the time and date are written, unless
+the
+.BR \(miu
+option is specified. If the
+.IR TZ
+variable is unset or null and
+.BR \(miu
+is not specified, an unspecified system default timezone is used.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+When no formatting operand is specified, the output in the POSIX locale
+shall be equivalent to specifying:
+.sp
+.RS 4
+.nf
+\fB
+date "+%a %b %e %H:%M:%S %Z %Y"
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The date was written successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Conversion specifiers are of unspecified format when not in the POSIX
+locale. Some of them can contain
+<newline>
+characters in some locales, so it may be difficult to use the format
+shown in standard output for parsing the output of
+.IR date
+in those locales.
+.P
+The range of values for
+.BR %S
+extends from 0 to 60 seconds to accommodate the occasional leap second.
+.P
+Although certain of the conversion specifiers in the POSIX locale (such
+as the name of the month) are shown with initial capital letters, this
+need not be the case in other locales. Programs using these fields may
+need to adjust the capitalization if the output is going to be used at
+the beginning of a sentence.
+.P
+The date string formatting capabilities are intended for use in
+Gregorian-style calendars, possibly with a different starting year (or
+years). The
+.BR %x
+and
+.BR %c
+conversion specifications, however, are intended for local
+representation; these may be based on a different, non-Gregorian
+calendar.
+.P
+The
+.BR %C
+conversion specification was introduced to allow a fallback for the
+.BR %EC
+(alternative year format base year); it can be viewed as the base of
+the current subdivision in the Gregorian calendar. The century number
+is calculated as the year divided by 100 and truncated to an integer;
+it should not be confused with the use of ordinal numbers for centuries
+(for example, ``twenty-first century''.) Both the
+.BR %Ey
+and
+.BR %y
+can then be viewed as the offset from
+.BR %EC
+and
+.BR %C ,
+respectively.
+.P
+The
+.BR E
+and
+.BR O
+modifiers modify the traditional conversion specifiers, so that they
+can always be used, even if the implementation (or the current locale)
+does not support the modifier.
+.P
+The
+.BR E
+modifier supports alternative date formats, such as the Japanese
+Emperor's Era, as long as these are based on the Gregorian calendar
+system. Extending the
+.BR E
+modifiers to other date elements may provide an implementation-defined
+extension capable of supporting other calendar systems, especially in
+combination with the
+.BR O
+modifier.
+.P
+The
+.BR O
+modifier supports time and date formats using the locale's alternative
+numerical symbols, such as Kanji or Hindi digits or ordinal number
+representation.
+.P
+Non-European locales, whether they use Latin digits in computational
+items or not, often have local forms of the digits for use in date
+formats. This is not totally unknown even in Europe; a variant of dates
+uses Roman numerals for the months: the third day of September 1991
+would be written as 3.IX.1991. In Japan, Kanji digits are regularly
+used for dates; in Arabic-speaking countries, Hindi digits are used.
+The
+.BR %d ,
+.BR %e ,
+.BR %H ,
+.BR %I ,
+.BR %m ,
+.BR %S ,
+.BR %U ,
+.BR %w ,
+.BR %W ,
+and
+.BR %y
+conversion specifications always return the date and time field in
+Latin digits (that is, 0 to 9). The
+.BR %O
+modifier was introduced to support the use for display purposes of
+non-Latin digits. In the
+.IR LC_TIME
+category in
+.IR localedef ,
+the optional
+.BR alt_digits
+keyword is intended for this purpose. As an example, assume the
+following (partial)
+.IR localedef
+source:
+.sp
+.RS 4
+.nf
+\fB
+alt_digits  "";"I";"II";"III";"IV";"V";"VI";"VII";"VIII" \e
+            "IX";"X";"XI";"XII"
+d_fmt       "%e.%Om.%Y"
+.fi \fR
+.P
+.RE
+.P
+With the above date, the command:
+.sp
+.RS 4
+.nf
+\fB
+date "+%x"
+.fi \fR
+.P
+.RE
+.P
+would yield 3.IX.1991. With the same
+.BR d_fmt ,
+but without the
+.BR alt_digits ,
+the command would yield 3.9.1991.
+.SH EXAMPLES
+.IP " 1." 4
+The following are input/output examples of
+.IR date
+used at arbitrary times in the POSIX locale:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+\fB$ \fRdate
+\fBTue Jun 26 09:58:10 PDT 1990
+.P
+\fB$ \fRdate "+DATE: %m/%d/%y%nTIME: %H:%M:%S"
+\fBDATE: 11/02/91
+\fBTIME: 13:36:16
+.P
+\fB$ \fRdate "+TIME: %r"
+\fBTIME: 01:36:32 PM\fR
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+Examples for Denmark, where the default date and time format is
+.BR %a
+.BR %d
+.BR %b
+.BR %Y
+.BR %T
+.BR %Z :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+\fB$ \fRLANG=da_DK.iso_8859\(mi1 date
+\fBons 02 okt 1991 15:03:32 CET
+.P
+\fB$ \fRLANG=da_DK.iso_8859\(mi1 \e
+    date "+DATO: %A den %e. %B %Y%nKLOKKEN: %H:%M:%S"
+\fBDATO: onsdag den 2. oktober 1991
+\fBKLOKKEN: 15:03:56\fR
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+Examples for Germany, where the default date and time format is
+.BR %a
+.BR %d .\c
+.BR %h .\c
+.BR %Y ,
+.BR %T
+.BR %Z :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+\fB$ \fRLANG=De_DE.88591 date
+\fBMi 02.Okt.1991, 15:01:21 MEZ
+.P
+\fB$ \fRLANG=De_DE.88591 date "+DATUM: %A, %d. %B %Y%nZEIT: %H:%M:%S"
+\fBDATUM: Mittwoch, 02. Oktober 1991
+\fBZEIT: 15:02:02\fR
+.fi \fR
+.P
+.RE
+.RE
+.IP " 4." 4
+Examples for France, where the default date and time format is
+.BR %a
+.BR %d
+.BR %h
+.BR %Y
+.BR %Z
+.BR %T :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+\fB$ \fRLANG=Fr_FR.88591 date
+\fBMer 02 oct 1991 MET 15:03:32
+.P
+\fB$ \fRLANG=Fr_FR.88591 date "+JOUR: %A %d %B %Y%nHEURE: %H:%M:%S"
+\fBJOUR: Mercredi 02 octobre 1991
+\fBHEURE: 15:03:56\fR
+.fi \fR
+.P
+.RE
+.RE
+.SH RATIONALE
+Some of the new options for formatting are from the ISO\ C standard. The
+.BR \(miu
+option was introduced to allow portable access to Coordinated Universal
+Time (UTC).
+The string
+.BR \(dqGMT0\(dq 
+is allowed as an equivalent
+.IR TZ
+value to be compatible with all of the systems using the BSD
+implementation, where this option originated.
+.P
+The
+.BR %e
+format conversion specification (adopted from System V) was added
+because the ISO\ C standard conversion specifications did not provide any way to
+produce the historical default
+.IR date
+output during the first nine days of any month.
+.P
+There are two varieties of day and week numbering supported (in
+addition to any others created with the locale-dependent
+.BR %E
+and
+.BR %O
+modifier characters):
+.IP " *" 4
+The historical variety in which Sunday is the first day of the week and
+the weekdays preceding the first Sunday of the year are considered week
+0. These are represented by
+.BR %w
+and
+.BR %U .
+A variant of this is
+.BR %W ,
+using Monday as the first day of the week, but still referring to week
+0. This view of the calendar was retained because so many historical
+applications depend on it and the ISO\ C standard
+\fIstrftime\fR()
+function, on which many
+.IR date
+implementations are based, was defined in this way.
+.IP " *" 4
+The international standard, based on the ISO\ 8601:\|2004 standard where Monday is the
+first weekday and the algorithm for the first week number is more
+complex: If the week (Monday to Sunday) containing January 1 has four
+or more days in the new year, then it is week 1; otherwise, it is week
+53 of the previous year, and the next week is week 1. These are
+represented by the new conversion specifications
+.BR %u
+and
+.BR %V ,
+added as a result of international comments.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 7.3.5" ", " "LC_TIME",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIfprintf\fR\^(\|)",
+.IR "\fIstrftime\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

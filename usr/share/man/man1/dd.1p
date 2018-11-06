@@ -1,0 +1,769 @@
+'\" et
+.TH DD "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+dd
+\(em convert and copy a file
+.SH SYNOPSIS
+.LP
+.nf
+dd \fB[\fIoperand\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR dd
+utility shall copy the specified input file to the specified output
+file with possible conversions using specific input and output block
+sizes. It shall read the input one block at a time, using the
+specified input block size; it shall then process the block of data
+actually returned, which could be smaller than the requested block
+size. It shall apply any conversions that have been specified and write
+the resulting data to the output in blocks of the specified output
+block size. If the
+.BR bs =\c
+.IR expr
+operand is specified and no conversions other than
+.BR sync ,
+.BR noerror ,
+or
+.BR notrunc
+are requested, the data returned from each input block shall be written
+as a separate output block; if the read returns less than a full block
+and the
+.BR sync
+conversion is not specified, the resulting output block shall be the
+same size as the input block. If the
+.BR bs =\c
+.IR expr
+operand is not specified, or a conversion other than
+.BR sync ,
+.BR noerror ,
+or
+.BR notrunc
+is requested, the input shall be processed and collected into
+full-sized output blocks until the end of the input is reached.
+.P
+The processing order shall be as follows:
+.IP " 1." 4
+An input block is read.
+.IP " 2." 4
+If the input block is shorter than the specified input block size and
+the
+.BR sync
+conversion is specified, null bytes shall be appended to the input data
+up to the specified size. (If either
+.BR block
+or
+.BR unblock
+is also specified,
+<space>
+characters shall be appended instead of null bytes.) The remaining
+conversions and output shall include the pad characters as if they had
+been read from the input.
+.IP " 3." 4
+If the
+.BR bs =\c
+.IR expr
+operand is specified and no conversion other than
+.BR sync
+or
+.BR noerror
+is requested, the resulting data shall be written to the output as a
+single block, and the remaining steps are omitted.
+.IP " 4." 4
+If the
+.BR swab
+conversion is specified, each pair of input data bytes shall be
+swapped. If there is an odd number of bytes in the input block, the
+last byte in the input record shall not be swapped.
+.IP " 5." 4
+Any remaining conversions (\c
+.BR block ,
+.BR unblock ,
+.BR lcase ,
+and
+.BR ucase )
+shall be performed. These conversions shall operate on the input data
+independently of the input blocking; an input or output fixed-length
+record may span block boundaries.
+.IP " 6." 4
+The data resulting from input or conversion or both shall be aggregated
+into output blocks of the specified size. After the end of input is
+reached, any remaining output shall be written as a block without
+padding if
+.BR conv =\c
+.BR sync
+is not specified; thus, the final output block may be shorter than the
+output block size.
+.SH OPTIONS
+None.
+.SH OPERANDS
+All of the operands shall be processed before any input is read.
+The following operands shall be supported:
+.IP "\fBif\fR=\fIfile\fR" 10
+Specify the input pathname; the default is standard input.
+.IP "\fBof\fR=\fIfile\fR" 10
+Specify the output pathname; the default is standard output. If the
+.BR seek =\c
+.IR expr
+conversion is not also specified, the output file shall be truncated
+before the copy begins if an explicit
+.BR of =\c
+.IR file
+operand is specified, unless
+.BR conv =\c
+.BR notrunc
+is specified. If
+.BR seek =\c
+.IR expr
+is specified, but
+.BR conv =\c
+.BR notrunc
+is not, the effect of the copy shall be to preserve the blocks in the
+output file over which
+.IR dd
+seeks, but no other portion of the output file shall be preserved. (If
+the size of the seek plus the size of the input file is less than the
+previous size of the output file, the output file shall be shortened by
+the copy. If the input file is empty and either the size of the seek is
+greater than the previous size of the output file or the output file
+did not previously exist, the size of the output file shall be set to
+the file offset after the seek.)
+.IP "\fBibs\fR=\fIexpr\fR" 10
+Specify the input block size, in bytes, by
+.IR expr
+(default is 512).
+.IP "\fBobs\fR=\fIexpr\fR" 10
+Specify the output block size, in bytes, by
+.IR expr
+(default is 512).
+.IP "\fBbs\fR=\fIexpr\fR" 10
+Set both input and output block sizes to
+.IR expr
+bytes, superseding
+.BR ibs =
+and
+.BR obs =.
+If no conversion other than
+.BR sync ,
+.BR noerror ,
+and
+.BR notrunc
+is specified, each input block shall be copied to the output as a
+single block without aggregating short blocks.
+.IP "\fBcbs\fR=\fIexpr\fR" 10
+Specify the conversion block size for
+.BR block
+and
+.BR unblock
+in bytes by
+.IR expr
+(default is zero). If
+.BR cbs =
+is omitted or given a value of zero, using
+.BR block
+or
+.BR unblock
+produces unspecified results.
+.RS 10 
+.P
+The application shall ensure that this operand is also specified if the
+.BR conv =
+operand is specified with a value of
+.BR ascii ,
+.BR ebcdic ,
+or
+.BR ibm .
+For a
+.BR conv =
+operand with an
+.BR ascii
+value, the input is handled as described for the
+.BR unblock
+value, except that characters are converted to ASCII before any
+trailing
+<space>
+characters are deleted. For
+.BR conv =
+operands with
+.BR ebcdic
+or
+.BR ibm
+values, the input is handled as described for the
+.BR block
+value except that the characters are converted to EBCDIC or IBM EBCDIC,
+respectively, after any trailing
+<space>
+characters are added.
+.RE
+.IP "\fBskip\fR=\fIn\fR" 10
+Skip
+.IR n
+input blocks (using the specified input block size) before starting to
+copy. On seekable files, the implementation shall read the blocks or
+seek past them; on non-seekable files, the blocks shall be read and the
+data shall be discarded.
+.IP "\fBseek\fR=\fIn\fR" 10
+Skip
+.IR n
+blocks (using the specified output block size) from the beginning of the
+output file before copying. On non-seekable files, existing blocks
+shall be read and space from the current end-of-file to the specified
+offset, if any, filled with null bytes; on seekable files, the
+implementation shall seek to the specified offset or read the blocks as
+described for non-seekable files.
+.IP "\fBcount\fR=\fIn\fR" 10
+Copy only
+.IR n
+input blocks.
+.IP "\fBconv\fR=\fIvalue\fB[\fR,\fIvalue\fR\ .\|.\|.\fB]\fR" 10
+.br
+Where
+.IR value s
+are
+<comma>-separated
+symbols from the following list:
+.RS 10 
+.IP "\fBascii\fR" 9
+Convert EBCDIC to ASCII; see
+.IR "Table 4-7, ASCII to EBCDIC Conversion".
+.IP "\fBebcdic\fR" 9
+Convert ASCII to EBCDIC; see
+.IR "Table 4-7, ASCII to EBCDIC Conversion".
+.IP "\fBibm\fR" 9
+Convert ASCII to a different EBCDIC set; see
+.IR "Table 4-8, ASCII to IBM EBCDIC Conversion".
+.P
+The
+.BR ascii ,
+.BR ebcdic ,
+and
+.BR ibm
+values are mutually-exclusive.
+.IP "\fBblock\fR" 9
+Treat the input as a sequence of
+<newline>-terminated
+or end-of-file-terminated variable-length records independent of the
+input block boundaries. Each record shall be converted to a record with
+a fixed length specified by the conversion block size. Any
+<newline>
+shall be removed from the input line;
+<space>
+characters shall be appended to lines that are shorter than their
+conversion block size to fill the block. Lines that are longer than
+the conversion block size shall be truncated to the largest number of
+characters that fit into that size; the number of truncated lines shall
+be reported (see the STDERR section).
+.RS 9 
+.P
+The
+.BR block
+and
+.BR unblock
+values are mutually-exclusive.
+.RE
+.IP "\fBunblock\fR" 9
+Convert fixed-length records to variable length. Read a number of bytes
+equal to the conversion block size (or the number of bytes remaining in
+the input, if less than the conversion block size), delete all trailing
+<space>
+characters, and append a
+<newline>.
+.IP "\fBlcase\fR" 9
+Map uppercase characters specified by the
+.IR LC_CTYPE
+keyword
+.BR tolower
+to the corresponding lowercase character. Characters for which no
+mapping is specified shall not be modified by this conversion.
+.RS 9 
+.P
+The
+.BR lcase
+and
+.BR ucase
+symbols are mutually-exclusive.
+.RE
+.IP "\fBucase\fR" 9
+Map lowercase characters specified by the
+.IR LC_CTYPE
+keyword
+.BR toupper
+to the corresponding uppercase character. Characters for which no
+mapping is specified shall not be modified by this conversion.
+.IP "\fBswab\fR" 9
+Swap every pair of input bytes.
+.IP "\fBnoerror\fR" 9
+Do not stop processing on an input error. When an input error occurs, a
+diagnostic message shall be written on standard error, followed by the
+current input and output block counts in the same format as used at
+completion (see the STDERR section). If the
+.BR sync
+conversion is specified, the missing input shall be replaced with null
+bytes and processed normally; otherwise, the input block shall be
+omitted from the output.
+.IP "\fBnotrunc\fR" 9
+Do not truncate the output file. Preserve blocks in the output
+file not explicitly written by this invocation of the
+.IR dd
+utility. (See also the preceding
+.BR of =\c
+.IR file
+operand.)
+.IP "\fBsync\fR" 9
+Pad every input block to the size of the
+.BR ibs =
+buffer, appending null bytes. (If either
+.BR block
+or
+.BR unblock
+is also specified, append
+<space>
+characters, rather than null bytes.)
+.RE
+.P
+The behavior is unspecified if operands other than
+.BR conv =
+are specified more than once.
+.P
+For the
+.BR bs =,
+.BR cbs =,
+.BR ibs =,
+and
+.BR obs =
+operands, the application shall supply an expression specifying a size
+in bytes. The expression,
+.IR expr ,
+can be:
+.IP " 1." 4
+A positive decimal number
+.IP " 2." 4
+A positive decimal number followed by
+.IR k ,
+specifying multiplication by 1\|024
+.IP " 3." 4
+A positive decimal number followed by
+.IR b ,
+specifying multiplication by 512
+.IP " 4." 4
+Two or more positive decimal numbers (with or without
+.IR k
+or
+.IR b )
+separated by
+.IR x ,
+specifying the product of the indicated values
+.P
+All of the operands are processed before any input is read.
+.P
+The following two tables display the octal number character values used
+for the
+.BR ascii
+and
+.BR ebcdic
+conversions (first table) and for the
+.BR ibm
+conversion (second table). In both tables, the ASCII values are the row
+and column headers and the EBCDIC values are found at their
+intersections. For example, ASCII 0012 (LF) is the second row, third
+column, yielding 0045 in EBCDIC. The inverted tables (for EBCDIC to
+ASCII conversion) are not shown, but are in one-to-one correspondence
+with these tables. The differences between the two tables are
+highlighted by small boxes drawn around five entries.
+.br
+.sp
+.ce 1
+\fBTable 4-7: ASCII to EBCDIC Conversion\fR
+.bp
+.sp
+.ce 1
+\fBTable 4-8: ASCII to IBM EBCDIC Conversion\fR
+.SH STDIN
+If no
+.BR if =
+operand is specified, the standard input shall be used. See the INPUT
+FILES section.
+.SH "INPUT FILES"
+The input file can be any file type.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR dd :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files), the classification
+of characters as uppercase or lowercase, and the mapping of characters
+from one case to the other.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+For SIGINT, the
+.IR dd
+utility shall interrupt its current processing, write status
+information to standard error, and exit as though terminated by
+SIGINT. It shall take the standard action for all other signals; see
+the ASYNCHRONOUS EVENTS section in
+.IR "Section 1.4" ", " "Utility Description Defaults".
+.SH STDOUT
+If no
+.BR of =
+operand is specified, the standard output shall be used. The nature of
+the output depends on the operands selected.
+.SH STDERR
+On completion,
+.IR dd
+shall write the number of input and output blocks to standard error. In
+the POSIX locale the following formats shall be used:
+.sp
+.RS 4
+.nf
+\fB
+"%u+%u records in\en", <\fInumber of whole input blocks\fR>,
+    <\fInumber of partial input blocks\fR>
+.P
+"%u+%u records out\en", <\fInumber of whole output blocks\fR>,
+    <\fInumber of partial output blocks\fR>
+.fi \fR
+.P
+.RE
+.P
+A partial input block is one for which
+\fIread\fR()
+returned less than the input block size. A partial output block is one
+that was written with fewer bytes than specified by the output block
+size.
+.P
+In addition, when there is at least one truncated block, the number of
+truncated blocks shall be written to standard error. In the POSIX
+locale, the format shall be:
+.sp
+.RS 4
+.nf
+\fB
+"%u truncated %s\en", <\fInumber of truncated blocks\fR>, "record" (if
+    <\fInumber of truncated blocks\fR> is one) "records" (otherwise)
+.fi \fR
+.P
+.RE
+.P
+Diagnostic messages may also be written to standard error.
+.SH "OUTPUT FILES"
+If the
+.BR of =
+operand is used, the output shall be the same as described in the
+STDOUT section.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The input file was copied successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+If an input error is detected and the
+.BR noerror
+conversion has not been specified, any partial output block shall be
+written to the output file, a diagnostic message shall be written, and
+the copy operation shall be discontinued. If some other error is
+detected, a diagnostic message shall be written and the copy operation
+shall be discontinued.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The input and output block size can be specified to take advantage of
+raw physical I/O.
+.P
+There are many different versions of the EBCDIC codesets. The ASCII and
+EBCDIC conversions specified for the
+.IR dd
+utility perform conversions for the version specified by the tables.
+.SH EXAMPLES
+The following command:
+.sp
+.RS 4
+.nf
+\fB
+dd if=/dev/rmt0h  of=/dev/rmt1h
+.fi \fR
+.P
+.RE
+.P
+copies from tape drive 0 to tape drive 1, using a common historical
+device naming convention.
+.P
+The following command:
+.sp
+.RS 4
+.nf
+\fB
+dd ibs=10  skip=1
+.fi \fR
+.P
+.RE
+.P
+strips the first 10 bytes from standard input.
+.P
+This example reads an EBCDIC tape blocked ten 80-byte EBCDIC card
+images per block into the ASCII file
+.BR x :
+.sp
+.RS 4
+.nf
+\fB
+dd if=/dev/tape of=x ibs=800 cbs=80 conv=ascii,lcase
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The OPTIONS section is listed as ``None'' because there are no options
+recognized by historical
+.IR dd
+utilities. Certainly, many of the operands could have been designed to
+use the Utility Syntax Guidelines, which would have resulted in the
+classic hyphenated option letters. In this version of this volume of POSIX.1\(hy2008,
+.IR dd
+retains its curious JCL-like syntax due to the large number of
+applications that depend on the historical implementation.
+.P
+A suggested implementation technique for
+.BR conv =\c
+.BR noerror ,\c
+.BR sync
+is to zero (or
+<space>-fill,
+if
+.BR block ing
+or
+.BR unblock ing)
+the input buffer before each read and to write the contents of the
+input buffer to the output even after an error. In this manner, any
+data transferred to the input buffer before the error was detected is
+preserved. Another point is that a failed read on a regular file or a
+disk generally does not increment the file offset, and
+.IR dd
+must then seek past the block on which the error occurred; otherwise,
+the input error occurs repetitively. When the input is a magnetic tape,
+however, the tape normally has passed the block containing the error
+when the error is reported, and thus no seek is necessary.
+.P
+The default
+.BR ibs =
+and
+.BR obs =
+sizes are specified as 512 bytes because there are historical (largely
+portable) scripts that assume these values. If they were left
+unspecified, unusual results could occur if an implementation chose an
+odd block size.
+.P
+Historical implementations of
+.IR dd
+used
+\fIcreat\fR()
+when processing
+.BR of =\c
+.IR file .
+This makes the
+.BR seek =
+operand unusable except on special files. The
+.BR conv =\c
+.BR notrunc
+feature was added because more recent BSD-based implementations use
+\fIopen\fR()
+(without O_TRUNC) instead of
+\fIcreat\fR(),
+but they fail to delete output file contents after the data copied.
+.P
+The
+.IR w
+multiplier (historically meaning
+.IR word ),
+is used in System V to mean 2 and in 4.2 BSD to mean 4. Since
+.IR word
+is inherently non-portable, its use is not supported by this volume of POSIX.1\(hy2008.
+.P
+Standard EBCDIC does not have the characters
+.BR '[' 
+and
+.BR ']' .
+The values used in the table are taken from a common print train that
+does contain them. Other than those characters, the print train values
+are not filled in, but appear to provide some of the motivation for the
+historical choice of translations reflected here.
+.P
+The Standard EBCDIC table provides a 1:1 translation for all 256
+bytes.
+.P
+The IBM EBCDIC table does not provide such a translation. The marked
+cells in the tables differ in such a way that:
+.IP " 1." 4
+EBCDIC 0112 (\c
+.BR '\(ct' )
+and 0152 (broken pipe) do not appear in the table.
+.IP " 2." 4
+EBCDIC 0137 (\c
+.BR '\(no' )
+translates to/from ASCII 0236 (\c
+.BR '^' ).
+In the standard table, EBCDIC 0232 (no graphic) is used.
+.IP " 3." 4
+EBCDIC 0241 (\c
+.BR '~' )
+translates to/from ASCII 0176 (\c
+.BR '~' ).
+In the standard table, EBCDIC 0137 (\c
+.BR '\(no' )
+is used.
+.IP " 4." 4
+0255 (\c
+.BR '[' )
+and 0275 (\c
+.BR ']' )
+appear twice, once in the same place as for the standard table and once
+in place of 0112 (\c
+.BR '\(ct' )
+and 0241 (\c
+.BR '~' ).
+.P
+In net result:
+.sp
+.RS
+EBCDIC 0275 (\c
+.BR ']' )
+displaced EBCDIC 0241 (\c
+.BR '~' )
+in cell 0345.
+.P
+\0\0\0\0That displaced EBCDIC 0137 (\c
+.BR '\(no' )
+in cell 0176.
+.P
+\0\0\0\0That displaced EBCDIC 0232 (no graphic) in cell 0136.
+.P
+\0\0\0\0That replaced EBCDIC 0152 (broken pipe) in cell 0313.
+.P
+EBCDIC 0255 (\c
+.BR '[' )
+replaced EBCDIC 0112 (\c
+.BR '\(ct' ).
+.RE
+.P
+This translation, however, reflects historical practice that (ASCII)
+.BR '~' 
+and
+.BR '\(no' 
+were often mapped to each other, as were
+.BR '[' 
+and
+.BR '\(ct' ;
+and
+.BR ']' 
+and (EBCDIC)
+.BR '~' .
+.P
+The
+.BR cbs
+operand is required if any of the
+.BR ascii ,
+.BR ebcdic ,
+or
+.BR ibm
+operands are specified. For the
+.BR ascii
+operand, the input is handled as described for the
+.BR unblock
+operand except that characters are converted to ASCII before the
+trailing
+<space>
+characters are deleted. For the
+.BR ebcdic
+and
+.BR ibm
+operands, the input is handled as described for the
+.BR block
+operand except that the characters are converted to EBCDIC or IBM
+EBCDIC after the trailing
+<space>
+characters are added.
+.P
+The
+.BR block
+and
+.BR unblock
+keywords are from historical BSD practice.
+.P
+The consistent use of the word
+.BR record
+in standard error messages matches most historical practice. An
+earlier version of System V used
+.BR block ,
+but this has been updated in more recent releases.
+.P
+Early proposals only allowed two numbers separated by
+.BR x
+to be used in a product when specifying
+.BR bs =,
+.BR cbs =,
+.BR ibs =,
+and
+.BR obs =
+sizes. This was changed to reflect the historical practice of allowing
+multiple numbers in the product as provided by Version 7 and all
+releases of System V and BSD.
+.P
+A change to the
+.BR swab
+conversion is required to match historical practice and is the result
+of IEEE PASC Interpretations 1003.2 #03 and #04, submitted for the
+ISO\ POSIX\(hy2:\|1993 standard.
+.P
+A change to the handling of SIGINT is required to match historical
+practice and is the result of IEEE PASC Interpretation 1003.2 #06
+submitted for the ISO\ POSIX\(hy2:\|1993 standard.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 1.4" ", " "Utility Description Defaults",
+.IR "\fIsed\fR\^",
+.IR "\fItr\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

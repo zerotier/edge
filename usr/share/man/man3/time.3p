@@ -1,0 +1,207 @@
+'\" et
+.TH TIME "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+time
+\(em get time
+.SH SYNOPSIS
+.LP
+.nf
+#include <time.h>
+.P
+time_t time(time_t *\fItloc\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fItime\fR()
+function shall return the value of time
+in seconds since the Epoch.
+.P
+The
+.IR tloc
+argument points to an area where the return value is also stored. If
+.IR tloc
+is a null pointer, no value is stored.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fItime\fR()
+shall return the value of time. Otherwise, (\fBtime_t\fP)\(mi1 shall be
+returned.
+.SH ERRORS
+The
+\fItime\fR()
+function may fail if:
+.TP
+.BR EOVERFLOW
+The number of seconds since the Epoch will not fit in an object of type
+.BR time_t .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Getting the Current Time"
+.P
+The following example uses the
+\fItime\fR()
+function to calculate the time elapsed, in seconds, since the Epoch,
+\fIlocaltime\fR()
+to convert that value to a broken-down time, and
+\fIasctime\fR()
+to convert the broken-down time values into a printable string.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <time.h>
+.P
+int main(void)
+{
+time_t result;
+.P
+    result = time(NULL);
+    printf("%s%ju secs since the Epoch\en",
+        asctime(localtime(&result)),
+            (uintmax_t)result);
+    return(0);
+}
+.fi \fR
+.P
+.RE
+.P
+This example writes the current time to
+.IR stdout
+in a form like this:
+.sp
+.RS 4
+.nf
+\fB
+Wed Jun 26 10:32:15 1996
+835810335 secs since the Epoch
+.fi \fR
+.P
+.RE
+.SS "Timing an Event"
+.P
+The following example gets the current time, prints it out in the
+user's format, and prints the number of minutes to an event being
+timed.
+.sp
+.RS 4
+.nf
+\fB
+#include <time.h>
+#include <stdio.h>
+\&...
+time_t now;
+int minutes_to_event;
+\&...
+time(&now);
+minutes_to_event = ...;
+printf("The time is ");
+puts(asctime(localtime(&now)));
+printf("There are %d minutes to the event.\en",
+    minutes_to_event);
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The
+\fItime\fR()
+function returns a value in seconds while
+\fIclock_gettime\fR()
+and
+\fIgettimeofday\fR()
+return a
+.BR "struct timespec"
+(seconds and nanoseconds) and
+.BR "struct timeval"
+(seconds and microseconds), respectively, and are therefore capable of
+returning more precise times. The
+\fItimes\fR()
+function is also capable of more precision than
+\fItime\fR()
+as it returns a value in clock ticks, although it returns the elapsed time
+since an arbitrary point such as system boot time, not since the epoch.
+.P
+Implementations in which
+.BR time_t
+is a 32-bit signed integer (many historical implementations) fail in
+the year 2038. POSIX.1\(hy2008 does not address this problem. However, the use
+of the
+.BR time_t
+type is mandated in order to ease the eventual fix.
+.P
+On some systems the
+\fItime\fR()
+function is implemented using a system call that does not return an
+error condition in addition to the return value. On these systems it is
+impossible to differentiate between valid and invalid return values and
+hence overflow conditions cannot be reliably detected.
+.P
+The use of the
+.IR <time.h> 
+header instead of
+.IR <sys/types.h> 
+allows compatibility with the ISO\ C standard.
+.P
+Many historical implementations (including Version 7) and the 1984 /usr/group standard use
+.BR long
+instead of
+.BR time_t .
+This volume of POSIX.1\(hy2008 uses the latter type in order to agree with the ISO\ C standard.
+.SH "FUTURE DIRECTIONS"
+In a future version of this volume of POSIX.1\(hy2008,
+.BR time_t
+is likely to be required to be capable of representing times far in the
+future. Whether this will be mandated as a 64-bit type or a requirement
+that a specific date in the future be representable (for example, 10000
+AD) is not yet determined. Systems purchased after the approval of this volume of POSIX.1\(hy2008
+should be evaluated to determine whether their lifetime will extend
+past 2038.
+.SH "SEE ALSO"
+.IR "\fIasctime\fR\^(\|)",
+.IR "\fIclock\fR\^(\|)",
+.IR "\fIclock_getres\fR\^(\|)",
+.IR "\fIctime\fR\^(\|)",
+.IR "\fIdifftime\fR\^(\|)",
+.IR "\fIfutimens\fR\^(\|)",
+.IR "\fIgettimeofday\fR\^(\|)",
+.IR "\fIgmtime\fR\^(\|)",
+.IR "\fIlocaltime\fR\^(\|)",
+.IR "\fImktime\fR\^(\|)",
+.IR "\fIstrftime\fR\^(\|)",
+.IR "\fIstrptime\fR\^(\|)",
+.IR "\fItimes\fR\^(\|)",
+.IR "\fIutime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

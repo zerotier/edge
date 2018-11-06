@@ -1,0 +1,164 @@
+'\" et
+.TH MSGGET "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+msgget
+\(em get the XSI message queue identifier
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/msg.h>
+.P
+int msgget(key_t \fIkey\fP, int \fImsgflg\fP);
+.fi
+.SH DESCRIPTION
+The
+\fImsgget\fR()
+function operates on XSI message queues (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.225" ", " "Message Queue").
+It is unspecified whether this function interoperates with the
+realtime interprocess communication facilities defined in
+.IR "Section 2.8" ", " "Realtime".
+.P
+The
+\fImsgget\fR()
+function shall return the message queue identifier associated with the
+argument
+.IR key .
+.P
+A message queue identifier, associated message queue, and data
+structure (see
+.IR <sys/msg.h> ),
+shall be created for the argument
+.IR key
+if one of the following is true:
+.IP " *" 4
+The argument
+.IR key
+is equal to IPC_PRIVATE.
+.IP " *" 4
+The argument
+.IR key
+does not already have a message queue identifier associated with it,
+and (\fImsgflg\fP & IPC_CREAT) is non-zero.
+.P
+Upon creation, the data structure associated with the new message queue
+identifier shall be initialized as follows:
+.IP " *" 4
+.BR msg_perm.cuid ,
+.BR msg_perm.uid ,
+.BR msg_perm.cgid ,
+and
+.BR msg_perm.gid
+shall be set to the effective user ID and effective group ID,
+respectively, of the calling process.
+.IP " *" 4
+The low-order 9 bits of
+.BR msg_perm.mode
+shall be set to the low-order 9 bits of
+.IR msgflg .
+.IP " *" 4
+.BR msg_qnum ,
+.BR msg_lspid ,
+.BR msg_lrpid ,
+.BR msg_stime ,
+and
+.BR msg_rtime
+shall be set to 0.
+.IP " *" 4
+.BR msg_ctime
+shall be set to the current time, as described in
+.IR "Section 2.7.1" ", " "IPC General Description".
+.IP " *" 4
+.BR msg_qbytes
+shall be set to the system limit.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fImsgget\fR()
+shall return a non-negative integer, namely a message queue identifier.
+Otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fImsgget\fR()
+function shall fail if:
+.TP
+.BR EACCES
+A message queue identifier exists for the argument
+.IR key ,
+but operation permission as specified by the low-order 9 bits of
+.IR msgflg
+would not be granted; see
+.IR "Section 2.7" ", " "XSI Interprocess Communication".
+.TP
+.BR EEXIST
+A message queue identifier exists for the argument
+.IR key
+but ((\fImsgflg\fP & IPC_CREAT) && (\fImsgflg\fP & IPC_EXCL)) is
+non-zero.
+.TP
+.BR ENOENT
+A message queue identifier does not exist for the argument
+.IR key
+and (\fImsgflg\fP & IPC_CREAT) is 0.
+.TP
+.BR ENOSPC
+A message queue identifier is to be created but the system-imposed
+limit on the maximum number of allowed message queue identifiers
+system-wide would be exceeded.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The POSIX Realtime Extension defines alternative interfaces for interprocess communication
+(IPC). Application developers who need to use IPC should design their
+applications so that modules using the IPC routines described in
+.IR "Section 2.7" ", " "XSI Interprocess Communication"
+can be easily modified to use the alternative interfaces.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.7" ", " "XSI Interprocess Communication",
+.IR "Section 2.8" ", " "Realtime",
+.IR "\fIftok\fR\^(\|)",
+.IR "\fImq_close\fR\^(\|)",
+.IR "\fImq_getattr\fR\^(\|)",
+.IR "\fImq_notify\fR\^(\|)",
+.IR "\fImq_open\fR\^(\|)",
+.IR "\fImq_receive\fR\^(\|)",
+.IR "\fImq_send\fR\^(\|)",
+.IR "\fImq_setattr\fR\^(\|)",
+.IR "\fImq_unlink\fR\^(\|)",
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fImsgrcv\fR\^(\|)",
+.IR "\fImsgsnd\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.225" ", " "Message Queue",
+.IR "\fB<sys_msg.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

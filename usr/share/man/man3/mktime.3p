@@ -1,0 +1,175 @@
+'\" et
+.TH MKTIME "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mktime
+\(em convert broken-down time into time since the Epoch
+.SH SYNOPSIS
+.LP
+.nf
+#include <time.h>
+.P
+time_t mktime(struct tm *\fItimeptr\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fImktime\fR()
+function shall convert the broken-down time, expressed as local time,
+in the structure pointed to by
+.IR timeptr ,
+into a time since the Epoch value with the same encoding as that of the
+values returned by
+\fItime\fR().
+The original values of the
+.IR tm_wday
+and
+.IR tm_yday
+components of the structure are ignored, and the original values
+of the other components are not restricted to the ranges
+described in
+.IR <time.h> .
+.P
+A positive or 0 value for
+.IR tm_isdst
+shall cause
+\fImktime\fR()
+to presume initially that Daylight Savings Time, respectively, is or is
+not in effect for the specified time. A negative value for
+.IR tm_isdst
+shall cause
+\fImktime\fR()
+to attempt to determine whether Daylight Savings Time is in effect for
+the specified time.
+.P
+Local timezone information shall be set as though
+\fImktime\fR()
+called
+\fItzset\fR().
+.P
+The relationship between the
+.BR tm
+structure (defined in the
+.IR <time.h> 
+header) and the time in seconds since the Epoch is that the result
+shall be as specified in the expression given in the definition of
+seconds since the Epoch (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.15" ", " "Seconds Since the Epoch")
+corrected for timezone and any seasonal time adjustments, where the
+names in the structure and in the expression correspond.
+.P
+Upon successful completion, the values of the
+.IR tm_wday
+and
+.IR tm_yday
+components of the structure shall be set appropriately, and the other
+components are set to represent the specified time since the Epoch, but
+with their values forced to the ranges indicated in the
+.IR <time.h> 
+entry; the final value of
+.IR tm_mday
+shall not be set until
+.IR tm_mon
+and
+.IR tm_year
+are determined.
+.SH "RETURN VALUE"
+The
+\fImktime\fR()
+function shall return the specified time since the Epoch encoded as
+a value of type
+.BR time_t .
+If the time since the Epoch cannot be represented, the function shall
+return the value (\fBtime_t\fP)\(mi1
+and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fImktime\fR()
+function shall fail if:
+.TP
+.BR EOVERFLOW
+The result cannot be represented.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+What day of the week is July 4, 2001?
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <time.h>
+.P
+struct tm time_str;
+.P
+char daybuf[20];
+.P
+int main(void)
+{
+    time_str.tm_year = 2001 \(em 1900;
+    time_str.tm_mon = 7 \(em 1;
+    time_str.tm_mday = 4;
+    time_str.tm_hour = 0;
+    time_str.tm_min = 0;
+    time_str.tm_sec = 1;
+    time_str.tm_isdst = \(mi1;
+    if (mktime(&time_str) == -1)
+        (void)puts("-unknown-");
+    else {
+        (void)strftime(daybuf, sizeof(daybuf), "%A", &time_str);
+        (void)puts(daybuf);
+    }
+    return 0;
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIasctime\fR\^(\|)",
+.IR "\fIclock\fR\^(\|)",
+.IR "\fIctime\fR\^(\|)",
+.IR "\fIdifftime\fR\^(\|)",
+.IR "\fIgmtime\fR\^(\|)",
+.IR "\fIlocaltime\fR\^(\|)",
+.IR "\fIstrftime\fR\^(\|)",
+.IR "\fIstrptime\fR\^(\|)",
+.IR "\fItime\fR\^(\|)",
+.IR "\fItzset\fR\^(\|)",
+.IR "\fIutime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.15" ", " "Seconds Since the Epoch",
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ -f /var/lib/zerotier-one/identity.public ]; then
+	rm -f /etc/hostname
+	cat /var/lib/zerotier-one/identity.public | cut -d : -f 1 >/etc/hostname
+	hostname `cat /var/lib/zerotier-one/identity.public | cut -d : -f 1`
+fi

@@ -1,0 +1,841 @@
+'\" et
+.TH M4 "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+m4 \(em macro processor
+.SH SYNOPSIS
+.LP
+.nf
+m4 \fB[\fR\(mis\fB] [\fR\(miD \fIname\fB[\fR=\fIval\fB]]\fR...\fB [\fR\(miU \fIname\fB]\fR... \fIfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR m4
+utility is a macro processor that shall read one or more text files,
+process them according to their included macro statements, and write
+the results to standard output.
+.SH OPTIONS
+The
+.IR m4
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that the order of the
+.BR \(miD
+and
+.BR \(miU
+options shall be significant, and options can be interspersed with
+operands.
+.P
+The following options shall be supported:
+.IP "\fB\(mis\fP" 10
+Enable line synchronization output for the
+.IR c99
+preprocessor phase (that is,
+.BR #line
+directives).
+.IP "\fB\(miD\ \fIname\fB[\fR=\fIval\fB]\fR" 10
+.br
+Define
+.IR name
+to
+.IR val
+or to null if =\c
+.IR val
+is omitted.
+.IP "\fB\(miU\ \fIname\fR" 10
+Undefine
+.IR name .
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a text file to be processed. If no
+.IR file
+is given, or if it is
+.BR '\(mi' ,
+the standard input shall be read.
+.SH STDIN
+The standard input shall be a text file that is used if no
+.IR file
+operand is given, or if it is
+.BR '\(mi' .
+.SH "INPUT FILES"
+The input file named by the
+.IR file
+operand shall be a text file.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR m4 :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be the same as the input files, after being
+processed for macro expansion.
+.SH STDERR
+The standard error shall be used to display strings with the
+.BR errprint
+macro, macro tracing enabled by the
+.BR traceon
+macro, the defined text for macros written by the
+.BR dumpdef
+macro, or for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+The
+.IR m4
+utility shall compare each token from the input against the set of
+built-in and user-defined macros. If the token matches the name of a
+macro, then the token shall be replaced by the macro's defining text, if
+any, and rescanned for matching macro names. Once no portion of the
+token matches the name of a macro, it shall be written to standard
+output. Macros may have arguments, in which case the arguments shall
+be substituted into the defining text before it is rescanned.
+.P
+Macro calls have the form:
+.sp
+.RS 4
+.nf
+\fB
+\fIname\fR(\fIarg1\fR, \fIarg2\fR, ..., \fIargn\fR)
+.fi \fR
+.P
+.RE
+.P
+Macro names shall consist of letters, digits, and underscores, where
+the first character is not a digit. Tokens not of this form shall not
+be treated as macros.
+.P
+The application shall ensure that the
+<left-parenthesis>
+immediately follows the name of the macro. If a token matching the name
+of a macro is not followed by a
+<left-parenthesis>,
+it is handled as a use of that macro without arguments.
+.P
+If a macro name is followed by a
+<left-parenthesis>,
+its arguments are the
+<comma>-separated
+tokens between the
+<left-parenthesis>
+and the matching
+<right-parenthesis>.
+Unquoted white-space characters preceding each argument shall be
+ignored. All other characters, including trailing white-space characters,
+are retained.
+<comma>
+characters enclosed between
+<left-parenthesis>
+and
+<right-parenthesis>
+characters do not delimit arguments.
+.P
+Arguments are positionally defined and referenced. The string
+.BR \(dq$1\(dq 
+in the defining text shall be replaced by the first argument. Systems
+shall support at least nine arguments; only the first nine can be
+referenced, using the strings
+.BR \(dq$1\(dq 
+to
+.BR \(dq$9\(dq ,
+inclusive. The string
+.BR \(dq$0\(dq 
+is replaced with the name of the macro. The string
+.BR \(dq$#\(dq 
+is replaced by the number of arguments as a string. The string
+.BR \(dq$*\(dq 
+is replaced by a list of all of the arguments, separated by
+<comma>
+characters. The string
+.BR \(dq$@\(dq 
+is replaced by a list of all of the arguments separated by
+<comma>
+characters, and each argument is quoted using the current left and right
+quoting strings. The string
+.BR \(dq${\(dq 
+produces unspecified behavior.
+.P
+If fewer arguments are supplied than are in the macro definition, the
+omitted arguments are taken to be null. It is not an error if more
+arguments are supplied than are in the macro definition.
+.P
+No special meaning is given to any characters enclosed between matching
+left and right quoting strings, but the quoting strings are themselves
+discarded. By default, the left quoting string consists of a grave accent
+(backquote) and the right quoting string consists of an acute accent
+(single-quote); see also the
+.BR changequote
+macro.
+.P
+Comments are written but not scanned for matching macro names; by
+default, the begin-comment string consists of the
+<number-sign>
+character and the end-comment string consists of a
+<newline>.
+See also the
+.BR changecom
+and
+.BR dnl
+macros.
+.P
+The
+.IR m4
+utility shall make available the following built-in macros. They can be
+redefined, but once this is done the original meaning is lost. Their
+values shall be null unless otherwise stated. In the descriptions
+below, the term
+.IR "defining text"
+refers to the value of the macro: the second argument to the
+.BR define
+macro, among other things. Except for the first argument to the
+.BR eval
+macro, all numeric arguments to built-in macros shall be interpreted as
+decimal values. The string values produced as the defining text of the
+.BR decr ,
+.BR divnum ,
+.BR incr ,
+.BR index ,
+.BR len ,
+and
+.BR sysval
+built-in macros shall be in the form of a decimal-constant as defined
+in the C language.
+.IP "\fBchangecom\fR" 10
+The
+.BR changecom
+macro shall set the begin-comment and end-comment strings. With no
+arguments, the comment mechanism shall be disabled. With a single non-null
+argument, that argument shall become the begin-comment and the
+<newline>
+shall become the end-comment string. With two non-null arguments,
+the first argument shall become the begin-comment string and the second
+argument shall become the end-comment string. The behavior is unspecified
+if either argument is provided but null. Systems shall support comment
+strings of at least five characters.
+.IP "\fBchangequote\fR" 10
+The
+.BR changequote
+macro shall set the begin-quote and end-quote strings. With no
+arguments, the quote strings shall be set to the default values (that
+is, \fR`\|'\fP). The behavior is unspecified if there is a single argument
+or either argument is null. With two non-null arguments, the first
+argument shall become the begin-quote string and the second argument
+shall become the end-quote string. Systems shall support quote strings
+of at least five characters.
+.IP "\fBdecr\fR" 10
+The defining text of the
+.BR decr
+macro shall be its first argument decremented by 1. It shall be an
+error to specify an argument containing any non-numeric characters.
+The behavior is unspecified if
+.BR decr
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBdefine\fR" 10
+The second argument shall become the defining text of the macro
+whose name is the first argument. It is unspecified whether the
+.BR define
+macro deletes all prior definitions of the macro named by its first
+argument or preserves all but the current definition of the macro.
+The behavior is unspecified if
+.BR define
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBdefn\fR" 10
+The defining text of the
+.BR defn
+macro shall be the quoted definition (using the current quoting
+strings) of its arguments. The behavior is unspecified if
+.BR defn
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBdivert\fR" 10
+The
+.IR m4
+utility maintains nine temporary buffers, numbered 1 to 9, inclusive.
+When the last of the input has been processed, any output that has been
+placed in these buffers shall be written to standard output in
+buffer-numerical order. The
+.BR divert
+macro shall divert future output to the buffer specified by its
+argument. Specifying no argument or an argument of 0 shall resume the
+normal output process. Output diverted to a stream with a negative
+number shall be discarded. Behavior is implementation-defined if
+a stream number larger than 9 is specified. It shall be an error to
+specify an argument containing any non-numeric characters.
+.IP "\fBdivnum\fR" 10
+The defining text of the
+.BR divnum
+macro shall be the number of the current output stream as a string.
+.IP "\fBdnl\fR" 10
+The
+.BR dnl
+macro shall cause
+.IR m4
+to discard all input characters up to and including the next
+<newline>.
+.IP "\fBdumpdef\fR" 10
+The
+.BR dumpdef
+macro shall write the defined text to standard error for each of the
+macros specified as arguments, or, if no arguments are specified, for
+all macros.
+.IP "\fBerrprint\fR" 10
+The
+.BR errprint
+macro shall write its arguments to standard error. The behavior
+is unspecified if
+.BR errprint
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBeval\fR" 10
+The
+.BR eval
+macro shall evaluate its first argument as an arithmetic expression,
+using signed integer arithmetic with at least 32-bit precision. At least
+the following C-language operators shall be supported, with precedence,
+associativity, and behavior as described in
+.IR "Section 1.1.2.1" ", " "Arithmetic Precision and Operations":
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+()
+unary +
+unary \(mi
+\&~
+.P
+\&!
+binary *
+/
+%
+binary +
+binary \(mi
+<<
+>>
+<
+<=
+>
+>=
+=\|=
+!=
+binary &
+\&^
+|
+&&
+||
+.fi \fR
+.P
+.RE
+.P
+Systems shall support octal and hexadecimal numbers as in the ISO\ C standard.
+The second argument, if specified, shall set the radix for the result;
+if the argument is blank or unspecified, the default is 10. Behavior is
+unspecified if the radix falls outside the range 2 to 36, inclusive. The
+third argument, if specified, sets the minimum number of digits in the
+result. Behavior is unspecified if the third argument is less than
+zero. It shall be an error to specify the second or third argument
+containing any non-numeric characters. The behavior is unspecified if
+.BR eval
+is not immediately followed by a
+<left-parenthesis>.
+.RE
+.IP "\fBifdef\fR" 10
+If the first argument to the
+.BR ifdef
+macro is defined, the defining text shall be the second argument.
+Otherwise, the defining text shall be the third argument, if specified,
+or the null string, if not. The behavior is unspecified if
+.BR ifdef
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBifelse\fR" 10
+The
+.BR ifelse
+macro takes three or more arguments. If the first two arguments compare
+as equal strings (after macro expansion of both arguments), the
+defining text shall be the third argument. If the first two arguments
+do not compare as equal strings and there are three arguments, the
+defining text shall be null. If the first two arguments do not compare
+as equal strings and there are four or five arguments, the defining
+text shall be the fourth argument. If the first two arguments do not
+compare as equal strings and there are six or more arguments, the first
+three arguments shall be discarded and processing shall restart with
+the remaining arguments. The behavior is unspecified if
+.BR ifelse
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBinclude\fR" 10
+The defining text for the
+.BR include
+macro shall be the contents of the file named by the first argument. It
+shall be an error if the file cannot be read. The behavior is unspecified if
+.BR include
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBincr\fR" 10
+The defining text of the
+.BR incr
+macro shall be its first argument incremented by 1. It shall be an
+error to specify an argument containing any non-numeric characters.
+The behavior is unspecified if
+.BR incr
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBindex\fR" 10
+The defining text of the
+.BR index
+macro shall be the first character position (as a string) in the first
+argument where a string matching the second argument begins (zero
+origin), or \(mi1 if the second argument does not occur.
+The behavior is unspecified if
+.BR index
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBlen\fR" 10
+The defining text of the
+.BR len
+macro shall be the length (as a string) of the first argument.
+The behavior is unspecified if
+.BR len
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBm4exit\fR" 10
+Exit from the
+.IR m4
+utility. If the first argument is specified, it is the exit code. The
+default is zero. It shall be an error to specify an argument containing
+any non-numeric characters.
+.IP "\fBm4wrap\fR" 10
+The first argument shall be processed when EOF is reached. If the
+.BR m4wrap
+macro is used multiple times, the arguments specified shall be
+processed in the order in which the
+.BR m4wrap
+macros were processed. The behavior is unspecified if
+.BR m4wrap
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBmaketemp\fR" 10
+The defining text shall be the first argument, with any trailing
+.BR 'X' 
+characters replaced with the current process ID as a string.
+The behavior is unspecified if
+.BR maketemp
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBmkstemp\fR" 10
+The first argument shall be taken as a template for creating an
+empty file, with trailing
+.BR 'X' 
+characters replaced with characters from the portable filename
+character set. The behavior is unspecified if the first argument
+does not end in at least six
+.BR 'X' 
+characters. If a temporary file is successfully created, then the
+defining text of the macro shall be the name of the new file.
+The user ID of the file shall be set to the effective user ID
+of the process. The group ID of the file shall be set to the group ID
+of the file's parent directory or to the effective group ID of the
+process. The file access permission bits are set such that
+only the owner can both read and write the file, regardless of
+the current
+.IR umask
+of the process. If a file could not be created, the defining text
+of the macro shall be the empty string. The behavior is unspecified if
+.BR mkstemp
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBpopdef\fR" 10
+The
+.BR popdef
+macro shall delete the current definition of its arguments, replacing
+that definition with the previous one. If there is no previous
+definition, the macro is undefined. The behavior is unspecified if
+.BR popdef
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBpushdef\fR" 10
+The
+.BR pushdef
+macro shall be equivalent to the
+.BR define
+macro with the exception that it shall preserve any current definition
+for future retrieval using the
+.BR popdef
+macro. The behavior is unspecified if
+.BR pushdef
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBshift\fR" 10
+The defining text for the
+.BR shift
+macro shall be a comma-separated list of its arguments except the first
+one. Each argument shall be quoted using the current quoting strings.
+The behavior is unspecified if
+.BR shift
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBsinclude\fR" 10
+The
+.BR sinclude
+macro shall be equivalent to the
+.BR include
+macro, except that it shall not be an error if the file is inaccessible.
+The behavior is unspecified if
+.BR sinclude
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBsubstr\fR" 10
+The defining text for the
+.BR substr
+macro shall be the substring of the first argument beginning at the
+zero-offset character position specified by the second argument. The
+third argument, if specified, shall be the number of characters to
+select; if not specified, the characters from the starting point to the
+end of the first argument shall become the defining text. It shall not
+be an error to specify a starting point beyond the end of the first
+argument and the defining text shall be null. It shall be an error to
+specify an argument containing any non-numeric characters.
+The behavior is unspecified if
+.BR substr
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBsyscmd\fR" 10
+The
+.BR syscmd
+macro shall interpret its first argument as a shell command line. The
+defining text shall be the string result of that command. The string
+result shall not be rescanned for macros while setting the defining
+text. No output redirection shall be performed by the
+.IR m4
+utility. The exit status value from the command can be retrieved using
+the
+.BR sysval
+macro. The behavior is unspecified if
+.BR syscmd
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBsysval\fR" 10
+The defining text of the
+.BR sysval
+macro shall be the exit value of the utility last invoked by the
+.BR syscmd
+macro (as a string).
+.IP "\fBtraceon\fR" 10
+The
+.BR traceon
+macro shall enable tracing for the macros specified as arguments, or,
+if no arguments are specified, for all macros. The trace output shall
+be written to standard error in an unspecified format.
+.IP "\fBtraceoff\fR" 10
+The
+.BR traceoff
+macro shall disable tracing for the macros specified as arguments, or,
+if no arguments are specified, for all macros.
+.IP "\fBtranslit\fR" 10
+The defining text of the
+.BR translit
+macro shall be the first argument with every character that occurs in
+the second argument replaced with the corresponding character from the
+third argument. If no replacement character is specified for some
+source character because the second argument is longer than the third
+argument, that character shall be deleted from the first argument in
+.BR translit 's
+defining text. The behavior is unspecified if the
+.BR '\(mi' 
+character appears within the second or third argument anywhere besides
+the first or last character. The behavior is unspecified if the same
+character appears more than once in the second argument. The behavior
+is unspecified if
+.BR translit
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBundefine\fR" 10
+The
+.BR undefine
+macro shall delete all definitions (including those preserved using the
+.BR pushdef
+macro) of the macros named by its arguments. The behavior is unspecified if
+.BR undefine
+is not immediately followed by a
+<left-parenthesis>.
+.IP "\fBundivert\fR" 10
+The
+.BR undivert
+macro shall cause immediate output of any text in temporary buffers
+named as arguments, or all temporary buffers if no arguments are
+specified. Buffers can be undiverted into other temporary buffers.
+Undiverting shall discard the contents of the temporary buffer. The
+behavior is unspecified if an argument contains any non-numeric
+characters.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred
+.P
+If the
+.BR m4exit
+macro is used, the exit value can be specified by the input file.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.BR defn
+macro is useful for renaming macros, especially built-ins.
+.P
+Since
+.BR eval
+defers to the ISO\ C standard, some operations have undefined behavior. In some
+implementations, division or remainder by zero cause a fatal signal,
+even if the division occurs on the short-circuited branch of
+.BR \(dq&&\(dq 
+or
+.BR \(dq||\(dq .
+Any operation that overflows in signed arithmetic produces undefined
+behavior. Likewise, using the
+.BR shift
+operators with a shift amount that is not positive and smaller
+than the precision is undefined, as is shifting a negative number to
+the right. Historically, not all implementations obeyed C-language
+precedence rules:
+.BR '~' 
+and
+.BR '!' 
+were lower than
+.BR '==' ;
+.BR '==' 
+and
+.BR '!=' 
+were not lower than
+.BR '<' ;
+and
+.BR '|' 
+was not lower than
+.BR '^' ;
+the liberal use of
+.BR \(dq()\(dq 
+can force the desired precedence even with these non-compliant
+implementations. Furthermore, some traditional implementations treated
+.BR '^' 
+as an exponentiation operator, although most implementations now use
+.BR \(dq**\(dq 
+as an extension for this purpose.
+.P
+When a macro has been multiply defined via the
+.BR pushdef
+macro, it is unspecified whether the
+.BR define
+macro will alter only the most recent definition (as though by
+.BR popdef
+and
+.BR pushdef ),
+or replace the entire stack of definitions with a single definition
+(as though by
+.BR undefine
+and
+.BR pushdef ).
+An application desiring particular behavior for the
+.BR define
+macro in this case can redefine it accordingly.
+.P
+Applications should use the
+.BR mkstemp
+macro instead of the obsolescent
+.BR maketemp
+macro for creating temporary files.
+.SH EXAMPLES
+If the file
+.BR m4src
+contains the lines:
+.sp
+.RS 4
+.nf
+\fB
+The value of `VER' is "VER".
+ifdef(`VER', ``VER'' is defined to be VER., VER is not defined.)
+ifelse(VER, 1, ``VER'' is `VER'.)
+ifelse(VER, 2, ``VER'' is `VER'., ``VER'' is not 2.)
+end
+.fi \fR
+.P
+.RE
+.P
+then the command
+.sp
+.RS 4
+.nf
+\fB
+m4 m4src
+.fi \fR
+.P
+.RE
+.P
+or the command:
+.sp
+.RS 4
+.nf
+\fB
+m4 \(miU VER m4src
+.fi \fR
+.P
+.RE
+.P
+produces the output:
+.sp
+.RS 4
+.nf
+\fB
+The value of VER is "VER".
+VER is not defined.
+.P
+VER is not 2.
+end
+.fi \fR
+.P
+.RE
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+m4 \(miD VER m4src
+.fi \fR
+.P
+.RE
+.P
+produces the output:
+.sp
+.RS 4
+.nf
+\fB
+The value of VER is "".
+VER is defined to be .
+.P
+VER is not 2.
+end
+.fi \fR
+.P
+.RE
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+m4 \(miD VER=1 m4src
+.fi \fR
+.P
+.RE
+.P
+produces the output:
+.sp
+.RS 4
+.nf
+\fB
+The value of VER is "1".
+VER is defined to be 1.
+VER is 1.
+VER is not 2.
+end
+.fi \fR
+.P
+.RE
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+m4 \(miD VER=2 m4src
+.fi \fR
+.P
+.RE
+.P
+produces the output:
+.sp
+.RS 4
+.nf
+\fB
+The value of VER is "2".
+VER is defined to be 2.
+.P
+VER is 2.
+end
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+Historic System V-based behavior treated
+.BR \(dq${\(dq 
+in a macro definition as two literal characters. However, this sequence
+is left unspecified so that implementations may offer extensions
+such as
+.BR \(dq${11}\(dq 
+meaning the eleventh positional parameter. Macros can still be defined with
+appropriate uses of nested quoting to result in a literal
+.BR \(dq${\(dq 
+in the output after rescanning removes the nested quotes.
+.P
+In the
+.BR translit
+built-in, historic System V-based behavior treated
+.BR '\(mi' 
+as a literal; GNU behavior treats it as a range. This version of
+the standard allows either behavior.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIc99\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

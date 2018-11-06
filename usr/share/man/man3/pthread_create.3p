@@ -1,0 +1,234 @@
+'\" et
+.TH PTHREAD_CREATE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_create
+\(em thread creation
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_create(pthread_t *restrict \fIthread\fP,
+    const pthread_attr_t *restrict \fIattr\fP,
+    void *(*\fIstart_routine\fP)(void*), void *restrict \fIarg\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_create\fR()
+function shall create a new thread, with attributes specified by
+.IR attr ,
+within a process. If
+.IR attr
+is NULL, the default attributes shall be used. If the attributes
+specified by
+.IR attr
+are modified later, the thread's attributes shall not be affected.
+Upon successful completion,
+\fIpthread_create\fR()
+shall store the ID of the created thread in the location referenced by
+.IR thread .
+.P
+The thread is created executing
+.IR start_routine
+with
+.IR arg
+as its sole argument. If the
+.IR start_routine
+returns, the effect shall be as if there was an implicit call to
+\fIpthread_exit\fR()
+using the return value of
+.IR start_routine
+as the exit status. Note that the thread in which
+\fImain\fR()
+was originally invoked differs from this. When it returns from
+\fImain\fR(),
+the effect shall be as if there was an implicit call to
+\fIexit\fR()
+using the return value of
+\fImain\fR()
+as the exit status.
+.P
+The signal state of the new thread shall be initialized as follows:
+.IP " *" 4
+The signal mask shall be inherited from the creating thread.
+.IP " *" 4
+The set of signals pending for the new thread shall be empty.
+.P
+The thread-local current locale
+and the alternate stack
+shall not be inherited.
+.P
+The floating-point environment shall be inherited from the creating
+thread.
+.P
+If
+\fIpthread_create\fR()
+fails, no new thread is created and the contents of the location
+referenced by
+.IR thread
+are undefined.
+.P
+If _POSIX_THREAD_CPUTIME is defined, the new thread shall have a
+CPU-time clock accessible, and the initial value of this clock shall
+be set to zero.
+.P
+The behavior is undefined if the value specified by the
+.IR attr
+argument to
+\fIpthread_create\fR()
+does not refer to an initialized thread attributes object.
+.SH "RETURN VALUE"
+If successful, the
+\fIpthread_create\fR()
+function shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_create\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The system lacked the necessary resources to create another thread, or
+the system-imposed limit on the total number of threads in a process
+{PTHREAD_THREADS_MAX}
+would be exceeded.
+.TP
+.BR EPERM
+The caller does not have appropriate privileges to set the required
+scheduling parameters or scheduling policy.
+.P
+The
+\fIpthread_create\fR()
+function shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+There is no requirement on the implementation that the ID of the
+created thread be available before the newly created thread starts
+executing. The calling thread can obtain the ID of the created thread
+through the return value of the
+\fIpthread_create\fR()
+function, and the newly created thread can obtain its ID by a call to
+\fIpthread_self\fR().
+.SH RATIONALE
+A suggested alternative to
+\fIpthread_create\fR()
+would be to define two separate operations: create and start. Some
+applications would find such behavior more natural. Ada, in
+particular, separates the ``creation'' of a task from its
+``activation''.
+.P
+Splitting the operation was rejected by the standard developers for
+many reasons:
+.IP " *" 4
+The number of calls required to start a thread would increase from one
+to two and thus place an additional burden on applications that do not
+require the additional synchronization. The second call, however,
+could be avoided by the additional complication of a start-up state
+attribute.
+.IP " *" 4
+An extra state would be introduced: ``created but not started''. This
+would require the standard to specify the behavior of the thread
+operations when the target has not yet started executing.
+.IP " *" 4
+For those applications that require such behavior, it is possible to
+simulate the two separate steps with the facilities that are currently
+provided. The
+\fIstart_routine\fR()
+can synchronize by waiting on a condition variable that is signaled by
+the start operation.
+.P
+An Ada implementor can choose to create the thread at either of two
+points in the Ada program: when the task object is created, or when
+the task is activated (generally at a ``begin''). If the first
+approach is adopted, the
+\fIstart_routine\fR()
+needs to wait on a condition variable to receive the order to begin
+``activation''. The second approach requires no such condition
+variable or extra synchronization. In either approach, a separate Ada
+task control block would need to be created when the task object is
+created to hold rendezvous queues, and so on.
+.P
+An extension of the preceding model would be to allow the state of the
+thread to be modified between the create and start. This would allow
+the thread attributes object to be eliminated. This has been rejected
+because:
+.IP " *" 4
+All state in the thread attributes object has to be able to be set for
+the thread. This would require the definition of functions to modify
+thread attributes. There would be no reduction in the number of
+function calls required to set up the thread. In fact, for an
+application that creates all threads using identical attributes, the
+number of function calls required to set up the threads would be
+dramatically increased. Use of a thread attributes object permits the
+application to make one set of attribute setting function calls.
+Otherwise, the set of attribute setting function calls needs to be made
+for each thread creation.
+.IP " *" 4
+Depending on the implementation architecture, functions to set thread
+state would require kernel calls, or for other implementation reasons
+would not be able to be implemented as macros, thereby increasing the
+cost of thread creation.
+.IP " *" 4
+The ability for applications to segregate threads by class would be
+lost.
+.P
+Another suggested alternative uses a model similar to that for process
+creation, such as ``thread fork''. The fork semantics would provide
+more flexibility and the ``create'' function can be implemented simply
+by doing a thread fork followed immediately by a call to the desired
+``start routine'' for the thread. This alternative has these
+problems:
+.IP " *" 4
+For many implementations, the entire stack of the calling thread would
+need to be duplicated, since in many architectures there is no way to
+determine the size of the calling frame.
+.IP " *" 4
+Efficiency is reduced since at least some part of the stack has to be
+copied, even though in most cases the thread never needs the copied
+context, since it merely calls the desired start routine.
+.P
+If an implementation detects that the value specified by the
+.IR attr
+argument to
+\fIpthread_create\fR()
+does not refer to an initialized thread attributes object, it is
+recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfork\fR\^(\|)",
+.IR "\fIpthread_exit\fR\^(\|)",
+.IR "\fIpthread_join\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.11" ", " "Memory Synchronization",
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

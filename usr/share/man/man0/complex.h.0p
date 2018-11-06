@@ -1,0 +1,254 @@
+'\" et
+.TH complex.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+complex.h
+\(em complex arithmetic
+.SH SYNOPSIS
+.LP
+.nf
+#include <complex.h>
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+.IR <complex.h> 
+header shall define the following macros:
+.IP complex 12
+Expands to
+.BR _Complex .
+.IP _Complex_I 12
+Expands to a constant expression of type
+.BR "const float _Complex" ,
+with the value of the imaginary unit (that is, a number
+.IR i
+such that \fIi\fR\s-3\u2\d\s+3=\(mi1).
+.IP imaginary 12
+Expands to
+.BR _Imaginary .
+.IP _Imaginary_I 12
+Expands to a constant expression of type
+.BR "const float _Imaginary"
+with the value of the imaginary unit.
+.IP I 12
+Expands to either _Imaginary_I or _Complex_I. If _Imaginary_I is not
+defined, I expands to _Complex_I.
+.P
+The macros imaginary and _Imaginary_I shall be defined if and only if
+the implementation supports imaginary types.
+.P
+An application may undefine and then, perhaps, redefine the complex,
+imaginary, and I macros.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+double               cabs(double complex);
+float                cabsf(float complex);
+long double          cabsl(long double complex);
+double complex       cacos(double complex);
+float complex        cacosf(float complex);
+double complex       cacosh(double complex);
+float complex        cacoshf(float complex);
+long double complex  cacoshl(long double complex);
+long double complex  cacosl(long double complex);
+double               carg(double complex);
+float                cargf(float complex);
+long double          cargl(long double complex);
+double complex       casin(double complex);
+float complex        casinf(float complex);
+double complex       casinh(double complex);
+float complex        casinhf(float complex);
+long double complex  casinhl(long double complex);
+long double complex  casinl(long double complex);
+double complex       catan(double complex);
+float complex        catanf(float complex);
+double complex       catanh(double complex);
+float complex        catanhf(float complex);
+long double complex  catanhl(long double complex);
+long double complex  catanl(long double complex);
+double complex       ccos(double complex);
+float complex        ccosf(float complex);
+double complex       ccosh(double complex);
+float complex        ccoshf(float complex);
+long double complex  ccoshl(long double complex);
+long double complex  ccosl(long double complex);
+double complex       cexp(double complex);
+float complex        cexpf(float complex);
+long double complex  cexpl(long double complex);
+double               cimag(double complex);
+float                cimagf(float complex);
+long double          cimagl(long double complex);
+double complex       clog(double complex);
+float complex        clogf(float complex);
+long double complex  clogl(long double complex);
+double complex       conj(double complex);
+float complex        conjf(float complex);
+long double complex  conjl(long double complex);
+double complex       cpow(double complex, double complex);
+float complex        cpowf(float complex, float complex);
+long double complex  cpowl(long double complex, long double complex);
+double complex       cproj(double complex);
+float complex        cprojf(float complex);
+long double complex  cprojl(long double complex);
+double               creal(double complex);
+float                crealf(float complex);
+long double          creall(long double complex);
+double complex       csin(double complex);
+float complex        csinf(float complex);
+double complex       csinh(double complex);
+float complex        csinhf(float complex);
+long double complex  csinhl(long double complex);
+long double complex  csinl(long double complex);
+double complex       csqrt(double complex);
+float complex        csqrtf(float complex);
+long double complex  csqrtl(long double complex);
+double complex       ctan(double complex);
+float complex        ctanf(float complex);
+double complex       ctanh(double complex);
+float complex        ctanhf(float complex);
+long double complex  ctanhl(long double complex);
+long double complex  ctanl(long double complex);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Values are interpreted as radians, not degrees.
+.SH RATIONALE
+The choice of
+.IR I
+instead of
+.IR i
+for the imaginary unit concedes to the widespread use of the identifier
+.IR i
+for other purposes. The application can use a different identifier, say
+.IR j ,
+for the imaginary unit by following the inclusion of the
+.IR <complex.h> 
+header with:
+.sp
+.RS 4
+.nf
+\fB
+#undef I
+#define j _Imaginary_I
+.fi \fR
+.P
+.RE
+.P
+An
+.IR I
+suffix to designate imaginary constants is not required, as
+multiplication by
+.IR I
+provides a sufficiently convenient and more generally useful notation
+for imaginary terms. The corresponding real type for the imaginary unit
+is
+.BR float ,
+so that use of
+.IR I
+for algorithmic or notational convenience will not result in
+widening types.
+.P
+On systems with imaginary types, the application has the ability to
+control whether use of the macro I introduces an imaginary type, by
+explicitly defining I to be _Imaginary_I or _Complex_I. Disallowing
+imaginary types is useful for some applications intended to run on
+implementations without support for such types.
+.P
+The macro _Imaginary_I provides a test for whether imaginary types are
+supported.
+.P
+The
+\fIcis\fR()
+function (\fIcos\fR(\fIx\fR) + \fII\fR*\fIsin\fR(\fIx\fR)) was
+considered but rejected because its implementation is easy and
+straightforward, even though some implementations could compute sine
+and cosine more efficiently in tandem.
+.SH "FUTURE DIRECTIONS"
+The following function names and the same names suffixed with
+.IR f
+or
+.IR l
+are reserved for future use, and may be added to the declarations
+in the
+.IR <complex.h> 
+header.
+.sp
+.RS
+.TS
+tab(!);
+l l l.
+T{
+.nf
+\fIcerf\fR()
+\fIcerfc\fR()
+\fIcexp2\fR()
+T}!T{
+.nf
+\fIcexpm1\fR()
+\fIclog10\fR()
+\fIclog1p\fR()
+T}!T{
+.nf
+\fIclog2\fR()
+\fIclgamma\fR()
+\fIctgamma\fR()
+.fi
+T}
+.TE
+.RE
+.SH "SEE ALSO"
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIcabs\fR\^(\|)",
+.IR "\fIcacos\fR\^(\|)",
+.IR "\fIcacosh\fR\^(\|)",
+.IR "\fIcarg\fR\^(\|)",
+.IR "\fIcasin\fR\^(\|)",
+.IR "\fIcasinh\fR\^(\|)",
+.IR "\fIcatan\fR\^(\|)",
+.IR "\fIcatanh\fR\^(\|)",
+.IR "\fIccos\fR\^(\|)",
+.IR "\fIccosh\fR\^(\|)",
+.IR "\fIcexp\fR\^(\|)",
+.IR "\fIcimag\fR\^(\|)",
+.IR "\fIclog\fR\^(\|)",
+.IR "\fIconj\fR\^(\|)",
+.IR "\fIcpow\fR\^(\|)",
+.IR "\fIcproj\fR\^(\|)",
+.IR "\fIcreal\fR\^(\|)",
+.IR "\fIcsin\fR\^(\|)",
+.IR "\fIcsinh\fR\^(\|)",
+.IR "\fIcsqrt\fR\^(\|)",
+.IR "\fIctan\fR\^(\|)",
+.IR "\fIctanh\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

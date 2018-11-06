@@ -1,0 +1,6 @@
+#!/bin/bash
+
+/opt/edge/run-mgr.sh &
+/opt/edge/run-webui.sh &
+
+exit 0

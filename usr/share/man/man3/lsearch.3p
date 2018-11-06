@@ -1,0 +1,154 @@
+'\" et
+.TH LSEARCH "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+lsearch,
+lfind
+\(em linear search and update
+.SH SYNOPSIS
+.LP
+.nf
+#include <search.h>
+.P
+void *lsearch(const void *\fIkey\fP, void *\fIbase\fP, size_t *\fInelp\fP, size_t \fIwidth\fP,
+    int (*\fIcompar\fP)(const void *, const void *));
+void *lfind(const void *\fIkey\fP, const void *\fIbase\fP, size_t *\fInelp\fP,
+    size_t width, int (*\fIcompar\fP)(const void *, const void *));
+.fi
+.SH DESCRIPTION
+The
+\fIlsearch\fR()
+function shall linearly search the table and return a pointer into the
+table for the matching entry. If the entry does not occur, it shall be
+added at the end of the table. The
+.IR key
+argument points to the entry to be sought in the table. The
+.IR base
+argument points to the first element in the table. The
+.IR width
+argument is the size of an element in bytes. The
+.IR nelp
+argument points to an integer containing the current number of elements
+in the table. The integer to which
+.IR nelp
+points shall be incremented if the entry is added to the table. The
+.IR compar
+argument points to a comparison function which the application shall
+supply (for example,
+\fIstrcmp\fR()).
+It is called with two arguments that point to the elements being
+compared. The application shall ensure that the function returns 0
+if the elements are equal, and non-zero otherwise.
+.P
+The
+\fIlfind\fR()
+function shall be equivalent to
+\fIlsearch\fR(),
+except that if the entry is not found, it is not added to the table.
+Instead, a null pointer is returned.
+.SH "RETURN VALUE"
+If the searched for entry is found, both
+\fIlsearch\fR()
+and
+\fIlfind\fR()
+shall return a pointer to it. Otherwise,
+\fIlfind\fR()
+shall return a null pointer and
+\fIlsearch\fR()
+shall return a pointer to the newly added element.
+.P
+Both functions shall return a null pointer in case of error.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+.SS "Storing Strings in a Table"
+.P
+This fragment reads in less than or equal to TABSIZE
+strings of length less than or equal to ELSIZE and stores them in a
+table, eliminating duplicates.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <string.h>
+#include <search.h>
+.P
+#define TABSIZE 50
+#define ELSIZE 120
+.P
+\&...
+    char line[ELSIZE], tab[TABSIZE][ELSIZE];
+    size_t nel = 0;
+    ...
+    while (fgets(line, ELSIZE, stdin) != NULL && nel < TABSIZE)
+        (void) lsearch(line, tab, &nel,
+            ELSIZE, (int (*)(const void *, const void *)) strcmp);
+    ...
+.fi \fR
+.P
+.RE
+.SS "Finding a Matching Entry"
+.P
+The following example finds any line that reads
+.BR \(dqThis is a test.\(dq .
+.sp
+.RS 4
+.nf
+\fB
+#include <search.h>
+#include <string.h>
+\&...
+char line[ELSIZE], tab[TABSIZE][ELSIZE];
+size_t nel = 0;
+char *findline;
+void *entry;
+.P
+findline = "This is a test.\en";
+.P
+entry = lfind(findline, tab, &nel, ELSIZE, (
+    int (*)(const void *, const void *)) strcmp);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The comparison function need not compare every byte, so arbitrary
+data may be contained in the elements in addition to the values
+being compared.
+.P
+Undefined results can occur if there is not enough room in the table to
+add a new item.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIhcreate\fR\^(\|)",
+.IR "\fItdelete\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<search.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

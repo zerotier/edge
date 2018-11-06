@@ -1,0 +1,7 @@
+# /etc/inittab
+::sysinit:/sbin/openrc sysinit
+::sysinit:/sbin/openrc boot
+::wait:/sbin/openrc default
+::ctrlaltdel:/sbin/reboot
+::shutdown:/sbin/openrc shutdown
+ttyMV0::respawn:/sbin/getty -L 115200 /dev/ttyMV0 xterm-256color

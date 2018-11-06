@@ -1,0 +1,542 @@
+'\" et
+.TH SCCS "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sccs
+\(em front end for the SCCS subsystem (\fBDEVELOPMENT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+sccs \fB[\fR\(mir\fB] [\fR\(mid \fIpath\fB] [\fR\(mip \fIpath\fB] \fIcommand \fB[\fIoptions\fR...\fB] [\fIoperands\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR sccs
+utility is a front end to the SCCS programs. It also includes the
+capability to run set-user-id to another user to provide additional
+protection.
+.P
+The
+.IR sccs
+utility shall invoke the specified
+.IR command
+with the specified
+.IR options
+and
+.IR operands .
+By default, each of the
+.IR operands
+shall be modified by prefixing it with the string
+.BR \(dqSCCS/s.\(dq .
+.P
+The
+.IR command
+can be the name of one of the SCCS utilities in this volume of POSIX.1\(hy2008 (\c
+.IR admin ,
+.IR delta ,
+.IR get ,
+.IR prs ,
+.IR rmdel ,
+.IR sact ,
+.IR unget ,
+.IR val ,
+or
+.IR what )
+or one of the pseudo-utilities listed in the EXTENDED DESCRIPTION
+section.
+.SH OPTIONS
+The
+.IR sccs
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that
+.IR options
+operands are actually options to be passed to the utility named by
+.IR command .
+When the portion of the command:
+.sp
+.RS 4
+.nf
+\fB
+\fIcommand \fB[\fIoptions\fR ... \fB] [\fIoperands\fR ... \fB]\fR
+.fi \fR
+.P
+.RE
+.P
+is considered, all of the pseudo-utilities used as
+.IR command
+shall support the Utility Syntax Guidelines. Any of the other SCCS
+utilities that can be invoked in this manner support the Guidelines to
+the extent indicated by their individual OPTIONS sections.
+.P
+The following options shall be supported preceding the
+.IR command
+operand:
+.IP "\fB\(mid\ \fIpath\fR" 10
+A pathname of a directory to be used as a root directory for the SCCS
+files. The default shall be the current directory. The
+.BR \(mid
+option shall take precedence over the
+.IR PROJECTDIR
+variable. See
+.BR \(mip .
+.IP "\fB\(mip\ \fIpath\fR" 10
+A pathname of a directory in which the SCCS files are located. The
+default shall be the
+.BR SCCS
+directory.
+.RS 10 
+.P
+The
+.BR \(mip
+option differs from the
+.BR \(mid
+option in that the
+.BR \(mid
+option-argument shall be prefixed to the entire pathname and the
+.BR \(mip
+option-argument shall be inserted before the final component of the
+pathname. For example:
+.sp
+.RS 4
+.nf
+\fB
+sccs \(mid /x \(mip y get a/b
+.fi \fR
+.P
+.RE
+.P
+converts to:
+.sp
+.RS 4
+.nf
+\fB
+get /x/a/y/s.b
+.fi \fR
+.P
+.RE
+.P
+This allows the creation of aliases such as:
+.sp
+.RS 4
+.nf
+\fB
+alias syssccs="sccs \(mid /usr/src"
+.fi \fR
+.P
+.RE
+.P
+which is used as:
+.sp
+.RS 4
+.nf
+\fB
+syssccs get cmd/who.c
+.fi \fR
+.P
+.RE
+.RE
+.IP "\fB\(mir\fP" 10
+Invoke
+.IR command
+with the real user ID of the process, not any effective user ID that
+the
+.IR sccs
+utility is set to. Certain commands (\c
+.IR admin ,
+.BR check ,
+.BR clean ,
+.BR diffs ,
+.BR info ,
+.IR rmdel ,
+and
+.BR tell )
+cannot be run set-user-ID by all users, since this would allow anyone
+to change the authorizations. These commands are always run as the
+real user.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIcommand\fR" 10
+An SCCS utility name or the name of one of the pseudo-utilities listed
+in the EXTENDED DESCRIPTION section.
+.IP "\fIoptions\fR" 10
+An option or option-argument to be passed to
+.IR command .
+.IP "\fIoperands\fR" 10
+An operand to be passed to
+.IR command .
+.SH STDIN
+See the utility description for the specified
+.IR command .
+.SH "INPUT FILES"
+See the utility description for the specified
+.IR command .
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR sccs :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fIPROJECTDIR\fP" 10
+.br
+Provide a default value for the
+.BR \(mid
+.IR path
+option. If the value of
+.IR PROJECTDIR
+begins with a
+<slash>,
+it shall be considered an absolute pathname; otherwise, the value of
+.IR PROJECTDIR
+is treated as a user name and that user's initial working directory
+shall be examined for a subdirectory
+.BR src
+or
+.BR source .
+If such a directory is found, it shall be used. Otherwise, the value
+shall be used as a relative pathname.
+.P
+Additional environment variable effects may be found in the utility
+description for the specified
+.IR command .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+See the utility description for the specified
+.IR command .
+.SH STDERR
+See the utility description for the specified
+.IR command .
+.SH "OUTPUT FILES"
+See the utility description for the specified
+.IR command .
+.SH "EXTENDED DESCRIPTION"
+The following pseudo-utilities shall be supported as
+.IR command
+operands. All options referred to in the following list are values
+given in the
+.IR options
+operands following
+.IR command .
+.IP "\fBcheck\fR" 8
+Equivalent to
+.BR info ,
+except that nothing shall be printed if nothing is being edited, and a
+non-zero exit status shall be returned if anything is being edited. The
+intent is to have this included in an ``install'' entry in a makefile
+to ensure that everything is included into the SCCS file before a
+version is installed.
+.IP "\fBclean\fR" 8
+Remove everything from the current directory that can be recreated from
+SCCS files, but do not remove any files being edited. If the
+.BR \(mib
+option is given, branches shall be ignored in the determination of
+whether they are being edited; this is dangerous if branches are kept
+in the same directory.
+.IP "\fBcreate\fR" 8
+Create an SCCS file, taking the initial contents from the file of the
+same name. Any options to
+.IR admin
+are accepted. If the creation is successful, the original files shall
+be renamed by prefixing the basenames with a comma. These renamed files
+should be removed after it has been verified that the SCCS files have
+been created successfully.
+.IP "\fBdelget\fR" 8
+Perform a
+.IR delta
+on the named files and then
+.IR get
+new versions. The new versions shall have ID keywords expanded and
+shall not be editable. Any
+.BR \(mim ,
+.BR \(mip ,
+.BR \(mir ,
+.BR \(mis ,
+and
+.BR \(miy
+options shall be passed to
+.IR delta ,
+and any
+.BR \(mib ,
+.BR \(mic ,
+.BR \(mie ,
+.BR \(mii ,
+.BR \(mik ,
+.BR \(mil ,
+.BR \(mis ,
+and
+.BR \(mix
+options shall be passed to
+.IR get .
+.IP "\fBdeledit\fR" 8
+Equivalent to
+.BR delget ,
+except that the
+.IR get
+phase shall include the
+.BR \(mie
+option. This option is useful for making a checkpoint of the current
+editing phase. The same options shall be passed to
+.IR delta
+as described above, and all the options listed for
+.IR get
+above except
+.BR \(mie
+shall be passed to
+.BR edit .
+.IP "\fBdiffs\fR" 8
+Write a difference listing between the current version of the files
+checked out for editing and the versions in SCCS format. Any
+.BR \(mir ,
+.BR \(mic ,
+.BR \(mii ,
+.BR \(mix ,
+and
+.BR \(mit
+options shall be passed to
+.IR get ;
+any
+.BR \(mil ,
+.BR \(mis ,
+.BR \(mie ,
+.BR \(mif ,
+.BR \(mih ,
+and
+.BR \(mib
+options shall be passed to
+.IR diff .
+A
+.BR \(miC
+option shall be passed to
+.IR diff
+as
+.BR \(mic .
+.IP "\fBedit\fR" 8
+Equivalent to
+.IR get
+.BR \(mie .
+.IP "\fBfix\fR" 8
+Remove the named delta, but leave a copy of the delta with the changes
+that were in it. It is useful for fixing small compiler bugs, and so
+on. The application shall ensure that it is followed by a
+.BR \(mir
+.IR SID
+option. Since
+.BR fix
+does not leave audit trails, it should be used carefully.
+.IP "\fBinfo\fR" 8
+Write a listing of all files being edited. If the
+.BR \(mib
+option is given, branches (that is, SIDs with two or fewer components)
+shall be ignored. If a
+.BR \(miu
+.IR user
+option is given, then only files being edited by the named user shall
+be listed. A
+.BR \(miU
+option shall be equivalent to
+.BR \(miu <\c
+.IR "current\ user" >.
+.IP "\fBprint\fR" 8
+Write out verbose information about the named files, equivalent to
+.IR sccs
+.IR prs .
+.IP "\fBtell\fR" 8
+Write a
+<newline>-separated
+list of the files being edited to standard output. Takes the
+.BR \(mib ,
+.BR \(miu ,
+and
+.BR \(miU
+options like
+.BR info
+and
+.BR check .
+.IP "\fBunedit\fR" 8
+This is the opposite of an
+.BR edit
+or a
+.IR get
+.BR \(mie .
+It should be used with caution, since any changes made since the
+.IR get
+are lost.
+.br
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Many of the SCCS utilities take directory names as operands as well as
+specific filenames. The pseudo-utilities supported by
+.IR sccs
+are not described as having this capability, but are not prohibited
+from doing so.
+.SH EXAMPLES
+.IP " 1." 4
+To get a file for editing, edit it and produce a new delta:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+sccs get \(mie file.c
+ex file.c
+sccs delta file.c
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+To get a file from another directory:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+sccs \(mip /usr/src/sccs/s. get cc.c
+.fi \fR
+.P
+.RE
+.P
+or:
+.sp
+.RS 4
+.nf
+\fB
+sccs get /usr/src/sccs/s.cc.c
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+To make a delta of a large number of files in the current directory:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+sccs delta *.c
+.fi \fR
+.P
+.RE
+.RE
+.IP " 4." 4
+To get a list of files being edited that are not on branches:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+sccs info \(mib
+.fi \fR
+.P
+.RE
+.RE
+.IP " 5." 4
+To delta everything being edited by the current user:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+sccs delta $(sccs tell \(miU)
+.fi \fR
+.P
+.RE
+.RE
+.IP " 6." 4
+In a makefile, to get source files from an SCCS file if it does not
+already exist:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+SRCS = <\fIlist of source files\fP>
+$(SRCS):
+    sccs get $(REL) $@
+.fi \fR
+.P
+.RE
+.RE
+.SH RATIONALE
+.IR sccs
+and its associated utilities are part of the XSI Development
+Utilities option within the XSI option.
+.P
+SCCS is an abbreviation for Source Code Control System. It is a
+maintenance and enhancement tracking tool. When a file is put under
+SCCS, the source code control system maintains the file and, when
+changes are made, identifies and stores them in the file with the
+original source code and/or documentation. As other changes are made,
+they too are identified and retained in the file.
+.P
+Retrieval of the original and any set of changes is possible. Any
+version of the file as it develops can be reconstructed for inspection
+or additional modification. History data can be stored with each
+version, documenting why the changes were made, who made them, and when
+they were made.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIadmin\fR\^",
+.IR "\fIdelta\fR\^",
+.IR "\fIget\fR\^",
+.IR "\fImake\fR\^",
+.IR "\fIprs\fR\^",
+.IR "\fIrmdel\fR\^",
+.IR "\fIsact\fR\^",
+.IR "\fIunget\fR\^",
+.IR "\fIval\fR\^",
+.IR "\fIwhat\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

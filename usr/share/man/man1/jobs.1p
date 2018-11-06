@@ -1,0 +1,343 @@
+'\" et
+.TH JOBS "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+jobs
+\(em display status of jobs in the current session
+.SH SYNOPSIS
+.LP
+.nf
+jobs \fB[\fR\(mil|\(mip\fB] [\fIjob_id\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR jobs
+utility shall display the status of jobs that were started in the
+current shell environment; see
+.IR "Section 2.12" ", " "Shell Execution Environment".
+.P
+When
+.IR jobs
+reports the termination status of a job, the shell shall remove its
+process ID from the list of those ``known in the current shell
+execution environment''; see
+.IR "Section 2.9.3.1" ", " "Examples".
+.SH OPTIONS
+The
+.IR jobs
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mil\fP" 10
+(The letter ell.) Provide more information about each job listed. This
+information shall include the job number, current job, process group
+ID, state, and the command that formed the job.
+.IP "\fB\(mip\fP" 10
+Display only the process IDs for the process group leaders of the
+selected jobs.
+.P
+By default, the
+.IR jobs
+utility shall display the status of all stopped jobs, running
+background jobs and all jobs whose status has changed and have not been
+reported by the shell.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIjob_id\fR" 10
+Specifies the jobs for which the status is to be displayed. If no
+.IR job_id
+is given, the status information for all jobs shall be displayed. The
+format of
+.IR job_id
+is described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.204" ", " "Job Control Job ID".
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR jobs :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If the
+.BR \(mip
+option is specified, the output shall consist of one line for each
+process ID:
+.sp
+.RS 4
+.nf
+\fB
+"%d\en", <\fIprocess ID\fR>
+.fi \fR
+.P
+.RE
+.P
+Otherwise, if the
+.BR \(mil
+option is not specified, the output shall be a series of lines of the
+form:
+.sp
+.RS 4
+.nf
+\fB
+"[%d] %c %s %s\en", <\fIjob-number\fR>, <\fIcurrent\fR>, <\fIstate\fR>, <\fIcommand\fR>
+.fi \fR
+.P
+.RE
+.P
+where the fields shall be as follows:
+.IP "<\fIcurrent\fP>" 10
+The character
+.BR '\(pl' 
+identifies the job that would be used as a default for the
+.IR fg
+or
+.IR bg
+utilities; this job can also be specified using the
+.IR job_id
+%+ or
+.BR \(dq%%\(dq .
+The character
+.BR '\(mi' 
+identifies the job that would become the default if the current default
+job were to exit; this job can also be specified using the
+.IR job_id
+%\(mi. For other jobs, this field is a
+<space>.
+At most one job can be identified with
+.BR '\(pl' 
+and at most one job can be identified with
+.BR '\(mi' .
+If there is any suspended job, then the current job shall be a
+suspended job. If there are at least two suspended jobs, then the
+previous job also shall be a suspended job.
+.IP "<\fIjob-number\fP>" 10
+A number that can be used to identify the process group to the
+.IR wait ,
+.IR fg ,
+.IR bg ,
+and
+.IR kill
+utilities. Using these utilities, the job can be identified by
+prefixing the job number with
+.BR '%' .
+.IP "<\fIstate\fP>" 10
+One of the following strings (in the POSIX locale):
+.RS 10 
+.IP "\fBRunning\fR" 10
+Indicates that the job has not been suspended by a signal and has not
+exited.
+.IP "\fBDone\fR" 10
+Indicates that the job completed and returned exit status zero.
+.IP "\fBDone\fR(\fIcode\fR)" 10
+Indicates that the job completed normally and that it exited with the
+specified non-zero exit status,
+.IR code ,
+expressed as a decimal number.
+.IP "\fBStopped\fR" 10
+Indicates that the job was suspended by the SIGTSTP signal.
+.IP "\fBStopped\fR\ (\fBSIGTSTP\fR)" 10
+.br
+Indicates that the job was suspended by the SIGTSTP signal.
+.IP "\fBStopped\fR\ (\fBSIGSTOP\fR)" 10
+.br
+Indicates that the job was suspended by the SIGSTOP signal.
+.IP "\fBStopped\fR\ (\fBSIGTTIN\fR)" 10
+.br
+Indicates that the job was suspended by the SIGTTIN signal.
+.IP "\fBStopped\fR\ (\fBSIGTTOU\fR)" 10
+.br
+Indicates that the job was suspended by the SIGTTOU signal.
+.P
+The implementation may substitute the string
+.BR Suspended
+in place of
+.BR Stopped .
+If the job was terminated by a signal, the format of <\fIstate\fP> is
+unspecified, but it shall be visibly distinct from all of the other
+<\fIstate\fP> formats shown here and shall indicate the name or
+description of the signal causing the termination.
+.RE
+.IP "<\fIcommand\fR>" 10
+The associated command that was given to the shell.
+.P
+If the
+.BR \(mil
+option is specified, a field containing the process group ID shall be
+inserted before the <\fIstate\fP> field. Also, more processes in a
+process group may be output on separate lines, using only the process
+ID and <\fIcommand\fP> fields.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.BR \(mip
+option is the only portable way to find out the process group of a job
+because different implementations have different strategies for
+defining the process group of the job. Usage such as $(\c
+.IR jobs
+.BR \(mip )
+provides a way of referring to the process group of the job in an
+implementation-independent way.
+.P
+The
+.IR jobs
+utility does not work as expected when it is operating in its own
+utility execution environment because that environment has no
+applicable jobs to manipulate. See the APPLICATION USAGE section for
+.IR "\fIbg\fR\^".
+For this reason,
+.IR jobs
+is generally implemented as a shell regular built-in.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+Both
+.BR \(dq%%\(dq 
+and
+.BR \(dq%+\(dq 
+are used to refer to the current job. Both forms are of equal
+validity\(emthe
+.BR \(dq%%\(dq 
+mirroring
+.BR \(dq$$\(dq 
+and
+.BR \(dq%+\(dq 
+mirroring the output of
+.IR jobs .
+Both forms reflect historical practice of the KornShell and the C shell
+with job control.
+.P
+The job control features provided by
+.IR bg ,
+.IR fg ,
+and
+.IR jobs
+are based on the KornShell. The standard developers examined the
+characteristics of the C shell versions of these utilities and found
+that differences exist. Despite widespread use of the C shell, the
+KornShell versions were selected for this volume of POSIX.1\(hy2008 to maintain a degree of
+uniformity with the rest of the KornShell features selected (such as
+the very popular command line editing features).
+.P
+The
+.IR jobs
+utility is not dependent on the job control option, as are the
+seemingly related
+.IR bg
+and
+.IR fg
+utilities because
+.IR jobs
+is useful for examining background jobs, regardless of the condition of
+job control. When the user has invoked a
+.IR set
+.BR +m
+command and job control has been turned off,
+.IR jobs
+can still be used to examine the background jobs associated with that
+current session. Similarly,
+.IR kill
+can then be used to kill background jobs with
+.IR kill
+%<\fIbackground job number\fP>.
+.P
+The output for terminated jobs is left unspecified to accommodate
+various historical systems. The following formats have been witnessed:
+.IP " 1." 4
+.BR Killed (\c
+.IR "signal name" )
+.IP " 2." 4
+.IR "signal name"
+.IP " 3." 4
+.IR "signal name" (\c
+.BR coredump )
+.IP " 4." 4
+.IR "signal description" \(mi
+.BR "core dumped"
+.P
+Most users should be able to understand these formats, although it
+means that applications have trouble parsing them.
+.P
+The calculation of job IDs was not described since this would suggest
+an implementation, which may impose unnecessary restrictions.
+.P
+In an early proposal, a
+.BR \(min
+option was included to ``Display the status of jobs that have changed,
+exited, or stopped since the last status report''. It was removed
+because the shell always writes any changed status of jobs before each
+prompt.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.12" ", " "Shell Execution Environment",
+.IR "\fIbg\fR\^",
+.IR "\fIfg\fR\^",
+.IR "\fIkill\fR\^",
+.IR "\fIwait\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.204" ", " "Job Control Job ID",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

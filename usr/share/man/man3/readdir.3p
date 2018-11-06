@@ -1,0 +1,373 @@
+'\" et
+.TH READDIR "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+readdir,
+readdir_r
+\(em read a directory
+.SH SYNOPSIS
+.LP
+.nf
+#include <dirent.h>
+.P
+struct dirent *readdir(DIR *\fIdirp\fP);
+int readdir_r(DIR *restrict \fIdirp\fP, struct dirent *restrict \fIentry\fP,
+    struct dirent **restrict \fIresult\fP);
+.fi
+.SH DESCRIPTION
+The type
+.BR DIR ,
+which is defined in the
+.IR <dirent.h> 
+header, represents a
+.IR "directory stream" ,
+which is an ordered sequence of all the directory entries in a
+particular directory. Directory entries represent files; files may be
+removed from a directory or added to a directory asynchronously to the
+operation of
+\fIreaddir\fR().
+.P
+The
+\fIreaddir\fR()
+function shall return a pointer to a structure representing the
+directory entry at the current position in the directory stream
+specified by the argument
+.IR dirp ,
+and position the directory stream at the next entry. It shall return a
+null pointer upon reaching the end of the directory stream. The
+structure
+.BR dirent
+defined in the
+.IR <dirent.h> 
+header describes a directory entry. The value of the structure's
+.IR d_ino
+member shall be set to the file serial number of the file named by the
+.IR d_name
+member. If the
+.IR d_name
+member names a symbolic link, the value of the
+.IR d_ino
+member shall be set to the file serial number of the symbolic link itself.
+.P
+The
+\fIreaddir\fR()
+function shall not return directory entries containing empty names. If
+entries for dot or dot-dot exist, one entry shall be returned for dot
+and one entry shall be returned for dot-dot; otherwise, they shall not
+be returned.
+.P
+The application shall not modify the structure to which the return
+value of
+\fIreaddir\fR()
+points, nor any storage areas pointed to by pointers within the
+structure. The returned pointer, and pointers within the structure,
+might be invalidated or the structure or the storage areas might be
+overwritten by a subsequent call to
+\fIreaddir\fR()
+on the same directory stream. They shall not be affected by a call to
+\fIreaddir\fR()
+on a different directory stream.
+.P
+If a file is removed from or added to the directory after the most
+recent call to
+\fIopendir\fR()
+or
+\fIrewinddir\fR(),
+whether a subsequent call to
+\fIreaddir\fR()
+returns an entry for that file is unspecified.
+.P
+The
+\fIreaddir\fR()
+function may buffer several directory entries per actual read
+operation;
+\fIreaddir\fR()
+shall mark for update the last data access timestamp
+of the directory each time the directory is actually read.
+.P
+After a call to
+\fIfork\fR(),
+either the parent or child (but not both) may continue processing the
+directory stream using
+\fIreaddir\fR(),
+\fIrewinddir\fR(),
+or
+\fIseekdir\fR().
+If both the parent and child processes use these functions, the result
+is undefined.
+.P
+The
+\fIreaddir\fR()
+function need not be thread-safe.
+.P
+Applications wishing to check for error situations should set
+.IR errno
+to 0 before calling
+\fIreaddir\fR().
+If
+.IR errno
+is set to non-zero on return, an error occurred.
+.P
+The
+\fIreaddir_r\fR()
+function shall initialize the
+.BR dirent
+structure referenced by
+.IR entry
+to represent the directory entry at the current position in the
+directory stream referred to by
+.IR dirp ,
+store a pointer to this structure at the location referenced by
+.IR result ,
+and position the directory stream at the next entry.
+.P
+The storage pointed to by
+.IR entry
+shall be large enough for a
+.BR dirent
+with an array of
+.BR char
+.IR d_name
+members containing at least
+{NAME_MAX}+1
+elements.
+.P
+Upon successful return, the pointer returned at *\fIresult\fP shall have
+the same value as the argument
+.IR entry .
+Upon reaching the end of the directory stream, this pointer shall
+have the value NULL.
+.P
+The
+\fIreaddir_r\fR()
+function shall not return directory entries containing empty names.
+.P
+If a file is removed from or added to the directory after the most
+recent call to
+\fIopendir\fR()
+or
+\fIrewinddir\fR(),
+whether a subsequent call to
+\fIreaddir_r\fR()
+returns an entry for that file is unspecified.
+.P
+The
+\fIreaddir_r\fR()
+function may buffer several directory entries per actual read
+operation;
+\fIreaddir_r\fR()
+shall mark for update the last data access timestamp of the directory
+each time the directory is actually read.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIreaddir\fR()
+shall return a pointer to an object of type
+.BR "struct dirent" .
+When an error is encountered, a null pointer shall be returned and
+.IR errno
+shall be set to indicate the error. When the end of the directory is
+encountered, a null pointer shall be returned and
+.IR errno
+is not changed.
+.P
+If successful, the
+\fIreaddir_r\fR()
+function shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EOVERFLOW
+One of the values in the structure to be returned cannot be represented
+correctly.
+.P
+These functions may fail if:
+.TP
+.BR EBADF
+The
+.IR dirp
+argument does not refer to an open directory stream.
+.TP
+.BR ENOENT
+The current position of the directory stream is invalid.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+The following sample program searches the current directory for
+each of the arguments supplied on the command line.
+.sp
+.RS 4
+.nf
+\fB
+#include <dirent.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+.P
+static void lookup(const char *arg)
+{
+    DIR *dirp;
+    struct dirent *dp;
+.P
+    if ((dirp = opendir(".")) == NULL) {
+        perror("couldn't open '.'");
+        return;
+    }
+.P
+    do {
+        errno = 0;
+        if ((dp = readdir(dirp)) != NULL) {
+            if (strcmp(dp->d_name, arg) != 0)
+                continue;
+.P
+            (void) printf("found %s\en", arg);
+            (void) closedir(dirp);
+                return;
+.P
+        }
+    } while (dp != NULL);
+.P
+    if (errno != 0)
+        perror("error reading directory");
+    else
+        (void) printf("failed to find %s\en", arg);
+    (void) closedir(dirp);
+    return;
+}
+.P
+int main(int argc, char *argv[])
+{
+    int i;
+    for (i = 1; i < argc; i++)
+        lookup(argv[i]);
+    return (0);
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIreaddir\fR()
+function should be used in conjunction with
+\fIopendir\fR(),
+\fIclosedir\fR(),
+and
+\fIrewinddir\fR()
+to examine the contents of the directory.
+.P
+The
+\fIreaddir_r\fR()
+function is thread-safe and shall return values in a user-supplied
+buffer instead of possibly using a static data area that may be
+overwritten by each call.
+.SH RATIONALE
+The returned value of
+\fIreaddir\fR()
+merely \fIrepresents\fP a directory entry. No equivalence should be
+inferred.
+.P
+Historical implementations of
+\fIreaddir\fR()
+obtain multiple directory entries on a single read operation, which
+permits subsequent
+\fIreaddir\fR()
+operations to operate from the buffered information. Any wording that
+required each successful
+\fIreaddir\fR()
+operation to mark the directory last data access timestamp
+for update would disallow such historical performance-oriented
+implementations.
+.P
+When returning a directory entry for the root of a mounted file system,
+some historical implementations of
+\fIreaddir\fR()
+returned the file serial number of the underlying mount point, rather
+than of the root of the mounted file system. This behavior is considered
+to be a bug, since the underlying file serial number has no significance
+to applications.
+.P
+Since
+\fIreaddir\fR()
+returns NULL
+when it detects an error and when the end of the directory is
+encountered, an application that needs to tell the difference must set
+.IR errno
+to zero before the call and check it if NULL is returned.
+Since the function must not change
+.IR errno
+in the second case and must set it to a non-zero value in the first
+case, a zero
+.IR errno
+after a call returning NULL indicates end-of-directory; otherwise, an
+error.
+.P
+Routines to deal with this problem more directly were proposed:
+.sp
+.RS 4
+.nf
+\fB
+int derror (\fIdirp\fP)
+DIR *\fIdirp\fP;
+.P
+void clearderr (\fIdirp\fP)
+DIR *\fIdirp\fP;
+.fi \fR
+.P
+.RE
+.P
+The first would indicate whether an error had occurred, and the second
+would clear the error indication. The simpler method involving
+.IR errno
+was adopted instead by requiring that
+\fIreaddir\fR()
+not change
+.IR errno
+when end-of-directory is encountered.
+.P
+An error or signal indicating that a directory has changed while open
+was considered but rejected.
+.P
+The thread-safe version of the directory reading function returns
+values in a user-supplied buffer instead of possibly using a static
+data area that may be overwritten by each call. Either the
+{NAME_MAX}
+compile-time constant or the corresponding
+\fIpathconf\fR()
+option can be used to determine the maximum sizes of returned
+pathnames.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIclosedir\fR\^(\|)",
+.IR "\fIdirfd\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfdopendir\fR\^(\|)",
+.IR "\fIfstatat\fR\^(\|)",
+.IR "\fIrewinddir\fR\^(\|)",
+.IR "\fIsymlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<dirent.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

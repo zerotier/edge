@@ -1,0 +1,196 @@
+#!/usr/bin/perl
+#
+# Copyright 2006-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+#
+# rolllog
+#
+#	This script writes log messages in the rollover manager's log file.
+#
+
+use strict;
+
+use Getopt::Long qw(:config no_ignore_case_always);
+
+use Net::DNS::SEC::Tools::rollmgr;
+
+#
+# Version information.
+#
+my $NAME   = "rolllog";  
+my $VERS   = "$NAME version: 2.1.0";
+my $DTVERS = "DNSSEC-Tools Version: 2.1";
+
+#######################################################################
+
+#
+# Data required for command line options.
+#
+my $loglevel;				# Logging level.
+
+my $OPT_HELP	 = "help";
+my $OPT_LOGLEVEL = "loglevel";
+my $OPT_VERSION	 = "Version";
+
+my %opts = ();				# Filled option array.
+my @opts =
+(
+	"loglevel=s",			# Logging level.
+	"help",				# Give a usage message and exit.
+        "Version",			# Display the version number.
+);
+
+#######################################################################
+
+my $ret;				# Return code from main().
+
+$ret = main();
+exit($ret);
+
+#-----------------------------------------------------------------------------
+# Routine:	main()
+#
+# Purpose:	Main controller routine.
+#
+sub main
+{
+	my $logmsg = "";			# The constructed log message.
+	my $ret;				# Return code from rollerd.
+	my $resp;				# Return message from rollerd.
+
+	#
+	# Check our arguments.
+	#
+	optsandargs();
+	usage() if(@ARGV == 0);
+
+	#
+	# Build our log message from the remaining arguments.
+	#
+	$logmsg = join(" ",@ARGV);
+
+	#
+	# Send the logging command to rollerd.
+	#
+	if(rollmgr_sendcmd(CHANNEL_WAIT,ROLLCMD_LOGMSG,"($loglevel)$logmsg") == 0)
+	{
+		print STDERR "rolllog:  unable to send command to rollerd\n";
+		exit(1);
+	}
+
+	#
+	# Give an error message if rollerd didn't like something. 
+	# 
+	($ret, $resp) = rollmgr_getresp();
+	if($ret != ROLLCMD_RC_OKAY)
+	{
+		print STDERR "rolllog:  rollerd was unable to write message to log file:  \"$resp\"\n";
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	optsandargs()
+#
+# Purpose:	Check for arguments.
+#
+sub optsandargs
+{
+	my $argc = @ARGV;				# Number of arguments.
+	my $dir;					# Execution directory.
+
+	#
+	# Check our options.
+	#
+	GetOptions(\%opts,@opts) || usage();
+	usage()   if(defined($opts{$OPT_HELP}));
+	version() if(defined($opts{$OPT_VERSION}));
+
+	$loglevel  = $opts{$OPT_LOGLEVEL} || usage();
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	usage()
+#
+sub usage
+{
+	print STDERR "usage:  rolllog [-loglevel <level> <log_message> | -help | -Version]\n";
+	exit(0);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	version()
+#
+# Purpose:      Print the version number(s) and exit.
+#
+sub version
+{
+        print STDERR "$VERS\n";
+	print STDERR "$DTVERS\n";
+
+	exit(0);
+}
+
+1;
+
+##############################################################################
+#
+
+=pod
+
+=head1 NAME
+
+rolllog - DNSSEC-Tools utility to write messages to the DNSSEC rollover
+log file
+
+=head1 SYNOPSIS
+
+  rolllog -loglevel <level> <log_message>
+
+=head1 DESCRIPTION
+
+The B<rolllog> program writes log messages to the DNSSEC rollover log file.
+B<rolllog> does not actually write the messages itself; rather, it sends them
+to the B<rollerd> rollover daemon to write the messages.  B<rollerd> keeps
+track of a logging level, and only messages of that level or higher are
+written to the log file.
+
+=head1 OPTIONS
+
+The following options are recognized:
+
+=over 4
+
+=item B<-loglevel level>
+
+Logging level of this message.  The valid levels are defined in
+B<rollmgr.pm>(3).   This option is required.
+
+=item B<-help>
+
+Display a usage message.
+
+=item B<-Version>
+
+Displays the version information for B<rolllog> and the DNSSEC-Tools package.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2006-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<rollctl(8)>,
+B<rollerd(8)>
+
+B<Net::DNS::SEC::Tools::rollmgr.pm(3)>
+
+=cut

@@ -1,0 +1,122 @@
+'\" et
+.TH sys_msg.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/msg.h
+\(em XSI message queue structures
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/msg.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/msg.h> 
+header shall define the following data types through
+.BR typedef :
+.IP "\fBmsgqnum_t\fP" 14
+Used for the number of messages in the message queue.
+.IP "\fBmsglen_t\fP" 14
+Used for the number of bytes allowed in a message queue.
+.P
+These types shall be unsigned integer types that are able to store
+values at least as large as a type
+.BR "unsigned short" .
+.P
+The
+.IR <sys/msg.h> 
+header shall define the following symbolic constant as a message
+operation flag:
+.IP MSG_NOERROR 14
+No error if big message.
+.P
+The
+.IR <sys/msg.h> 
+header shall define the
+.BR msqid_ds
+structure, which shall include the following members:
+.sp
+.RS 4
+.nf
+\fB
+struct ipc_perm msg_perm   \fROperation permission structure.\fR
+msgqnum_t       msg_qnum   \fRNumber of messages currently on queue.\fR
+msglen_t        msg_qbytes \fRMaximum number of bytes allowed on queue.\fR
+pid_t           msg_lspid  \fRProcess ID of last \fImsgsnd\fP\^(\|).\fR
+pid_t           msg_lrpid  \fRProcess ID of last \fImsgrcv\fP\^(\|).\fR
+time_t          msg_stime  \fRTime of last \fImsgsnd\fP\^(\|).\fR
+time_t          msg_rtime  \fRTime of last \fImsgrcv\fP\^(\|).\fR
+time_t          msg_ctime  \fRTime of last change.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <sys/msg.h> 
+header shall define the
+.BR pid_t ,
+.BR size_t ,
+.BR ssize_t ,
+and
+.BR time_t
+types as described in
+.IR <sys/types.h> .
+.P
+The following shall be declared as functions and may also be defined
+as macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int       msgctl(int, int, struct msqid_ds *);
+int       msgget(key_t, int);
+ssize_t   msgrcv(int, void *, size_t, long, int);
+int       msgsnd(int, const void *, size_t, int);
+.fi \fR
+.P
+.RE
+.P
+In addition, the
+.IR <sys/msg.h> 
+header shall include the
+.IR <sys/ipc.h> 
+header.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_ipc.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fImsgget\fR\^(\|)",
+.IR "\fImsgrcv\fR\^(\|)",
+.IR "\fImsgsnd\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

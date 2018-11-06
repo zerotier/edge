@@ -1,0 +1,504 @@
+'\" et
+.TH FREEADDRINFO "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+freeaddrinfo,
+getaddrinfo
+\(em get address information
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+#include <netdb.h>
+.P
+void freeaddrinfo(struct addrinfo *\fIai\fP);
+int getaddrinfo(const char *restrict \fInodename\fP,
+    const char *restrict \fIservname\fP,
+    const struct addrinfo *restrict \fIhints\fP,
+    struct addrinfo **restrict \fIres\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIfreeaddrinfo\fR()
+function shall free one or more
+.BR addrinfo
+structures returned by
+\fIgetaddrinfo\fR(),
+along with any additional storage associated with those structures. If
+the
+.IR ai_next
+field of the structure is not null, the entire list of structures shall
+be freed. The
+\fIfreeaddrinfo\fR()
+function shall support the freeing of arbitrary sublists of an
+.BR addrinfo
+list originally returned by
+\fIgetaddrinfo\fR().
+.P
+The
+\fIgetaddrinfo\fR()
+function shall translate the name of a service location (for example, a
+host name) and/or a service name
+and shall return a set of socket addresses and associated information
+to be used in creating a socket with which to address the specified
+service.
+.TP 10
+.BR Note:
+In many cases it is implemented by the Domain Name System,
+as documented in RFC\ 1034, RFC\ 1035, and RFC\ 1886.
+.P
+.P
+The
+\fIfreeaddrinfo\fR()
+and
+\fIgetaddrinfo\fR()
+functions shall be thread-safe.
+.P
+The
+.IR nodename
+and
+.IR servname
+arguments are either null pointers or pointers to null-terminated
+strings. One or both of these two arguments shall be supplied by the
+application as a non-null pointer.
+.P
+The format of a valid name depends on the address family or families.
+If a specific family is not given and the name could be interpreted as
+valid within multiple supported families, the implementation shall
+attempt to resolve the name in all supported families and, in absence
+of errors, one or more results shall be returned.
+.P
+If the
+.IR nodename
+argument is not null, it can be a descriptive name or can be an address
+string.
+If the specified address family is AF_INET,
+AF_INET6,
+or AF_UNSPEC, valid descriptive names include host names. If the
+specified address family is AF_INET or AF_UNSPEC, address strings using
+Internet standard dot notation as specified in
+.IR "\fIinet_addr\fR\^(\|)"
+are valid.
+.P
+If the specified address family is AF_INET6 or AF_UNSPEC, standard IPv6
+text forms described in
+.IR "\fIinet_ntop\fR\^(\|)"
+are valid.
+.P
+If
+.IR nodename
+is not null, the requested service location is named by
+.IR nodename ;
+otherwise, the requested service location is local to the caller.
+.P
+If
+.IR servname
+is null, the call shall return network-level addresses for the
+specified
+.IR nodename.
+If
+.IR servname
+is not null, it is a null-terminated character string identifying the
+requested service. This can be either a descriptive name or a numeric
+representation suitable for use with the address family or families.
+If the specified address family is AF_INET,
+AF_INET6,
+or AF_UNSPEC, the service can be specified as a string specifying a
+decimal port number.
+.P
+If the
+.IR hints
+argument is not null, it refers to a structure containing input values
+that directs the operation by providing options and by limiting the
+returned information to a specific socket type, address family, and/or
+protocol, as described below. In this
+.IR hints
+structure every member other than
+.IR ai_flags ,
+.IR ai_family ,
+.IR ai_socktype ,
+and
+.IR ai_protocol
+shall be set to zero or a null pointer. A value of AF_UNSPEC for
+.IR ai_family
+means that the caller shall accept any address family. A value of zero
+for
+.IR ai_socktype
+means that the caller shall accept any socket type. A value of zero for
+.IR ai_protocol
+means that the caller shall accept any protocol. If
+.IR hints
+is a null pointer, the behavior shall be as if it referred to a
+structure containing the value zero for the
+.IR ai_flags ,
+.IR ai_socktype ,
+and
+.IR ai_protocol
+fields, and AF_UNSPEC for the
+.IR ai_family
+field.
+.P
+The
+.IR ai_flags
+field to which the
+.IR hints
+parameter points shall be set to zero or be the bitwise-inclusive
+OR of one or more of the values AI_PASSIVE, AI_CANONNAME,
+AI_NUMERICHOST, AI_NUMERICSERV, AI_V4MAPPED, AI_ALL, and AI_ADDRCONFIG.
+.P
+If the AI_PASSIVE flag is specified, the returned address information
+shall be suitable for use in binding a socket for accepting incoming
+connections for the specified service. In this case, if the
+.IR nodename
+argument is null, then the IP address portion of the socket address
+structure shall be set to INADDR_ANY for an IPv4 address or
+IN6ADDR_ANY_INIT for an IPv6 address. If the AI_PASSIVE flag is not
+specified, the returned address information shall be suitable for a call
+to
+\fIconnect\fR()
+(for a connection-mode protocol) or for a call to
+\fIconnect\fR(),
+\fIsendto\fR(),
+or
+\fIsendmsg\fR()
+(for a connectionless protocol). In this case, if the
+.IR nodename
+argument is null, then the IP address portion of the socket address
+structure shall be set to the loopback address. The AI_PASSIVE flag shall
+be ignored if the
+.IR nodename
+argument is not null.
+.P
+If the AI_CANONNAME flag is specified and the
+.IR nodename
+argument is not null, the function shall attempt to determine the
+canonical name corresponding to
+.IR nodename
+(for example, if
+.IR nodename
+is an alias or shorthand notation for a complete name).
+.TP 10
+.BR Note:
+Since different implementations use different conceptual models, the
+terms ``canonical name'' and ``alias'' cannot be precisely defined for
+the general case. However, Domain Name System implementations are
+expected to interpret them as they are used in RFC\ 1034.
+.RS 10 
+.P
+A numeric host address string is not a ``name'', and thus does not have
+a ``canonical name'' form; no address to host name translation is
+performed. See below for handling of the case where a canonical name
+cannot be obtained.
+.RE
+.P
+.P
+If the AI_NUMERICHOST flag is specified, then a non-null
+.IR nodename
+string supplied shall be a numeric host address string. Otherwise, an
+.BR [EAI_NONAME] 
+error is returned. This flag shall prevent any type of name resolution
+service (for example, the DNS) from being invoked.
+.P
+If the AI_NUMERICSERV flag is specified, then a non-null
+.IR servname
+string supplied shall be a numeric port string. Otherwise, an
+.BR [EAI_NONAME] 
+error shall be returned. This flag shall prevent any type of name
+resolution service (for example, NIS+) from being invoked.
+.P
+If the AI_V4MAPPED flag is specified along with an
+.IR ai_family
+of AF_INET6, then
+\fIgetaddrinfo\fR()
+shall return IPv4-mapped IPv6 addresses on finding no matching IPv6
+addresses (\c
+.IR ai_addrlen
+shall be 16). The AI_V4MAPPED flag shall be ignored unless
+.IR ai_family
+equals AF_INET6. If the AI_ALL flag is used with the AI_V4MAPPED flag,
+then
+\fIgetaddrinfo\fR()
+shall return all matching IPv6 and IPv4 addresses. The AI_ALL flag
+without the AI_V4MAPPED flag is ignored.
+.P
+If the AI_ADDRCONFIG flag is specified, IPv4 addresses shall be
+returned only if an IPv4 address is configured on the local system,
+and IPv6 addresses shall be returned only if an IPv6 address is
+configured on the local system.
+.P
+The
+.IR ai_socktype
+field to which argument
+.IR hints
+points specifies the socket type for the service, as defined in
+.IR "\fIsocket\fR\^(\|)".
+If a specific socket type is not given (for example, a value of zero)
+and the service name could be interpreted as valid with multiple
+supported socket types, the implementation shall attempt to resolve the
+service name for all supported socket types and, in the absence of
+errors, all possible results shall be returned. A non-zero socket type
+value shall limit the returned information to values with the specified
+socket type.
+.P
+If the
+.IR ai_family
+field to which
+.IR hints
+points has the value AF_UNSPEC, addresses shall be returned for use
+with any address family that can be used with the specified
+.IR nodename
+and/or
+.IR servname .
+Otherwise, addresses shall be returned for use only with the specified
+address family. If
+.IR ai_family
+is not AF_UNSPEC and
+.IR ai_protocol
+is not zero, then addresses shall be returned for use only with the
+specified address family and protocol; the value of
+.IR ai_protocol
+shall be interpreted as in a call to the
+\fIsocket\fR()
+function with the corresponding values of
+.IR ai_family
+and
+.IR ai_protocol .
+.SH "RETURN VALUE"
+A zero return value for
+\fIgetaddrinfo\fR()
+indicates successful completion; a non-zero return value indicates
+failure. The possible values for the failures are listed in the
+ERRORS section.
+.P
+Upon successful return of
+\fIgetaddrinfo\fR(),
+the location to which
+.IR res
+points shall refer to a linked list of
+.BR addrinfo
+structures, each of which shall specify a socket address and
+information for use in creating a socket with which to use that socket
+address. The list shall include at least one
+.BR addrinfo
+structure. The
+.IR ai_next
+field of each structure contains a pointer to the next structure on the
+list, or a null pointer if it is the last structure on the list. Each
+structure on the list shall include values for use with a call to the
+\fIsocket\fR()
+function, and a socket address for use with the
+\fIconnect\fR()
+function or, if the AI_PASSIVE flag was specified, for use with the
+\fIbind\fR()
+function. The fields
+.IR ai_family ,
+.IR ai_socktype ,
+and
+.IR ai_protocol
+shall be usable as the arguments to the
+\fIsocket\fR()
+function to create a socket suitable for use with the returned
+address. The fields
+.IR ai_addr
+and
+.IR ai_addrlen
+are usable as the arguments to the
+\fIconnect\fR()
+or
+\fIbind\fR()
+functions with such a socket, according to the AI_PASSIVE flag.
+.P
+If
+.IR nodename
+is not null, and if requested by the AI_CANONNAME flag, the
+.IR ai_canonname
+field of the first returned
+.BR addrinfo
+structure shall point to a null-terminated string containing the
+canonical name corresponding to the input
+.IR nodename ;
+if the canonical name is not available, then
+.IR ai_canonname
+shall refer to the
+.IR nodename
+argument or a string with the same contents. The contents of the
+.IR ai_flags
+field of the returned structures are undefined.
+.P
+All fields in socket address structures returned by
+\fIgetaddrinfo\fR()
+that are not filled in through an explicit argument (for example,
+.IR sin6_flowinfo )
+shall be set to zero.
+.TP 10
+.BR Note:
+This makes it easier to compare socket address structures.
+.P
+.SH ERRORS
+The
+\fIgetaddrinfo\fR()
+function shall fail and return the corresponding error value if:
+.IP [EAI_AGAIN] 12
+The name could not be resolved at this time. Future attempts may
+succeed.
+.IP [EAI_BADFLAGS] 12
+.br
+The
+.IR flags
+parameter had an invalid value.
+.IP [EAI_FAIL] 12
+A non-recoverable error occurred when attempting to resolve the name.
+.IP [EAI_FAMILY] 12
+The address family was not recognized.
+.IP [EAI_MEMORY] 12
+There was a memory allocation failure when trying to allocate storage
+for the return value.
+.IP [EAI_NONAME] 12
+The name does not resolve for the supplied parameters.
+.RS 12 
+.P
+Neither
+.IR nodename
+nor
+.IR servname
+were supplied. At least one of these shall be supplied.
+.RE
+.IP [EAI_SERVICE] 12
+The service passed was not recognized for the specified socket type.
+.IP [EAI_SOCKTYPE] 12
+.br
+The intended socket type was not recognized.
+.IP [EAI_SYSTEM] 12
+A system error occurred; the error code can be found in
+.IR errno .
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+The following (incomplete) program demonstrates the use of
+\fIgetaddrinfo\fR()
+to obtain the socket address structure(s) for the service named in the
+program's command-line argument. The program then loops through each
+of the address structures attempting to create and bind a socket to the
+address, until it performs a successful
+\fIbind\fR().
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netdb.h>
+.P
+int
+main(int argc, char *argv[])
+{
+    struct addrinfo *result, *rp;
+    int sfd, s;
+.P
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s port\en", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+.P
+    struct addrinfo hints = {};
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_protocol = 0;
+.P
+    s = getaddrinfo(NULL, argv[1], &hints, &result);
+    if (s != 0) {
+        fprintf(stderr, "getaddrinfo: %s\en", gai_strerror(s));
+        exit(EXIT_FAILURE);
+    }
+.P
+    /* getaddrinfo() returns a list of address structures.
+       Try each address until a successful bind().
+       If socket(2) (or bind(2)) fails, close the socket
+       and try the next address. */
+.P
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        sfd = socket(rp->ai_family, rp->ai_socktype,
+            rp->ai_protocol);
+        if (sfd == -1)
+            continue;
+.P
+        if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
+            break;            /* Success */
+.P
+        close(sfd);
+    }
+.P
+    if (rp == NULL) {         /* No address succeeded */
+        fprintf(stderr, "Could not bind\en");
+        exit(EXIT_FAILURE);
+    }
+.P
+    freeaddrinfo(result);     /* No longer needed */
+.P
+             /* ... use socket bound to sfd ... */
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+If the caller handles only TCP and not UDP, for example, then the
+.IR ai_protocol
+member of the
+.IR hints
+structure should be set to IPPROTO_TCP when
+\fIgetaddrinfo\fR()
+is called.
+.P
+If the caller handles only IPv4 and not IPv6, then the
+.IR ai_family
+member of the
+.IR hints
+structure should be set to AF_INET when
+\fIgetaddrinfo\fR()
+is called.
+.P
+The term ``canonical name'' is misleading; it is taken from the Domain
+Name System (RFC\ 2181). It should be noted that the canonical name is
+a result of alias processing, and not necessarily a unique attribute of
+a host, address, or set of addresses. See RFC\ 2181 for more discussion
+of this in the Domain Name System context.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIconnect\fR\^(\|)",
+.IR "\fIendservent\fR\^(\|)",
+.IR "\fIgai_strerror\fR\^(\|)",
+.IR "\fIgetnameinfo\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<netdb.h>\fP",
+.IR "\fB<sys_socket.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

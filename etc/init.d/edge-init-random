@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+
+start()
+{
+	# This is always unique per-device, so it serves as an ultimate failsafe.
+	sha512sum /var/lib/zerotier-one/identity.secret | /opt/edge/rngseed >>/dev/null 2>&1
+
+	# Generate randomness using a bag of tricks including CPU clocking, interrupts, etc.
+	haveged -n 131072 -f - 2>/dev/null | /opt/edge/rngseed >>/dev/null 2>&1
+
+	return 0
+}

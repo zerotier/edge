@@ -1,0 +1,437 @@
+'\" et
+.TH LINK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+link, linkat
+\(em link one file to another file relative to two directory
+file descriptors
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int link(const char *\fIpath1\fP, const char *\fIpath2\fP);
+int linkat(int \fIfd1\fP, const char *\fIpath1\fP, int \fIfd2\fP,
+    const char *\fIpath2\fP, int \fIflag\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIlink\fR()
+function shall create a new link (directory entry) for the existing file,
+.IR path1 .
+.P
+The
+.IR path1
+argument points to a pathname naming an existing file. The
+.IR path2
+argument points to a pathname naming the new directory entry to be
+created. The
+\fIlink\fR()
+function shall atomically create a new link for the existing file and
+the link count of the file shall be incremented by one.
+.P
+If
+.IR path1
+names a directory,
+\fIlink\fR()
+shall fail unless the process has appropriate privileges and the
+implementation supports using
+\fIlink\fR()
+on directories.
+.P
+If
+.IR path1
+names a symbolic link, it is implementation-defined whether
+\fIlink\fR()
+follows the symbolic link, or creates a new link to the symbolic
+link itself.
+.P
+Upon successful completion,
+\fIlink\fR()
+shall mark for update the last file status change timestamp of the
+file. Also, the last data modification and last file status change
+timestamps of the directory that contains the new entry shall be marked
+for update.
+.P
+If
+\fIlink\fR()
+fails, no link shall be created and the link count of the file shall
+remain unchanged.
+.P
+The implementation may require that the calling process has permission
+to access the existing file.
+.P
+The
+\fIlinkat\fR()
+function shall be equivalent to the
+\fIlink\fR()
+function except that symbolic links shall be handled as specified by
+the value of
+.IR flag
+(see below) and except in the case where either
+.IR path1
+or
+.IR path2
+or both are relative paths. In this case a relative path
+.IR path1
+is interpreted relative to the directory associated with the file
+descriptor
+.IR fd1
+instead of the current working directory and similarly for
+.IR path2
+and the file descriptor
+.IR fd2 .
+If the file descriptor was opened without O_SEARCH, the function
+shall check whether directory searches are permitted using the current
+permissions of the directory underlying the file descriptor. If the
+file descriptor was opened with O_SEARCH, the function shall not perform
+the check.
+.P
+Values for
+.IR flag
+are constructed by a bitwise-inclusive OR of flags from the following
+list, defined in
+.IR <fcntl.h> :
+.IP AT_SYMLINK_FOLLOW 6
+.br
+If
+.IR path1
+names a symbolic link, a new link for the target of the symbolic link
+is created.
+.P
+If
+\fIlinkat\fR()
+is passed the special value AT_FDCWD in the
+.IR fd1
+or
+.IR fd2
+parameter, the current working directory shall be used for the respective
+.IR path
+argument. If both
+.IR fd1
+and
+.IR fd2
+have value AT_FDCWD, the behavior shall be identical to a call to
+\fIlink\fR(),
+except that symbolic links shall be handled as specified by the value of
+.IR flag .
+.P
+If the AT_SYMLINK_FOLLOW flag is clear in the
+.IR flag
+argument and the
+.IR path1
+argument names a symbolic link, a new link is created for the symbolic
+link
+.IR path1
+and not its target.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return 0. Otherwise,
+these functions shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.br
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EACCES
+A component of either path prefix denies search permission, or the
+requested link requires writing in a directory that denies write
+permission, or the calling process does not have permission to access
+the existing file and this is required by the implementation.
+.TP
+.BR EEXIST
+The
+.IR path2
+argument resolves to an existing directory entry or refers to a symbolic
+link.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path1
+or
+.IR path2
+argument.
+.TP
+.BR EMLINK
+The number of links to the file named by
+.IR path1
+would exceed
+{LINK_MAX}.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of either path prefix does not exist; the file named by
+.IR path1
+does not exist; or
+.IR path1
+or
+.IR path2
+points to an empty string.
+.TP
+.BR ENOSPC
+The directory to contain the link cannot be extended.
+.TP
+.BR ENOTDIR
+A component of either path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path1
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory, or the
+.IR path1
+argument names an existing non-directory file and the
+.IR path2
+argument names a nonexistent file, contains at least one non-\c
+<slash>
+character, and ends with one or more trailing
+<slash>
+characters.
+.TP
+.BR EPERM
+The file named by
+.IR path1
+is a directory and either the calling process does not have appropriate
+privileges or the implementation prohibits using
+\fIlink\fR()
+on directories.
+.TP
+.BR EROFS
+The requested link requires writing in a directory on a read-only file
+system.
+.TP
+.BR EXDEV
+The link named by
+.IR path2
+and the file named by
+.IR path1
+are on different file systems and the implementation does not support
+links between file systems.
+.TP
+.BR EXDEV
+.IR path1
+refers to a named STREAM.
+.P
+The
+\fIlinkat\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The
+.IR path1
+or
+.IR path2
+argument does not specify an absolute path and the
+.IR fd1
+or
+.IR fd2
+argument, respectively, is neither AT_FDCWD nor a valid file descriptor
+open for reading or searching.
+.TP
+.BR ENOTDIR
+The
+.IR path1
+or
+.IR path2
+argument is not an absolute path and
+.IR fd1
+or
+.IR fd2 ,
+respectively, is a file descriptor associated with a non-directory file.
+.P
+These functions may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path1
+or
+.IR path2
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.br
+.P
+The
+\fIlinkat\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR flag
+argument is not valid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Creating a Link to a File"
+.P
+The following example shows how to create a link to a file named
+.BR /home/cnd/mod1
+by creating a new directory entry named
+.BR /modules/pass1 .
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+.P
+char *path1 = "/home/cnd/mod1";
+char *path2 = "/modules/pass1";
+int   status;
+\&...
+status = link (path1, path2);
+.fi \fR
+.P
+.RE
+.SS "Creating a Link to a File Within a Program"
+.P
+In the following program example, the
+\fIlink\fR()
+function links the
+.BR /etc/passwd
+file (defined as
+.BR PASSWDFILE )
+to a file named
+.BR /etc/opasswd
+(defined as
+.BR SAVEFILE ),
+which is used to save the current password file. Then, after removing
+the current password file (defined as
+.BR PASSWDFILE ),
+the new password file is saved as the current password file using the
+\fIlink\fR()
+function again.
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+.P
+#define LOCKFILE "/etc/ptmp"
+#define PASSWDFILE "/etc/passwd"
+#define SAVEFILE "/etc/opasswd"
+\&...
+/* Save current password file */
+link (PASSWDFILE, SAVEFILE);
+.P
+/* Remove current password file. */
+unlink (PASSWDFILE);
+.P
+/* Save new password file as current password file. */
+link (LOCKFILE,PASSWDFILE);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Some implementations do allow links between file systems.
+.P
+If
+.IR path1
+refers to a symbolic link, application developers should use
+\fIlinkat\fR()
+with appropriate flags to select whether or not the symbolic link should
+be resolved.
+.SH RATIONALE
+Linking to a directory is restricted to the superuser
+in most historical implementations because this capability may produce
+loops in the file hierarchy or otherwise corrupt the file system. This volume of POSIX.1\(hy2008
+continues that philosophy by prohibiting
+\fIlink\fR()
+and
+\fIunlink\fR()
+from doing this. Other functions could do it if the implementor designed
+such an extension.
+.P
+Some historical implementations allow linking of files on different file
+systems. Wording was added to explicitly allow this optional behavior.
+.P
+The exception for cross-file system links is intended to apply only to
+links that are programmatically indistinguishable from ``hard'' links.
+.P
+The purpose of the
+\fIlinkat\fR()
+function is to link files in directories other than the current working
+directory without exposure to race conditions. Any part of the path of
+a file could be changed in parallel to a call to
+\fIlink\fR(),
+resulting in unspecified behavior. By opening a file descriptor for the
+directory of both the existing file and the target location and using the
+\fIlinkat\fR()
+function it can be guaranteed that the both filenames are in the desired
+directories.
+.P
+The AT_SYMLINK_FOLLOW flag allows for implementing both common behaviors
+of the
+\fIlink\fR()
+function. The POSIX specification requires that if
+.IR path1
+is a symbolic link, a new link for the target of the symbolic link is
+created. Many systems by default or as an alternative provide a mechanism
+to avoid the implicit symbolic link lookup and create a new link for
+the symbolic link itself.
+.P
+Earlier versions of this standard specified only the
+\fIlink\fR()
+function, and required it to behave like
+\fIlinkat\fR()
+with the AT_SYMLINK_FOLLOW flag. However, historical practice from SVR4
+and Linux kernels had
+\fIlink\fR()
+behaving like
+\fIlinkat\fR()
+with no flags, and many systems that attempted to provide a conforming
+\fIlink\fR()
+function did so in a way that was rarely used, and when it was used
+did not conform to the standard (e.g., by not being atomic, or by
+dereferencing the symbolic link incorrectly). Since applications could
+not rely on
+\fIlink\fR()
+following links in practice, the
+\fIlinkat\fR()
+function was added taking a flag to specify the desired behavior
+for the application.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIrename\fR\^(\|)",
+.IR "\fIsymlink\fR\^(\|)",
+.IR "\fIunlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,289 @@
+'\" et
+.TH GENCAT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+gencat
+\(em generate a formatted message catalog
+.SH SYNOPSIS
+.LP
+.nf
+gencat \fIcatfile msgfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR gencat
+utility shall merge the message text source file
+.IR msgfile
+into a formatted message catalog
+.IR catfile .
+The file
+.IR catfile
+shall be created if it does not already exist. If
+.IR catfile
+does exist, its messages shall be included in the new
+.IR catfile .
+If set and message numbers collide, the new message text defined in
+.IR msgfile
+shall replace the old message text currently contained in
+.IR catfile .
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIcatfile\fR" 10
+A pathname of the formatted message catalog. If
+.BR '\(mi' 
+is specified, standard output shall be used. The format of the message
+catalog produced is unspecified.
+.IP "\fImsgfile\fR" 10
+A pathname of a message text source file. If
+.BR '\(mi' 
+is specified for an instance of
+.IR msgfile ,
+standard input shall be used. The format of message text source files
+is defined in the EXTENDED DESCRIPTION section.
+.SH STDIN
+The standard input shall not be used unless a
+.IR msgfile
+operand is specified as
+.BR '\(mi' .
+.SH "INPUT FILES"
+The input files shall be text files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR gencat :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall not be used unless the
+.IR catfile
+operand is specified as
+.BR '\(mi' .
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+The content of a message text file shall be in the format defined as
+follows. Note that the fields of a message text source line are
+separated by a single
+<blank>
+character. Any other
+<blank>
+characters are considered to be part of the subsequent field.
+.IP "\fB$set\ \fIn\ comment\fR" 10
+.br
+This line specifies the set identifier of the following messages until
+the next
+.BR $set
+or end-of-file appears. The
+.IR n
+denotes the set identifier, which is defined as a number in the range
+[1,
+{NL_SETMAX}]
+(see the
+.IR <limits.h> 
+header defined in the Base Definitions volume of POSIX.1\(hy2008). The application shall ensure that set
+identifiers are presented in ascending order within a single source
+file, but need not be contiguous. Any string following the set
+identifier shall be treated as a comment. If no
+.BR $set
+directive is specified in a message text source file, all messages
+shall be located in an implementation-defined default message set
+NL_SETD (see the
+.IR <nl_types.h> 
+header defined in the Base Definitions volume of POSIX.1\(hy2008).
+.IP "\fB$delset\ \fIn\ comment\fR" 10
+.br
+This line deletes message set
+.IR n
+from an existing message catalog. The
+.IR n
+denotes the set number [1,
+{NL_SETMAX}].
+Any string following the set number shall be treated as a comment.
+.IP "\fB$\ \fIcomment\fR" 10
+A line beginning with
+.BR '$' 
+followed by a
+<blank>
+shall be treated as a comment.
+.IP "\fIm\ message-text\fR" 10
+.br
+The
+.IR m
+denotes the message identifier, which is defined as a number in the
+range [1,
+{NL_MSGMAX}]
+(see the
+.IR <limits.h> 
+header). The
+.IR message-text
+shall be stored in the message catalog with the set identifier
+specified by the last
+.BR $set
+directive, and with message identifier
+.IR m .
+If the
+.IR message-text
+is empty, and a
+<blank>
+field separator is present, an empty string shall be stored
+in the message catalog. If a message source line has a message number,
+but neither a field separator nor
+.IR message-text ,
+the existing message with that number (if any) shall be deleted from
+the catalog. The application shall ensure that message identifiers are
+in ascending order within a single set, but need not be contiguous. The
+application shall ensure that the length of
+.IR message-text
+is in the range [0,
+{NL_TEXTMAX}]
+(see the
+.IR <limits.h> 
+header).
+.IP "\fB$quote\ \fIn\fR" 10
+This line specifies an optional quote character
+.IR c ,
+which can be used to surround
+.IR message-text
+so that trailing
+<space>
+characters or null (empty) messages are visible in a message source
+line. By default, or if an empty
+.BR $quote
+directive is supplied, no quoting of
+.IR message-text
+shall be recognized.
+.P
+Empty lines in a message text source file shall be ignored. The
+effects of lines starting with any character other than those defined
+above are implementation-defined.
+.P
+Text strings can contain the special characters and escape sequences
+defined in the following table:
+.TS
+center tab(@) box;
+cB | cB | cB
+l | l | lf5.
+Description@Symbol@Sequence
+_
+<newline>@NL(LF)@\en
+Horizontal-tab@HT@\et
+<vertical-tab>@VT@\ev
+<backspace>@BS@\eb
+<carriage-return>@CR@\er
+<form-feed>@FF@\ef
+Backslash@\fR\e\fP@\e\e
+Bit pattern@\fRddd\fP@\eddd
+.TE
+.P
+The escape sequence
+.BR \(dq\eddd\(dq 
+consists of
+<backslash>
+followed by one, two, or three octal digits, which shall be taken to
+specify the value of the desired character. If the character following a
+<backslash>
+is not one of those specified, the
+<backslash>
+shall be ignored.
+.P
+A
+<backslash>
+followed by a
+<newline>
+is also used to continue a string on the following line. Thus, the
+following two lines describe a single message string:
+.sp
+.RS 4
+.nf
+\fB
+1 This line continues \e
+to the next line
+.fi \fR
+.P
+.RE
+.P
+which shall be equivalent to:
+.sp
+.RS 4
+.nf
+\fB
+1 This line continues to the next line
+.fi \fR
+.P
+.RE
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Message catalogs produced by
+.IR gencat
+are binary encoded, meaning that their portability cannot be guaranteed
+between different types of machine. Thus, just as C programs need to
+be recompiled for each type of machine, so message catalogs must be
+recreated via
+.IR gencat .
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIiconv\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "\fB<limits.h>\fP",
+.IR "\fB<nl_types.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

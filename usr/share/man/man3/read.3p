@@ -1,0 +1,626 @@
+'\" et
+.TH READ "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pread,
+read
+\(em read from a file
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+ssize_t pread(int \fIfildes\fP, void *\fIbuf\fP, size_t \fInbyte\fP, off_t \fIoffset\fR);
+ssize_t read(int \fIfildes\fP, void *\fIbuf\fP, size_t \fInbyte\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIread\fR()
+function shall attempt to read
+.IR nbyte
+bytes from the file associated with the open file descriptor,
+.IR fildes ,
+into the buffer pointed to by
+.IR buf .
+The behavior of multiple concurrent reads on the same pipe, FIFO, or
+terminal device is unspecified.
+.P
+Before any action described below is taken, and if
+.IR nbyte
+is zero, the
+\fIread\fR()
+function may detect and return errors as described below. In the
+absence of errors, or if error detection is not performed, the
+\fIread\fR()
+function shall return zero and have no other results.
+.P
+On files that support seeking (for example, a regular file), the
+\fIread\fR()
+shall start at a position in the file given by the file offset
+associated with
+.IR fildes .
+The file offset shall be incremented by the number of bytes
+actually read.
+.P
+Files that do not support seeking\(emfor example, terminals\(emalways
+read from the current position. The value of a file offset associated
+with such a file is undefined.
+.P
+No data transfer shall occur past the current end-of-file. If the
+starting position is at or after the end-of-file, 0 shall be returned.
+If the file refers to a device special file, the result of subsequent
+\fIread\fR()
+requests is implementation-defined.
+.P
+If the value of
+.IR nbyte
+is greater than
+{SSIZE_MAX},
+the result is implementation-defined.
+.P
+When attempting to read from an empty pipe or FIFO:
+.IP " *" 4
+If no process has the pipe open for writing,
+\fIread\fR()
+shall return 0 to indicate end-of-file.
+.IP " *" 4
+If some process has the pipe open for writing and O_NONBLOCK is set,
+\fIread\fR()
+shall return \(mi1 and set
+.IR errno
+to
+.BR [EAGAIN] .
+.IP " *" 4
+If some process has the pipe open for writing and O_NONBLOCK is clear,
+\fIread\fR()
+shall block the calling thread until some data is written or the pipe
+is closed by all processes that had the pipe open for writing.
+.P
+When attempting to read a file (other than a pipe or FIFO) that
+supports non-blocking reads and has no data currently available:
+.IP " *" 4
+If O_NONBLOCK is set,
+\fIread\fR()
+shall return \(mi1 and set
+.IR errno
+to
+.BR [EAGAIN] .
+.IP " *" 4
+If O_NONBLOCK is clear,
+\fIread\fR()
+shall block the calling thread until some data becomes available.
+.IP " *" 4
+The use of the O_NONBLOCK flag has no effect if there is some data
+available.
+.P
+The
+\fIread\fR()
+function reads data previously written to a file. If any portion of a
+regular file prior to the end-of-file has not been written,
+\fIread\fR()
+shall return bytes with value 0. For example,
+\fIlseek\fR()
+allows the file offset to be set beyond the end of existing data in the
+file. If data is later written at this point, subsequent reads in the
+gap between the previous end of data and the newly written data shall
+return bytes with value 0 until data is written into the gap.
+.P
+Upon successful completion, where
+.IR nbyte
+is greater than 0,
+\fIread\fR()
+shall mark for update the last data access timestamp
+of the file, and shall return the number of bytes read.
+This number shall never be greater than
+.IR nbyte .
+The value returned may be less than
+.IR nbyte
+if the number of bytes left in the file is less than
+.IR nbyte ,
+if the
+\fIread\fR()
+request was interrupted by a signal, or if the file is a pipe or FIFO
+or special file and has fewer than
+.IR nbyte
+bytes immediately available for reading. For example, a
+\fIread\fR()
+from a file associated with a terminal may return one typed line of
+data.
+.P
+If a
+\fIread\fR()
+is interrupted by a signal before it reads any data, it shall return
+\(mi1 with
+.IR errno
+set to
+.BR [EINTR] .
+.P
+If a
+\fIread\fR()
+is interrupted by a signal after it has successfully read some data, it
+shall return the number of bytes read.
+.P
+For regular files, no data transfer shall occur past the offset maximum
+established in the open file description associated with
+.IR fildes .
+.P
+If
+.IR fildes
+refers to a socket,
+\fIread\fR()
+shall be equivalent to
+\fIrecv\fR()
+with no flags set.
+.P
+If the O_DSYNC and O_RSYNC bits have been set,
+read I/O operations on the file descriptor shall complete as defined by
+synchronized I/O data integrity completion. If the O_SYNC and O_RSYNC
+bits have been set, read I/O operations on the file descriptor shall
+complete as defined by synchronized I/O file integrity completion.
+.P
+If
+.IR fildes
+refers to a shared memory object, the result of the
+\fIread\fR()
+function is unspecified.
+.P
+If
+.IR fildes
+refers to a typed memory object, the result of the
+\fIread\fR()
+function is unspecified.
+.P
+A
+\fIread\fR()
+from a STREAMS file can read data in three different modes:
+\fIbyte-stream\fP mode, \fImessage-nondiscard\fP mode, and
+\fImessage-discard\fP mode. The default shall be byte-stream mode.
+This can be changed using the I_SRDOPT
+\fIioctl\fR()
+request, and can be tested with I_GRDOPT
+\fIioctl\fR().
+In byte-stream mode,
+\fIread\fR()
+shall retrieve data from the STREAM until as many bytes as were
+requested are
+transferred, or until there is no more data to be retrieved.
+Byte-stream mode ignores message boundaries.
+.P
+In STREAMS message-nondiscard mode,
+\fIread\fR()
+shall retrieve data until as many bytes as were requested are
+transferred, or until a message boundary is reached. If
+\fIread\fR()
+does not retrieve all the data in a message, the remaining data shall
+be left on the STREAM, and can be retrieved by the next
+\fIread\fR()
+call. Message-discard mode also retrieves data until as many bytes as
+were requested are transferred, or a message boundary is reached.
+However, unread data remaining in a message after the
+\fIread\fR()
+returns shall be discarded, and shall not be available for a subsequent
+\fIread\fR(),
+\fIgetmsg\fR(),
+or
+\fIgetpmsg\fR()
+call.
+.P
+How
+\fIread\fR()
+handles zero-byte STREAMS messages is determined by the current read
+mode setting. In byte-stream mode,
+\fIread\fR()
+shall accept data until it has read
+.IR nbyte
+bytes, or until there is no more data to read, or until a zero-byte
+message block is encountered. The
+\fIread\fR()
+function shall then return the number of bytes read, and place the
+zero-byte message back on the STREAM to be retrieved by the next
+\fIread\fR(),
+\fIgetmsg\fR(),
+or
+\fIgetpmsg\fR().
+In message-nondiscard mode or message-discard mode, a zero-byte message
+shall return 0 and the message shall be removed from the STREAM. When a
+zero-byte message is read as the first message on a STREAM, the message
+shall be removed from the STREAM and 0 shall be returned, regardless of
+the read mode.
+.P
+A
+\fIread\fR()
+from a STREAMS file shall return the data in the message at the front
+of the STREAM head read queue, regardless of the priority band of the
+message.
+.P
+By default, STREAMs are in control-normal mode, in which a
+\fIread\fR()
+from a STREAMS file can only process messages that contain a data part
+but do not contain a control part. The
+\fIread\fR()
+shall fail if a message containing a control part is encountered at the
+STREAM head. This default action can be changed by placing the STREAM
+in either control-data mode or control-discard mode with the I_SRDOPT
+\fIioctl\fR()
+command. In control-data mode,
+\fIread\fR()
+shall convert any control part to data and pass it to the application
+before passing any data part originally present in the same message.
+In control-discard mode,
+\fIread\fR()
+shall discard message control parts but return to the process any data
+part in the message.
+.P
+In addition,
+\fIread\fR()
+shall fail if the STREAM head had processed an asynchronous error
+before the call. In this case, the value of
+.IR errno
+shall not reflect the result of
+\fIread\fR(),
+but reflect the prior error. If a hangup occurs on the STREAM being
+read,
+\fIread\fR()
+shall continue to operate normally until the STREAM head read queue is
+empty. Thereafter, it shall return 0.
+.P
+The
+\fIpread\fR()
+function shall be equivalent to
+\fIread\fR(),
+except that it shall read from a given position in the file without
+changing the file pointer. The first three arguments to
+\fIpread\fR()
+are the same as
+\fIread\fR()
+with the addition of a fourth argument
+.IR offset
+for the desired position inside the file. An attempt to perform a
+\fIpread\fR()
+on a file that is incapable of seeking shall result in an error.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return a non-negative
+integer indicating the number of bytes actually read. Otherwise, the
+functions shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EAGAIN
+The file is neither a pipe, nor a FIFO, nor a socket, the O_NONBLOCK
+flag is set for the file descriptor, and the thread would be delayed
+in the read operation.
+.TP
+.BR EBADF
+The
+.IR fildes
+argument is not a valid file descriptor open for reading.
+.TP
+.BR EBADMSG
+The file is a STREAM file that is set to control-normal mode and the
+message waiting to be read includes a control part.
+.TP
+.BR EINTR
+The read operation was terminated due to the receipt of a signal, and
+no data was transferred.
+.TP
+.BR EINVAL
+The STREAM or multiplexer referenced by
+.IR fildes
+is linked (directly or indirectly) downstream from a multiplexer.
+.TP
+.BR EIO
+The process is a member of a background process group attempting to read
+from its controlling terminal, and either the calling thread is blocking
+SIGTTIN or the process is ignoring SIGTTIN or the process group of the
+process is orphaned. This error may also be generated for
+implementation-defined reasons.
+.TP
+.BR EISDIR
+The
+.IR fildes
+argument refers to a directory and the implementation
+does not allow the directory to be read using
+\fIread\fR()
+or
+\fIpread\fR().
+The
+\fIreaddir\fR()
+function should be used instead.
+.TP
+.BR EOVERFLOW
+The file is a regular file,
+.IR nbyte
+is greater than 0, the starting position is before the end-of-file, and
+the starting position is greater than or equal to the offset maximum
+established in the open file description associated with
+.IR fildes .
+.P
+The
+\fIpread\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The file is a regular file or block special file, and the
+.IR offset
+argument is negative. The file pointer shall remain unchanged.
+.TP
+.BR ESPIPE
+The file is a pipe, FIFO, or socket.
+.br
+.P
+The
+\fIread\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The file is a pipe or FIFO, the O_NONBLOCK flag is set for the file
+descriptor, and the thread would be delayed in the read operation.
+.TP
+.BR EAGAIN " or " EWOULDBLOCK
+.br
+The file is a socket, the O_NONBLOCK flag is set for the file
+descriptor, and the thread would be delayed in the read operation.
+.TP
+.BR ECONNRESET
+A read was attempted on a socket and the connection was forcibly closed
+by its peer.
+.TP
+.BR ENOTCONN
+A read was attempted on a socket that is not connected.
+.TP
+.BR ETIMEDOUT
+A read was attempted on a socket and a transmission timeout occurred.
+.P
+These functions may fail if:
+.TP
+.BR EIO
+A physical I/O error has occurred.
+.TP
+.BR ENOBUFS
+Insufficient resources were available in the system to perform the
+operation.
+.TP
+.BR ENOMEM
+Insufficient memory was available to fulfill the request.
+.TP
+.BR ENXIO
+A request was made of a nonexistent device, or the request was outside
+the capabilities of the device.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Reading Data into a Buffer"
+.P
+The following example reads data from the file associated with the file
+descriptor
+.IR fd
+into the buffer pointed to by
+.IR buf .
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/types.h>
+#include <unistd.h>
+\&...
+char buf[20];
+size_t nbytes;
+ssize_t bytes_read;
+int fd;
+\&...
+nbytes = sizeof(buf);
+bytes_read = read(fd, buf, nbytes);
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+This volume of POSIX.1\(hy2008 does not specify the value of the file offset after an
+error is returned; there are too many cases. For programming errors,
+such as
+.BR [EBADF] ,
+the concept is meaningless since no file is involved. For errors that
+are detected immediately, such as
+.BR [EAGAIN] ,
+clearly the pointer should not change. After an interrupt or hardware
+error, however, an updated value would be very useful and is the
+behavior of many implementations.
+.P
+Note that a
+\fIread\fR()
+of zero bytes does not modify the last data access timestamp. A
+\fIread\fR()
+that requests more than zero bytes, but returns zero, is required
+to modify the last data access timestamp.
+.P
+Implementations are allowed, but not required, to perform error
+checking for
+\fIread\fR()
+requests of zero bytes.
+.SS "Input and Output"
+.P
+The use of I/O with large byte counts has always presented problems.
+Ideas such as
+\fIlread\fR()
+and
+\fIlwrite\fR()
+(using and returning
+.BR long s)
+were considered at one time. The current solution is to use abstract
+types on the ISO\ C standard function to
+\fIread\fR()
+and
+\fIwrite\fR().
+The abstract types can be declared so that existing functions work, but
+can also be declared so that larger types can be represented in future
+implementations. It is presumed that whatever constraints limit the
+maximum range of
+.BR size_t
+also limit portable I/O requests to the same range. This volume of POSIX.1\(hy2008 also limits
+the range further by requiring that the byte count be limited so that a
+signed return value remains meaningful. Since the return type is also a
+(signed) abstract type, the byte count can be defined by the
+implementation to be larger than an
+.BR int
+can hold.
+.P
+The standard developers considered adding atomicity requirements to a
+pipe or FIFO, but recognized that due to the nature of pipes and FIFOs
+there could be no guarantee of atomicity of reads of
+{PIPE_BUF}
+or any other size that would be an aid to applications portability.
+.P
+This volume of POSIX.1\(hy2008 requires that no action be taken for
+\fIread\fR()
+or
+\fIwrite\fR()
+when
+.IR nbyte
+is zero. This is not intended to take precedence over detection of
+errors (such as invalid buffer pointers or file descriptors). This is
+consistent with the rest of this volume of POSIX.1\(hy2008, but the phrasing here could be
+misread to require detection of the zero case before any other errors.
+A value of zero is to be considered a correct value, for which the
+semantics are a no-op.
+.P
+I/O is intended to be atomic to ordinary files and pipes and FIFOs.
+Atomic means that all the bytes from a single operation that
+started out together end up together, without interleaving from other
+I/O operations. It is a known attribute of terminals that this is not
+honored, and terminals are explicitly (and implicitly permanently)
+excepted, making the behavior unspecified. The behavior for other
+device types is also left unspecified, but the wording is intended to
+imply that future standards might choose to specify atomicity (or not).
+.P
+There were recommendations to add format parameters to
+\fIread\fR()
+and
+\fIwrite\fR()
+in order to handle networked transfers among heterogeneous file system
+and base hardware types. Such a facility may be required for support by
+the OSI presentation of layer services. However, it was determined that
+this should correspond with similar C-language facilities, and that is
+beyond the scope of this volume of POSIX.1\(hy2008. The concept was suggested to the developers
+of the ISO\ C standard for their consideration as a possible area for future
+work.
+.P
+In 4.3 BSD, a
+\fIread\fR()
+or
+\fIwrite\fR()
+that is interrupted by a signal before transferring any data does not
+by default return an
+.BR [EINTR] 
+error, but is restarted. In 4.2 BSD,
+4.3 BSD,
+and the Eighth Edition, there is an additional function,
+\fIselect\fR(),
+whose purpose is to pause until specified activity (data to read, space
+to write, and so on) is detected on specified file descriptors. It is
+common in applications written for those systems for
+\fIselect\fR()
+to be used before
+\fIread\fR()
+in situations (such as keyboard input) where interruption of I/O due to
+a signal is desired.
+.P
+The issue of which files or file types are interruptible is considered
+an implementation design issue. This is often affected primarily by
+hardware and reliability issues.
+.P
+There are no references to actions taken following an ``unrecoverable
+error''. It is considered beyond the scope of this volume of POSIX.1\(hy2008 to describe what
+happens in the case of hardware errors.
+.P
+Earlier versions of this standard allowed two very different behaviors
+with regard to the handling of interrupts. In order to minimize the
+resulting confusion, it was decided that POSIX.1\(hy2008 should support only one
+of these behaviors. Historical practice on AT&T-derived systems was to
+have
+\fIread\fR()
+and
+\fIwrite\fR()
+return \(mi1 and set
+.IR errno
+to
+.BR [EINTR] 
+when interrupted after some, but not all, of the data requested had
+been transferred. However, the US Department of Commerce FIPS 151\(hy1 and
+FIPS 151\(hy2 require the historical BSD behavior, in which
+\fIread\fR()
+and
+\fIwrite\fR()
+return the number of bytes actually transferred before the interrupt.
+If \(mi1 is returned when any data is transferred, it is difficult to
+recover from the error on a seekable device and impossible on a
+non-seekable device. Most new implementations support this behavior.
+The behavior required by POSIX.1\(hy2008 is to return the number of bytes
+transferred.
+.P
+POSIX.1\(hy2008 does not specify when an implementation that buffers
+\fIread\fR()s
+actually moves the data into the user-supplied buffer, so an
+implementation may choose to do this at the latest possible moment.
+Therefore, an interrupt arriving earlier may not cause
+\fIread\fR()
+to return a partial byte count, but rather to return \(mi1 and set
+.IR errno
+to
+.BR [EINTR] .
+.P
+Consideration was also given to combining the two previous options, and
+setting
+.IR errno
+to
+.BR [EINTR] 
+while returning a short count. However, not only is there no existing
+practice that implements this, it is also contradictory to the idea
+that when
+.IR errno
+is set, the function responsible shall return \(mi1.
+.P
+This volume of POSIX.1\(hy2008 intentionally does not specify any
+\fIpread\fR()
+errors related to pipes, FIFOs, and sockets other than
+.BR [ESPIPE] .
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIioctl\fR\^(\|)",
+.IR "\fIlseek\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIpipe\fR\^(\|)",
+.IR "\fIreadv\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "\fB<stropts.h>\fP",
+.IR "\fB<sys_uio.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

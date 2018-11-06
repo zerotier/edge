@@ -1,0 +1,129 @@
+'\" et
+.TH EXIT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+exit
+\(em cause the shell to exit
+.SH SYNOPSIS
+.LP
+.nf
+exit \fB[\fIn\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR exit
+utility shall cause the shell to exit with the exit status specified
+by the unsigned decimal integer
+.IR n .
+If
+.IR n
+is specified, but its value is not between 0 and 255 inclusively, the
+exit status is undefined.
+.P
+A
+.IR trap
+on
+.BR EXIT
+shall be executed before the shell terminates, except when the
+.IR exit
+utility is invoked in that
+.IR trap
+itself, in which case the shell shall exit immediately.
+.SH OPTIONS
+None.
+.SH OPERANDS
+See the DESCRIPTION.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+None.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The exit status shall be
+.IR n ,
+if specified. Otherwise, the value shall be the exit value of the last
+command executed, or zero if no command was executed. When
+.IR exit
+is executed in a
+.IR trap
+action, the last command is considered to be the command that executed
+immediately preceding the
+.IR trap
+action.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+Exit with a
+.IR true
+value:
+.sp
+.RS 4
+.nf
+\fB
+exit 0
+.fi \fR
+.P
+.RE
+.P
+Exit with a
+.IR false
+value:
+.sp
+.RS 4
+.nf
+\fB
+exit 1
+.fi \fR
+.P
+.RE
+.SH "RATIONALE"
+As explained in other sections, certain exit status values have been
+reserved for special uses and should be used by applications only for
+those purposes:
+.IP "\0126" 8
+A file to be executed was found, but it was not an executable utility.
+.IP "\0127" 8
+A utility to be executed was not found.
+.IP >128 8
+A command was interrupted by a signal.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.14" ", " "Special Built-In Utilities"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

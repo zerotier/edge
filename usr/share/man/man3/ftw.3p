@@ -1,0 +1,284 @@
+'\" et
+.TH FTW "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ftw
+\(em traverse (walk) a file tree
+.SH SYNOPSIS
+.LP
+.nf
+#include <ftw.h>
+.P
+int ftw(const char *\fIpath\fP, int (*\fIfn\fP)(const char *,
+    const struct stat *\fIptr\fP, int \fIflag\fP), int \fIndirs\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIftw\fR()
+function shall recursively descend the directory hierarchy rooted in
+.IR path .
+For each object in the hierarchy,
+\fIftw\fR()
+shall call the function pointed to by
+.IR fn ,
+passing it a pointer to a null-terminated character string containing
+the name of the object, a pointer to a
+.BR stat
+structure containing information about the object, filled in as if
+\fIstat\fR()
+or
+\fIlstat\fR()
+had been called to retrieve the information. Possible values of the
+integer, defined in the
+.IR <ftw.h> 
+header, are:
+.IP FTW_D 10
+For a directory.
+.IP FTW_DNR 10
+For a directory that cannot be read.
+.IP FTW_F 10
+For a non-directory file.
+.IP FTW_SL 10
+For a symbolic link (but see also FTW_NS below).
+.IP FTW_NS 10
+For an object other than a symbolic link on which
+\fIstat\fR()
+could not successfully be executed. If the object is a symbolic link
+and
+\fIstat\fR()
+failed, it is unspecified whether
+\fIftw\fR()
+passes FTW_SL or FTW_NS to the user-supplied function.
+.P
+If the integer is FTW_DNR, descendants of that directory shall not be
+processed. If the integer is FTW_NS, the
+.BR stat
+structure contains undefined values. An example of an object that
+would cause FTW_NS to be passed to the function pointed to by
+.IR fn
+would be a file in a directory with read but without execute (search)
+permission.
+.P
+The
+\fIftw\fR()
+function shall visit a directory before visiting any of its
+descendants.
+.P
+The
+\fIftw\fR()
+function shall use at most one file descriptor for each level in
+the tree.
+.P
+The argument
+.IR ndirs
+should be in the range [1,\c
+{OPEN_MAX}].
+.P
+The tree traversal shall continue until either the tree is exhausted,
+an invocation of
+.IR fn
+returns a non-zero value, or some error, other than
+.BR [EACCES] ,
+is detected within
+\fIftw\fR().
+.P
+The
+.IR ndirs
+argument shall specify the maximum number of directory streams or file
+descriptors or both available for use by
+\fIftw\fR()
+while traversing the tree. When
+\fIftw\fR()
+returns it shall close any directory streams and file descriptors it
+uses not counting any opened by the application-supplied
+.IR fn
+function.
+.P
+The results are unspecified if the application-supplied
+.IR fn
+function does not preserve the current working directory.
+.P
+The
+\fIftw\fR()
+function need not be thread-safe.
+.SH "RETURN VALUE"
+If the tree is exhausted,
+\fIftw\fR()
+shall return 0. If the function pointed to by
+.IR fn
+returns a non-zero value,
+\fIftw\fR()
+shall stop its tree traversal and return whatever value was returned
+by the function pointed to by
+.IR fn .
+If
+\fIftw\fR()
+detects an error, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.P
+If
+\fIftw\fR()
+encounters an error other than
+.BR [EACCES] 
+(see FTW_DNR and FTW_NS above), it shall return \(mi1 and set
+.IR errno
+to indicate the error. The external variable
+.IR errno
+may contain any error value that is possible when a directory is opened
+or when one of the
+.IR stat
+functions is executed on a directory or file.
+.SH ERRORS
+The
+\fIftw\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Search permission is denied for any component of
+.IR path
+or read permission is denied for
+.IR path .
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of
+.IR path
+names an existing file that is neither a directory nor a symbolic link
+to a directory.
+.TP
+.BR EOVERFLOW
+A field in the
+.BR stat
+structure cannot be represented correctly in the current programming
+environment for one or more files found in the file hierarchy.
+.P
+The
+\fIftw\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR ndirs
+argument is invalid.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.P
+In addition, if the function pointed to by
+.IR fn
+encounters system errors,
+.IR errno
+may be set accordingly.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Walking a Directory Structure"
+.P
+The following example walks the current directory structure, calling
+the
+.IR fn
+function for every directory entry, using at most 10 file descriptors:
+.sp
+.RS 4
+.nf
+\fB
+#include <ftw.h>
+\&...
+if (ftw(".", fn, 10) != 0) {
+    perror("ftw"); exit(2);
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIftw\fR()
+function may allocate dynamic storage during its operation. If
+\fIftw\fR()
+is forcibly terminated, such as by
+\fIlongjmp\fR()
+or
+\fIsiglongjmp\fR()
+being executed by the function pointed to by
+.IR fn
+or an interrupt routine,
+\fIftw\fR()
+does not have a chance to free that storage, so it remains
+permanently allocated. A safe way to handle interrupts is to store the
+fact that an interrupt has occurred, and arrange to have the function
+pointed to by
+.IR fn
+return a non-zero value at its next invocation.
+.P
+Applications should use the
+\fInftw\fR()
+function instead of the obsolescent
+\fIftw\fR()
+function.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fIftw\fR()
+function may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIfdopendir\fR\^(\|)",
+.IR "\fIfstatat\fR\^(\|)",
+.IR "\fIlongjmp\fR\^(\|)",
+.IR "\fInftw\fR\^(\|)",
+.IR "\fIsiglongjmp\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<ftw.h>\fP",
+.IR "\fB<sys_stat.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

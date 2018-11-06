@@ -1,0 +1,1283 @@
+#!/usr/bin/perl
+# Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+
+use Carp;
+use strict;
+use IO::File;
+use Net::DNS;
+use Net::DNS::RR;
+use Net::DNS::SEC::Tools::BootStrap;
+use Net::DNS::SEC::Tools::QWPrimitives;
+
+# this is actually not used directly, but there is an autoload bug in
+# Net::DNS::RR::DS that gets triggered if you don't have it.
+use Digest::BubbleBabble;
+
+######################################################################
+# detect needed perl modules
+#
+dnssec_tools_load_mods("Net::DNS::SEC"     => "",
+		       "Net::DNS::RR::RRSIG" => "noerror",
+		      );
+
+my %opts =
+  ( 'd' => 'test.dnssec-tools.org',
+    'ns' => 'dns1=127.0.0.1',
+    'a-addr' => '127.0.0.1',
+    'aaaa-addr' => '::1',
+    'S' => ";\n; %s\n;\n",
+
+    o => "db.",
+    O => ".zs",
+    M => ".modified",
+    'donuts-output-suffix' => '.donuts',
+
+    'bind-db-dir' => '/etc/named',
+    'html-doc-root' => '/var/www/dnssec-test-zone',
+    'html-log' => 'logs/dnssec-test-zone',
+
+    #  Add --genksk --genzsk for new zones
+    'a' =>  "--verbose -gends --endtime +2592000 -archivedir TZkeyarchive",
+# XXX:
+# nsec skips the good record
+# nsec says type shouldn't be used
+# sig doesn't cover type
+    'p' => 'good,badsign,nosig,baddata,futuredate,pastdate,reverseddates',
+    'cname-extra-prefixes' => 'cnametodne',
+# XXX:
+#   newksk: doesn't work because zonesigner requires generation of zsks too
+    'P' => 'insecure-ns,good-ns,badsign-ns,nosig-ns,nods-ns,futuredate-ds,pastdate-ds,reverseddates-ns,rollzsk-ns,newzsk-ns,newkeys-ns,rsamd5keys-ns,nsec3-ns',
+  );
+
+DTGetOptions(\%opts,
+		['GUI:VERSION',"DNSSEC-Tools Version: 2.1"],
+		['GUI:separator',"Output File Naming:"],
+		['o|output-file-prefix=s',
+		 'Output prefix to use for zone files (default = db.)'],
+		['O|output-suffix-signed-file=s',
+		 'Output suffix to be given to zonesigner (default = .zs)'],
+		['M|output-modified-file=s', 'Output suffix for the modified zone file (default = .modified)'],
+		'',
+		['D|run-donuts','Run donuts on the results'],
+		['donuts-output-suffix=s', 'The file suffix to use for donuts output (default = .donuts)'],
+
+		['GUI:separator',"Output Zone Information:"],
+		['d|domain=s', 'domain name to generate records for'],
+		['ns|name-servers|n=s',
+		 'Comma separated name=addr name-server records'],
+		['a-addr|a-record-address=s',
+		 'A record (IPv4) address to use in data'],
+		['aaaa-addr|a-record-address=s',
+		 'AAAA record (IPv6) address to use in data'],
+
+		['GUI:separator',"Output Data Type Selection:"],
+		['p|record-prefixes=s',
+		 'Comma separated list of record prefixes to use'],
+		['P|ns-prefixes=s',
+		 'Comma separated list of NS record prefixes to use'],
+		['cname-extra-prefixes=s',
+		 'Comma separated list of extra prefixes to use for cnames'],
+		['c|no-cname-records','Don\'t create CNAME records'],
+		['s|no-ns-records','Don\'t create sub-zone records'],
+		'',
+		['GUI:separator',"Task Selection:"],
+		['g|dont-generate-zone',
+		 'Do not generate the zone; use the existing and sign/modify it'],
+		['z|dont-run-zonesigner',
+		 'Do not run zonesigner to sign the records'],
+		['Z|dont-destroy',
+		 'Do not destroy the records and leave them properly signed'],
+		['bind-config=s',
+		 'Generate a bind configuration file snippit to load the DB sets'],
+		['html-out=s',
+		 'Generate a HTML page containing a list of record names'],
+		['apache-out=s',
+		 'Generate a Apache config snippit for configuring apache for each zone record'],
+		['sh-test-out=s',
+		 'Generate a test script for running dig commands'],
+		['v|verbose','Verbose output'],
+
+		['GUI:separator',"Zonesigner Configuration:"],
+		['a|zonesigner-arguments=s',
+		 'Arguments to pass to zonesigner'],
+		['k|generate-keys','Have zonesigner generate needed keys'],
+		'',
+
+		['GUI:screen','Bind Configuration Options',
+		 doif => 'bind-config'],
+		['bind-db-dir=s',
+		 'The base directory where the bind DB files will be placed'],
+
+		['GUI:screen','HTML Output Configuration',
+		 doif => 'html-out'],
+		['html-out-add-links','Make each html record name a http link to that address'],
+		['html-out-add-db-links','Add a link to each of the generated DB files.'],
+		['html-out-add-donuts-links','Add a link to each of the generated donuts error list files.'],
+
+		['GUI:screen','SH Test Script Configuration Options',
+		 doif => 'sh-out'],
+		['sh-test-resolver=s',
+		 'The resolver address to force'],
+	       );
+
+# default zonesigner opts: add key generation stuff if -k specified.
+$opts{'a'} .= " --genzsk --genksk  --ksklength 2048 --zsklength 1024"
+  if ($opts{'k'});
+
+#
+# address definitions
+#
+my %addrs =
+   (A    => $opts{'a-addr'},
+    AAAA => $opts{'aaaa-addr'});
+
+sub getnums {
+    my $count = shift;
+    my $res;
+    $res = "0123456789" x (int($count/10));
+    $res .= substr("0123456789",0,$count-10*(int($count/10)));
+}
+
+my %extrarecords =
+   (TXT => '"TXT record test"',
+    longlabel => sub { my ($domain, $name) = @_;
+			my $record = $name . "-" .
+			  (getnums(63 - length($name)-1)); 
+		       print_record("$record.$domain.", "1D IN",
+				    'TXT', '"Long Label Test"');
+		       add_web_stuff_for_domain($domain, "$record", "TXT");
+		   },
+    wildcard => sub { my ($domain, $name) = @_;
+		       print_record("*", "1D IN",
+				    'TXT', '"Wild Card Record"');
+		       add_web_stuff_for_domain($domain, "*", "TXT");
+		   },
+    nsectest => sub { my ($domain, $name) = @_;
+		       print_record("nsectest", "1D IN",
+				    'TXT', '"NSEC record signature change"');
+		       add_web_stuff_for_domain($domain, "nsectest", "TXT");
+		   },
+# XXX: arg...  need to find the actual rules.
+#     longrecord => sub { my ($domain, $name) = @_;
+# 			my $length = 230 - length($domain) - 1 - 64;
+# 			my $record = $name . "-" .
+# 			  getnums(63 - length($name) - 1) . ".";
+# 			while ($length > 63) {
+# 			    $record .= getnums(63) . ".";
+# 			    $length -= 64;
+# 			}
+# 			$record .= getnums($length);
+# 			print_record("$record.$domain", "1D IN",
+# 				     'TXT', '"Long Record Test"');
+# 			add_web_stuff_for_domain($domain, "$record", "TXT");
+# 		    },
+   );
+
+#
+# data modification functions
+#
+#   regexp -> function
+#        OR
+#   regexp -> [function, EXTRA_ARG1, ARG2, ...]
+#
+#  function will be called with all the REGEXP match args followed by
+#  the optionla args
+#
+my %destroyFunctions =
+  (
+   # changes the rrsig signature to insert bogus x's
+   '^(badsign[-\w]+).*IN\s+(CNAME|A+)\s+' => \&destroy_signature,
+   '^(badsign[-\w]+).*IN\s+NS\s+' => [\&destroy_signature, 'DS'],
+
+   # changes the signature on an NSEC record
+   '^(nsectest)\..*IN\s+TXT\s+' => [\&destroy_signature, 'NSEC'],
+
+   # changes the address/cname record in the data
+   '^(baddata[-\w]+).*IN\s+(A+)\s+(.*)' => \&modify_address,
+   '^(baddata[-\w]+).*IN\s+(CNAME)\s+(.*)' => \&modify_cname,
+   '^(cnametodne[-\w]+).*IN\s+(CNAME)\s+(.*)' => \&modify_cnametodne,
+
+   # removes the rrsig record
+   '^(nosig[-\w]+).*IN\s+(CNAME|A+)\s+' => [\&delete_signature, 'RRSIG'],
+   '^(nosig[-\w]+).*IN\s+NS\s+' => [\&delete_signature, 'DS', 'RRSIG'],
+
+   # removes the DS record
+   '^(nods[-\w]+).*IN\s+NS\s+' => [\&delete_signature, '', 'DS'],
+
+   # future expiration date = 60 days from now -> 90 days from now
+   # warning: make_new_date expects $2 to be the type
+   '^(futuredate[-\.\w]+).*IN\s+(A+|CNAME)\s+' =>
+   [\&make_new_date, 60*24*60*60, 90*24*60*60],
+   '^(futuredate[-\.\w]+).*IN\s+NS\s+' =>
+   [\&make_new_date, 'DS', 60*24*60*60, 90*24*60*60],
+
+   # past date: 30 days ago to 5 minutes ago
+   # warning: make_new_date expects $2 to be the type
+   '^(pastdate[-\.\w]+).*IN\s+(A+|CNAME)\s+' =>
+   [\&make_new_date, -(30*24*60*60), -300],
+   '^(pastdate[-\.\w]+).*IN\s+NS\s+' =>
+   [\&make_new_date, 'DS', -(30*24*60*60), -300],
+
+   # reverse dates
+   '^(reverseddates[-\w]+).*IN\s+(A+|CNAME)\s+' => \&reverse_dates,
+   '^(reverseddates[-\w]+).*IN\s+NS\s+' => [\&reverse_dates, 'DS'],
+  );
+
+#
+# Legend information
+#
+my %LegendInformation =
+(
+
+ # modification types
+ addedlater => 'The record was added after signing took place and contain no RRSIG records properly signing them.',
+ baddata => 'The data in the record was modified after signing and thus the signature should not validate the record data.  Note: modified CNAME records will point to a otherwise valid domain name within the zone (see cnametodne)',
+ cnametodne =>
+ 'The CNAME record has been modified to point to a record that never existed in the signed zone.',
+ badsign => 'The RRSIG signature data was modified after signing so the signature should no longer be a valid signature.',
+ futuredate => 'The record and signature are valid but the inception date of the RRSIG is in the future and should not be valid yet.',
+ pastdate => 'The expiration date of the RRSIG covering the record has expired.',
+ good => 'An unmodified record that should be completely valid.',
+ nosig => 'The RRSIG record has been completely removed from the data set and is not available to verify the original record.',
+ nods => 'A valid NS record where the parent zone did not have the DNSKEY for the child and thus does not provide a valid DS record to securely delegate to the child zone.',
+
+ # key difference subzones
+ rollzsk => 'The ZSK for this zone is rolled every time the zone is generated',
+ newzsk => 'The ZSKs for this zone are brand new every time the zone is generated',
+ newksk => 'The KSKs (but not the ZSKs) for this zone are brand new every time the zone is generated',
+ newkeys => 'The KSKs and the ZSKs for this zone are brand new every time the zone is generated',
+ rsamd5keys => 'The keys for this zone are of type RSAMD5',
+ nsec3 => 'The zone contains NSEC3 proof-of-non-existence records',
+
+ # record types
+ A => 'An A (IPv4) address record',
+ AAAA => 'An AAAA (IPv6) address record',
+ CNAME => 'A CNAME record pointing to an address record',
+ DNAME => 'A DNAME record pointing to a parallel subzone',
+ NS => 'An NS record pointing to a child zone.',
+ longlabel => 'A TXT record with a maximum length label (63)',
+ longrecord => 'A TXT record with a maximum length record (254)',
+ wildcard => 'A TXT record generated by a wildcard',
+ nsectest => 'A NSEC record that will not valiadate because the signature is incorrect',
+);
+
+#
+# ZONENAME => EXTRAOPTS
+#   defines extra options that zonesigner will run with for a given domain
+#
+#   - using special op of NOSIGN means it won't run zonesigner
+#
+my %zonesigner_domain_opts =
+  (
+   'rollzsk-ns.' . $opts{'d'} => ($opts{'a'} =~ /-gen/ ? '' : '-rollzsk'),
+   'newzsk-ns.' . $opts{'d'} => '-genzsk',
+   'newksk-ns.' . $opts{'d'} => '-genksk',
+   'newkeys-ns.' . $opts{'d'} => '-genkeys',
+   'nsec3-ns.' . $opts{'d'} => '-usensec3',
+   'rsamd5keys-ns.' . $opts{'d'} => '-algorithm RSAMD5 -genkeys',
+   'insecure-ns.' . $opts{'d'} => 'NOSIGN',
+  );
+
+#
+# globals
+#
+my $name;
+my @prefixes = split(/,\s*/,$opts{p});
+my @nsprefixes = split(/,\s*/,$opts{P});
+my @cnameextraprefixes = split(/,\s*/,$opts{'cname-extra-prefixes'});
+
+# output information
+my (@resultfiles, @outdomains);
+
+# file handles
+my ($fh, $bcfh, $apachefh, $htmlfh, $shfh);
+
+# domain info to store
+my (%linkinfo, %keypaths, $topdomain, $currentdomain);
+
+######################################################################
+# do it
+
+setup_global_files();
+
+# generate the zone we wanted
+$topdomain = $opts{'d'};
+generate_zone($opts{'d'}, $opts{'c'}, $opts{'s'});
+
+shutdown_global_files();
+
+Verbose("\nDONE:\n");
+Verbose("I created the following modified zone files:\n","  ",
+	join("\n  ",@resultfiles));
+
+######################################################################
+# Generate records based on inputs
+#
+
+sub generate_zone {
+    my ($domain, $nocnames, $nosubdomains) = @_;
+
+    # save current zone and make our new one the current
+    my $olddomain = $currentdomain;
+    $currentdomain = $domain;
+
+    # add the named.conf snippit for this file
+    if ($bcfh) {
+	print $bcfh "zone \"$domain\" {\n";
+	print $bcfh "\ttype master;\n";
+	print $bcfh "\tfile \"$opts{'bind-db-dir'}/$opts{'o'}$domain$opts{'O'}.signed$opts{'M'}\";\n";
+	print $bcfh "};\n\n";
+    }
+
+    generate_records($domain, $nocnames, $nosubdomains)   if (!$opts{'g'});
+    run_zonesigner($domain)                		  if (!$opts{'z'});
+    modify_records($domain)                		  if (!$opts{'Z'});
+    run_donuts($domain)                		          if ($opts{'D'});
+
+    unshift @outdomains, $domain;
+
+    # restore the current domain
+    $currentdomain = $olddomain;
+}
+
+#######################################################################
+# Generate output records
+#
+# args: string    the domain name,
+#       boolean   whether to generate cnames
+#       boolean   whether to generate sub-domains
+#
+#   - loops through output record types (%addrs) and generates them
+#   - generates cnames for each record type if appropriate
+#
+sub generate_records {
+    my ($domain, $nocnames, $nosubdomains) = @_;
+    my $file = $opts{'o'} . $domain;
+    Verbose("generating $file");
+    #
+    # open the output file
+    #
+    $fh = new IO::File (">$file");
+
+    generate_top($domain);
+
+    # bogus address to replace bad cname data and point to this:
+    print_record("other-a", "1D IN", 'A', $addrs{'A'});
+    print_record("other-aaaa", "1D IN", 'AAAA', $addrs{'AAAA'});
+
+    #
+    # for each address, generate records
+    #
+    print_comment("Main records");
+    foreach my $addr (keys(%addrs)) {
+	print_comment("$addr records");
+	# generate address records
+	foreach my $prefix (@prefixes) {
+	    print_record("$prefix-$addr", "1D IN", $addr, $addrs{$addr});
+	    add_web_stuff_for_domain($domain, "$prefix-$addr", $addr);
+	}
+
+	# generate address records
+	if (!$nocnames) {
+	    print_comment("CNAMEs to $addr records");
+	    foreach my $cnameprefix (@prefixes, @cnameextraprefixes) {
+		foreach my $addrprefix (@prefixes) {
+		    print_record("${cnameprefix}-cname-to-${addrprefix}-${addr}",
+				 "CNAME",
+				 "", lc("${addrprefix}-${addr}"));
+		    add_web_stuff_for_domain($domain, "${cnameprefix}-cname-to-${addrprefix}-${addr}", $addr);
+		}
+	    }
+	}
+    }
+
+    print_comment("Other Record Types");
+    foreach my $name (keys(%extrarecords)) {
+	if (ref($extrarecords{$name}) eq 'CODE') {
+	    $extrarecords{$name}($domain, $name);
+	} else {
+	    print_record("extra-$name", "1D IN", $name, $extrarecords{$name});
+	    add_web_stuff_for_domain($domain, "extra-$name", $name);
+	}
+    }
+
+    # generate address records
+    if (!$nosubdomains) {
+	print_comment("NS records to sub zones");
+	foreach my $nsprefix (@nsprefixes) {
+	    my $savefh = $fh;
+	    generate_zone("${nsprefix}.$domain", 1, 1);
+	    $fh = $savefh;
+
+	    # DNAME records
+	    print_record("dname-${nsprefix}",
+			 "1D IN", "DNAME",
+			 lc("${nsprefix}.$domain."));
+
+	    foreach my $ns (split(",",$opts{'ns'})) {
+		my ($rec,$addr) = split(/=/,$ns);
+
+		# NS record
+		print_record("${nsprefix}",
+			     "1D IN", "NS",
+			     lc("$rec.${nsprefix}.$domain."));
+
+		# glue records
+		print_record(lc("$rec.${nsprefix}.$domain."),
+			     "1D IN", "A", $addr);
+	    }
+	}
+    }
+
+
+    $fh->close();
+}
+
+#######################################################################
+# Setup and open the various output files
+#
+#  - bind configuration output file  --bind-config
+#  - html output file                --html-out
+#  - apache config file              --apache-out
+#  - sh test script                  --sh-test-out
+#
+sub setup_global_files {
+
+    #
+    # bind configuration file
+    #
+    if ($opts{'bind-config'}) {
+	$bcfh = new IO::File(">$opts{'bind-config'}");
+	print $bcfh "// " . "*" x 70 . "\n";
+	print $bcfh "// DNSSEC Test Zone Files\n";
+	print $bcfh "// " . "*" x 70 . "\n\n";
+    }
+
+    #
+    # HTML output file o' links
+    #
+    if ($opts{'html-out'}) {
+	$htmlfh = new IO::File(">$opts{'html-out'}");
+	print $htmlfh "<head>
+    <title>Test Zone HTML Links</title>
+    <style type=\"text/css\">
+<!--
+table {
+  border-style: solid;
+  border-color: #66f;
+  border-width: 2px;
+  margin-left: 50px;
+  margin-right: 50px;
+}
+th {
+  border-style: outset;
+  border-width: 2px;
+  border-color: #66f;
+  background-color: #ddf;
+}
+td {
+  border-style: solid;
+  border-width: 1px 0px 0px 0px;
+  border-color: #99f;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+h1,h2 {
+  background-color: #ddf;
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Test Zone HTML Links</h1>
+    <p>The below is a lits of HTML links to DNS zone names that may have various DNSSEC problems.</p>
+<h2>Legend:</h2>
+<p>The following table describes the components of a record name that indicate how the data in the record has potentally been affected</p>
+<table>
+<tr><th>Type</th><th>Name Component</th><th>Description</th></tr>\n";
+
+	foreach my $addr (keys(%addrs)) {
+	    print $htmlfh "<tr><td>Record</td><td>$addr</td><td>$LegendInformation{$addr}</td></tr>\n";
+	}
+	if (!$opts{'c'}) {
+	    print $htmlfh "<tr><td>Record</td><td>CNAME</td><td>$LegendInformation{CNAME}</td></tr>\n";
+	}
+	if (!$opts{'s'}) {
+	    print $htmlfh "<tr><td>Record</td><td>NS</td><td>$LegendInformation{NS}</td></tr>\n";
+	}
+	foreach my $key (keys(%extrarecords)) {
+	    print $htmlfh "<tr><td>Record</td><td>$key</td><td>$LegendInformation{$key}</td></tr>\n";
+	}
+	
+	my %done;
+	foreach my $prefix (@prefixes, @nsprefixes, @cnameextraprefixes) {
+	    next if ($done{$prefix});
+	    $done{$prefix} = 1;
+	    print $htmlfh "<tr><td>Manipulation</td><td>$prefix</td><td>$LegendInformation{$prefix}</td></tr>\n";
+	}
+	print $htmlfh "
+</table>
+<p>Records may contain any number of the above components.  For example, a record name of \"nosig-cname-to-futuredate-a\" would be a CNAME record with no signature which was pointing at an A record with an RRSIG which is not yet valid at the time the signature was created.<p>
+";
+    }
+
+    #
+    # Apache configuration file
+    #
+    if ($opts{'apache-out'}) {
+	$apachefh = new IO::File(">$opts{'apache-out'}");
+	print $apachefh "#\n# Apache Configuration for DNSSEC Test zone\n#\n";
+    }
+
+    #
+    # SH test script
+    #
+    if ($opts{'sh-test-out'}) {
+	$shfh = new IO::File(">$opts{'sh-test-out'}");
+	print $shfh "#!/bin/sh\n\n# test script for testing the test zone\n\n";
+    }
+
+}
+
+sub shutdown_global_files {
+    $bcfh->close() if ($bcfh);
+    $apachefh->close() if ($apachefh);
+    $shfh->close() if ($shfh);
+    if ($htmlfh) {
+	foreach my $domain (@outdomains) {
+	    print $htmlfh "    <h2>Records in $domain</h2>\n    <ul>";
+	    if ($opts{'html-out-add-db-links'}) {
+		print $htmlfh "<p>The zone file for this domain: <a href=\"$opts{'o'}$domain$opts{'O'}.signed$opts{'M'}\">$domain</a></p>\n";
+	    }
+	    if ($opts{'html-out-add-donuts-links'}) {
+		print $htmlfh "<p>The errors for the records contained within this zone as caught by the <i>donuts</i> application: <a href=\"$opts{'o'}$domain$opts{'O'}.signed$opts{'M'}$opts{'donuts-output-suffix'}\">$domain</a></p>\n";
+	    }
+	    foreach my $addr (sort @{$linkinfo{$domain}}) {
+		print $htmlfh "        <li>";
+		print $htmlfh "<a href=\"http://$addr/\">"
+		  if ($opts{'html-out-add-links'});
+		print $htmlfh $addr;
+		print $htmlfh "</a>"
+		  if ($opts{'html-out-add-links'});
+		print $htmlfh "</li>\n";
+	    }
+	    print $htmlfh "    </ul>\n";
+	}
+	print $htmlfh "</body>\n";
+    }
+}
+
+######################################################################
+# Create the apache web configuration file
+# Create the shell script test script file
+#
+sub add_web_stuff_for_domain {
+    my ($domain, $addr, $type) = @_;
+    if ($htmlfh) {
+	push @{$linkinfo{$domain}},"$addr.$domain";
+    }
+    if ($apachefh) {
+	print $apachefh "<VirtualHost $addr.$domain:80>\n";
+	print $apachefh "  DocumentRoot $opts{'html-doc-root'}\n";
+	print $apachefh "  ServerName $addr.$domain\n";
+	print $apachefh "  CustomLog $opts{'html-log'} combined\n";
+	print $apachefh "</VirtualHost>\n\n";
+    }
+    if ($shfh) {
+	print $shfh "echo \"$addr.$domain:  \"\n";
+	print $shfh "dig +short " .
+	  ($opts{'sh-test-resolver'} ? "\@$opts{'sh-test-resolver'} " : "") .
+	    "$addr.$domain $type\n";
+	print $shfh "echo \"\"\n";
+	print $shfh "echo \"\"\n";
+    }
+}
+
+
+######################################################################
+# Run zonesigner on the resulting file.
+#
+sub run_zonesigner {
+    my ($domain) = @_;
+
+    my $infile = $opts{'o'} . $domain;
+    my $outfile = $opts{'o'} . $domain . $opts{'O'};
+
+    #
+    # Run zonesigner to sign the thing
+    #
+    if ($zonesigner_domain_opts{$domain} eq 'NOSIGN') {
+	# we don't actually want to sign this zone; just copy it
+	Verbose("copying $infile to produce (unsigned) $outfile.signed");
+	System("cp $infile $outfile.signed");
+    } else {
+	Verbose("running zonesigner on $infile ($domain) to produce $outfile.signed");
+	System("zonesigner $opts{'a'} $zonesigner_domain_opts{$domain} --intermediate $infile$opts{'O'} --zone $domain $infile $outfile.signed");
+    }
+}
+
+######################################################################
+# Run donuts on the final results.
+#
+sub run_donuts {
+    my ($domain) = @_;
+
+    my $infile = $opts{'o'} . $domain . $opts{'O'} . '.signed' . $opts{'M'};
+    my $outfile = $infile . $opts{'donuts-output-suffix'};
+
+    #
+    # Run donuts to check the badness of the zone
+    #
+    Verbose("running donuts on $infile to produce $outfile");
+    System("donuts $infile $domain > $outfile 2>&1");
+}
+
+######################################################################
+# Modifies the records based on the registered functions
+#
+sub modify_records {
+    my ($domain) = @_;
+    my $infile = $opts{'o'} . $domain . $opts{'O'} . '.signed';
+    my $outfile = $opts{'o'} . $domain . $opts{'O'} . '.signed' . $opts{'M'};
+
+    push @resultfiles, $outfile;
+
+    # if it wasn't signed, the modifications won't work
+    if ($zonesigner_domain_opts{$domain} eq 'NOSIGN') {
+	Verbose("Not modifying records in $infile; copying to $outfile");
+	System("cp $infile $outfile");
+	return;
+    }
+
+    open(I,"$infile");
+    $fh = new IO::File (">$outfile");
+    $_ = <I>;
+    my @matches;
+    while ($_) {
+	my $found;
+	foreach my $type (keys(%destroyFunctions)) {
+	    my $matchtype = $type;
+	    $matchtype =~ s/CURRENTDOMAIN/$domain/;
+	    if (@matches = /$matchtype/) {
+		my @args;
+		my $func = $destroyFunctions{$type};
+		if (ref($func) eq 'ARRAY') {
+		    @args = @$func;
+		    $func = shift @args;
+		}
+		$func->(@matches, @args);
+		$found = 1;
+		last;
+	    }
+	}
+	if (!$found) {
+	    print $fh $_;
+	    $_ = <I>;
+	}
+    }
+
+    print $fh "; records added later after signing took place\n";
+    foreach my $addr (keys(%addrs)) {
+	print $fh "addedlater-nosig-$addr.$domain. 86400 IN $addr $addrs{$addr}\n";
+	add_web_stuff_for_domain($domain, "addedlater-nosig-$addr", $addr);
+
+	# zone has no sub-key
+
+	next if (!exists($keypaths{$domain}));
+
+	# the current RRset
+	my $rec =
+	  "addedlater-withsig-$addr.$domain. 86400 IN $addr $addrs{$addr}";
+	print $fh $rec,"\n";
+	
+	# turn into an object
+	$rec = Net::DNS::RR->new($rec);
+
+	# create the sig record
+	my $sigrr = Net::DNS::RR::RRSIG->create([$rec], $keypaths{$domain},
+						ttl => $rec->ttl);
+	# print it
+	print $fh $sigrr->string,"\n";
+
+    }
+
+    close(I);
+    $fh->close();
+}
+
+######################################################################
+# Functions to mess with results
+#
+sub destroy_signature {
+    my ($name, $type) = @_;
+    Verbose("  modifying signatures of $name");
+    print $fh $_;
+    my $inrec = 0;
+    while (<I>) {
+	last if /^\w/;
+	$inrec = 1 if (/RRSIG\s+$type/);
+	s/^(\s*)(.)(.*)= \)/$1 . ($2 eq "x" ? "y" : "x") . $3 . "= )"/e if ($inrec);
+	$inrec = 0 if (/\)/);
+	print $fh $_;
+    }
+}
+
+sub modify_address {
+    my ($name, $type, $data) = @_;
+    Verbose("  modifying data of $name:$type");
+# mods end-field (eg address)
+    $_ =~ s/(.)$/($1 eq '0') ? "1" : "0"/e;
+    print $fh $_;
+    $_ = <I>;
+}
+
+sub modify_cname {
+    my ($name, $type, $data) = @_;
+    Verbose("  modifying data of $name:$type");
+# modifies CNAME
+    $_ =~ s/([-\w]+)(-a+)\.([-\w\.]+)$/other$2.$currentdomain./;
+    print $fh $_;
+    $_ = <I>;
+}
+
+sub modify_cnametodne {
+    my ($name, $type, $data) = @_;
+    Verbose("  modifying data of $name:$type");
+# modifies CNAME
+    $_ =~ s/([-\w]+)(-a+)\.([-\w\.]+)$/addedlater-nosig$2.$topdomain./;
+    print $fh $_;
+    $_ = <I>;
+}
+
+sub delete_signature {
+    my ($name, $type, $expr) = @_;
+    Verbose("  deleting signatures of $_[0]");
+    print $fh $_;
+    my $inrec = 0;
+    while (<I>) {
+	last if /^\w/;
+	$inrec = 1 if (/$expr\s+$type/);
+	print $fh $_ if (!$inrec);
+	$inrec = 0 if (/\)/);
+    }
+}
+
+sub make_new_date {
+    my ($name, $type, $sigin_mod, $sigex_mod) = @_;
+    $type = $2 if (!$type);
+    Verbose("  changing time in signatures of $_[0]");
+
+    # print and save the current rr set
+    print $fh $_;
+    my $currentrr = $_ if ($type ne 'DS');
+
+    # delete the old signature
+    my $inrec = 0;
+    my $slurp = 0;
+    my ($keyid, $keyname);
+    my @records;
+    while (<I>) {
+	last if /^\w/;
+	if ($type eq 'DS' && /\d+\s+DS\s+\d+/) {
+	    $slurp=1;
+	    $currentrr = $name . " " . $_;
+	} elsif ($slurp) {
+	    $currentrr .= $_;
+	}
+	if ($inrec == 1) {
+	    # get the key id from the current line after the RRSIG line
+	    # Note: depends heavily on format of dnssec-signzone output
+	    #
+	    # XXX: read this in instead into an RR record and get the
+	    # keyid from that for better flexible parsing.
+	    ($keyid, $keyname) = /^\s*\d+\s+(\d+)\s+([-\.\w]+)/;
+	    $inrec = 2;
+	} elsif (/RRSIG\s+$type/) {
+	    $inrec = 1;
+	}
+	print $fh $_ if (!$inrec && !$slurp);
+	if (/\)/) {
+	    if ($slurp) {
+		push @records, Net::DNS::RR->new($currentrr);
+	    }
+	    $inrec = $slurp = 0;
+	}
+    }
+
+    #
+    # create the new signature based on the record/key
+    #
+
+    # save the current line since Net::DNS::RR::* messes with it
+    my $currentline = $_;
+
+    push @records, Net::DNS::RR->new($currentrr) if ($#records == -1);
+
+    # the current RRset
+    croak "can't read one of keyid ($keyid) or keyname ($keyname) from input RRSIG\n" if (!$keyid || !$keyname);
+
+    my $keypath;
+    foreach my $alg (1, 5, 7) {
+	$keypath = sprintf("K${keyname}+%03d+%05d.private",$alg, $keyid);
+	last if (-f $keypath);
+    }
+
+    croak "can't find needed private key file: $keypath\n" if (!-f $keypath);
+    $keypaths{$currentdomain} = $keypath;
+
+    # create the new record
+    if ($type eq 'DS') {
+	foreach my $rec (@records) {
+	    print $fh $rec->string,"\n" ;
+	}
+    }
+    my $sigrr = Net::DNS::RR::RRSIG->create(\@records, $keypath,
+					    sigin => make_date($sigin_mod),
+					    sigex => make_date($sigex_mod),
+					    ttl => $records[0]->ttl);
+
+    # print it
+    print $fh $sigrr->string,"\n";
+
+    # put the remembered line back
+    $_ = $currentline;
+}
+
+sub make_date {
+    my @timeinfo = localtime(time() + $_[0]);
+    return sprintf("%04d%02d%02d%02d%02d%02d", $timeinfo[5]+1900,
+		   $timeinfo[4]+1, $timeinfo[3], $timeinfo[2], $timeinfo[1],
+		   $timeinfo[0]);
+}
+
+sub reverse_dates {
+    my ($name, $type) = @_;
+    Verbose("  reversing dates for signatures of $_[0]");
+
+    # print and save the current rr set
+    print $fh $_;
+    my $currentrr = $_;
+
+    # delete the old signature
+    my $inrec = 0;
+    my ($keyid, $keyname);
+    while (<I>) {
+	last if /^\w/;
+	if (/RRSIG\s+$type.*\s+(\d+)\s*\(/) {
+	    my $futuredate = $1;
+	    my $firstline = $_;
+
+	    my $secondline = <I>;
+	    my ($pastdate) = ($secondline =~ /^\s*(\d+)/);
+
+	    $secondline =~ s/$pastdate/$futuredate/;
+	    $firstline =~ s/$futuredate/$pastdate/;
+
+	    print $fh $firstline;
+	    print $fh $secondline;
+	} else {
+	    print $fh $_;
+	}
+    }
+}
+
+sub freq_zsk_roll {
+    my ($name, $type) = @_;
+}
+
+
+######################################################################
+# printing-subs
+#
+sub print_record {
+    my @txt = @_;
+    $txt[0] = lc($txt[0]);
+    printf $fh ("%-30s %-6s %-6s %s\n", @txt);
+}
+
+sub print_comment {
+    Verbose($_[0]);
+    printf $fh ($opts{'S'}, $_[0]);
+}
+
+sub generate_top {
+    my $domain = shift;
+
+    print $fh "; -*- dns -*-\n";
+    print_comment "This file was generated by $0";
+    print $fh "\$TTL 1D
+$domain.	600	IN SOA dns.$domain. hardaker.$domain. (
+					" . time() . "
+					2H       ; refresh (2 hours)
+					1H       ; retry (1 hour)
+					1W       ; expire (1 week)
+					600        ; minimum (10 minutes)
+					)
+                        TXT     \"DNSSEC-TOOLS test zone for $domain\"
+";
+    my ($ns, $rec, $addr);
+    foreach $ns (split(",",$opts{'ns'})) {
+        ($rec,$addr) = split(/=/,$ns);
+        print_record("","NS","",$rec . "." . $domain . ".");
+    }
+    foreach $ns (split(",",$opts{'ns'})) {
+	($rec,$addr) = split(/=/,$ns);
+        print_record("$rec","1D IN","A",$addr);
+    }
+}
+
+sub Verbose {
+    print @_,"\n" if ($opts{'v'});
+}
+
+sub System {
+    Verbose("running: ",@_);
+    system(@_);
+    die "system command failed!!!\n" if ($_[0] !~ /^donuts/ && $? != 0)
+}
+
+=head1 NAME
+
+generaterecords - generates a test dnssec zone that can be used to DNSSEC
+
+=head1 SYNOPSIS
+
+generaterecords -v -d mytestzone.example.com
+
+=head1 DESCRIPTION
+
+The generaterecords script generates a zone file, given a domain name,
+which is then signed and modified to invalidate portions of the data
+in particular ways.  Each generated record is named appropriately to
+how the security data is modified (the gooda record will contain a A
+record with valid DNSSEC data, but the badseca record will contain an
+A record where the signature has been modified to invalidate it).
+
+The results of this process can then be served and test secure
+validators, applications, and other software can be thrown at it to
+see if they properly fail or succeed under the dns security policies
+being deployed.
+
+After the files are generated, consider running B<donuts> on them to
+see how the data in them has been tampered with to be invalid.
+
+=head1 PRE-REQUISITES
+
+zonesigner from the dnssec-tools project
+bind software 9.3.1 or greater
+
+=head1 GETTING STARTED
+
+To get started creating a new zone, you'll need to tell zonesigner to
+create new keys for all of the new zones that B<maketestzone> creates.
+Thus, the first run of B<maketestzone> should look like:
+
+=over
+
+=item First Time:
+
+maketestzone -k [OTHER DESIRED OPTIONS]
+
+=back
+
+After that, the generated zone files can be loaded and served in a
+test server.
+
+Once every 30 days (by default via zonesigner) the script will need to
+be rerun to recreate the records and resign the data so the signature
+date stamps remain valid (or in some cases invalid).
+
+=over
+
+=item Every 30 days:
+
+maketestzone [OTHER DESIRED OPTIONS]
+
+=back
+
+=head1 OPTIONS
+
+Below are thoe options that are accepted by the B<maketestzone> tool.
+
+=over
+
+=head2 Output File Naming:
+
+=item  -o STRING
+
+=item  --output-file-prefix=STRING
+
+Output prefix to use for zone files (default = db.)
+
+=item  -O STRING
+
+=item  --output-suffix-signed-file=STRING
+
+Output suffix to be given to zonesigner (default = .zs)
+
+=item  -M STRING
+
+=item  --output-modified-file=STRING
+
+Output suffix for the modified zone file (default = .modified)
+
+=item  -D
+
+=item  --run-donuts
+
+Run donuts on the results
+
+=item  --donuts-output-suffix=STRING
+
+The file suffix to use for donuts output (default = .donuts)
+
+=head2 Output Zone Information:
+
+=item  -d STRING
+
+=item  --domain=STRING
+
+domain name to generate records for
+
+=item  --ns=STRING
+
+=item  --name-servers=STRING
+
+=item  -n STRING
+
+Comma separated name=addr name-server records
+
+=item  --a-addr=STRING
+
+=item  --a-record-address=STRING
+
+A record (IPv4) address to use in data
+
+=item  --aaaa-addr=STRING
+
+=item  --a-record-address=STRING
+
+AAAA record (IPv6) address to use in data
+
+=head2 Output Data Type Selection:
+
+=item  -p STRING
+
+=item  --record-prefixes=STRING
+
+Comma separated list of record prefixes to use
+
+=item  -P STRING
+
+=item  --ns-prefixes=STRING
+
+Comma separated list of NS record prefixes to use
+
+=item  -c
+
+=item  --no-cname-records
+
+Don't create CNAME records
+
+=item  -s
+
+=item  --no-ns-records
+
+Don't create sub-zone records
+
+=head2 Task Selection:
+
+=item  -g
+
+=item  --dont-generate-zone
+
+Do not generate the zone; use the existing and sign/modify it
+
+=item  -z
+
+=item  --dont-run-zonesigner
+
+Do not run zonesigner to sign the records
+
+=item  -Z
+
+=item  --dont-destroy
+
+Do not destroy the records and leave them properly signed
+
+=item  --bind-config=STRING
+
+Generate a bind configuration file snippit to load the DB sets
+
+=item  --html-out=STRING
+
+Generate a HTML page containing a list of record names
+
+=item  --apache-out=STRING
+
+Generate a Apache config snippit for configuring apache for each zone record
+
+=item  --sh-test-out=STRING
+
+Generate a test script for running dig commands
+
+=item  -v
+
+=item  --verbose
+
+Verbose output
+
+=head2 Zonesigner Configuration:
+
+=item  -a STRING
+
+=item  --zonesigner-arguments=STRING
+
+Arguments to pass to zonesigner
+
+=item  -k
+
+=item  --generate-keys
+
+Have zonesigner generate needed keys
+
+=head2 Bind Configuration Options
+
+=item  --bind-db-dir=STRING
+
+The base directory where the bind DB files will be placed
+
+=head2 HTML Output Configuration
+
+=item  --html-out-add-links
+
+Make each html record name a http link to that address
+
+=item  --html-out-add-db-links
+
+Add a link to each of the generated DB files.
+
+=item  --html-out-add-donuts-links
+
+Add a link to each of the generated donuts error list files.
+
+=head2 SH Test Script Configuration Options
+
+=item  --sh-test-resolver=STRING
+
+The resolver address to force
+
+=head2 Help Options
+
+=item -h
+
+Display a help summary (short flags preferred)
+
+=item --help
+
+Display a help summary (long flags preferred)
+
+=item --help-full
+
+Display all help options (both short and long)
+
+=item --version
+
+Display the script version number.
+
+=back
+
+=head1 ADDING NEW OUTPUT
+
+The following section discusses how to extend the B<maketestzone> tool
+with new output modifications.
+
+=head2 ADDING LEGEND INFORMATION
+
+For the legend HTML output, the %LegendInformation hash contains a
+keyname and description for each modification type.
+
+=head2 ADDING NEW SUBZONE DIFFERENCES
+
+The I<%zonesigner_domain_opts> hash lists additional arguments between
+how zonesigner is called for various sub-domains.  Thus you can create
+additional sub-zones with different zonesigner optionns to test other
+operational parameters between parent and child.  For example:
+
+   'rollzsk-ns.' . $opts{'d'} => '-rollzsk',
+
+Forces the rollzsk-ns test sub-zone to roll it's zsk when the zone is
+signed.
+
+=head2 ADDING NEW RECORD MODIFICATIONS
+
+Maketestzone is in early development stages but already has the
+beginnings of an extnesible system allowing you to modify records at
+will based on regexp => subroutine hooks.
+
+To add a new modification, add a new keyword to the 'p' and optionally
+'P' default flags (or add it at run time), and then add a new function
+to the list of callbacks defined in the %destroyFunctions hash that is
+based on your new keyword.  When the file is getting parsed and hits a
+record matching your expression, your functional will be called.
+Arguments can be added to the function by passing an array reference
+where the first argument is the subroutine to be called, and the
+remainder are additional arguments.  Output lines should be printed to
+the $fh file handle.
+
+Here's an example function that deletes the RRSIG signature of the
+next record:
+
+  sub delete_signature {
+      # the first 2 arguments are always passed; the other was in the
+      # array refeence the subroutine was registered with.
+      my ($name, $type, $expr) = @_;
+
+      Verbose("  deleting signatures of $_[0]");
+
+      # print the current line
+      print $fh $_;
+
+      my $inrec = 0;
+      while (<I>) {
+	# new name record means we're done.
+  	last if /^\w/;
+
+        # we're in a multi-line rrsig record
+  	$inrec = 1 if (/$expr\s+$type/);
+
+	# print the line if we're not in the rrsig record
+  	print $fh $_ if (!$inrec);
+
+	# when done with the last line of the rrsig record, mark this spot
+  	$inrec = 0 if (/\)/);
+      }
+  }
+
+This is then registered within %destroyFunctions.  Here's an example
+of registering the function to delete the signature on a DS record:
+
+   '^(nosig[-\w]+).*IN\s+NS\s+' => [\&delete_signature, 'DS', 'RRSIG'],
+
+=head1 COPYRIGHT
+
+Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wes Hardaker <hardaker@users.sourceforge.net>
+
+=head1 SEE ALSO
+
+B<Net::DNS>
+
+http://dnssec-tools.sourceforge.net
+
+zonesigner(1), donuts(1)
+
+=cut
+

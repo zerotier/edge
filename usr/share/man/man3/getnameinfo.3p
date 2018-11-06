@@ -1,0 +1,234 @@
+'\" et
+.TH GETNAMEINFO "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getnameinfo
+\(em get name information
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+#include <netdb.h>
+.P
+int getnameinfo(const struct sockaddr *restrict \fIsa\fP, socklen_t \fIsalen\fP,
+    char *restrict \fInode\fP, socklen_t \fInodelen\fP, char *restrict \fIservice\fP,
+    socklen_t \fIservicelen\fP, int \fIflags\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIgetnameinfo\fR()
+function shall translate a socket address to a node name and service
+location, all of which are defined as in
+.IR "\fIfreeaddrinfo\fR\^(\|)".
+.P
+The
+.IR sa
+argument points to a socket address structure to be translated. The
+.IR salen
+argument contains the length of the address pointed to by
+.IR sa .
+.P
+If the socket address structure contains an IPv4-mapped IPv6 address or
+an IPv4-compatible IPv6 address, the implementation shall extract the
+embedded IPv4 address and lookup the node name for that IPv4 address.
+.P
+If the address is the IPv6 unspecified address (\c
+.BR \(dq::\(dq ),
+a lookup shall not be performed and the behavior shall be the same as
+when the node's name cannot be located.
+.P
+If the
+.IR node
+argument is non-NULL and the
+.IR nodelen
+argument is non-zero, then the
+.IR node
+argument points to a buffer able to contain up to
+.IR nodelen
+bytes that receives the node name as a null-terminated string. If the
+.IR node
+argument is NULL or the
+.IR nodelen
+argument is zero, the node name shall not be returned. If the node's
+name cannot be located, the numeric form of the address contained
+in the socket address structure pointed to by the
+.IR sa
+argument is returned instead of its name.
+.P
+If the
+.IR service
+argument is non-NULL and the
+.IR servicelen
+argument is non-zero, then the
+.IR service
+argument points to a buffer able to contain up to
+.IR servicelen
+bytes that receives the service name as a null-terminated string.
+If the
+.IR service
+argument is NULL or the
+.IR servicelen
+argument is zero, the service name shall not be returned. If the
+service's name cannot be located, the numeric form of the service
+address (for example, its port number) shall be returned instead of
+its name.
+.P
+The
+.IR flags
+argument is a flag that changes the default actions of the function. By
+default the fully-qualified domain name (FQDN) for the
+host shall be returned, but:
+.IP " *" 4
+If the flag bit NI_NOFQDN is set, only the node name portion of the
+FQDN shall be returned for local hosts.
+.IP " *" 4
+If the flag bit NI_NUMERICHOST is set, the numeric form of the address
+contained in the socket address structure pointed to by the
+.IR sa
+argument shall be returned instead of its name.
+.IP " *" 4
+If the flag bit NI_NAMEREQD is set, an error shall be returned if the
+host's name cannot be located.
+.IP " *" 4
+If the flag bit NI_NUMERICSERV is set, the numeric form of the service
+address shall be returned (for example, its port number) instead of its
+name.
+.IP " *" 4
+If the flag bit NI_NUMERICSCOPE is set, the numeric form of the scope
+identifier shall be returned (for example, interface index) instead of
+its name. This flag shall be ignored if the
+.IR sa
+argument is not an IPv6 address.
+.IP " *" 4
+If the flag bit NI_DGRAM is set, this indicates that the service is a
+datagram service (SOCK_DGRAM). The default behavior shall assume that
+the service is a stream service (SOCK_STREAM).
+.TP 10
+.BR Notes:
+.RS 10 
+.IP " 1." 4
+The two NI_NUMERICxxx flags are required to support the
+.BR \(min
+flag that many commands provide.
+.IP " 2." 4
+The NI_DGRAM flag is required for the few AF_INET and AF_INET6 port
+numbers (for example, [512,514]) that represent different services for
+UDP and TCP.
+.RE
+.P
+.P
+The
+\fIgetnameinfo\fR()
+function shall be thread-safe.
+.SH "RETURN VALUE"
+A zero return value for
+\fIgetnameinfo\fR()
+indicates successful completion; a non-zero return value indicates
+failure. The possible values for the failures are listed in the
+ERRORS section.
+.P
+Upon successful completion,
+\fIgetnameinfo\fR()
+shall return the
+.IR node
+and
+.IR service
+names, if requested, in the buffers provided. The returned names are
+always null-terminated strings.
+.SH ERRORS
+The
+\fIgetnameinfo\fR()
+function shall fail and return the corresponding value if:
+.IP [EAI_AGAIN] 12
+The name could not be resolved at this time. Future attempts may
+succeed.
+.IP [EAI_BADFLAGS] 12
+.br
+The
+.IR flags
+had an invalid value.
+.IP [EAI_FAIL] 12
+A non-recoverable error occurred.
+.IP [EAI_FAMILY] 12
+The address family was not recognized or the address length was invalid
+for the specified family.
+.IP [EAI_MEMORY] 12
+There was a memory allocation failure.
+.IP [EAI_NONAME] 12
+The name does not resolve for the supplied parameters.
+.RS 12 
+.P
+NI_NAMEREQD is set and the host's name cannot be located, or both
+.IR nodename
+and
+.IR servname
+were null.
+.RE
+.IP [EAI_OVERFLOW] 12
+.br
+An argument buffer overflowed. The buffer pointed to by the
+.IR node
+argument or the
+.IR service
+argument was too small.
+.IP [EAI_SYSTEM] 12
+A system error occurred. The error code can be found in
+.IR errno .
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+None.
+.SH "APPLICATION USAGE"
+If the returned values are to be used as part of any further name
+resolution (for example, passed to
+\fIgetaddrinfo\fR()),
+applications should provide buffers large enough to store any result
+possible on the system.
+.P
+Given the IPv4-mapped IPv6 address
+.BR \(dq::ffff:1.2.3.4\(dq ,
+the implementation performs a lookup as if the socket address structure
+contains the IPv4 address
+.BR \(dq1.2.3.4\(dq .
+.P
+The IPv6 unspecified address (\c
+.BR \(dq::\(dq )
+and the IPv6 loopback address (\c
+.BR \(dq::1\(dq )
+are not IPv4-compatible addresses.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIendservent\fR\^(\|)",
+.IR "\fIfreeaddrinfo\fR\^(\|)",
+.IR "\fIgai_strerror\fR\^(\|)",
+.IR "\fIinet_ntop\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<netdb.h>\fP",
+.IR "\fB<sys_socket.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

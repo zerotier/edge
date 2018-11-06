@@ -1,0 +1,480 @@
+'\" et
+.TH SEMOP "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+semop
+\(em XSI semaphore operations
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/sem.h>
+.P
+int semop(int \fIsemid\fP, struct sembuf *\fIsops\fP, size_t \fInsops\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsemop\fR()
+function operates on XSI semaphores (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.16" ", " "Semaphore").
+It is unspecified whether this function interoperates with the
+realtime interprocess communication facilities defined in
+.IR "Section 2.8" ", " "Realtime".
+.P
+The
+\fIsemop\fR()
+function shall perform atomically a user-defined array of semaphore
+operations in array order on the set of semaphores associated with the
+semaphore identifier specified by the argument
+.IR semid .
+.P
+The argument
+.IR sops
+is a pointer to a user-defined array of semaphore operation
+structures. The implementation shall not modify elements of this array
+unless the application uses implementation-defined extensions.
+.P
+The argument
+.IR nsops
+is the number of such structures in the array.
+.P
+Each structure,
+.BR sembuf ,
+includes the following members:
+.TS
+center box tab(!);
+cB | cB | cB
+lw(1.25i)B | lw(1.25i)I | lw(2.5i).
+Member Type!Member Name!Description
+_
+unsigned short!sem_num!Semaphore number.
+short!sem_op!Semaphore operation.
+short!sem_flg!Operation flags.
+.TE
+.P
+Each semaphore operation specified by
+.IR sem_op
+is performed on the corresponding semaphore specified by
+.IR semid
+and
+.IR sem_num .
+.P
+The variable
+.IR sem_op
+specifies one of three semaphore operations:
+.IP " 1." 4
+If
+.IR sem_op
+is a negative integer and the calling process has alter permission, one
+of the following shall occur:
+.RS 4 
+.IP " *" 4
+If
+.IR semval (see
+.IR <sys/sem.h> )
+is greater than or equal to the absolute value of
+.IR sem_op ,
+the absolute value of
+.IR sem_op
+is subtracted from
+.IR semval .
+Also, if (\fIsem_flg\fP &SEM_UNDO) is non-zero, the absolute value of
+.IR sem_op
+shall be added to the
+.IR semadj
+value of the calling process for the specified semaphore.
+.IP " *" 4
+If
+.IR semval
+is less than the absolute value of
+.IR sem_op
+and (\fIsem_flg\fP &IPC_NOWAIT) is non-zero,
+\fIsemop\fR()
+shall return immediately.
+.IP " *" 4
+If
+.IR semval
+is less than the absolute value of
+.IR sem_op
+and (\fIsem_flg\fP &IPC_NOWAIT) is 0,
+\fIsemop\fR()
+shall increment the
+.IR semncnt
+associated with the specified semaphore and suspend execution of the
+calling thread until one of the following conditions occurs:
+.RS 4 
+.IP -- 4
+The value of
+.IR semval
+becomes greater than or equal to the absolute value of
+.IR sem_op .
+When this occurs, the value of
+.IR semncnt
+associated with the specified semaphore shall be decremented, the
+absolute value of
+.IR sem_op
+shall be subtracted from
+.IR semval
+and, if (\fIsem_flg\fP &SEM_UNDO) is non-zero, the absolute value of
+.IR sem_op
+shall be added to the
+.IR semadj
+value of the calling process for the specified semaphore.
+.IP -- 4
+The
+.IR semid
+for which the calling thread is awaiting action is removed from the
+system. When this occurs,
+.IR errno
+shall be set to
+.BR [EIDRM] 
+and \(mi1 shall be returned.
+.IP -- 4
+The calling thread receives a signal that is to be caught. When this
+occurs, the value of
+.IR semncnt
+associated with the specified semaphore shall be decremented, and the
+calling thread shall resume execution in the manner prescribed in
+.IR "\fIsigaction\fR\^(\|)".
+.RE
+.RE
+.IP " 2." 4
+If
+.IR sem_op
+is a positive integer and the calling process has alter permission, the
+value of
+.IR sem_op
+shall be added to
+.IR semval
+and, if (\fIsem_flg\fP &SEM_UNDO) is non-zero, the value of
+.IR sem_op
+shall be subtracted from the
+.IR semadj
+value of the calling process for the specified semaphore.
+.IP " 3." 4
+If
+.IR sem_op
+is 0 and the calling process has read permission, one of the following
+shall occur:
+.RS 4 
+.IP " *" 4
+If
+.IR semval
+is 0,
+\fIsemop\fR()
+shall return immediately.
+.IP " *" 4
+If
+.IR semval
+is non-zero and (\fIsem_flg\fP &IPC_NOWAIT) is non-zero,
+\fIsemop\fR()
+shall return immediately.
+.IP " *" 4
+If
+.IR semval
+is non-zero and (\fIsem_flg\fP &IPC_NOWAIT) is 0,
+\fIsemop\fR()
+shall increment the
+.IR semzcnt
+associated with the specified semaphore and suspend execution of the
+calling thread until one of the following occurs:
+.RS 4 
+.IP -- 4
+The value of
+.IR semval
+becomes 0, at which time the value of
+.IR semzcnt
+associated with the specified semaphore shall be decremented.
+.IP -- 4
+The
+.IR semid
+for which the calling thread is awaiting action is removed from the
+system. When this occurs,
+.IR errno
+shall be set to
+.BR [EIDRM] 
+and \(mi1 shall be returned.
+.IP -- 4
+The calling thread receives a signal that is to be caught. When this
+occurs, the value of
+.IR semzcnt
+associated with the specified semaphore shall be decremented, and the
+calling thread shall resume execution in the manner prescribed in
+.IR "\fIsigaction\fR\^(\|)".
+.RE
+.RE
+.P
+Upon successful completion, the value of
+.IR sempid
+for each semaphore specified in the array pointed to by
+.IR sops
+shall be set to the process ID of the calling process. Also, the
+.IR sem_otime
+timestamp shall be set to the current time, as described in
+.IR "Section 2.7.1" ", " "IPC General Description".
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsemop\fR()
+shall return 0; otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIsemop\fR()
+function shall fail if:
+.TP
+.BR E2BIG
+The value of
+.IR nsops
+is greater than the system-imposed maximum.
+.TP
+.BR EACCES
+Operation permission is denied to the calling process; see
+.IR "Section 2.7" ", " "XSI Interprocess Communication".
+.TP
+.BR EAGAIN
+The operation would result in suspension of the calling process but
+(\fIsem_flg\fP &IPC_NOWAIT) is non-zero.
+.TP
+.BR EFBIG
+The value of
+.IR sem_num
+is greater than or equal to the number of semaphores in the set
+associated with
+.IR semid .
+.TP
+.BR EIDRM
+The semaphore identifier
+.IR semid
+is removed from the system.
+.TP
+.BR EINTR
+The
+\fIsemop\fR()
+function was interrupted by a signal.
+.TP
+.BR EINVAL
+The value of
+.IR semid
+is not a valid semaphore identifier, or the number of individual
+semaphores for which the calling process requests a SEM_UNDO would
+exceed the system-imposed limit.
+.TP
+.BR ENOSPC
+The limit on the number of individual processes requesting a SEM_UNDO
+would be exceeded.
+.TP
+.BR ERANGE
+An operation would cause a
+.IR semval
+to overflow the system-imposed limit, or an operation would cause a
+.IR semadj
+value to overflow the system-imposed limit.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Setting Values in Semaphores"
+.P
+The following example sets the values of the two semaphores associated
+with the
+.IR semid
+identifier to the values contained in the
+.IR sb
+array.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/sem.h>
+\&...
+int semid;
+struct sembuf sb[2];
+int nsops = 2;
+int result;
+.P
+/* Code to initialize semid. */
+\&...
+.P
+/* Adjust value of semaphore in the semaphore array semid. */
+sb[0].sem_num = 0;
+sb[0].sem_op = -1;
+sb[0].sem_flg = SEM_UNDO | IPC_NOWAIT;
+sb[1].sem_num = 1;
+sb[1].sem_op = 1;
+sb[1].sem_flg = 0;
+.P
+result = semop(semid, sb, nsops);
+.fi \fR
+.P
+.RE
+.SS "Creating a Semaphore Identifier"
+.P
+The following example gets a unique semaphore key using the
+\fIftok\fR()
+function, then gets a semaphore ID associated with that key using the
+\fIsemget\fR()
+function (the first call also tests to make sure the semaphore exists).
+If the semaphore does not exist, the program creates it, as shown by
+the second call to
+\fIsemget\fR().
+In creating the semaphore for the queuing process, the program
+attempts to create one semaphore with read/write permission for all. It
+also uses the IPC_EXCL flag, which forces
+\fIsemget\fR()
+to fail if the semaphore already exists.
+.P
+After creating the semaphore, the program uses calls to
+\fIsemctl\fR()
+and
+\fIsemop\fR()
+to initialize it to the values in the
+.IR sbuf
+array. The number of processes that can execute concurrently without
+queuing is initially set to 2. The final call to
+\fIsemget\fR()
+creates a semaphore identifier that can be used later in the program.
+.P
+Processes that obtain
+.IR semid
+without creating it check that
+.IR sem_otime
+is non-zero, to ensure that the creating process has completed the
+\fIsemop\fR()
+initialization.
+.P
+The final call to
+\fIsemop\fR()
+acquires the semaphore and waits until it is free; the SEM_UNDO option
+releases the semaphore when the process exits, waiting until there are
+less than two processes running concurrently.
+.br
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <sys/sem.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <stdlib.h>
+\&...
+key_t semkey;
+int semid;
+struct sembuf sbuf;
+union semun {
+    int val;
+    struct semid_ds *buf;
+    unsigned short *array;
+} arg;
+struct semid_ds ds;
+\&...
+/* Get unique key for semaphore. */
+if ((semkey = ftok("/tmp", 'a')) == (key_t) -1) {
+    perror("IPC error: ftok"); exit(1);
+}
+.P
+/* Get semaphore ID associated with this key. */
+if ((semid = semget(semkey, 0, 0)) == -1) {
+.P
+    /* Semaphore does not exist - Create. */
+    if ((semid = semget(semkey, 1, IPC_CREAT | IPC_EXCL | S_IRUSR |
+        S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) != -1)
+    {
+        /* Initialize the semaphore. */
+        arg.val = 0;
+        sbuf.sem_num = 0;
+        sbuf.sem_op = 2;  /* This is the number of runs without queuing. */
+        sbuf.sem_flg = 0;
+        if (semctl(semid, 0, SETVAL, arg) == -1
+            || semop(semid, &sbuf, 1) == -1) {
+            perror("IPC error: semop"); exit(1);
+        }
+    }
+    else if (errno == EEXIST) {
+        if ((semid = semget(semkey, 0, 0)) == -1) {
+            perror("IPC error 1: semget"); exit(1);
+        }
+        goto check_init;
+    }
+    else {
+        perror("IPC error 2: semget"); exit(1);
+    }
+}
+else
+{
+    /* Check that semid has completed initialization. */
+    /* An application can use a retry loop at this point rather than
+       exiting. */
+    check_init:
+    arg.buf = &ds;
+    if (semctl(semid, 0, IPC_STAT, arg) < 0) {
+        perror("IPC error 3: semctl"); exit(1);
+    }
+    if (ds.sem_otime == 0) {
+        perror("IPC error 4: semctl"); exit(1);
+    }
+}
+\&...
+sbuf.sem_num = 0;
+sbuf.sem_op = -1;
+sbuf.sem_flg = SEM_UNDO;
+if (semop(semid, &sbuf, 1) == -1) {
+    perror("IPC Error: semop"); exit(1);
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The POSIX Realtime Extension defines alternative interfaces for interprocess
+communication. Application developers who need to use IPC should
+design their applications so that modules using the IPC routines
+described in
+.IR "Section 2.7" ", " "XSI Interprocess Communication"
+can be easily modified to use the alternative interfaces.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.7" ", " "XSI Interprocess Communication",
+.IR "Section 2.8" ", " "Realtime",
+.IR "\fIexec\fR\^",
+.IR "\fIexit\fR\^(\|)",
+.IR "\fIfork\fR\^(\|)",
+.IR "\fIsemctl\fR\^(\|)",
+.IR "\fIsemget\fR\^(\|)",
+.IR "\fIsem_close\fR\^(\|)",
+.IR "\fIsem_destroy\fR\^(\|)",
+.IR "\fIsem_getvalue\fR\^(\|)",
+.IR "\fIsem_init\fR\^(\|)",
+.IR "\fIsem_open\fR\^(\|)",
+.IR "\fIsem_post\fR\^(\|)",
+.IR "\fIsem_trywait\fR\^(\|)",
+.IR "\fIsem_unlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.16" ", " "Semaphore",
+.IR "\fB<sys_ipc.h>\fP",
+.IR "\fB<sys_sem.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

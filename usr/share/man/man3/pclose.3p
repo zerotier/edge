@@ -1,0 +1,221 @@
+'\" et
+.TH PCLOSE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pclose
+\(em close a pipe stream to or from a process
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+int pclose(FILE *\fIstream\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpclose\fR()
+function shall close a stream that was opened by
+\fIpopen\fR(),
+wait for the command to terminate, and return the termination status
+of the process that was running the command language interpreter.
+However, if a call caused the termination status to be unavailable to
+\fIpclose\fR(),
+then
+\fIpclose\fR()
+shall return \(mi1 with
+.IR errno
+set to
+.BR [ECHILD] 
+to report this situation. This can happen if the application calls one
+of the following functions:
+.IP " *" 4
+\fIwait\fR()
+.IP " *" 4
+\fIwaitpid\fR()
+with a
+.IR pid
+argument less than or equal to 0 or equal to the process ID of the
+command line interpreter
+.IP " *" 4
+Any other function not defined in this volume of POSIX.1\(hy2008 that could do one of the above
+.P
+In any case,
+\fIpclose\fR()
+shall not return before the child process created by
+\fIpopen\fR()
+has terminated.
+.P
+If the command language interpreter cannot be executed, the child
+termination status returned by
+\fIpclose\fR()
+shall be as if the command language interpreter terminated using
+.IR exit (127)
+or
+.IR _exit (127).
+.P
+The
+\fIpclose\fR()
+function shall not affect the termination status of any child of the
+calling process other than the one created by
+\fIpopen\fR()
+for the associated stream.
+.P
+If the argument
+.IR stream
+to
+\fIpclose\fR()
+is not a pointer to a stream created by
+\fIpopen\fR(),
+the result of
+\fIpclose\fR()
+is undefined.
+.SH "RETURN VALUE"
+Upon successful return,
+\fIpclose\fR()
+shall return the termination status of the command language
+interpreter. Otherwise,
+\fIpclose\fR()
+shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIpclose\fR()
+function shall fail if:
+.TP
+.BR ECHILD
+The status of the child process could not be obtained, as described
+above.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+There is a requirement that
+\fIpclose\fR()
+not return before the child process terminates. This is intended to
+disallow implementations that return
+.BR [EINTR] 
+if a signal is received while waiting. If
+\fIpclose\fR()
+returned before the child terminated, there would be no way for the
+application to discover which child used to be associated with the
+stream, and it could not do the cleanup itself.
+.P
+If the stream pointed to by
+.IR stream
+was not created by
+\fIpopen\fR(),
+historical implementations of
+\fIpclose\fR()
+return \(mi1 without setting
+.IR errno .
+To avoid requiring
+\fIpclose\fR()
+to set
+.IR errno
+in this case, POSIX.1\(hy2008 makes the behavior unspecified. An application
+should not use
+\fIpclose\fR()
+to close any stream that was not created by
+\fIpopen\fR().
+.P
+Some historical implementations of
+\fIpclose\fR()
+either block or ignore the signals SIGINT, SIGQUIT, and SIGHUP while
+waiting for the child process to terminate. Since this behavior is not
+described for the
+\fIpclose\fR()
+function in POSIX.1\(hy2008, such implementations are not conforming. Also, some
+historical implementations return
+.BR [EINTR] 
+if a signal is received, even though the child process has not
+terminated. Such implementations are also considered non-conforming.
+.P
+Consider, for example, an application that uses:
+.sp
+.RS 4
+.nf
+\fB
+popen("command", "r")
+.fi \fR
+.P
+.RE
+.P
+to start
+.IR command ,
+which is part of the same application. The parent writes a prompt to
+its standard output (presumably the terminal) and then reads from the
+\fIpopen\fR()ed
+stream. The child reads the response from the user, does some
+transformation on the response (pathname expansion, perhaps) and
+writes the result to its standard output. The parent process reads the
+result from the pipe, does something with it, and prints another
+prompt. The cycle repeats. Assuming that both processes do appropriate
+buffer flushing, this would be expected to work.
+.P
+To conform to POSIX.1\(hy2008,
+\fIpclose\fR()
+must use
+\fIwaitpid\fR(),
+or some similar function, instead of
+\fIwait\fR().
+.P
+The code sample below illustrates how the
+\fIpclose\fR()
+function might be implemented on a system conforming to POSIX.1\(hy2008.
+.sp
+.RS 4
+.nf
+\fB
+int pclose(FILE *stream)
+{
+    int stat;
+    pid_t pid;
+.P
+    pid = <pid for process created for stream by popen()>
+    (void) fclose(stream);
+    while (waitpid(pid, &stat, 0) == -1) {
+        if (errno != EINTR){
+            stat = -1;
+            break;
+        }
+    }
+    return(stat);
+}
+.fi \fR
+.P
+.RE
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfork\fR\^(\|)",
+.IR "\fIpopen\fR\^(\|)",
+.IR "\fIwait\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

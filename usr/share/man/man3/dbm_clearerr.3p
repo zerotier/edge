@@ -1,0 +1,403 @@
+'\" et
+.TH DBM_CLEARERR "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+dbm_clearerr,
+dbm_close,
+dbm_delete,
+dbm_error,
+dbm_fetch,
+dbm_firstkey,
+dbm_nextkey,
+dbm_open,
+dbm_store
+\(em database functions
+.SH SYNOPSIS
+.LP
+.nf
+#include <ndbm.h>
+.P
+int dbm_clearerr(DBM *\fIdb\fP);
+void dbm_close(DBM *\fIdb\fP);
+int dbm_delete(DBM *\fIdb\fP, datum \fIkey\fP);
+int dbm_error(DBM *\fIdb\fP);
+datum dbm_fetch(DBM *\fIdb\fP, datum \fIkey\fP);
+datum dbm_firstkey(DBM *\fIdb\fP);
+datum dbm_nextkey(DBM *\fIdb\fP);
+DBM *dbm_open(const char *\fIfile\fP, int \fIopen_flags\fP, mode_t \fIfile_mode\fP);
+int dbm_store(DBM *\fIdb\fP, datum \fIkey\fP, datum \fIcontent\fP, int \fIstore_mode\fP);
+.fi
+.SH DESCRIPTION
+These functions create, access, and modify a database.
+.P
+A
+.BR datum
+consists of at least two members,
+.IR dptr
+and
+.IR dsize .
+The
+.IR dptr
+member points to an object that is
+.IR dsize
+bytes in length. Arbitrary binary data, as well as character strings,
+may be stored in the object pointed to by
+.IR dptr .
+.P
+A database shall be stored in one or two files. When one file is used,
+the name of the database file shall be formed by appending the suffix
+.BR .db
+to the
+.IR file
+argument given to
+\fIdbm_open\fR().
+When two files are used, the names of the database files shall be
+formed by appending the suffixes
+.BR .dir
+and
+.BR .pag
+respectively to the
+.IR file
+argument.
+.P
+The
+\fIdbm_open\fR()
+function shall open a database. The
+.IR file
+argument to the function is the pathname of the database. The
+.IR open_flags
+argument has the same meaning as the
+.IR flags
+argument of
+\fIopen\fR()
+except that a database opened for write-only access opens the files for
+read and write access and the behavior of the O_APPEND flag
+is unspecified. The
+.IR file_mode
+argument has the same meaning as the third argument of
+\fIopen\fR().
+.P
+The
+\fIdbm_open\fR()
+function need not accept pathnames longer than
+{PATH_MAX}\(mi4
+bytes (including the terminating null), or pathnames with a last
+component longer than
+{NAME_MAX}\(mi4
+bytes (excluding the terminating null).
+.P
+The
+\fIdbm_close\fR()
+function shall close a database. The application shall ensure that
+argument
+.IR db
+is a pointer to a
+.BR dbm
+structure that has been returned from a call to
+\fIdbm_open\fR().
+.P
+These database functions shall support an internal block size large
+enough to support key/content pairs of at least 1\|023 bytes.
+.P
+The
+\fIdbm_fetch\fR()
+function shall read a record from a database. The argument
+.IR db
+is a pointer to a database structure that has been returned from a call
+to
+\fIdbm_open\fR().
+The argument
+.IR key
+is a
+.BR datum
+that has been initialized by the application to the value of
+the key that matches the key of the record the program is fetching.
+.P
+The
+\fIdbm_store\fR()
+function shall write a record to a database. The argument
+.IR db
+is a pointer to a database structure that has been returned from a call
+to
+\fIdbm_open\fR().
+The argument
+.IR key
+is a
+.BR datum
+that has been initialized by the application to the value of the key
+that identifies (for subsequent reading, writing, or deleting) the
+record the application is writing. The argument
+.IR content
+is a
+.BR datum
+that has been initialized by the application to the value of the record
+the program is writing. The argument
+.IR store_mode
+controls whether
+\fIdbm_store\fR()
+replaces any pre-existing record that has the same key that is
+specified by the
+.IR key
+argument. The application shall set
+.IR store_mode
+to either DBM_INSERT or DBM_REPLACE. If the database contains a record
+that matches the
+.IR key
+argument and
+.IR store_mode
+is DBM_REPLACE, the existing record shall be replaced with the new
+record. If the database contains a record that matches the
+.IR key
+argument and
+.IR store_mode
+is DBM_INSERT, the existing record shall be left unchanged and the new
+record ignored. If the database does not contain a record that matches
+the
+.IR key
+argument and
+.IR store_mode
+is either DBM_INSERT or DBM_REPLACE, the new record shall be inserted
+in the database.
+.P
+If the sum of a key/content pair exceeds the internal block size, the
+result is unspecified. Moreover, the application shall ensure that all
+key/content pairs that hash together fit on a single block. The
+\fIdbm_store\fR()
+function shall return an error in the event that a disk block fills
+with inseparable data.
+.P
+The
+\fIdbm_delete\fR()
+function shall delete a record and its key from the database. The
+argument
+.IR db
+is a pointer to a database structure that has been returned from a call
+to
+\fIdbm_open\fR().
+The argument
+.IR key
+is a
+.BR datum
+that has been initialized by the application to the value of
+the key that identifies the record the program is deleting.
+.P
+The
+\fIdbm_firstkey\fR()
+function shall return the first key in the database. The argument
+.IR db
+is a pointer to a database structure that has been returned from a call
+to
+\fIdbm_open\fR().
+.P
+The
+\fIdbm_nextkey\fR()
+function shall return the next key in the database. The argument
+.IR db
+is a pointer to a database structure that has been returned from a call
+to
+\fIdbm_open\fR().
+The application shall ensure that the
+\fIdbm_firstkey\fR()
+function is called before calling
+\fIdbm_nextkey\fR().
+Subsequent calls to
+\fIdbm_nextkey\fR()
+return the next key until all of the keys in the database have been
+returned.
+.P
+The
+\fIdbm_error\fR()
+function shall return the error condition of the database. The argument
+.IR db
+is a pointer to a database structure that has been returned from a call
+to
+\fIdbm_open\fR().
+.P
+The
+\fIdbm_clearerr\fR()
+function shall clear the error condition of the database. The argument
+.IR db
+is a pointer to a database structure that has been returned from a call
+to
+\fIdbm_open\fR().
+.P
+The
+.IR dptr
+pointers returned by these functions may point into static storage that
+may be changed by subsequent calls.
+.P
+These functions need not be thread-safe.
+.SH "RETURN VALUE"
+The
+\fIdbm_store\fR()
+and
+\fIdbm_delete\fR()
+functions shall return 0 when they succeed and a negative value when
+they fail.
+.P
+The
+\fIdbm_store\fR()
+function shall return 1 if it is called with a
+.IR flags
+value of DBM_INSERT and the function finds an existing record with the
+same key.
+.P
+The
+\fIdbm_error\fR()
+function shall return 0 if the error condition is not set and return a
+non-zero value if the error condition is set.
+.P
+The return value of
+\fIdbm_clearerr\fR()
+is unspecified.
+.P
+The
+\fIdbm_firstkey\fR()
+and
+\fIdbm_nextkey\fR()
+functions shall return a key
+.BR datum .
+When the end of the database is reached, the
+.IR dptr
+member of the key is a null pointer. If an error is detected, the
+.IR dptr
+member of the key shall be a null pointer and the error condition of
+the database shall be set.
+.P
+The
+\fIdbm_fetch\fR()
+function shall return a content
+.BR datum .
+If no record in the database matches the key or if an error condition
+has been detected in the database, the
+.IR dptr
+member of the content shall be a null pointer.
+.P
+The
+\fIdbm_open\fR()
+function shall return a pointer to a database structure. If an error
+is detected during the operation,
+\fIdbm_open\fR()
+shall return a (\c
+.BR "DBM *" )0.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The following code can be used to traverse the database:
+.sp
+.RS 4
+.nf
+\fB
+for(key = dbm_firstkey(db); key.dptr != NULL; key = dbm_nextkey(db))
+.fi \fR
+.P
+.RE
+.P
+The
+.IR dbm_ *
+functions provided in this library should not be confused in any way
+with those of a general-purpose database management system. These
+functions do not provide for multiple search keys per entry, they do
+not protect against multi-user access (in other words they do not lock
+records or files), and they do not provide the many other useful
+database functions that are found in more robust database management
+systems. Creating and updating databases by use of these functions is
+relatively slow because of data copies that occur upon hash
+collisions. These functions are useful for applications requiring fast
+lookup of relatively static information that is to be indexed by a
+single key.
+.P
+Note that a strictly conforming application is extremely limited by
+these functions: since there is no way to determine that the keys in
+use do not all hash to the same value (although that would be rare), a
+strictly conforming application cannot be guaranteed that it can store
+more than one block's worth of data in the database. As long as a key
+collision does not occur, additional data may be stored, but because
+there is no way to determine whether an error is due to a key collision
+or some other error condition (\c
+\fIdbm_error\fR()
+being effectively a Boolean), once an error is detected, the
+application is effectively limited to guessing what the error might be
+if it wishes to continue using these functions.
+.P
+The
+\fIdbm_delete\fR()
+function need not physically reclaim file space, although it does make
+it available for reuse by the database.
+.P
+After calling
+\fIdbm_store\fR()
+or
+\fIdbm_delete\fR()
+during a pass through the keys by
+\fIdbm_firstkey\fR()
+and
+\fIdbm_nextkey\fR(),
+the application should reset the database by calling
+\fIdbm_firstkey\fR()
+before again calling
+\fIdbm_nextkey\fR().
+The contents of these files are unspecified and may not be portable.
+.P
+Applications should take care that database pathname arguments
+specified to
+\fIdbm_open\fR()
+are not prefixes of unrelated files. This might be done, for example,
+by placing databases in a separate directory.
+.P
+Since some implementations use three characters for a suffix and others
+use four characters for a suffix, applications should ensure that the
+maximum portable pathname length passed to
+\fIdbm_open\fR()
+is no greater than
+{PATH_MAX}\(mi4
+bytes, with the last component of the pathname no greater than
+{NAME_MAX}\(mi4
+bytes.
+.SH RATIONALE
+Previously the standard required the database to be stored in two
+files, one file being a directory containing a bitmap of keys and
+having
+.BR .dir
+as its suffix. The second file containing all data and having
+.BR .pag
+as its suffix. This has been changed not to specify the use of the
+files and to allow newer implementations of the Berkeley DB interface
+using a single file that have evolved while remaining compatible with
+the application programming interface. The standard developers
+considered removing the specific suffixes altogether but decided to
+retain them so as not to pollute the application file name space more
+than necessary and to allow for portable backups of the database.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIopen\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<ndbm.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

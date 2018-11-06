@@ -1,0 +1,235 @@
+'\" et
+.TH QSIG "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+qsig
+\(em signal batch jobs
+.SH SYNOPSIS
+.LP
+.nf
+qsig \fB[\fR\(mis \fIsignal\fB] \fIjob_identifier\fR...
+.fi
+.SH DESCRIPTION
+To signal a batch job is to send a signal to the session leader of the
+batch job. A batch job is signaled by sending a request to the batch
+server that manages the batch job. The
+.IR qsig
+utility is a user-accessible batch client that requests the signaling
+of a batch job.
+.P
+The
+.IR qsig
+utility shall signal those batch jobs for which a batch
+.IR job_identifier
+is presented to the utility. The
+.IR qsig
+utility shall not signal any batch jobs whose batch
+.IR job_identifier s
+are not presented to the utility.
+.P
+The
+.IR qsig
+utility shall signal batch jobs in the order in which the corresponding
+batch
+.IR job_identifier s
+are presented to the utility. If the
+.IR qsig
+utility fails to process a batch
+.IR job_identifier
+successfully, the utility shall proceed to process the remaining batch
+.IR job_identifier s,
+if any.
+.P
+The
+.IR qsig
+utility shall signal batch jobs by sending a
+.IR "Signal Job Request"
+to the batch server that manages the batch job.
+.P
+For each successfully processed batch
+.IR job_identifier ,
+the
+.IR qsig
+utility shall have received a completion reply to each
+.IR "Signal Job Request"
+sent to a batch server at the time the utility exits.
+.SH OPTIONS
+The
+.IR qsig
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported by the implementation:
+.IP "\fB\(mis\ \fIsignal\fR" 10
+Define the signal to be sent to the batch job.
+.RS 10 
+.P
+The
+.IR qsig
+utility shall accept a
+.IR signal
+option-argument that is either a symbolic signal name or an unsigned
+integer signal number (see the POSIX.1\(hy1990 standard, Section 3.3.1.1). The
+.IR qsig
+utility shall accept signal names for which the SIG prefix has been
+omitted.
+.P
+If the
+.IR signal
+option-argument is a signal name, the
+.IR qsig
+utility shall send that name.
+.P
+If the
+.IR signal
+option-argument is a number, the
+.IR qsig
+utility shall send the signal value represented by the number.
+.P
+If the
+.BR \(mis
+option is not presented to the
+.IR qsig
+utility, the utility shall send the signal SIGTERM to each signaled
+batch job.
+.RE
+.SH OPERANDS
+The
+.IR qsig
+utility shall accept one or more operands that conform to the syntax
+for a batch
+.IR job_identifier
+(see
+.IR "Section 3.3.1" ", " "Batch Job Identifier").
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR qsig :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+the precedence of internationalization variables used to determine the
+values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fILOGNAME\fP" 10
+Determine the login name of the user.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+An implementation of the
+.IR qsig
+utility may write informative messages to standard output.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+In addition to the default behavior, the
+.IR qsig
+utility shall not be required to write a diagnostic message to standard
+error when the error reply received from a batch server indicates that
+the batch
+.IR job_identifier
+does not exist on the server. Whether or not the
+.IR qsig
+utility waits to output the diagnostic message while attempting to
+locate the batch job on other servers is implementation-defined.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The
+.IR qsig
+utility allows users to signal batch jobs.
+.P
+A user may be unable to signal a batch job with the
+.IR kill
+utility of the operating system for a number of reasons. First, the
+process ID of the batch job may be unknown to the user. Second, the
+processes of the batch job may be on a remote node. However, by virtue
+of communication between batch nodes, the
+.IR qsig
+utility can arrange for the signaling of a process.
+.P
+Because a batch job that is not running cannot be signaled, and because
+the signal may not terminate the batch job, the
+.IR qsig
+utility is not a substitute for the
+.IR qdel
+utility.
+.P
+The options of the
+.IR qsig
+utility allow the user to specify the signal that is to be sent to the
+batch job.
+.P
+The
+.BR \(mis
+option allows users to specify a signal by name or by number, and thus
+override the default signal. The POSIX.1\(hy1990 standard defines signals by both name and
+number.
+.P
+The
+.IR qsig
+utility is a new utility, \fIvis-a-vis\fP existing practice; it has
+been defined in this volume of POSIX.1\(hy2008 in response to user-perceived shortcomings in
+existing practice.
+.SH "FUTURE DIRECTIONS"
+The
+.IR qsig
+utility may be removed in a future version.
+.SH "SEE ALSO"
+.IR "Chapter 3" ", " "Batch Environment Services",
+.IR "\fIkill\fR\^",
+.IR "\fIqdel\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

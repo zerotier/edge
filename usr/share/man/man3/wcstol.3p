@@ -1,0 +1,229 @@
+'\" et
+.TH WCSTOL "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+wcstol,
+wcstoll
+\(em convert a wide-character string to a long integer
+.SH SYNOPSIS
+.LP
+.nf
+#include <wchar.h>
+.P
+long wcstol(const wchar_t *restrict \fInptr\fP, wchar_t **restrict \fIendptr\fP,
+    int \fIbase\fP);
+long long wcstoll(const wchar_t *restrict \fInptr\fP,
+    wchar_t **restrict \fIendptr\fP, int \fIbase\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+These functions shall convert the initial portion of the wide-character
+string pointed to by
+.IR nptr
+to
+.BR long
+and
+.BR "long long" ,
+respectively. First, they shall decompose the input string into three
+parts:
+.IP " 1." 4
+An initial, possibly empty, sequence of white-space wide-character
+codes (as specified by
+\fIiswspace\fR())
+.IP " 2." 4
+A subject sequence interpreted as an integer represented in some radix
+determined by the value of
+.IR base
+.IP " 3." 4
+A final wide-character string of one or more unrecognized
+wide-character codes, including the terminating null wide-character
+code of the input wide-character string
+.P
+Then they shall attempt to convert the subject sequence to an
+integer, and return the result.
+.P
+If
+.IR base
+is 0, the expected form of the subject sequence is that of a decimal
+constant, octal constant, or hexadecimal constant, any of which may be
+preceded by a
+.BR '+' 
+or
+.BR '\(mi' 
+sign. A decimal constant begins with a non-zero digit, and consists of
+a sequence of decimal digits. An octal constant consists of the prefix
+.BR '0' 
+optionally followed by a sequence of the digits
+.BR '0' 
+to
+.BR '7' 
+only. A hexadecimal constant consists of the prefix 0x or 0X followed
+by a sequence of the decimal digits and letters
+.BR 'a' 
+(or
+.BR 'A' )
+to
+.BR 'f' 
+(or
+.BR 'F' )
+with values 10 to 15 respectively.
+.P
+If the value of
+.IR base
+is between 2 and 36, the expected form of the subject sequence is a
+sequence of letters and digits representing an integer with the radix
+specified by
+.IR base ,
+optionally preceded by a
+.BR '+' 
+or
+.BR '\(mi' 
+sign, but not including an integer suffix. The letters from
+.BR 'a' 
+(or
+.BR 'A' )
+to
+.BR 'z' 
+(or
+.BR 'Z' )
+inclusive are ascribed the values 10 to 35; only letters whose ascribed
+values are less than that of
+.IR base
+shall be permitted. If the value of
+.IR base
+is 16, the wide-character code representations of 0x or 0X may
+optionally precede the sequence of letters and digits, following the
+sign if present.
+.P
+The subject sequence is defined as the longest initial subsequence of
+the input wide-character string, starting with the first
+non-white-space wide-character code that is of the expected form. The
+subject sequence contains no wide-character codes if the input
+wide-character string is empty or consists entirely of white-space
+wide-character code, or if the first non-white-space wide-character
+code is other than a sign or a permissible letter or digit.
+.P
+If the subject sequence has the expected form and
+.IR base
+is 0, the sequence of wide-character codes starting with the first
+digit shall be interpreted as an integer constant. If the subject
+sequence has the expected form and the value of
+.IR base
+is between 2 and 36, it shall be used as the base for conversion,
+ascribing to each letter its value as given above. If the subject
+sequence begins with a minus-sign, the value resulting from the
+conversion shall be negated. A pointer to the final wide-character
+string shall be stored in the object pointed to by
+.IR endptr ,
+provided that
+.IR endptr
+is not a null pointer.
+.P
+In other than the C
+or POSIX
+locales, other implementation-defined subject sequences may be
+accepted.
+.P
+If the subject sequence is empty or does not have the expected form, no
+conversion shall be performed; the value of
+.IR nptr
+shall be stored in the object pointed to by
+.IR endptr ,
+provided that
+.IR endptr
+is not a null pointer.
+.P
+These functions shall not change the setting of
+.IR errno
+if successful.
+.P
+Since 0,
+{LONG_MIN}
+or
+{LLONG_MIN}
+and
+{LONG_MAX}
+or
+{LLONG_MAX}
+are returned on error and are also valid returns on success, an
+application wishing to check for error situations should set
+.IR errno
+to 0, then call
+\fIwcstol\fR()
+or
+\fIwcstoll\fR(),
+then check
+.IR errno .
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return the converted
+value, if any. If no conversion could be performed, 0 shall be returned
+and
+.IR errno
+may be set to indicate the error.
+If the correct value is outside the range of representable values,
+{LONG_MIN},
+{LONG_MAX},
+{LLONG_MIN},
+or
+{LLONG_MAX}
+shall be returned (according to the sign of the value), and
+.IR errno
+set to
+.BR [ERANGE] .
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EINVAL
+The value of
+.IR base
+is not supported.
+.TP
+.BR ERANGE
+The value to be returned is not representable.
+.P
+These functions may fail if:
+.TP
+.BR EINVAL
+No conversion could be performed.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfscanf\fR\^(\|)",
+.IR "\fIiswalpha\fR\^(\|)",
+.IR "\fIwcstod\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<wchar.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

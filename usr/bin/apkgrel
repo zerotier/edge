@@ -1,0 +1,138 @@
+#!/bin/sh
+
+# apkgrel - display or bump pkgrel in APKBUILDs
+# Copyright (c) 2012 Natanael Copa <ncopa@alpinelinux.org>
+#
+# Distributed under GPL-2
+#
+
+program_version=3.3.0_pre1-r1
+datadir=/usr/share/abuild
+
+if ! [ -f "$datadir/functions.sh" ]; then
+	echo "$datadir/functions.sh: not found" >&2
+	exit 1
+fi
+. "$datadir/functions.sh"
+
+
+show_plain() {
+	# we source the APKBUILD and show last pkgrel that's read
+	# if this script is invoked with --force, this needn't pass "do_verify"
+	( . "$1" && echo "$pkgrel" )
+}
+
+show_pretty() {
+	(
+	. "$1" || exit 1
+	[ -n "$pkgname" ] || die "no \$pkgname for $1"
+	printf '%s: r%s\n' "$pkgname" "${pkgrel:-?}"
+	)
+}
+
+do_show() {
+	local f=
+	# show_pretty is more informative, but would change the output format of this script
+	for f; do show_plain "$f"; done
+}
+
+do_set() {
+	sed -e "/^pkgrel=/s/=.*/=${setto:-0}/" \
+		-i "$@"
+}
+
+do_add () {
+	local f= old=
+	for f; do
+		[ -n "$only_clean_git" ] \
+			&& [ -n "$(git diff --name-only "${f%/*}")" ] \
+			&& continue
+		old=$(show_plain "$f")
+		case $old in
+		[0-9]*) setto=$((old + 1));;
+		*) setto=0;;
+		esac
+		do_set "$f" || return 1
+	done
+}
+
+do_verify() {
+	[ -n "$force" ] && return 0
+	local f= rc=0
+	for f; do
+		if ! grep -q '^pkgrel=[0-9]' "$f"; then
+			error "no proper \$pkgrel for $f"
+			rc=1
+		fi
+	done
+	return $rc
+}
+
+do_nothing() {
+	return 0
+}
+
+usage() {
+	cat >&2 <<-__EOF__
+		$program $program_version - display or bump pkgrel in APKBUILDs
+		Usage: $program [-z|--zero] [-a|--add] [-g|--clean-git] [-s|--set NUM]
+				[-t|--test] [-f|--force] DIR or APKBUILD...
+		Options:
+		  -z, --zero       Set pkgrel to 0
+		  -a, --add        Add 1 to current pkgrel
+		  -g, --clean-git  Only operate on APKBUILDs with clean git status (implies
+		                   --add)
+		  -s, --set NUM    Set pkgrel to NUM
+		  -t, --test       Only verify that files have a valid pkgrel
+		  -f, --force      Operate on files without a valid pkgrel
+		  -h, --help       Show this help
+
+	__EOF__
+}
+
+cmd=do_show
+force=
+setto=
+only_clean_git=
+
+args=$(getopt -o zags:tfqh --long zero,add,clean-git,set:,test,force,quiet,help \
+	-n "$program" -- "$@")
+if [ $? -ne 0 ]; then
+	usage
+	exit 2
+fi
+eval set -- "$args"
+while true; do
+	case $1 in
+		-z|--zero) setto=0; cmd=do_set;;
+		-a|--add) cmd=do_add;;
+		-g|--clean-git) # verify that we're in a git tree
+				git rev-parse 2>/dev/null || die "not in a git tree"
+				cmd=do_add
+				only_clean_git=1;;
+		-s|--set) setto=$2; shift; cmd=do_set;;
+		-t|--test) cmd=do_nothing;;
+		-f|--force) force=1;;
+		-q|--quiet) quiet=1;; # noop
+		-h|--help) usage; exit;;
+		--) shift; break;;
+		*) exit 1;; # getopt error
+	esac
+	shift
+done
+if [ $# -eq 0 ]; then
+	usage
+	exit 2
+fi
+
+# normalize $@ into paths to APKBUILDs
+[ "$(echo "$@" | wc -l)" -eq 1 ] || die "can't handle paths with embedded newlines"
+args=$(for a; do p=$(any_buildscript "$a") || die "can't find APKBUILD for $a"; echo "$p"; done)
+[ $? -eq 0 ] || exit 1
+oldifs=$IFS
+IFS=$'\n'
+set -- $args
+IFS=$oldifs
+
+do_verify "$@" || exit 1
+$cmd "$@"

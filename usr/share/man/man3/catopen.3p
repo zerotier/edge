@@ -1,0 +1,195 @@
+'\" et
+.TH CATOPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+catopen
+\(em open a message catalog
+.SH SYNOPSIS
+.LP
+.nf
+#include <nl_types.h>
+.P
+nl_catd catopen(const char *\fIname\fP, int \fIoflag\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIcatopen\fR()
+function shall open a message catalog and return a message catalog
+descriptor. The
+.IR name
+argument specifies the name of the message catalog to be opened. If
+.IR name
+contains a
+.BR '/' ,
+then
+.IR name
+specifies a complete name for the message catalog. Otherwise, the
+environment variable
+.IR NLSPATH
+is used with
+.IR name
+substituted for the
+.BR %N
+conversion specification (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables").
+If
+.IR NLSPATH
+exists in the environment when the process starts, then if the process
+has appropriate privileges, the behavior of
+\fIcatopen\fR()
+is undefined. If
+.IR NLSPATH
+does not exist in the environment, or if a message catalog cannot be
+found in any of the components specified by
+.IR NLSPATH ,
+then an implementation-defined default path shall be used. This default
+may be affected by the setting of
+.IR LC_MESSAGES
+if the value of
+.IR oflag
+is NL_CAT_LOCALE, or the
+.IR LANG
+environment variable if
+.IR oflag
+is 0.
+.P
+A message catalog descriptor shall remain valid in a process until that
+process closes it, or a successful call to one of the
+.IR exec
+functions. A change in the setting of the
+.IR LC_MESSAGES
+category may invalidate existing open catalogs.
+.P
+If a file descriptor is used to implement message catalog descriptors,
+the FD_CLOEXEC flag shall be set; see
+.IR <fcntl.h> .
+.P
+If the value of the
+.IR oflag
+argument is 0, the
+.IR LANG
+environment variable is used to locate the catalog without regard to
+the
+.IR LC_MESSAGES
+category. If the
+.IR oflag
+argument is NL_CAT_LOCALE, the
+.IR LC_MESSAGES
+category is used to locate the message catalog (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables").
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIcatopen\fR()
+shall return a message catalog descriptor for use on subsequent calls to
+\fIcatgets\fR()
+and
+\fIcatclose\fR().
+Otherwise,
+\fIcatopen\fR()
+shall return (\c
+.BR nl_catd )
+\(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIcatopen\fR()
+function may fail if:
+.TP
+.BR EACCES
+Search permission is denied for the component of the path prefix of the
+message catalog or read permission is denied for the message catalog.
+.TP
+.BR EMFILE
+All file descriptors available to the process are currently open.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR ENFILE
+Too many files are currently open in the system.
+.TP
+.BR ENOENT
+The message catalog does not exist or the
+.IR name
+argument points to an empty string.
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.TP
+.BR ENOTDIR
+A component of the path prefix of the message catalog names an existing
+file that is neither a directory nor a symbolic link to a directory,
+or the pathname of the message catalog contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Some implementations of
+\fIcatopen\fR()
+use
+\fImalloc\fR()
+to allocate space for internal buffer areas. The
+\fIcatopen\fR()
+function may fail if there is insufficient storage space available to
+accommodate these buffers.
+.P
+Conforming applications must assume that message catalog descriptors are
+not valid after a call to one of the
+.IR exec
+functions.
+.P
+Application developers should be aware that guidelines for the location
+of message catalogs have not yet been developed. Therefore they should
+take care to avoid conflicting with catalogs used by other applications
+and the standard utilities.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIcatclose\fR\^(\|)",
+.IR "\fIcatgets\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<nl_types.h>\fP",
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

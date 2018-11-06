@@ -1,0 +1,312 @@
+'\" et
+.TH NL "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+nl
+\(em line numbering filter
+.SH SYNOPSIS
+.LP
+.nf
+nl \fB[\fR\(mip\fB] [\fR\(mib \fItype\fB] [\fR\(mid \fIdelim\fB] [\fR\(mif \fItype\fB] [\fR\(mih \fItype\fB] [\fR\(mii \fIincr\fB] [\fR\(mil \fInum\fB]
+    [\fR\(min \fIformat\fB] [\fR\(mis \fIsep\fB] [\fR\(miv \fIstartnum\fB] [\fR\(miw \fIwidth\fB] [\fIfile\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR nl
+utility shall read lines from the named
+.IR file
+or the standard input if no
+.IR file
+is named and shall reproduce the lines to standard output. Lines shall
+be numbered on the left. Additional functionality may be provided in
+accordance with the command options in effect.
+.P
+The
+.IR nl
+utility views the text it reads in terms of logical pages. Line
+numbering shall be reset at the start of each logical page. A logical
+page consists of a header, a body, and a footer section. Empty sections
+are valid. Different line numbering options are independently available
+for header, body, and footer (for example, no numbering of header and
+footer lines while numbering blank lines only in the body).
+.P
+The starts of logical page sections shall be signaled by input lines
+containing nothing but the following delimiter characters:
+.TS
+center box tab(@);
+cB | cB
+lw(1i)f5 | lw(1i).
+Line@Start of
+_
+\e:\e:\e:@Header
+\e:\e:@Body
+\e:@Footer
+.TE
+.P
+Unless otherwise specified,
+.IR nl
+shall assume the text being read is in a single logical page body.
+.SH OPTIONS
+The
+.IR nl
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+Only one file can be named.
+.P
+The following options shall be supported:
+.IP "\fB\(mib\ \fItype\fR" 10
+Specify which logical page body lines shall be numbered. Recognized
+.IR types
+and their meaning are:
+.RS 10 
+.IP "\fBa\fP" 8
+Number all lines.
+.IP "\fBt\fP" 8
+Number only non-empty lines.
+.IP "\fBn\fP" 8
+No line numbering.
+.IP "\fBp\fIstring\fR" 8
+Number only lines that contain the basic regular expression
+specified in
+.IR string .
+.P
+The default
+.IR type
+for logical page body shall be
+.BR t
+(text lines numbered).
+.RE
+.IP "\fB\(mid\ \fIdelim\fR" 10
+Specify the delimiter characters that indicate the start of a logical
+page section. These can be changed from the default characters
+.BR \(dq\e:\(dq 
+to two user-specified characters. If only one character is entered,
+the second character shall remain the default character
+.BR ':' .
+.IP "\fB\(mif\ \fItype\fR" 10
+Specify the same as
+.BR b
+.IR type
+except for footer. The default for logical page footer shall be
+.BR n
+(no lines numbered).
+.IP "\fB\(mih\ \fItype\fR" 10
+Specify the same as
+.BR b
+.IR type
+except for header. The default
+.IR type
+for logical page header shall be
+.BR n
+(no lines numbered).
+.IP "\fB\(mii\ \fIincr\fR" 10
+Specify the increment value used to number logical page lines. The
+default shall be 1.
+.IP "\fB\(mil\ \fInum\fR" 10
+Specify the number of blank lines to be considered as one. For
+example,
+.BR "\(mil\ 2"
+results in only the second adjacent blank line being numbered (if the
+appropriate
+.BR "\(mih\ a" ,
+.BR "\(mib\ a" ,
+or
+.BR "\(mif\ a"
+option is set). The default shall be 1.
+.IP "\fB\(min\ \fIformat\fR" 10
+Specify the line numbering format. Recognized values are:
+.BR ln ,
+left justified, leading zeros suppressed;
+.BR rn ,
+right justified, leading zeros suppressed;
+.BR rz ,
+right justified, leading zeros kept. The default
+.IR format
+shall be
+.BR rn
+(right justified).
+.IP "\fB\(mip\fP" 10
+Specify that numbering should not be restarted at logical page
+delimiters.
+.IP "\fB\(mis\ \fIsep\fR" 10
+Specify the characters used in separating the line number and the
+corresponding text line. The default
+.IR sep
+shall be a
+<tab>.
+.IP "\fB\(miv\ \fIstartnum\fR" 10
+Specify the initial value used to number logical page lines. The
+default shall be 1.
+.IP "\fB\(miw\ \fIwidth\fR" 10
+Specify the number of characters to be used for the line number. The
+default
+.IR width
+shall be 6.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a text file to be line-numbered.
+.SH STDIN
+The standard input shall be used if no
+.IR file
+operand is specified, and shall be used if the
+.IR file
+operand is
+.BR '\(mi' 
+and the implementation treats the
+.BR '\(mi' 
+as meaning standard input.
+Otherwise, the standard input shall not be used.
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input file shall be a text file.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR nl :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements within regular expressions.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files), the behavior of
+character classes within regular expressions, and for deciding which
+characters are in character class
+.BR graph
+(for the
+.BR "\(mib\ t" ,
+.BR "\(mif\ t" ,
+and
+.BR "\(mih\ t"
+options).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be a text file in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%s%s%s", <\fIline number\fR>, <\fIseparator\fR>, <\fIinput line\fR>
+.fi \fR
+.P
+.RE
+.P
+where <\fIline\ number\fP> is one of the following numeric formats:
+.IP "\fR%6d\fP" 10
+When the
+.BR rn
+format is used (the default; see
+.BR \(min ).
+.IP "\fR%06d\fP" 10
+When the
+.BR rz
+format is used.
+.IP "\fR%\(mi6d\fP" 10
+When the
+.BR ln
+format is used.
+.IP <empty> 10
+When line numbers are suppressed for a portion of the page; the
+<\fIseparator\fP> is also suppressed.
+.P
+In the preceding list, the number 6 is the default width; the
+.BR \(miw
+option can change this value.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+In using the
+.BR \(mid
+.IR delim
+option, care should be taken to escape characters that have special
+meaning to the command interpreter.
+.SH EXAMPLES
+The command:
+.sp
+.RS 4
+.nf
+\fB
+nl \(miv 10 \(mii 10 \(mid \e!+ file1
+.fi \fR
+.P
+.RE
+.P
+numbers
+.IR file1
+starting at line number 10 with an increment of 10. The logical page
+delimiter is
+.BR \(dq!+\(dq .
+Note that the
+.BR '!' 
+has to be escaped when using
+.IR csh
+as a command interpreter because of its history substitution syntax.
+For
+.IR ksh
+and
+.IR sh
+the escape is not necessary, but does not do any harm.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIpr\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

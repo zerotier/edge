@@ -1,0 +1,224 @@
+'\" et
+.TH SLEEP "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sleep
+\(em suspend execution for an interval of time
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+unsigned sleep(unsigned \fIseconds\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsleep\fR()
+function shall cause the calling thread to be suspended from execution
+until either the number of realtime seconds specified by the argument
+.IR seconds
+has elapsed or a signal is delivered to the calling thread and its
+action is to invoke a signal-catching function or to terminate the
+process. The suspension time may be longer than requested due to the
+scheduling of other activity by the system.
+.P
+If a SIGALRM signal is generated for the calling process during
+execution of
+\fIsleep\fR()
+and if the SIGALRM signal is being ignored or blocked from delivery, it
+is unspecified whether
+\fIsleep\fR()
+returns when the SIGALRM signal is scheduled. If the signal is being
+blocked, it is also unspecified whether it remains pending after
+\fIsleep\fR()
+returns or it is discarded.
+.P
+If a SIGALRM signal is generated for the calling process during
+execution of
+\fIsleep\fR(),
+except as a result of a prior call to
+\fIalarm\fR(),
+and if the SIGALRM signal is not being ignored or blocked from
+delivery, it is unspecified whether that signal has any effect other
+than causing
+\fIsleep\fR()
+to return.
+.P
+If a signal-catching function interrupts
+\fIsleep\fR()
+and examines or changes either the time a SIGALRM is scheduled to be
+generated, the action associated with the SIGALRM signal, or whether
+the SIGALRM signal is blocked from delivery, the results are
+unspecified.
+.P
+If a signal-catching function interrupts
+\fIsleep\fR()
+and calls
+\fIsiglongjmp\fR()
+or
+\fIlongjmp\fR()
+to restore an environment saved prior to the
+\fIsleep\fR()
+call, the action associated with the SIGALRM signal and the time at
+which a SIGALRM signal is scheduled to be generated are unspecified.
+It is also unspecified whether the SIGALRM signal is blocked, unless
+the signal mask of the process is restored as part of the environment.
+.P
+Interactions between
+\fIsleep\fR()
+and
+\fIsetitimer\fR()
+are unspecified.
+.SH "RETURN VALUE"
+If
+\fIsleep\fR()
+returns because the requested time has elapsed, the value returned
+shall be 0. If
+\fIsleep\fR()
+returns due to delivery of a signal, the return value shall be
+the ``unslept'' amount (the requested time minus the time actually
+slept) in seconds.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+There are two general approaches to the implementation of the
+\fIsleep\fR()
+function. One is to use the
+\fIalarm\fR()
+function to schedule a SIGALRM
+signal and then suspend the calling thread waiting for that signal. The
+other is to implement an independent facility. This volume of POSIX.1\(hy2008 permits either
+approach.
+.P
+In order to comply with the requirement that no primitive shall change
+a process attribute unless explicitly described by this volume of POSIX.1\(hy2008, an
+implementation using SIGALRM must carefully take into account any
+SIGALRM signal scheduled by previous
+\fIalarm\fR()
+calls, the action previously established for SIGALRM, and whether
+SIGALRM was blocked. If a SIGALRM has been scheduled before the
+\fIsleep\fR()
+would ordinarily complete, the
+\fIsleep\fR()
+must be shortened to that time and a SIGALRM generated (possibly
+simulated by direct invocation of the signal-catching function) before
+\fIsleep\fR()
+returns. If a SIGALRM has been scheduled after the
+\fIsleep\fR()
+would ordinarily complete, it must be rescheduled for the same time
+before
+\fIsleep\fR()
+returns. The action and blocking for SIGALRM must be saved and
+restored.
+.P
+Historical implementations often implement the SIGALRM-based version
+using
+\fIalarm\fR()
+and
+\fIpause\fR().
+One such implementation is prone to infinite hangups, as described in
+.IR "\fIpause\fR\^(\|)".
+Another such implementation uses the C-language
+\fIsetjmp\fR()
+and
+\fIlongjmp\fR()
+functions to avoid that window. That implementation introduces a
+different problem: when the SIGALRM signal interrupts a signal-catching
+function installed by the user to catch a different signal, the
+\fIlongjmp\fR()
+aborts that signal-catching function. An implementation based on
+\fIsigprocmask\fR(),
+\fIalarm\fR(),
+and
+\fIsigsuspend\fR()
+can avoid these problems.
+.P
+Despite all reasonable care, there are several very subtle, but
+detectable and unavoidable, differences between the two types of
+implementations. These are the cases mentioned in this volume of POSIX.1\(hy2008 where
+some other activity relating to SIGALRM takes place, and the results
+are stated to be unspecified. All of these cases are sufficiently
+unusual as not to be of concern to most applications.
+.P
+See also the discussion of the term
+.IR realtime
+in
+.IR "\fIalarm\fR\^(\|)".
+.P
+Since
+\fIsleep\fR()
+can be implemented using
+\fIalarm\fR(),
+the discussion about alarms occurring early under
+\fIalarm\fR()
+applies to
+\fIsleep\fR()
+as well.
+.P
+Application developers should note that the type of the argument
+.IR seconds
+and the return value of
+\fIsleep\fR()
+is
+.BR unsigned .
+That means that a Strictly Conforming POSIX System Interfaces
+Application
+cannot pass a value greater than the minimum guaranteed value for
+{UINT_MAX},
+which the ISO\ C standard sets as 65\|535, and any application passing a larger
+value is restricting its portability. A different type was considered,
+but historical implementations, including those with a 16-bit
+.BR int
+type, consistently use either
+.BR unsigned
+or
+.BR int .
+.P
+Scheduling delays may cause the process to return from the
+\fIsleep\fR()
+function significantly after the requested time. In such cases, the
+return value should be set to zero, since the formula (requested time
+minus the time actually spent) yields a negative number and
+\fIsleep\fR()
+returns an
+.BR unsigned .
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIalarm\fR\^(\|)",
+.IR "\fIgetitimer\fR\^(\|)",
+.IR "\fInanosleep\fR\^(\|)",
+.IR "\fIpause\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)",
+.IR "\fIsigsetjmp\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

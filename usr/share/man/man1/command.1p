@@ -1,0 +1,560 @@
+'\" et
+.TH COMMAND "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+command
+\(em execute a simple command
+.SH SYNOPSIS
+.LP
+.nf
+command \fB[\fR\(mip\fB] \fIcommand_name \fB[\fIargument\fR...\fB]\fR
+.P
+command \fB[\fR\(mip\fB][\fR\(miv|\(miV\fB] \fIcommand_name\fR
+.fi
+.SH DESCRIPTION
+The
+.IR command
+utility shall cause the shell to treat the arguments as a simple
+command, suppressing the shell function lookup that is described in
+.IR "Section 2.9.1.1" ", " "Command Search and Execution",
+item 1b.
+.P
+If the
+.IR command_name
+is the same as the name of one of the special built-in utilities, the
+special properties in the enumerated list at the beginning of
+.IR "Section 2.14" ", " "Special Built-In Utilities"
+shall not occur. In every other respect, if
+.IR command_name
+is not the name of a function, the effect of
+.IR command
+(with no options) shall be the same as omitting
+.IR command .
+.P
+When the
+.BR \(miv
+or
+.BR \(miV
+option is used, the
+.IR command
+utility shall provide information concerning how a command name
+is interpreted by the shell.
+.SH OPTIONS
+The
+.IR command
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mip\fP" 10
+Perform the command search using a default value for
+.IR PATH
+that is guaranteed to find all of the standard utilities.
+.IP "\fB\(miv\fP" 10
+Write a string to standard output that indicates the pathname or command
+that will be used by the shell, in the current shell execution environment
+(see
+.IR "Section 2.12" ", " "Shell Execution Environment"),
+to invoke
+.IR command_name ,
+but do not invoke
+.IR command_name .
+.RS 10 
+.IP " *" 4
+Utilities, regular built-in utilities,
+.IR command_name s
+including a
+<slash>
+character, and any implementation-defined functions that are found
+using the
+.IR PATH
+variable (as described in
+.IR "Section 2.9.1.1" ", " "Command Search and Execution"),
+shall be written as absolute pathnames.
+.IP " *" 4
+Shell functions, special built-in utilities, regular built-in utilities
+not associated with a
+.IR PATH
+search, and shell reserved words shall be written as just their names.
+.IP " *" 4
+An alias shall be written as a command line that represents its alias
+definition.
+.IP " *" 4
+Otherwise, no output shall be written and the exit status shall reflect
+that the name was not found.
+.RE
+.IP "\fB\(miV\fP" 10
+Write a string to standard output that indicates how the name given in the
+.IR command_name
+operand will be interpreted by the shell, in the current shell
+execution environment (see
+.IR "Section 2.12" ", " "Shell Execution Environment"),
+but do not invoke
+.IR command_name .
+Although the format of this string is unspecified, it shall indicate in
+which of the following categories
+.IR command_name
+falls and shall include the information stated:
+.RS 10 
+.IP " *" 4
+Utilities, regular built-in utilities, and any implementation-defined
+functions that are found using the
+.IR PATH
+variable (as described in
+.IR "Section 2.9.1.1" ", " "Command Search and Execution"),
+shall be identified as such and include the absolute pathname in the
+string.
+.IP " *" 4
+Other shell functions shall be identified as functions.
+.IP " *" 4
+Aliases shall be identified as aliases and their definitions
+included in the string.
+.IP " *" 4
+Special built-in utilities shall be identified as special built-in
+utilities.
+.IP " *" 4
+Regular built-in utilities not associated with a
+.IR PATH
+search shall be identified as regular built-in utilities. (The term
+``regular'' need not be used.)
+.IP " *" 4
+Shell reserved words shall be identified as reserved words.
+.RE
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIargument\fR" 10
+One of the strings treated as an argument to
+.IR command_name .
+.IP "\fIcommand_name\fR" 10
+.br
+The name of a utility or a special built-in utility.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR command :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fIPATH\fP" 10
+Determine the search path used during the command search described in
+.IR "Section 2.9.1.1" ", " "Command Search and Execution",
+except as described under the
+.BR \(mip
+option.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+When the
+.BR \(miv
+option is specified, standard output shall be formatted as:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIpathname or command\fR>
+.fi \fR
+.P
+.RE
+.P
+When the
+.BR \(miV
+option is specified, standard output shall be formatted as:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIunspecified\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+When the
+.BR \(miv
+or
+.BR \(miV
+options are specified, the following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+The
+.IR command_name
+could not be found or an error occurred.
+.P
+Otherwise, the following exit values shall be returned:
+.IP 126 6
+The utility specified by
+.IR command_name
+was found but could not be invoked.
+.IP 127 6
+An error occurred in the
+.IR command
+utility or the utility specified by
+.IR command_name
+could not be found.
+.P
+Otherwise, the exit status of
+.IR command
+shall be that of the simple command specified by the arguments to
+.IR command .
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The order for command search allows functions to override regular
+built-ins and path searches. This utility is necessary to allow
+functions that have the same name as a utility to call the utility
+(instead of a recursive call to the function).
+.P
+The system default path is available using
+.IR getconf ;
+however, since
+.IR getconf
+may need to have the
+.IR PATH
+set up before it can be called itself, the following can be used:
+.sp
+.RS 4
+.nf
+\fB
+command \(mip getconf PATH
+.fi \fR
+.P
+.RE
+.P
+There are some advantages to suppressing the special characteristics of
+special built-ins on occasion. For example:
+.sp
+.RS 4
+.nf
+\fB
+command exec > \fIunwritable-file\fR
+.fi \fR
+.P
+.RE
+.P
+does not cause a non-interactive script to abort, so that the output
+status can be checked by the script.
+.P
+The
+.IR command ,
+.IR env ,
+.IR nohup ,
+.IR time ,
+and
+.IR xargs
+utilities have been specified to use exit code 127 if an error occurs
+so that applications can distinguish ``failure to find a utility'' from
+``invoked utility exited with an error indication''. The value 127 was
+chosen because it is not commonly used for other meanings; most
+utilities use small values for ``normal error conditions'' and the
+values above 128 can be confused with termination due to receipt of a
+signal. The value 126 was chosen in a similar manner to indicate that
+the utility could be found, but not invoked. Some scripts produce
+meaningful error messages differentiating the 126 and 127 cases. The
+distinction between exit codes 126 and 127 is based on KornShell
+practice that uses 127 when all attempts to
+.IR exec
+the utility fail with
+.BR [ENOENT] ,
+and uses 126 when any attempt to
+.IR exec
+the utility fails for any other reason.
+.P
+Since the
+.BR \(miv
+and
+.BR \(miV
+options of
+.IR command
+produce output in relation to the current shell execution environment,
+.IR command
+is generally provided as a shell regular built-in. If it is called in a
+subshell or separate utility execution environment, such as one of the
+following:
+.sp
+.RS 4
+.nf
+\fB
+(PATH=foo command \(miv)
+ nohup command \(miv
+.fi \fR
+.P
+.RE
+.P
+it does not necessarily produce correct results. For example, when
+called with
+.IR nohup
+or an
+.IR exec
+function, in a separate utility execution environment, most
+implementations are not able to identify aliases, functions, or special
+built-ins.
+.P
+Two types of regular built-ins could be encountered on a system and
+these are described separately by
+.IR command .
+The description of command search in
+.IR "Section 2.9.1.1" ", " "Command Search and Execution"
+allows for a standard utility to be implemented as a regular built-in
+as long as it is found in the appropriate place in a
+.IR PATH
+search. So, for example,
+.IR command
+.BR \(miv
+.IR true
+might yield
+.BR /bin/true
+or some similar pathname. Other implementation-defined utilities that
+are not defined by this volume of POSIX.1\(hy2008 might exist only as built-ins and have no
+pathname associated with them. These produce output identified as
+(regular) built-ins. Applications encountering these are not able to
+count on
+.IR exec ing
+them, using them with
+.IR nohup ,
+overriding them with a different
+.IR PATH ,
+and so on.
+.SH EXAMPLES
+.IP " 1." 4
+Make a version of
+.IR cd
+that always prints out the new working directory exactly once:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+cd() {
+    command cd "$@" >/dev/null
+    pwd
+}
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+Start off a ``secure shell script'' in which the script avoids
+being spoofed by its parent:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+IFS='
+\&'
+#    The preceding value should be <space><tab><newline>.
+#    Set IFS to its default value.
+.P
+\eunalias \(mia
+#    Unset all possible aliases.
+#    Note that unalias is escaped to prevent an alias
+#    being used for unalias.
+.P
+unset \(mif command
+#    Ensure command is not a user function.
+.P
+PATH="$(command \(mip getconf PATH):$PATH"
+#    Put on a reliable PATH prefix.
+.P
+#    ...
+.fi \fR
+.P
+.RE
+.P
+At this point, given correct permissions on the directories called by
+.IR PATH ,
+the script has the ability to ensure that any utility it calls is the
+intended one. It is being very cautious because it assumes that
+implementation extensions may be present that would allow user
+functions to exist when it is invoked; this capability is not specified
+by this volume of POSIX.1\(hy2008, but it is not prohibited as an extension. For example, the
+.IR ENV
+variable precedes the invocation of the script with a user start-up
+script. Such a script could define functions to spoof the application.
+.RE
+.SH RATIONALE
+Since
+.IR command
+is a regular built-in utility it is always found prior to the
+.IR PATH
+search.
+.P
+There is nothing in the description of
+.IR command
+that implies the command line is parsed any differently from that of
+any other simple command. For example:
+.sp
+.RS 4
+.nf
+\fB
+command a | b ; c
+.fi \fR
+.P
+.RE
+.P
+is not parsed in any special way that causes
+.BR '|' 
+or
+.BR ';' 
+to be treated other than a pipe operator or
+<semicolon>
+or that prevents function lookup on
+.BR b
+or
+.BR c .
+.P
+The
+.IR command
+utility is somewhat similar to the Eighth Edition shell
+.IR builtin
+command, but since
+.IR command
+also goes to the file system to search for utilities, the name
+.IR builtin
+would not be intuitive.
+.P
+The
+.IR command
+utility is most likely to be provided as a regular built-in. It is not
+listed as a special built-in
+for the following reasons:
+.IP " *" 4
+The removal of exportable functions made the special precedence of a
+special built-in unnecessary.
+.IP " *" 4
+A special built-in has special properties (see
+.IR "Section 2.14" ", " "Special Built-In Utilities")
+that were inappropriate for invoking other utilities. For example, two
+commands such as:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+date > \fIunwritable-file\fR
+.P
+command date > \fIunwritable-file\fR
+.fi \fR
+.P
+.RE
+.P
+would have entirely different results; in a non-interactive script, the
+former would continue to execute the next command, the latter would
+abort. Introducing this semantic difference along with suppressing
+functions was seen to be non-intuitive.
+.RE
+.P
+The
+.BR \(mip
+option is present because it is useful to be able to ensure a safe path
+search that finds all the standard utilities. This search might not be
+identical to the one that occurs through one of the
+.IR exec
+functions (as defined in the System Interfaces volume of POSIX.1\(hy2008) when
+.IR PATH
+is unset. At the very least, this feature is required to allow the
+script to access the correct version of
+.IR getconf
+so that the value of the default path can be accurately retrieved.
+.P
+The
+.IR command
+.BR \(miv
+and
+.BR \(miV
+options were added to satisfy requirements from users that are
+currently accomplished by three different historical utilities:
+.IR type
+in the System V shell,
+.IR whence
+in the KornShell, and
+.IR which
+in the C shell. Since there is no historical agreement on how and what
+to accomplish here, the POSIX
+.IR command
+utility was enhanced and the historical utilities were left unmodified.
+The C shell
+.IR which
+merely conducts a path search. The KornShell
+.IR whence
+is more elaborate\(emin addition to the categories required by POSIX,
+it also reports on tracked aliases, exported aliases, and undefined
+functions.
+.P
+The output format of
+.BR \(miV
+was left mostly unspecified because human users are its only audience.
+Applications should not be written to care about this information; they
+can use the output of
+.BR \(miv
+to differentiate between various types of commands, but the additional
+information that may be emitted by the more verbose
+.BR \(miV
+is not needed and should not be arbitrarily constrained in its
+verbosity or localization for application parsing reasons.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.9.1.1" ", " "Command Search and Execution",
+.IR "Section 2.12" ", " "Shell Execution Environment",
+.IR "Section 2.14" ", " "Special Built-In Utilities",
+.IR "\fIsh\fR\^",
+.IR "\fItype\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIexec\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

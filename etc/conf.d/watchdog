@@ -1,0 +1,2 @@
+WATCHDOG_OPTS="-t 3 -T 10"
+WATCHDOG_DEV="/dev/watchdog"

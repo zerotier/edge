@@ -1,0 +1,396 @@
+'\" et
+.TH tgmath.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+tgmath.h
+\(em type-generic macros
+.SH SYNOPSIS
+.LP
+.nf
+#include <tgmath.h>
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+.IR <tgmath.h> 
+header shall include the headers
+.IR <math.h> 
+and
+.IR <complex.h> 
+and shall define several type-generic macros.
+.P
+Of the functions contained within the
+.IR <math.h> 
+and
+.IR <complex.h> 
+headers without an
+.IR f
+(\c
+.BR float )
+or
+.IR l
+(\c
+.BR "long double" )
+suffix, several have one or more parameters whose corresponding real
+type is
+.BR double .
+For each such function, except
+\fImodf\fR(),
+\fIj0\fR(),
+\fIj1\fR(),
+\fIjn\fR(),
+\fIy0\fR(),
+\fIy1\fR(),
+and
+\fIyn\fR(),
+there shall be a corresponding type-generic macro. The parameters
+whose corresponding real type is
+.BR double
+in the function synopsis are generic parameters. Use of the macro
+invokes a function whose corresponding real type and type domain are
+determined by the arguments for the generic parameters.
+.P
+Use of the macro invokes a function whose generic parameters have the
+corresponding real type determined as follows:
+.IP " *" 4
+First, if any argument for generic parameters has type
+.BR "long double" ,
+the type determined is
+.BR "long double" .
+.IP " *" 4
+Otherwise, if any argument for generic parameters has type
+.BR double
+or is of integer type, the type determined is
+.BR double .
+.IP " *" 4
+Otherwise, the type determined is
+.BR float .
+.P
+For each unsuffixed function in the
+.IR <math.h> 
+header for which there is a function in the
+.IR <complex.h> 
+header with the same name except for a
+.IR c
+prefix, the corresponding type-generic macro (for both functions) has
+the same name as the function in the
+.IR <math.h> 
+header. The corresponding type-generic macro for
+\fIfabs\fR()
+and
+\fIcabs\fR()
+is
+\fIfabs\fR().
+.TS
+center box tab(!);
+cB | cB | cB
+l | l | l.
+<math.h> Function!<complex.h> Function!Type-Generic Macro
+_
+\fIacos\fR\^(\|)!\fIcacos\fR\^(\|)!\fIacos\fR\^(\|)
+\fIasin\fR\^(\|)!\fIcasin\fR\^(\|)!\fIasin\fR\^(\|)
+\fIatan\fR\^(\|)!\fIcatan\fR\^(\|)!\fIatan\fR\^(\|)
+\fIacosh\fR\^(\|)!\fIcacosh\fR\^(\|)!\fIacosh\fR\^(\|)
+\fIasinh\fR\^(\|)!\fIcasinh\fR\^(\|)!\fIasinh\fR\^(\|)
+\fIatanh\fR\^(\|)!\fIcatanh\fR\^(\|)!\fIatanh\fR\^(\|)
+\fIcos\fR\^(\|)!\fIccos\fR\^(\|)!\fIcos\fR\^(\|)
+\fIsin\fR\^(\|)!\fIcsin\fR\^(\|)!\fIsin\fR\^(\|)
+\fItan\fR\^(\|)!\fIctan\fR\^(\|)!\fItan\fR\^(\|)
+\fIcosh\fR\^(\|)!\fIccosh\fR\^(\|)!\fIcosh\fR\^(\|)
+\fIsinh\fR\^(\|)!\fIcsinh\fR\^(\|)!\fIsinh\fR\^(\|)
+\fItanh\fR\^(\|)!\fIctanh\fR\^(\|)!\fItanh\fR\^(\|)
+\fIexp\fR\^(\|)!\fIcexp\fR\^(\|)!\fIexp\fR\^(\|)
+\fIlog\fR\^(\|)!\fIclog\fR\^(\|)!\fIlog\fR\^(\|)
+\fIpow\fR\^(\|)!\fIcpow\fR\^(\|)!\fIpow\fR\^(\|)
+\fIsqrt\fR\^(\|)!\fIcsqrt\fR\^(\|)!\fIsqrt\fR\^(\|)
+\fIfabs\fR\^(\|)!\fIcabs\fR\^(\|)!\fIfabs\fR\^(\|)
+.TE
+.P
+If at least one argument for a generic parameter is complex, then use
+of the macro invokes a complex function; otherwise, use of the macro
+invokes a real function.
+.P
+For each unsuffixed function in the
+.IR <math.h> 
+header without a
+.IR c -prefixed
+counterpart in the
+.IR <complex.h> 
+header, except for
+\fImodf\fR(),
+\fIj0\fR(),
+\fIj1\fR(),
+\fIjn\fR(),
+\fIy0\fR(),
+\fIy1\fR(),
+and
+\fIyn\fR(),
+the corresponding type-generic macro has the same name as the function.
+These type-generic macros are:
+.sp
+.RS
+.TS
+tab(!);
+l l l l.
+T{
+.nf
+\fIatan2\fR()
+\fIcbrt\fR()
+\fIceil\fR()
+\fIcopysign\fR()
+\fIerf\fR()
+\fIerfc\fR()
+\fIexp2\fR()
+\fIexpm1\fR()
+\fIfdim\fR()
+\fIfloor\fR()
+T}!T{
+.nf
+\fIfma\fR()
+\fIfmax\fR()
+\fIfmin\fR()
+\fIfmod\fR()
+\fIfrexp\fR()
+\fIhypot\fR()
+\fIilogb\fR()
+\fIldexp\fR()
+\fIlgamma\fR()
+\fIllrint\fR()
+T}!T{
+.nf
+\fIllround\fR()
+\fIlog10\fR()
+\fIlog1p\fR()
+\fIlog2\fR()
+\fIlogb\fR()
+\fIlrint\fR()
+\fIlround\fR()
+\fInearbyint\fR()
+\fInextafter\fR()
+\fInexttoward\fR()
+T}!T{
+.nf
+\fIremainder\fR()
+\fIremquo\fR()
+\fIrint\fR()
+\fIround\fR()
+\fIscalbln\fR()
+\fIscalbn\fR()
+\fItgamma\fR()
+\fItrunc\fR()
+.fi
+T}
+.TE
+.RE
+.P
+If all arguments for generic parameters are real, then use of the macro
+invokes a real function; otherwise, use of the macro results in
+undefined behavior.
+.P
+For each unsuffixed function in the
+.IR <complex.h> 
+header that is not a
+.IR c -prefixed
+counterpart to a function in the
+.IR <math.h> 
+header, the corresponding type-generic macro has the same name as the
+function. These type-generic macros are:
+.sp
+.RS
+\fIcarg\fR()
+\fIcimag\fR()
+\fIconj\fR()
+\fIcproj\fR()
+\fIcreal\fR()
+.RE
+.P
+Use of the macro with any real or complex argument invokes a complex
+function.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+With the declarations:
+.sp
+.RS 4
+.nf
+\fB
+#include <tgmath.h>
+int n;
+float f;
+double d;
+long double ld;
+float complex fc;
+double complex dc;
+long double complex ldc;
+.fi \fR
+.P
+.RE
+.P
+functions invoked by use of type-generic macros are shown in the
+following table:
+.TS
+center box tab(!);
+cB | cB
+l | l.
+Macro!Use Invokes
+_
+\fIexp\fR(\fIn\fR)!\fIexp\fR(\fIn\fR), the function
+\fIacosh\fR(\fIf\fR)!\fIacoshf\fR(\fIf\fR)
+\fIsin\fR(\fId\fR)!\fIsin\fR(\fId\fR), the function
+\fIatan\fR(\fIld\fR)!\fIatanl\fR(\fIld\fR)
+\fIlog\fR(\fIfc\fR)!\fIclogf\fR(\fIfc\fR)
+\fIsqrt\fR(\fIdc\fR)!\fIcsqrt\fR(\fIdc\fR)
+\fIpow\fR(\fIldc,f\fR)!\fIcpowl\fR(\fIldc, f\fR)
+\fIremainder\fR(\fIn,n\fR)!\fIremainder\fR(\fIn, n\fR), the function
+\fInextafter\fR(\fId,f\fR)!\fInextafter\fR(\fId, f\fR), the function
+\fInexttoward\fR(\fIf,ld\fR)!\fInexttowardf\fR(\fIf, ld\fR)
+\fIcopysign\fR(\fIn,ld\fR)!\fIcopysignl\fR(\fIn, ld\fR)
+\fIceil\fR(\fIfc\fR)!Undefined behavior
+\fIrint\fR(\fIdc\fR)!Undefined behavior
+\fIfmax\fR(\fIldc,ld\fR)!Undefined behavior
+\fIcarg\fR(\fIn\fR)!\fIcarg\fR(\fIn\fR), the function
+\fIcproj\fR(\fIf\fR)!\fIcprojf\fR(\fIf\fR)
+\fIcreal\fR(\fId\fR)!\fIcreal\fR(\fId\fR), the function
+\fIcimag\fR(\fIld\fR)!\fIcimagl\fR(\fIld\fR)
+\fIcabs\fR(\fIfc\fR)!\fIcabsf\fR(\fIfc\fR)
+\fIcarg\fR(\fIdc\fR)!\fIcarg\fR(\fIdc\fR), the function
+\fIcproj\fR(\fIldc\fR)!\fIcprojl\fR(\fIldc\fR)
+.TE
+.SH RATIONALE
+Type-generic macros allow calling a function whose type is determined
+by the argument type, as is the case for C operators such as
+.BR '+' 
+and
+.BR '*' .
+For example, with a type-generic
+\fIcos\fR()
+macro, the expression
+.IR cos ((\c
+.BR float )\c
+.IR x )
+will have type
+.BR float .
+This feature enables writing more portably efficient code and
+alleviates need for awkward casting and suffixing in the process of
+porting or adjusting precision. Generic math functions are a widely
+appreciated feature of Fortran.
+.P
+The only arguments that affect the type resolution are the arguments
+corresponding to the parameters that have type
+.BR double
+in the synopsis. Hence the type of a type-generic call to
+\fInexttoward\fR(),
+whose second parameter is
+.BR "long double"
+in the synopsis, is determined solely by the type of the first
+argument.
+.P
+The term ``type-generic'' was chosen over the proposed alternatives of
+intrinsic and overloading. The term is more specific than intrinsic,
+which already is widely used with a more general meaning, and reflects
+a closer match to Fortran's generic functions than to C++ overloading.
+.P
+The macros are placed in their own header in order not to silently
+break old programs that include the
+.IR <math.h> 
+header; for example, with:
+.sp
+.RS 4
+.nf
+\fB
+printf ("%e", sin(x))
+.fi \fR
+.P
+.RE
+.P
+.IR modf (\c
+.BR double ,
+.BR "double *" )
+is excluded because no way was seen to make it safe without
+complicating the type resolution.
+.P
+The implementation might, as an extension, endow appropriate ones of
+the macros that POSIX.1\(hy2008 specifies only for real arguments with the
+ability to invoke the complex functions.
+.P
+POSIX.1\(hy2008 does not prescribe any particular implementation mechanism
+for generic macros. It could be implemented simply with built-in
+macros. The generic macro for
+\fIsqrt\fR(),
+for example, could be implemented with:
+.sp
+.RS 4
+.nf
+\fB
+#undef sqrt
+#define sqrt(x) __BUILTIN_GENERIC_sqrt(x)
+.fi \fR
+.P
+.RE
+.P
+Generic macros are designed for a useful level of consistency with C++
+overloaded math functions.
+.P
+The great majority of existing C programs are expected to be unaffected
+when the
+.IR <tgmath.h> 
+header is included instead of the
+.IR <math.h> 
+or
+.IR <complex.h> 
+headers. Generic macros are similar to the ISO/IEC\ 9899:\|1999 standard library masking
+macros, though the semantic types of return values differ.
+.P
+The ability to overload on integer as well as floating types would have
+been useful for some functions; for example,
+\fIcopysign\fR().
+Overloading with different numbers of arguments would have allowed
+reusing names; for example,
+\fIremainder\fR()
+for
+\fIremquo\fR().
+However, these facilities would have complicated the specification; and
+their natural consistent use, such as for a floating
+\fIabs\fR()
+or a two-argument
+\fIatan\fR(),
+would have introduced further inconsistencies with the ISO/IEC\ 9899:\|1999 standard for
+insufficient benefit.
+.P
+The ISO\ C standard in no way limits the implementation's options for efficiency,
+including inlining library functions.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<math.h>\fP",
+.IR "\fB<complex.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIcabs\fR\^(\|)",
+.IR "\fIfabs\fR\^(\|)",
+.IR "\fImodf\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,472 @@
+#!/usr/bin/perl
+# Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+
+######################################################################
+# Options are described in the POD at the end of this file
+######################################################################
+
+use strict;
+
+use IO::Socket::INET;
+use IO::File;
+use Getopt::Long;
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::BootStrap;
+
+our $VERSION = "1.0";
+
+######################################################################
+# detect needed GraphViz requirement
+#
+dnssec_tools_load_mods('GraphViz' => "");
+
+########################################################
+# Globals
+
+my $gv;
+my $name;
+my $class; 
+my $type;
+my $status;
+my $dest;
+my $i;
+my $socket;
+my $edge_str;
+my $htmlfile;
+my $htmlfh;
+my $logfile;
+my $logfh;
+my %opts;
+my $loglevelstr;
+my %loglevels;
+my $image_has_changed;
+my $refresh;
+my $local_host;
+my $local_port;
+my @log = ();
+my $usesock;
+my $ignorestr;
+my $requirestr;
+my $imgfile;
+my $imgfileext = "png";
+
+########################################################
+# Constants
+
+my $SUCCESS = "SUCCESS";
+my $BOGUS = "BOGUS";
+my $DATA_MISSING = "DATA_MISSING";
+my $ERROR = "ERROR";
+my $IGNORED = "IGNORED";
+
+########################################################
+# Defaults
+
+%opts = (
+	a => "127.0.0.1",
+    f => "val_log_map.png",
+	g => "",
+    h => "",
+    i => "",
+    m => "",
+	p => "1053",
+	r => 5,
+	s => 0,
+);
+
+# This indicates which types of log messages will be 
+# displayed by default
+%loglevels = (
+    $SUCCESS => 1,
+    $BOGUS => 1,
+    $DATA_MISSING => 1,
+    $ERROR => 1,
+    $IGNORED => 0
+);
+
+$image_has_changed = 0;
+
+########################################################
+# main
+
+# Parse command-line options
+GetOptions(\%opts, "a=s", "g=s", "h=s", "i=s", "l=s", "m=s", "p=s", "r=i", "s", 
+	   "version");
+
+if ($opts{'version'}) {
+    print "drawvalmap Version:   $VERSION\nDNSSEC-Tools Version: 2.1\n";
+    exit(1);
+}
+
+# Parse the dnssec-tools.conf file
+my %dtconf = parseconfig();
+
+my $libvalnode = "libval";
+my $curnode = $libvalnode; 
+
+$local_host = $opts{'a'};
+$imgfile = $opts{'f'};
+$htmlfile = $opts{'h'};
+$ignorestr = $opts{'i'};
+$loglevelstr = $opts{'l'};
+$requirestr = $opts{'m'};
+$local_port = $opts{'p'};
+$refresh = $opts{'r'};
+$usesock = $opts{'s'};
+$logfile = shift;
+
+# determine output file extension
+if ($imgfile =~ /.*\.([a-zA-Z]+)$/) {
+    $imgfileext = lc $1;
+} 
+
+# add log levels into our map
+if (defined $loglevelstr) {
+    my @tmplevels;
+    %loglevels = ();
+    push @tmplevels, split(/,/, $loglevelstr);
+    if ($#tmplevels == 0) {
+        $loglevels{$loglevelstr} = 1;
+    } else {
+        for (my $i = 0; $i <=$#tmplevels; $i++) {
+            $loglevels{$tmplevels[$i]} = 1; 
+        }
+    }
+}
+
+# create an HTML file with the image and 
+# with auto refresh set to desired value 
+if ($htmlfile ne "") {
+    $htmlfh = new IO::File(">$htmlfile");
+    print $htmlfh "<html>\n<head>\n".
+	    "<title>Validator Results</title>\n".
+	    "<meta http-equiv=\"refresh\" content=\"$refresh\">\n".
+	    "</head>\n".
+	    "<body> <img src=\"$imgfile\" alt=\"Validator Status\"> </body>\n".
+	    "</html>";
+    $htmlfh->close;
+}
+
+$gv = GraphViz->new(rankdir => 0, edge => { fontsize => '9'});
+#$gv = GraphViz->new(layout => 'dot', rankdir => 0, edge => { fontsize => '10'});
+$gv->add_node($libvalnode);
+
+# check if socket operation is desired
+if($usesock == 1) {
+	$socket = IO::Socket::INET->new(LocalAddr => $local_host,
+                                LocalPort => $local_port,
+                                Proto    => "udp",
+                                Type     => SOCK_DGRAM)
+    	or die "Couldn't bind to $local_host:$local_port\n";
+
+	while ($_=<$socket>) {
+        if (!matches_logreq($_)) {
+            $curnode = $libvalnode;
+            next;
+        }
+		$curnode = update_graph($curnode);
+        if ($image_has_changed) {
+            update_image();
+        }
+	}
+
+	# Never reached
+	close($socket);
+} 
+
+if (defined $logfile) {
+    $logfh = new IO::File("<$logfile");
+} else {
+    $logfile = "STDIN";
+    $logfh = new IO::Handle;
+    $logfh->fdopen(fileno(STDIN),"r");
+}
+
+if (! $logfh) {
+    print STDERR "drawvalmap unable to open input file \"$logfile\"\n";
+    exit(1);
+}
+
+# Read from file handle
+while ($_=<$logfh>) {
+    if (!matches_logreq($_)) { 
+        $curnode = $libvalnode;
+        next;
+    }
+	$curnode = update_graph($curnode);
+}
+
+update_image();
+
+exit(0);
+
+#
+# End Main
+########################################################
+
+
+########################################################
+# 
+# Check if line matches log requirements 
+#
+sub matches_logreq {
+    my $line = shift;
+    if ($line =~ /\s*name=(\S+)\s*class=(\S+)\s*type=(\S+)\s*from-server=(\S+)\s*status=(\S+?):/) {
+        ($name, $class, $type, $dest, $status) = ($1, $2, $3, $4, $5); 
+        if (($ignorestr && ($line =~ /$ignorestr/)) || 
+            ($requirestr && !($line =~ /$requirestr/))) {
+            return 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+
+########################################################
+# 
+# export graph as an image 
+#
+sub update_image {
+    # update the image only when something has changed
+    my $imgtmp = $imgfile . "tmp"; 
+    if ($imgfileext eq "gif") {
+        $gv->as_gif($imgtmp);
+    } elsif ($imgfileext eq "jpeg") {
+        $gv->as_jpeg($imgtmp);
+    } elsif ($imgfileext eq "png") {
+        $gv->as_png($imgtmp);
+    } elsif ($imgfileext eq "ps") {
+        $gv->as_ps($imgtmp);
+    } else {
+        die "Unknown image file extension: $imgfileext\n";
+    }
+    rename($imgtmp, $imgfile);
+    $image_has_changed = 0;
+}
+
+#############################################################
+#
+# update the graph
+#
+sub update_graph {
+    my $count;
+    my $level;
+    my %prop;
+    my $newnode;
+    my $prevnode = shift; 
+
+    $edge_str = $dest ;
+    $newnode = "$name, $class, $type";
+    $count = $#log + 1;
+    push(@log, "$name $class $type $prevnode $dest $status");
+
+    # remove duplicates from the array so that 
+    # all edges on the graph are different
+    my %hash = map { $_, 1 } @log;
+    @log = keys %hash;
+
+    # Check if something new was added 
+    if($count == ($#log + 1)) {
+	return $newnode;
+    }
+
+    # add the node and an edge from the Validator
+    ($level, %prop) = get_ac_lineattr($status);
+    if ($loglevels{$level} == 1) {
+        $gv->add_node($newnode);
+        if ($prevnode ne $newnode) {
+            $gv->add_edge($prevnode, $newnode, label => $edge_str, decorateP => '1', %prop); 
+        }
+        $image_has_changed = 1;
+    }
+
+    return $newnode;
+}
+
+#############################################################
+# get the edge properties based on the error status passed as 
+# the parameter
+# See <validator/val_errors.h>
+#
+sub get_ac_lineattr {
+
+	my %prop;
+	my $ac_status;
+	$ac_status = shift;
+    my $level;
+
+	$prop{'dir'} = 'back';
+
+    # success
+    if (($ac_status eq "VAL_AC_VERIFIED") ||
+        ($ac_status eq "VAL_AC_TRUST")) { 
+
+		$prop{'color'} =  "green";
+		$prop{'fillcolor'} =  "green";
+        $level = $SUCCESS;
+
+    }
+    # trusted bug not validated 
+    elsif (($ac_status eq "VAL_AC_IGNORE_VALIDATION") ||
+        ($ac_status eq "VAL_AC_PINSECURE") ||
+        ($ac_status eq "VAL_AC_BARE_RRSIG")) { 
+
+		$prop{'color'} =  "yellow";
+		$prop{'fillcolor'} =  "yellow";
+        $level = $IGNORED;
+
+    }
+    # not trusted 
+    elsif (($ac_status eq "VAL_AC_NOT_VERIFIED") ||
+            ($ac_status eq "VAL_AC_UNTRUSTED_ZONE") ||
+            ($ac_status eq "VAL_AC_NO_LINK")) {
+
+		$prop{'color'} =  "red";
+		$prop{'fillcolor'} =  "red";
+        $level = $BOGUS;
+
+    }
+    # error conditions 
+    elsif  (($ac_status eq "VAL_AC_RRSIG_MISSING") ||
+        ($ac_status eq "VAL_AC_DNSKEY_MISSING") ||
+        ($ac_status eq "VAL_AC_DS_MISSING") ||
+        ($ac_status eq "VAL_AC_DATA_MISSING") ||
+        ($ac_status eq "VAL_AC_DNS_ERROR")) { 
+
+		$prop{'color'} =  "red";
+		$prop{'fillcolor'} =  "red";
+		$prop{'style'} = 'dashed';
+        $level = $DATA_MISSING;
+    } 
+    # unexpected errors
+    else { 
+		$prop{'color'} =  "black";
+		$prop{'fillcolor'} =  "black";
+        $level = $ERROR;
+    } 
+
+	return $level, %prop;
+}
+
+=head1 NAME
+
+drawvalmap - Generate a graphical output of validation status values
+             encountered by the validator library.
+
+=head1 SYNOPSIS
+
+drawvalmap <logfile>
+
+drawvalmap
+
+=head1 DESCRIPTION
+
+B<drawvalmap> is a simple utility that can be used to display the validator
+status values in a graphical format.  The input to this script is a set of log
+messages that can be read either from file or from a socket.  The output is an
+image file containing an image of the various validator authentication chain
+status values.
+
+B<drawvalmap> reads data from STDIN if the logfile and the socket option are
+both unspecified.  If the I<-f> option is given, the output image file is
+embedded in an HTML file with the given name.  The HTML file auto-refreshes
+according to the refresh time supplied by the I<-r> option, allowing changes
+to the validator graph to be constantly tracked.
+
+The typical usage of this script is in the following way:
+
+    # drawvalmap <logfile>
+
+It would not be uncommon to use this script for troubleshooting purposes, in
+which case output generated by a driver program would be "piped" to this
+script in the manner shown below.
+
+    # dt-validate -o6:stdout secure.example.com. | drawvalmap -f val_log_map.html
+
+In each case the script generates the results in a B<val_log_map.png> file.
+In the second case, an HTML file with the name B<val_log_map.html> is also
+generated.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-a IP-address>
+
+This changes the address to which B<drawvalmap> binds itself to
+the specified value. This option takes effect only if the
+I<-s> option is also specified.
+
+=item B<-f file.ext>
+
+This creates an image of the type determined by the file extension 
+
+=item B<-g xxxx> (deprecated)
+
+Use -f instead.
+
+=item B<-h file.html>
+
+This creates an HTML file with the given name, which contains the image of
+the validation map.
+
+=item B<-i ignore_pattern_string>
+
+This causes B<drawvalmap> to ignore log records that match the given ignore
+pattern.
+
+=item B<-l log_event1,log_event2>
+
+This causes B<drawvalmap> to enable display of events for the given list of  
+log types. The following log event types are defined with their default enabled 
+status indicated in parenthesis: SUCCESS(1), BOGUS(1), DATA_MISSING(1), 
+ERROR(1), and IGNORED(0).
+
+=item B<-m match_pattern_string>
+
+This causes B<drawvalmap> to include only log records that match the given
+pattern.  If a given log record matches a pattern given by the I<-m> option
+and also matches the pattern given by the I<-i> option the effective result
+is that of ignoring the record.
+
+=item B<-p port>
+
+This changes the port to which B<drawvalmap> binds itself to
+the specified value. This option takes effect only if the
+I<-s> option is also specified.
+
+=item B<-r refresh-period>
+
+This changes the refresh period in the HTML file to the given value. The
+default is 5 seconds.
+
+=item B<-s>
+
+This changes the mode of operation to read input from a socket.
+The default address and port to which B<drawvalmap> binds are
+127.0.0.1:1053.
+
+=back
+  
+=head1 PRE-REQUISITES
+
+GraphViz
+
+=head1 COPYRIGHT
+
+Copyright 2005-2013 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Suresh Krishnaswamy, hserus@users.sourceforge.net
+
+=head1 SEE ALSO
+
+B<libval(3)>
+
+
+=cut
+

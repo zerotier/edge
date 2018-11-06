@@ -1,0 +1,1490 @@
+'\" et
+.TH FPRINTF "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+dprintf,
+fprintf,
+printf,
+snprintf,
+sprintf
+\(em print formatted output
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+int dprintf(int \fIfildes\fP, const char *restrict \fIformat\fP, ...);
+int fprintf(FILE *restrict \fIstream\fP, const char *restrict \fIformat\fP, ...);
+int printf(const char *restrict \fIformat\fP, ...);
+int snprintf(char *restrict \fIs\fP, size_t \fIn\fP,
+    const char *restrict \fIformat\fP, ...);
+int sprintf(char *restrict \fIs\fP, const char *restrict \fIformat\fP, ...);
+.fi
+.SH DESCRIPTION
+Excluding
+\fIdprintf\fR():
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIfprintf\fR()
+function shall place output on the named output
+.IR stream .
+The
+\fIprintf\fR()
+function shall place output on the standard output stream
+.IR stdout .
+The
+\fIsprintf\fR()
+function shall place output followed by the null byte,
+.BR '\e0' ,
+in consecutive bytes starting at *\fIs\fP; it is the user's
+responsibility to ensure that enough space is available.
+.P
+The
+\fIdprintf\fR()
+function shall be equivalent to the
+\fIfprintf\fR()
+function, except that
+\fIdprintf\fR()
+shall write output to the file associated with the file descriptor
+specified by the
+.IR fildes
+argument rather than place output on a stream.
+.P
+The
+\fIsnprintf\fR()
+function shall be equivalent to
+\fIsprintf\fR(),
+with the addition of the
+.IR n
+argument which states the size of the buffer referred to by
+.IR s .
+If
+.IR n
+is zero, nothing shall be written and
+.IR s
+may be a null pointer. Otherwise, output bytes beyond the
+.IR n \(hy1st
+shall be discarded instead of being written to the array, and a null
+byte is written at the end of the bytes actually written into the
+array.
+.P
+If copying takes place between objects that overlap as a result of a
+call to
+\fIsprintf\fR()
+or
+\fIsnprintf\fR(),
+the results are undefined.
+.P
+Each of these functions converts, formats, and prints its arguments
+under control of the
+.IR format .
+The
+.IR format
+is a character string, beginning and ending in its initial shift state,
+if any. The
+.IR format
+is composed of zero or more directives:
+.IR "ordinary characters" ,
+which are simply copied to the output stream, and
+.IR "conversion specifications" ,
+each of which shall result in the fetching of zero or more arguments.
+The results are undefined if there are insufficient arguments for the
+.IR format .
+If the
+.IR format
+is exhausted while arguments remain, the excess arguments shall be
+evaluated but are otherwise ignored.
+.P
+Conversions can be applied to the
+.IR n th
+argument after the
+.IR format
+in the argument list, rather than to the next unused argument. In this
+case, the conversion specifier character
+.BR %
+(see below) is replaced by the sequence \fR"%\fIn\fR$"\fR, where
+.IR n
+is a decimal integer in the range [1,{NL_ARGMAX}],
+giving the position of the argument in the argument list. This feature
+provides for the definition of format strings that select arguments in
+an order appropriate to specific languages (see the EXAMPLES section).
+.P
+The
+.IR format
+can contain either numbered argument conversion specifications (that
+is, \fR"%\fIn\fR$"\fR and \fR"*\fIm\fR$"\fR), or unnumbered argument
+conversion specifications (that is,
+.BR %
+and
+.BR * ),
+but not both. The only exception to this is that
+.BR %%
+can be mixed with the \fR"%\fIn\fR$"\fR form. The results of mixing
+numbered and unnumbered argument specifications in a
+.IR format
+string are undefined. When numbered argument specifications are used,
+specifying the
+.IR N th
+argument requires that all the leading arguments, from the first to the
+(\fIN\(mi1\fP)th, are specified in the format string.
+.P
+In format strings containing the \fR"%\fIn\fR$"\fR form of conversion
+specification, numbered arguments in the argument list can be
+referenced from the format string as many times as required.
+.P
+In format strings containing the
+.BR %
+form of conversion specification, each conversion specification uses
+the first unused argument in the argument list.
+.P
+All forms of the
+\fIfprintf\fR()
+functions allow for the insertion of a language-dependent radix
+character in the output string. The radix character is defined in the
+current locale (category
+.IR LC_NUMERIC ).
+In the POSIX locale, or in a locale where the radix character is not
+defined, the radix character shall default to a
+<period>
+(\c
+.BR '.' ).
+.P
+Each conversion specification is introduced by the
+.BR '%' 
+character
+or by the character sequence \fR"%\fIn\fR$"\fR,
+after which the following appear in sequence:
+.IP " *" 4
+Zero or more
+.IR flags
+(in any order), which modify the meaning of the conversion
+specification.
+.IP " *" 4
+An optional minimum
+.IR "field width" .
+If the converted value has fewer bytes than the field width, it shall
+be padded with
+<space>
+characters by default on the left; it shall be padded on the right if
+the left-adjustment flag (\c
+.BR '\(mi' ),
+described below, is given to the field width. The field width takes the
+form of an
+<asterisk>
+(\c
+.BR '*' ),
+described below, or a decimal integer.
+.IP " *" 4
+An optional
+.IR precision
+that gives the minimum number of digits to appear for the
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+and
+.BR X
+conversion specifiers; the number of digits to appear after the radix
+character for the
+.BR a ,
+.BR A ,
+.BR e ,
+.BR E ,
+.BR f ,
+and
+.BR F
+conversion specifiers; the maximum number of significant digits for the
+.BR g
+and
+.BR G
+conversion specifiers; or the maximum number of bytes to be printed
+from a string in the
+.BR s
+and
+.BR S
+conversion specifiers. The precision takes the form of a
+<period>
+(\c
+.BR '.' )
+followed either by an
+<asterisk>
+(\c
+.BR '*' ),
+described below, or an optional decimal digit string, where a null
+digit string is treated as zero. If a precision appears with any other
+conversion specifier, the behavior is undefined.
+.IP " *" 4
+An optional length modifier that specifies the size of the argument.
+.IP " *" 4
+A
+.IR "conversion specifier"
+character that indicates the type of conversion to be applied.
+.P
+A field width, or precision, or both, may be indicated by an
+<asterisk>
+(\c
+.BR '*' ).
+In this case an argument of type
+.BR int
+supplies the field width or precision. Applications shall ensure that
+arguments specifying field width, or precision, or both appear in that
+order before the argument, if any, to be converted. A negative field
+width is taken as a
+.BR '\(mi' 
+flag followed by a positive field width. A negative precision is taken
+as if the precision were omitted.
+In
+.IR format
+strings containing the \fR"%\fIn\fR$"\fR form of a
+conversion specification, a field width or precision may be indicated
+by the sequence \fR"*\fIm\fR$"\fR, where
+.IR m
+is a decimal integer in the range [1,{NL_ARGMAX}] giving the position
+in the argument list (after the
+.IR format
+argument) of an integer argument containing the field width or
+precision, for example:
+.sp
+.RS 4
+.nf
+\fB
+printf("%1$d:%2$.*3$d:%4$.*3$d\en", hour, min, precision, sec);
+.fi \fR
+.P
+.RE
+.P
+The flag characters and their meanings are:
+.IP "\fR'\fR" 8
+(The
+<apostrophe>.)
+The integer portion of the result of a decimal conversion (\c
+.BR %i ,
+.BR %d ,
+.BR %u ,
+.BR %f ,
+.BR %F ,
+.BR %g ,
+or
+.BR %G )
+shall be formatted with thousands' grouping characters. For other
+conversions the behavior is undefined. The non-monetary grouping
+character is used.
+.IP "\fR\(mi\fR" 8
+The result of the conversion shall be left-justified within the field.
+The conversion is right-justified if this flag is not specified.
+.IP "\fR+\fR" 8
+The result of a signed conversion shall always begin with a sign (\c
+.BR '+' 
+or
+.BR '\(mi' ).
+The conversion shall begin with a sign only when a negative value is
+converted if this flag is not specified.
+.IP <space> 8
+If the first character of a signed conversion is not a sign or if a
+signed conversion results in no characters, a
+<space>
+shall be prefixed to the result. This means that if the
+<space>
+and
+.BR '+' 
+flags both appear, the
+<space>
+flag shall be ignored.
+.IP "\fR#\fR" 8
+Specifies that the value is to be converted to an alternative
+form. For
+.BR o
+conversion, it increases the precision (if necessary) to force the
+first digit of the result to be zero. For
+.BR x
+or
+.BR X
+conversion specifiers, a non-zero result shall have 0x (or 0X) prefixed
+to it. For
+.BR a ,
+.BR A ,
+.BR e ,
+.BR E ,
+.BR f ,
+.BR F ,
+.BR g ,
+and
+.BR G
+conversion specifiers, the result shall always contain a radix
+character, even if no digits follow the radix character. Without this
+flag, a radix character appears in the result of these conversions only
+if a digit follows it. For
+.BR g
+and
+.BR G
+conversion specifiers, trailing zeros shall
+.IR not
+be removed from the result as they normally are. For other conversion
+specifiers, the behavior is undefined.
+.IP "\fR0\fR" 8
+For
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+.BR X ,
+.BR a ,
+.BR A ,
+.BR e ,
+.BR E ,
+.BR f ,
+.BR F ,
+.BR g ,
+and
+.BR G
+conversion specifiers, leading zeros (following any indication of sign
+or base) are used to pad to the field width rather than performing
+space padding, except when converting an infinity or NaN. If the
+.BR '0' 
+and
+.BR '\(mi' 
+flags both appear, the
+.BR '0' 
+flag is ignored. For
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+and
+.BR X
+conversion specifiers, if a precision is specified, the
+.BR '0' 
+flag shall be ignored.
+If the
+.BR '0' 
+and
+<apostrophe>
+flags both appear, the grouping characters are inserted before zero
+padding. For other conversions, the behavior is undefined.
+.P
+The length modifiers and their meanings are:
+.IP "\fRhh\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+or
+.BR X
+conversion specifier applies to a
+.BR "signed char"
+or
+.BR "unsigned char"
+argument (the argument will have been promoted according to the integer
+promotions, but its value shall be converted to
+.BR "signed char"
+or
+.BR "unsigned char"
+before printing); or that a following
+.BR n
+conversion specifier applies to a pointer to a
+.BR "signed char"
+argument.
+.IP "\fRh\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+or
+.BR X
+conversion specifier applies to a
+.BR "short"
+or
+.BR "unsigned short"
+argument (the argument will have been promoted according to the integer
+promotions, but its value shall be converted to
+.BR "short"
+or
+.BR "unsigned short"
+before printing); or that a following
+.BR n
+conversion specifier applies to a pointer to a
+.BR "short"
+argument.
+.IP "\fRl\fR\ (ell)" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+or
+.BR X
+conversion specifier applies to a
+.BR "long"
+or
+.BR "unsigned long"
+argument; that a following
+.BR n
+conversion specifier applies to a pointer to a
+.BR "long"
+argument; that a following
+.BR c
+conversion specifier applies to a
+.BR wint_t
+argument; that a following
+.BR s
+conversion specifier applies to a pointer to a
+.BR wchar_t
+argument; or has no effect on a following
+.BR a ,
+.BR A ,
+.BR e ,
+.BR E ,
+.BR f ,
+.BR F ,
+.BR g ,
+or
+.BR G
+conversion specifier.
+.IP "\fRll\fR\ (ell-ell)" 8
+.br
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+or
+.BR X
+conversion specifier applies to a
+.BR "long long"
+or
+.BR "unsigned long long"
+argument; or that a following
+.BR n
+conversion specifier applies to a pointer to a
+.BR "long long"
+argument.
+.IP "\fRj\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+or
+.BR X
+conversion specifier applies to an
+.BR intmax_t
+or
+.BR uintmax_t
+argument; or that a following
+.BR n
+conversion specifier applies to a pointer to an
+.BR intmax_t
+argument.
+.IP "\fRz\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+or
+.BR X
+conversion specifier applies to a
+.BR size_t
+or the corresponding signed integer type argument; or that a following
+.BR n
+conversion specifier applies to a pointer to a signed integer type
+corresponding to a
+.BR size_t
+argument.
+.IP "\fRt\fR" 8
+Specifies that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR u ,
+.BR x ,
+or
+.BR X
+conversion specifier applies to a
+.BR ptrdiff_t
+or the corresponding
+.BR unsigned
+type argument; or that a following
+.BR n
+conversion specifier applies to a pointer to a
+.BR ptrdiff_t
+argument.
+.IP "\fRL\fR" 8
+Specifies that a following
+.BR a ,
+.BR A ,
+.BR e ,
+.BR E ,
+.BR f ,
+.BR F ,
+.BR g ,
+or
+.BR G
+conversion specifier applies to a
+.BR "long double"
+argument.
+.P
+If a length modifier appears with any conversion specifier other than
+as specified above, the behavior is undefined.
+.P
+The conversion specifiers and their meanings are:
+.IP "\fRd\fR,\ \fRi\fR" 8
+The
+.BR int
+argument shall be converted to a signed decimal in the style
+\fR"[\(mi]\fIdddd\fR"\fR. The precision specifies the minimum number of
+digits to appear; if the value being converted can be represented in
+fewer digits, it shall be expanded with leading zeros. The default
+precision is 1. The result of converting zero with an explicit
+precision of zero shall be no characters.
+.IP "\fRo\fP" 8
+The
+.BR unsigned
+argument shall be converted to unsigned octal format in the style
+\fR"\fIdddd\fR"\fR. The precision specifies the minimum number of
+digits to appear; if the value being converted can be represented in
+fewer digits, it shall be expanded with leading zeros. The default
+precision is 1. The result of converting zero with an explicit
+precision of zero shall be no characters.
+.IP "\fRu\fP" 8
+The
+.BR unsigned
+argument shall be converted to unsigned decimal format in the style
+\fR"\fIdddd\fR"\fR. The precision specifies the minimum number of
+digits to appear; if the value being converted can be represented in
+fewer digits, it shall be expanded with leading zeros. The default
+precision is 1. The result of converting zero with an explicit
+precision of zero shall be no characters.
+.IP "\fRx\fP" 8
+The
+.BR unsigned
+argument shall be converted to unsigned hexadecimal format in the
+style \fR"\fIdddd\fR"\fR; the letters
+.BR \(dqabcdef\(dq 
+are used. The precision specifies the minimum number of digits to
+appear; if the value being converted can be represented in fewer
+digits, it shall be expanded with leading zeros. The default precision
+is 1. The result of converting zero with an explicit precision of zero
+shall be no characters.
+.IP "\fRX\fP" 8
+Equivalent to the
+.BR x
+conversion specifier, except that letters
+.BR \(dqABCDEF\(dq 
+are used instead of
+.BR \(dqabcdef\(dq .
+.IP "\fRf\fR,\ \fRF\fR" 8
+The
+.BR double
+argument shall be converted to decimal notation in the style
+\fR"[\(mi]\fIddd\fR.\fIddd\fR"\fR, where the number of digits after the
+radix character is equal to the precision specification. If the
+precision is missing, it shall be taken as 6; if the precision is
+explicitly zero and no
+.BR '#' 
+flag is present, no radix character shall appear. If a radix character
+appears, at least one digit appears before it. The low-order digit
+shall be rounded in an implementation-defined manner.
+.RS 8 
+.P
+A
+.BR double
+argument representing an infinity shall be converted in one of the
+styles
+.BR \(dq[\(mi]inf\(dq 
+or
+.BR \(dq[\(mi]infinity\(dq ;
+which style is implementation-defined. A
+.BR double
+argument representing a NaN shall be converted in one of the styles
+\fR"[\(mi]nan(\fIn-char-sequence\fR)"\fR or
+.BR \(dq[\(mi]nan\(dq ;
+which style, and the meaning of any
+.IR n-char-sequence ,
+is implementation-defined. The
+.BR F
+conversion specifier produces
+.BR \(dqINF\(dq ,
+.BR \(dqINFINITY\(dq ,
+or
+.BR \(dqNAN\(dq 
+instead of
+.BR \(dqinf\(dq ,
+.BR \(dqinfinity\(dq ,
+or
+.BR \(dqnan\(dq ,
+respectively.
+.RE
+.IP "\fRe\fR,\ \fRE\fR" 8
+The
+.BR double
+argument shall be converted in the style
+\fR"[\(mi]\fId\fR.\fIddd\fRe\(+-\fIdd\fR"\fR, where there is one digit
+before the radix character (which is non-zero if the argument is
+non-zero) and the number of digits after it is equal to the precision;
+if the precision is missing, it shall be taken as 6; if the precision
+is zero and no
+.BR '#' 
+flag is present, no radix character shall appear. The low-order digit
+shall be rounded in an implementation-defined manner. The
+.BR E
+conversion specifier shall produce a number with
+.BR 'E' 
+instead of
+.BR 'e' 
+introducing the exponent. The exponent shall always contain at least
+two digits. If the value is zero, the exponent shall be zero.
+.RS 8 
+.P
+A
+.BR double
+argument representing an infinity or NaN shall be converted in
+the style of an
+.BR f
+or
+.BR F
+conversion specifier.
+.RE
+.IP "\fRg\fR,\ \fRG\fR" 8
+The
+.BR double
+argument representing a floating-point number shall be converted in the
+style
+.BR f
+or
+.BR e
+(or in the style
+.BR F
+or
+.BR E
+in the case of a
+.BR G
+conversion specifier), depending on the value converted and the precision.
+Let
+.BR P
+equal the precision if non-zero, 6 if the precision is omitted, or 1 if the
+precision is zero. Then, if a conversion with style
+.BR E
+would have an exponent of
+.IR X :
+.RS 8 
+.IP -- 4
+If
+.BR P >\c
+.IR X \(>=\(mi4,
+the conversion shall be with style
+.BR f
+(or
+.BR F )
+and precision
+.BR P \(mi(\c
+.IR X +1).
+.IP -- 4
+Otherwise, the conversion shall be with style
+.BR e
+(or
+.BR E )
+and precision
+.BR P \(mi1.
+.P
+Finally, unless the
+.BR '#' 
+flag is used, any trailing zeros shall be removed from the fractional
+portion of the result and the decimal-point character shall be removed
+if there is no fractional portion remaining.
+.P
+A
+.BR double
+argument representing an infinity or NaN shall be converted in the
+style of an
+.BR f
+or
+.BR F
+conversion specifier.
+.RE
+.IP "\fRa\fR,\ \fRA\fR" 8
+A
+.BR double
+argument representing a floating-point number shall be converted in the
+style \fR"[\(mi]0x\fIh\fR.\fIhhhh\fRp\(+-\fId\fR"\fR, where there is
+one hexadecimal digit (which shall be non-zero if the argument is a
+normalized floating-point number and is otherwise unspecified) before
+the decimal-point character and the number of hexadecimal digits after
+it is equal to the precision; if the precision is missing and FLT_RADIX
+is a power of 2, then the precision shall be sufficient for an exact
+representation of the value; if the precision is missing and FLT_RADIX
+is not a power of 2, then the precision shall be sufficient to
+distinguish values of type
+.BR double ,
+except that trailing zeros may be omitted; if the precision is zero and
+the
+.BR '#' 
+flag is not specified, no decimal-point character shall appear. The
+letters
+.BR \(dqabcdef\(dq 
+shall be used for
+.BR a
+conversion and the letters
+.BR \(dqABCDEF\(dq 
+for
+.BR A
+conversion. The
+.BR A
+conversion specifier produces a number with
+.BR 'X' 
+and
+.BR 'P' 
+instead of
+.BR 'x' 
+and
+.BR 'p' .
+The exponent shall always contain at least one digit, and only as many
+more digits as necessary to represent the decimal exponent of 2. If the
+value is zero, the exponent shall be zero.
+.RS 8 
+.P
+A
+.BR double
+argument representing an infinity or NaN shall be converted in the
+style of an
+.BR f
+or
+.BR F
+conversion specifier.
+.RE
+.IP "\fRc\fP" 8
+The
+.BR int
+argument shall be converted to an
+.BR "unsigned char" ,
+and the resulting byte shall be written.
+.RS 8 
+.P
+If an
+.BR l
+(ell) qualifier is present, the
+.BR wint_t
+argument shall be converted as if by an
+.BR ls
+conversion specification with no precision and an argument that points
+to a two-element array of type
+.BR wchar_t ,
+the first element of which contains the
+.BR wint_t
+argument to the
+.BR ls
+conversion specification and the second element contains a null wide
+character.
+.RE
+.IP "\fRs\fP" 8
+The argument shall be a pointer to an array of
+.BR char .
+Bytes from the array shall be written up to (but not including) any
+terminating null byte. If the precision is specified, no more than that
+many bytes shall be written. If the precision is not specified or is
+greater than the size of the array, the application shall ensure that
+the array contains a null byte.
+.RS 8 
+.P
+If an
+.BR l
+(ell) qualifier is present, the argument shall be a pointer to an array
+of type
+.BR wchar_t .
+Wide characters from the array shall be converted to characters (each
+as if by a call to the
+\fIwcrtomb\fR()
+function, with the conversion state described by an
+.BR mbstate_t
+object initialized to zero before the first wide character is
+converted) up to and including a terminating null wide character. The
+resulting characters shall be written up to (but not including) the
+terminating null character (byte). If no precision is specified, the
+application shall ensure that the array contains a null wide character.
+If a precision is specified, no more than that many characters (bytes)
+shall be written (including shift sequences, if any), and the array
+shall contain a null wide character if, to equal the character sequence
+length given by the precision, the function would need to access a wide
+character one past the end of the array. In no case shall a partial
+character be written.
+.RE
+.IP "\fRp\fP" 8
+The argument shall be a pointer to
+.BR void .
+The value of the pointer is converted to a sequence of printable
+characters, in an implementation-defined manner.
+.IP "\fRn\fP" 8
+The argument shall be a pointer to an integer into which is written the
+number of bytes written to the output so far by this call to one of the
+\fIfprintf\fR()
+functions. No argument is converted.
+.IP "\fRC\fP" 8
+Equivalent to
+.BR lc .
+.IP "\fRS\fP" 8
+Equivalent to
+.BR ls .
+.IP "\fR%\fR" 8
+Print a
+.BR '%' 
+character; no argument is converted. The complete conversion
+specification shall be
+.BR %% .
+.P
+If a conversion specification does not match one of the above forms,
+the behavior is undefined. If any argument is not the correct type for
+the corresponding conversion specification, the behavior is undefined.
+.P
+In no case shall a nonexistent or small field width cause truncation of
+a field; if the result of a conversion is wider than the field width,
+the field shall be expanded to contain the conversion result.
+Characters generated by
+\fIfprintf\fR()
+and
+\fIprintf\fR()
+are printed as if
+\fIfputc\fR()
+had been called.
+.P
+For the
+.BR a
+and
+.BR A
+conversion specifiers, if FLT_RADIX is a power of 2, the value shall be
+correctly rounded to a hexadecimal floating number with the given
+precision.
+.P
+For
+.BR a
+and
+.BR A
+conversions, if FLT_RADIX is not a power of 2 and the result is not
+exactly representable in the given precision, the result should be one
+of the two adjacent numbers in hexadecimal floating style with the
+given precision, with the extra stipulation that the error should have
+a correct sign for the current rounding direction.
+.P
+For the
+.BR e ,
+.BR E ,
+.BR f ,
+.BR F ,
+.BR g ,
+and
+.BR G
+conversion specifiers, if the number of significant decimal digits is
+at most DECIMAL_DIG, then the result should be correctly rounded. If
+the number of significant decimal digits is more than DECIMAL_DIG but
+the source value is exactly representable with DECIMAL_DIG digits, then
+the result should be an exact representation with trailing zeros.
+Otherwise, the source value is bounded by two adjacent decimal strings
+.IR L
+<
+.IR U ,
+both having DECIMAL_DIG significant digits; the value of the resultant
+decimal string
+.IR D
+should satisfy
+.IR L
+<=
+.IR D
+<=
+.IR U ,
+with the extra stipulation that the error should have a correct sign
+for the current rounding direction.
+.P
+The last data modification and last file status change timestamps
+of the file shall be marked for update:
+.IP " 1." 4
+Between the call to a successful execution of
+\fIfprintf\fR()
+or
+\fIprintf\fR()
+and the next successful completion of a call to
+\fIfflush\fR()
+or
+\fIfclose\fR()
+on the same stream or a call to
+\fIexit\fR()
+or
+\fIabort\fR()
+.IP " 2." 4
+Upon successful completion of a call to
+\fIdprintf\fR()
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIdprintf\fR(),
+\fIfprintf\fR(),
+and
+\fIprintf\fR()
+functions shall return the number of bytes transmitted.
+.P
+Upon successful completion, the
+\fIsprintf\fR()
+function shall return the number of bytes written to
+.IR s ,
+excluding the terminating null byte.
+.P
+Upon successful completion, the
+\fIsnprintf\fR()
+function shall return the number of bytes that would be written to
+.IR s
+had
+.IR n
+been sufficiently large excluding the terminating null byte.
+.P
+If an output error was encountered, these functions shall return a
+negative value
+and set
+.IR errno
+to indicate the error.
+.P
+If the value of
+.IR n
+is zero on a call to
+\fIsnprintf\fR(),
+nothing shall be written, the number of bytes that would have been
+written had
+.IR n
+been sufficiently large excluding the terminating null shall be
+returned, and
+.IR s
+may be a null pointer.
+.SH ERRORS
+For the conditions under which
+\fIdprintf\fR(),
+\fIfprintf\fR(),
+and
+\fIprintf\fR()
+fail and may fail, refer to
+.IR "\fIfputc\fR\^(\|)"
+or
+.IR "\fIfputwc\fR\^(\|)".
+.P
+In addition, all forms of
+\fIfprintf\fR()
+shall fail if:
+.TP
+.BR EILSEQ
+A wide-character code that does not correspond to a valid character
+has been detected.
+.TP
+.BR EOVERFLOW
+The value to be returned is greater than
+{INT_MAX}.
+.P
+In addition, all forms of
+\fIfprintf\fR()
+may fail if:
+.TP
+.BR EINVAL
+There are insufficient arguments.
+.P
+The
+\fIdprintf\fR()
+function may fail if:
+.TP
+.BR EBADF
+The
+.IR fildes
+argument is not a valid file descriptor.
+.P
+The
+\fIdprintf\fR(),
+\fIfprintf\fR(),
+and
+\fIprintf\fR()
+functions may fail if:
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.P
+The
+\fIsnprintf\fR()
+function shall fail if:
+.TP
+.BR EOVERFLOW
+The value of
+.IR n
+is greater than
+{INT_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+.SS "Printing Language-Independent Date and Time"
+.P
+The following statement can be used to print date and time using a
+language-independent format:
+.sp
+.RS 4
+.nf
+\fB
+printf(format, weekday, month, day, hour, min);
+.fi \fR
+.P
+.RE
+.P
+For American usage,
+.IR format
+could be a pointer to the following string:
+.sp
+.RS 4
+.nf
+\fB
+"%s, %s %d, %d:%.2d\en"
+.fi \fR
+.P
+.RE
+.P
+This example would produce the following message:
+.sp
+.RS 4
+.nf
+\fB
+Sunday, July 3, 10:02
+.fi \fR
+.P
+.RE
+.P
+For German usage,
+.IR format
+could be a pointer to the following string:
+.sp
+.RS 4
+.nf
+\fB
+"%1$s, %3$d. %2$s, %4$d:%5$.2d\en"
+.fi \fR
+.P
+.RE
+.P
+This definition of
+.IR format
+would produce the following message:
+.sp
+.RS 4
+.nf
+\fB
+Sonntag, 3. Juli, 10:02
+.fi \fR
+.P
+.RE
+.SS "Printing File Information"
+.P
+The following example prints information about the type, permissions,
+and number of links of a specific file in a directory.
+.P
+The first two calls to
+\fIprintf\fR()
+use data decoded from a previous
+\fIstat\fR()
+call. The user-defined
+\fIstrperm\fR()
+function shall return a string similar to the one at the beginning of the
+output for the following command:
+.sp
+.RS 4
+.nf
+\fB
+ls \(mil
+.fi \fR
+.P
+.RE
+.P
+The next call to
+\fIprintf\fR()
+outputs the owner's name if it is found using
+\fIgetpwuid\fR();
+the
+\fIgetpwuid\fR()
+function shall return a
+.BR passwd
+structure from which the name of the user is extracted. If the user
+name is not found, the program instead prints out the numeric value of
+the user ID.
+.P
+The next call prints out the group name if it is found using
+\fIgetgrgid\fR();
+\fIgetgrgid\fR()
+is very similar to
+\fIgetpwuid\fR()
+except that it shall return group information based on the group number.
+Once again, if the group is not found, the program prints the numeric
+value of the group for the entry.
+.P
+The final call to
+\fIprintf\fR()
+prints the size of the file.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
+.P
+char *strperm (mode_t);
+\&...
+struct stat statbuf;
+struct passwd *pwd;
+struct group *grp;
+\&...
+printf("%10.10s", strperm (statbuf.st_mode));
+printf("%4d", statbuf.st_nlink);
+.P
+if ((pwd = getpwuid(statbuf.st_uid)) != NULL)
+    printf(" %\(mi8.8s", pwd->pw_name);
+else
+    printf(" %\(mi8ld", (long) statbuf.st_uid);
+.P
+if ((grp = getgrgid(statbuf.st_gid)) != NULL)
+    printf(" %\(mi8.8s", grp->gr_name);
+else
+    printf(" %\(mi8ld", (long) statbuf.st_gid);
+.P
+printf("%9jd", (intmax_t) statbuf.st_size);
+\&...
+.fi \fR
+.P
+.RE
+.SS "Printing a Localized Date String"
+.P
+The following example gets a localized date string. The
+\fInl_langinfo\fR()
+function shall return the localized date string, which specifies the
+order and layout of the date. The
+\fIstrftime\fR()
+function takes this information and, using the
+.BR tm
+structure for values, places the date and time information into
+.IR datestring .
+The
+\fIprintf\fR()
+function then outputs
+.IR datestring
+and the name of the entry.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <time.h>
+#include <langinfo.h>
+\&...
+struct dirent *dp;
+struct tm *tm;
+char datestring[256];
+\&...
+strftime(datestring, sizeof(datestring), nl_langinfo (D_T_FMT), tm);
+.P
+printf(" %s %s\en", datestring, dp->d_name);
+\&...
+.fi \fR
+.P
+.RE
+.SS "Printing Error Information"
+.P
+The following example uses
+\fIfprintf\fR()
+to write error information to standard error.
+.P
+In the first group of calls, the program tries to open the password
+lock file named
+.BR LOCKFILE .
+If the file already exists, this is an error, as indicated by the
+O_EXCL flag on the
+\fIopen\fR()
+function. If the call fails, the program assumes that someone else is
+updating the password file, and the program exits.
+.P
+The next group of calls saves a new password file as the current
+password file by creating a link between
+.BR LOCKFILE
+and the new password file
+.BR PASSWDFILE .
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+.P
+#define LOCKFILE "/etc/ptmp"
+#define PASSWDFILE "/etc/passwd"
+\&...
+int pfd;
+\&...
+if ((pfd = open(LOCKFILE, O_WRONLY | O_CREAT | O_EXCL,
+    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == \(mi1)
+{
+    fprintf(stderr, "Cannot open /etc/ptmp. Try again later.\en");
+    exit(1);
+}
+\&...
+if (link(LOCKFILE,PASSWDFILE) == -1) {
+    fprintf(stderr, "Link error: %s\en", strerror(errno));
+    exit(1);
+}
+\&...
+.fi \fR
+.P
+.RE
+.SS "Printing Usage Information"
+.P
+The following example checks to make sure the program has the necessary
+arguments, and uses
+\fIfprintf\fR()
+to print usage information if the expected number of arguments is not
+present.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <stdlib.h>
+\&...
+char *Options = "hdbtl";
+\&...
+if (argc < 2) {
+    fprintf(stderr, "Usage: %s -%s <file\en", argv[0], Options); exit(1);
+}
+\&...
+.fi \fR
+.P
+.RE
+.SS "Formatting a Decimal String"
+.P
+The following example prints a key and data pair on
+.IR stdout .
+Note use of the
+<asterisk>
+(\c
+.BR '*' )
+in the format string; this ensures the correct number of decimal places
+for the element based on the number of elements requested.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+\&...
+long i;
+char *keystr;
+int elementlen, len;
+\&...
+while (len < elementlen) {
+\&...
+    printf("%s Element%0*ld\en", keystr, elementlen, i);
+\&...
+}
+.fi \fR
+.P
+.RE
+.SS "Creating a Pathname"
+.P
+The following example creates a pathname using information from a previous
+\fIgetpwnam\fR()
+function that returned the password database entry of the user.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+\&...
+char *pathname;
+struct passwd *pw;
+size_t len;
+\&...
+// digits required for pid_t is number of bits times
+// log2(10) = approx 10/33
+len = strlen(pw->pw_dir) + 1 + 1+(sizeof(pid_t)*80+32)/33 +
+    sizeof ".out";
+pathname = malloc(len);
+if (pathname != NULL)
+{
+    snprintf(pathname, len, "%s/%jd.out", pw->pw_dir,
+        (intmax_t)getpid());
+    ...
+}
+.fi \fR
+.P
+.RE
+.SS "Reporting an Event"
+.P
+The following example loops until an event has timed out. The
+\fIpause\fR()
+function waits forever unless it receives a signal. The
+\fIfprintf\fR()
+statement should never occur due to the possible return values of
+\fIpause\fR().
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+\&...
+while (!event_complete) {
+\&...
+    if (pause() != \(mi1 || errno != EINTR)
+        fprintf(stderr, "pause: unknown error: %s\en", strerror(errno));
+}
+\&...
+.fi \fR
+.P
+.RE
+.SS "Printing Monetary Information"
+.P
+The following example uses
+\fIstrfmon\fR()
+to convert a number and store it as a formatted monetary string named
+.IR convbuf .
+If the first number is printed, the program prints the format and the
+description; otherwise, it just prints the number.
+.sp
+.RS 4
+.nf
+\fB
+#include <monetary.h>
+#include <stdio.h>
+\&...
+struct tblfmt {
+    char *format;
+    char *description;
+};
+.P
+struct tblfmt table[] = {
+    { "%n", "default formatting" },
+    { "%11n", "right align within an 11 character field" },
+    { "%#5n", "aligned columns for values up to 99\|999" },
+    { "%=*#5n", "specify a fill character" },
+    { "%=0#5n", "fill characters do not use grouping" },
+    { "%^#5n", "disable the grouping separator" },
+    { "%^#5.0n", "round off to whole units" },
+    { "%^#5.4n", "increase the precision" },
+    { "%(#5n", "use an alternative pos/neg style" },
+    { "%!(#5n", "disable the currency symbol" },
+};
+\&...
+float input[3];
+int i, j;
+char convbuf[100];
+\&...
+strfmon(convbuf, sizeof(convbuf), table[i].format, input[j]);
+.P
+if (j == 0) {
+    printf("%s\t%s\t%s\en", table[i].format,
+        convbuf, table[i].description);
+}
+else {
+    printf("\t%s\en", convbuf);
+}
+\&...
+.fi \fR
+.P
+.RE
+.SS "Printing Wide Characters"
+.P
+The following example prints a series of wide characters. Suppose that
+.BR \(dqL`@`\(dq 
+expands to three bytes:
+.sp
+.RS 4
+.nf
+\fB
+wchar_t wz [3] = L"@@";       // Zero-terminated
+wchar_t wn [3] = L"@@@";      // Unterminated
+.P
+fprintf (stdout,"%ls", wz);   // Outputs 6 bytes
+fprintf (stdout,"%ls", wn);   // Undefined because wn has no terminator
+fprintf (stdout,"%4ls", wz);  // Outputs 3 bytes
+fprintf (stdout,"%4ls", wn);  // Outputs 3 bytes; no terminator needed
+fprintf (stdout,"%9ls", wz);  // Outputs 6 bytes
+fprintf (stdout,"%9ls", wn);  // Outputs 9 bytes; no terminator needed
+fprintf (stdout,"%10ls", wz); // Outputs 6 bytes
+fprintf (stdout,"%10ls", wn); // Undefined because wn has no terminator
+.fi \fR
+.P
+.RE
+.P
+In the last line of the example, after processing three characters,
+nine bytes have been output. The fourth character must then be examined
+to determine whether it converts to one byte or more. If it converts
+to more than one byte, the output is only nine bytes. Since there is
+no fourth character in the array, the behavior is undefined.
+.SH "APPLICATION USAGE"
+If the application calling
+\fIfprintf\fR()
+has any objects of type
+.BR wint_t
+or
+.BR wchar_t ,
+it must also include the
+.IR <wchar.h> 
+header to have these objects defined.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIfputc\fR\^(\|)",
+.IR "\fIfscanf\fR\^(\|)",
+.IR "\fIsetlocale\fR\^(\|)",
+.IR "\fIstrfmon\fR\^(\|)",
+.IR "\fIwcrtomb\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<wchar.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,98 @@
+'\" et
+.TH SETKEY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+setkey
+\(em set encoding key
+(\fBCRYPT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdlib.h>
+.P
+void setkey(const char *\fIkey\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsetkey\fR()
+function provides access to an implementation-defined encoding
+algorithm. The argument of
+\fIsetkey\fR()
+is an array of length 64 bytes containing only the bytes with numerical
+value of 0 and 1. If this string is divided into groups of 8, the
+low-order bit in each group is ignored; this gives a 56-bit key which
+is used by the algorithm. This is the key that shall be used with the
+algorithm to encode a string
+.IR block
+passed to
+\fIencrypt\fR().
+.P
+The
+\fIsetkey\fR()
+function shall not change the setting of
+.IR errno
+if successful. An application wishing to check for error situations
+should set
+.IR errno
+to 0 before calling
+\fIsetkey\fR().
+If
+.IR errno
+is non-zero on return, an error has occurred.
+.P
+The
+\fIsetkey\fR()
+function need not be thread-safe.
+.SH "RETURN VALUE"
+No values are returned.
+.SH ERRORS
+The
+\fIsetkey\fR()
+function shall fail if:
+.TP
+.BR ENOSYS
+The functionality is not supported on this implementation.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Decoding need not be implemented in all environments. This is related
+to government restrictions in some countries on encryption and
+decryption routines. Historical practice has been to ship a different
+version of the encryption library without the decryption feature in the
+routines supplied. Thus the exported version of
+\fIencrypt\fR()
+does encoding but not decoding.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIcrypt\fR\^(\|)",
+.IR "\fIencrypt\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdlib.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,150 @@
+'\" et
+.TH IPCRM "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ipcrm
+\(em remove an XSI message queue, semaphore set, or shared memory
+segment identifier
+.SH SYNOPSIS
+.LP
+.nf
+ipcrm \fB[\fR\(miq msgid|\(miQ msgkey|\(mis semid|\(miS semkey|\(mim shmid|\(miM shmkey\fB]\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR ipcrm
+utility shall remove zero or more message queues, semaphore sets, or
+shared memory segments. The interprocess communication facilities to be
+removed are specified by the options.
+.P
+Only a user with appropriate privileges shall be allowed to remove an
+interprocess communication facility that was not created by or owned by
+the user invoking
+.IR ipcrm .
+.SH OPTIONS
+The
+.IR ipcrm
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(miq\ \fImsgid\fR" 10
+Remove the message queue identifier
+.IR msgid
+from the system and destroy the message queue and data structure
+associated with it.
+.IP "\fB\(mim\ \fIshmid\fR" 10
+Remove the shared memory identifier
+.IR shmid
+from the system. The shared memory segment and data structure
+associated with it shall be destroyed after the last detach.
+.IP "\fB\(mis\ \fIsemid\fR" 10
+Remove the semaphore identifier
+.IR semid
+from the system and destroy the set of semaphores and data structure
+associated with it.
+.IP "\fB\(miQ\ \fImsgkey\fR" 10
+Remove the message queue identifier, created with key
+.IR msgkey ,
+from the system and destroy the message queue and data structure
+associated with it.
+.IP "\fB\(miM\ \fIshmkey\fR" 10
+Remove the shared memory identifier, created with key
+.IR shmkey ,
+from the system. The shared memory segment and data structure
+associated with it shall be destroyed after the last detach.
+.IP "\fB\(miS\ \fIsemkey\fR" 10
+Remove the semaphore identifier, created with key
+.IR semkey ,
+from the system and destroy the set of semaphores and data structure
+associated with it.
+.SH OPERANDS
+None.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR ipcrm :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIipcs\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fIsemctl\fR\^(\|)",
+.IR "\fIshmctl\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

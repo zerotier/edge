@@ -1,0 +1,254 @@
+'\" et
+.TH REALPATH "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+realpath
+\(em resolve a pathname
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdlib.h>
+.P
+char *realpath(const char *restrict \fIfile_name\fP,
+    char *restrict \fIresolved_name\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIrealpath\fR()
+function shall derive, from the pathname pointed to by
+.IR file_name ,
+an absolute pathname that resolves to the same directory entry, whose
+resolution does not involve
+.BR '.' ,
+.BR '..' ,
+or symbolic links. If
+.IR resolved_name
+is a null pointer, the generated pathname shall be stored as a
+null-terminated string in a buffer allocated as if by a call to
+\fImalloc\fR().
+Otherwise, if
+{PATH_MAX}
+is defined as a constant in the
+.IR <limits.h> 
+header, then the generated pathname shall be stored as a null-terminated
+string, up to a maximum of
+{PATH_MAX}
+bytes, in the buffer pointed to by
+.IR resolved_name .
+.P
+If
+.IR resolved_name
+is not a null pointer and
+{PATH_MAX}
+is not defined as a constant in the
+.IR <limits.h> 
+header, the behavior is undefined.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIrealpath\fR()
+shall return a pointer to the buffer containing the resolved name.
+Otherwise,
+\fIrealpath\fR()
+shall return a null pointer and set
+.IR errno
+to indicate the error.
+.P
+If the
+.IR resolved_name
+argument is a null pointer, the pointer returned by
+\fIrealpath\fR()
+can be passed to
+\fIfree\fR().
+.P
+If the
+.IR resolved_name
+argument is not a null pointer and the
+\fIrealpath\fR()
+function fails, the contents of the buffer pointed to by
+.IR resolved_name
+are undefined.
+.SH ERRORS
+The
+\fIrealpath\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Search permission was denied for a component of the path prefix of
+.IR file_name .
+.TP
+.BR EINVAL
+The
+.IR file_name
+argument is a null pointer.
+.TP
+.BR EIO
+An error occurred while reading from the file system.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR file_name
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR file_name
+does not name an existing file or
+.IR file_name
+points to an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR file_name
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file that
+is neither a directory nor a symbolic link to a directory.
+.br
+.P
+The
+\fIrealpath\fR()
+function may fail if:
+.TP
+.BR EACCES
+The
+.IR file_name
+argument does not begin with a
+<slash>
+and none of the symbolic links (if any) processed during pathname
+resolution of
+.IR file_name
+had contents that began with a
+<slash>,
+and either search permission was denied for the current directory or
+read or search permission was denied for a directory above the current
+directory in the file hierarchy.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR file_name
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Generating an Absolute Pathname"
+.P
+The following example generates an absolute pathname for the file
+identified by the
+.IR symlinkpath
+argument. The generated pathname is stored in the buffer pointed to by
+.IR actualpath .
+.sp
+.RS 4
+.nf
+\fB
+#include <stdlib.h>
+\&...
+char *symlinkpath = "/tmp/symlink/file";
+char *actualpath;
+.P
+actualpath = realpath(symlinkpath, NULL);
+if (actualpath != NULL)
+{
+    ... use actualpath ...
+.P
+    free(actualpath);
+}
+else
+{
+    ... handle error ...
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+For functions that allocate memory as if by
+\fImalloc\fR(),
+the application should release such memory when it is no longer
+required by a call to
+\fIfree\fR().
+For
+\fIrealpath\fR(),
+this is the return value.
+.SH RATIONALE
+Since
+\fIrealpath\fR()
+has no
+.IR length
+argument, if
+{PATH_MAX}
+is not defined as a constant in
+.IR <limits.h> ,
+applications have no way of determining how large a buffer they need
+to allocate for it to be safe to pass to
+\fIrealpath\fR().
+A
+{PATH_MAX}
+value obtained from a prior
+\fIpathconf\fR()
+call is out-of-date by the time
+\fIrealpath\fR()
+is called. Hence the only reliable way to use
+\fIrealpath\fR()
+when
+{PATH_MAX}
+is not defined in
+.IR <limits.h> 
+is to pass a null pointer for
+.IR resolved_name
+so that
+\fIrealpath\fR()
+will allocate a buffer of the necessary size.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfpathconf\fR\^(\|)",
+.IR "\fIfree\fR\^(\|)",
+.IR "\fIgetcwd\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<limits.h>\fP",
+.IR "\fB<stdlib.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

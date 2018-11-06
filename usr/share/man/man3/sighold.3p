@@ -1,0 +1,255 @@
+'\" et
+.TH SIGHOLD "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sighold,
+sigignore,
+sigpause,
+sigrelse,
+sigset
+\(em signal management
+.SH SYNOPSIS
+.LP
+.nf
+#include <signal.h>
+.P
+int sighold(int \fIsig\fP);
+int sigignore(int \fIsig\fP);
+int sigpause(int \fIsig\fP);
+int sigrelse(int \fIsig\fP);
+void (*sigset(int \fIsig\fP, void (*\fIdisp\fP)(int)))(int);
+.fi
+.SH DESCRIPTION
+Use of any of these functions is unspecified in a multi-threaded
+process.
+.P
+The
+\fIsighold\fR(),
+\fIsigignore\fR(),
+\fIsigpause\fR(),
+\fIsigrelse\fR(),
+and
+\fIsigset\fR()
+functions provide simplified signal management.
+.P
+The
+\fIsigset\fR()
+function shall modify signal dispositions. The
+.IR sig
+argument specifies the signal, which may be any signal except SIGKILL
+and SIGSTOP. The
+.IR disp
+argument specifies the signal's disposition, which may be SIG_DFL,
+SIG_IGN, or the address of a signal handler. If
+\fIsigset\fR()
+is used, and
+.IR disp
+is the address of a signal handler, the system shall add
+.IR sig
+to the signal mask of the calling process before executing the signal
+handler; when the signal handler returns, the system shall restore the
+signal mask of the calling process to its state prior to the delivery
+of the signal. In addition, if
+\fIsigset\fR()
+is used, and
+.IR disp
+is equal to SIG_HOLD,
+.IR sig
+shall be added to the
+signal mask of the calling process and
+.IR sig 's
+disposition shall remain unchanged. If
+\fIsigset\fR()
+is used, and
+.IR disp
+is not equal to SIG_HOLD,
+.IR sig
+shall be removed from the signal mask of the calling process.
+.P
+The
+\fIsighold\fR()
+function shall add
+.IR sig
+to the signal mask of the calling process.
+.P
+The
+\fIsigrelse\fR()
+function shall remove
+.IR sig
+from the signal mask of the calling process.
+.P
+The
+\fIsigignore\fR()
+function shall set the disposition of
+.IR sig
+to SIG_IGN.
+.P
+The
+\fIsigpause\fR()
+function shall remove
+.IR sig
+from the signal mask of the calling process and suspend the calling process
+until a signal is received. The
+\fIsigpause\fR()
+function shall restore the signal mask of the process to its original
+state before returning.
+.P
+If the action for the SIGCHLD signal is set to SIG_IGN, child processes
+of the
+calling processes shall not be transformed into zombie processes when
+they terminate. If the calling process subsequently waits for its
+children, and the process has no unwaited-for children that were
+transformed into zombie processes, it shall block until all of its
+children terminate, and
+\fIwait\fR(),
+\fIwaitid\fR(),
+and
+\fIwaitpid\fR()
+shall fail and set
+.IR errno
+to
+.BR [ECHILD] .
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsigset\fR()
+shall return SIG_HOLD if the signal had been blocked and the signal's
+previous disposition if it had not been blocked. Otherwise, SIG_ERR
+shall be returned and
+.IR errno
+set to indicate the error.
+.P
+The
+\fIsigpause\fR()
+function shall suspend execution of the thread until a signal is
+received, whereupon it shall return \(mi1 and set
+.IR errno
+to
+.BR [EINTR] .
+.P
+For all other functions, upon successful completion, 0 shall be returned.
+Otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EINVAL
+The
+.IR sig
+argument is an illegal signal number.
+.P
+The
+\fIsigset\fR()
+and
+\fIsigignore\fR()
+functions shall fail if:
+.TP
+.BR EINVAL
+An attempt is made to catch a signal that cannot be caught, or to
+ignore a signal that cannot be ignored.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The
+\fIsigaction\fR()
+function provides a more comprehensive and reliable mechanism for
+controlling signals; new applications should use the
+\fIsigaction\fR()
+function instead of the obsolescent
+\fIsigset\fR()
+function.
+.P
+The
+\fIsighold\fR()
+function, in conjunction with
+\fIsigrelse\fR()
+or
+\fIsigpause\fR(),
+may be used to establish critical regions of code that require the
+delivery of a signal to be temporarily deferred. For broader
+portability, the
+\fIpthread_sigmask\fR()
+or
+\fIsigprocmask\fR()
+functions should be used instead of the obsolescent
+\fIsighold\fR()
+and
+\fIsigrelse\fR()
+functions.
+.P
+For broader portability, the
+\fIsigsuspend\fR()
+function should be used instead of the obsolescent
+\fIsigpause\fR()
+function.
+.SH RATIONALE
+Each of these historic functions has a direct analog in the other
+functions which are required to be per-thread and thread-safe (aside
+from
+\fIsigprocmask\fR(),
+which is replaced by
+\fIpthread_sigmask\fR()).
+The
+\fIsigset\fR()
+function can be implemented as a simple wrapper for
+\fIsigaction\fR().
+The
+\fIsighold\fR()
+function is equivalent to
+\fIsigprocmask\fR()
+or
+\fIpthread_sigmask\fR()
+with SIG_BLOCK set. The
+\fIsigignore\fR()
+function is equivalent to
+\fIsigaction\fR()
+with SIG_IGN set. The
+\fIsigpause\fR()
+function is equivalent to
+\fIsigsuspend\fR().
+The
+\fIsigrelse\fR()
+function is equivalent to
+\fIsigprocmask\fR()
+or
+\fIpthread_sigmask\fR()
+with SIG_UNBLOCK set.
+.SH "FUTURE DIRECTIONS"
+These functions may be removed in a future version.
+.SH "SEE ALSO"
+.IR "Section 2.4" ", " "Signal Concepts",
+.IR "\fIexec\fR\^",
+.IR "\fIpause\fR\^(\|)",
+.IR "\fIpthread_sigmask\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)",
+.IR "\fIsignal\fR\^(\|)",
+.IR "\fIsigsuspend\fR\^(\|)",
+.IR "\fIwait\fR\^(\|)",
+.IR "\fIwaitid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<signal.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

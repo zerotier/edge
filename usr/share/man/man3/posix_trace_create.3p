@@ -1,0 +1,450 @@
+'\" et
+.TH POSIX_TRACE_CREATE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+posix_trace_create,
+posix_trace_create_withlog,
+posix_trace_flush,
+posix_trace_shutdown
+\(em trace stream initialization, flush, and shutdown from a process
+(\fBTRACING\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/types.h>
+#include <trace.h>
+.P
+int posix_trace_create(pid_t \fIpid\fP,
+    const trace_attr_t *restrict \fIattr\fP,
+    trace_id_t *restrict \fItrid\fP);
+int posix_trace_create_withlog(pid_t \fIpid\fP,
+    const trace_attr_t *restrict \fIattr\fP, int \fIfile_desc\fP,
+    trace_id_t *restrict \fItrid\fP);
+int posix_trace_flush(trace_id_t \fItrid\fP);
+int posix_trace_shutdown(trace_id_t \fItrid\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIposix_trace_create\fR()
+function shall create an active trace stream. It allocates all the
+resources needed by the trace stream being created for tracing the
+process specified by
+.IR pid
+in accordance with the
+.IR attr
+argument. The
+.IR attr
+argument represents the initial attributes of the trace stream and
+shall have been initialized by the function
+\fIposix_trace_attr_init\fR()
+prior to the
+\fIposix_trace_create\fR()
+call. If the argument
+.IR attr
+is NULL, the default attributes shall be used. The
+.IR attr
+attributes object shall be manipulated through a set of functions
+described in the
+.IR posix_trace_attr
+family of functions. If the attributes of the object pointed to by
+.IR attr
+are modified later, the attributes of the trace stream shall not be
+affected. The
+.IR creation-time
+attribute of the newly created trace stream shall be set to the value
+of the system clock, if the Timers option is not supported, or to the
+value of the CLOCK_REALTIME clock, if the Timers option is supported.
+.P
+The
+.IR pid
+argument represents the target process to be traced. If the process
+executing this function does not have appropriate privileges to trace
+the process identified by
+.IR pid ,
+an error shall be returned. If the
+.IR pid
+argument is zero, the calling process shall be traced.
+.P
+The
+\fIposix_trace_create\fR()
+function shall store the trace stream identifier of the new trace
+stream in the object pointed to by the
+.IR trid
+argument. This trace stream identifier shall be used in subsequent
+calls to control tracing. The
+.IR trid
+argument may only be used by the following functions:
+.TS
+tab(!);
+l l.
+T{
+.nf
+\fIposix_trace_clear\fR()
+\fIposix_trace_eventid_equal\fR()
+\fIposix_trace_eventid_get_name\fR()
+\fIposix_trace_eventtypelist_getnext_id\fR()
+\fIposix_trace_eventtypelist_rewind\fR()
+\fIposix_trace_get_attr\fR()
+\fIposix_trace_get_status\fR()
+T}!T{
+.nf
+\fIposix_trace_getnext_event\fR()
+\fIposix_trace_shutdown\fR()
+\fIposix_trace_start\fR()
+\fIposix_trace_stop\fR()
+\fIposix_trace_timedgetnext_event\fR()
+\fIposix_trace_trid_eventid_open\fR()
+\fIposix_trace_trygetnext_event\fR()
+.fi
+T}
+.TE
+.P
+If the Trace Event Filter option is supported, the following additional
+functions may use the
+.IR trid
+argument:
+.TS
+tab(!);
+l l.
+T{
+\fIposix_trace_get_filter\fR()
+T}!T{
+\fIposix_trace_set_filter\fR()
+T}
+.TE
+.P
+In particular, notice that the operations normally used by a trace
+analyzer process, such as
+\fIposix_trace_rewind\fR()
+or
+\fIposix_trace_close\fR(),
+cannot be invoked using the trace stream identifier returned by the
+\fIposix_trace_create\fR()
+function.
+.P
+A trace stream shall be created in a suspended state.
+If the Trace Event Filter option is supported, its trace event type
+filter shall be empty.
+.P
+The
+\fIposix_trace_create\fR()
+function may be called multiple times from the same or different
+processes, with the system-wide limit indicated by the runtime
+invariant value
+{TRACE_SYS_MAX},
+which has the minimum value
+{_POSIX_TRACE_SYS_MAX}.
+.P
+The trace stream identifier returned by the
+\fIposix_trace_create\fR()
+function in the argument pointed to by
+.IR trid
+is valid only in the process that made the function call. If it is
+used from another process, that is a child process, in functions
+defined in POSIX.1\(hy2008, these functions shall return with the error
+.BR [EINVAL] .
+.P
+The
+\fIposix_trace_create_withlog\fR()
+function shall be equivalent to
+\fIposix_trace_create\fR(),
+except that it associates a trace log with this stream. The
+.IR file_desc
+argument shall be the file descriptor designating the trace log
+destination. The function shall fail if this file descriptor refers to
+a file with a file type that is not compatible with the log policy
+associated with the trace log. The list of the appropriate file types
+that are compatible with each log policy is implementation-defined.
+.P
+The
+\fIposix_trace_create_withlog\fR()
+function shall return in the parameter pointed to by
+.IR trid
+the trace stream identifier, which uniquely identifies the newly
+created trace stream, and shall be used in subsequent calls to control
+tracing. The
+.IR trid
+argument may only be used by the following functions:
+.TS
+tab(!);
+l l.
+T{
+.nf
+\fIposix_trace_clear\fR()
+\fIposix_trace_eventid_equal\fR()
+\fIposix_trace_eventid_get_name\fR()
+\fIposix_trace_eventtypelist_getnext_id\fR()
+\fIposix_trace_eventtypelist_rewind\fR()
+\fIposix_trace_flush\fR()
+\fIposix_trace_get_attr\fR()
+T}!T{
+.nf
+\fIposix_trace_get_status\fR()
+\fIposix_trace_getnext_event\fR()
+\fIposix_trace_shutdown\fR()
+\fIposix_trace_start\fR()
+\fIposix_trace_stop\fR()
+\fIposix_trace_timedgetnext_event\fR()
+\fIposix_trace_trid_eventid_open\fR()
+.fi
+T}
+.TE
+.P
+If the Trace Event Filter option is supported, the following additional
+functions may use the
+.IR trid
+argument:
+.TS
+tab(!);
+l l.
+T{
+\fIposix_trace_get_filter\fR()
+T}!T{
+\fIposix_trace_set_filter\fR()
+T}
+.TE
+.P
+In particular, notice that the operations normally used by a trace
+analyzer process, such as
+\fIposix_trace_rewind\fR()
+or
+\fIposix_trace_close\fR(),
+cannot be invoked using the trace stream identifier returned by the
+\fIposix_trace_create_withlog\fR()
+function.
+.P
+The
+\fIposix_trace_flush\fR()
+function shall initiate a flush operation which copies the contents of
+the trace stream identified by the argument
+.IR trid
+into the trace log associated with the trace stream at the creation
+time. If no trace log has been associated with the trace stream
+pointed to by
+.IR trid ,
+this function shall return an error. The termination of the flush
+operation can be polled by the
+\fIposix_trace_get_status\fR()
+function. During the flush operation, it shall be possible to trace
+new trace events up to the point when the trace stream becomes full.
+After flushing is completed, the space used by the flushed trace events
+shall be available for tracing new trace events.
+.P
+If flushing the trace stream causes the resulting trace log to become
+full, the trace log full policy shall be applied. If the trace
+.IR log-full-policy
+attribute is set, the following occurs:
+.IP POSIX_TRACE_UNTIL_FULL 6
+.br
+The trace events that have not yet been flushed shall be discarded.
+.IP POSIX_TRACE_LOOP 6
+.br
+The trace events that have not yet been flushed shall be written to the
+beginning of the trace log, overwriting previous trace events stored
+there.
+.IP POSIX_TRACE_APPEND 6
+.br
+The trace events that have not yet been flushed shall be appended to the
+trace log.
+.P
+The
+\fIposix_trace_shutdown\fR()
+function shall stop the tracing of trace events in the trace stream
+identified by
+.IR trid ,
+as if
+\fIposix_trace_stop\fR()
+had been invoked. The
+\fIposix_trace_shutdown\fR()
+function shall free all the resources associated with the trace
+stream.
+.P
+The
+\fIposix_trace_shutdown\fR()
+function shall not return until all the resources associated with the
+trace stream have been freed. When the
+\fIposix_trace_shutdown\fR()
+function returns, the
+.IR trid
+argument becomes an invalid trace stream identifier. A call to this
+function shall unconditionally deallocate the resources regardless of
+whether all trace events have been retrieved by the analyzer process.
+Any thread blocked on one of the
+\fItrace_getnext_event\fR()
+functions (which specified this
+.IR trid )
+before this call is unblocked with the error
+.BR [EINVAL] .
+.P
+If the process exits, invokes a member of the
+.IR exec
+family of functions, or is terminated, the trace streams that the
+process had created and that have not yet been shut down, shall be
+automatically shut down as if an explicit call were made to the
+\fIposix_trace_shutdown\fR()
+function.
+.P
+For an active trace stream with log, when the
+\fIposix_trace_shutdown\fR()
+function is called, all trace events that have not yet been flushed to
+the trace log shall be flushed, as in the
+\fIposix_trace_flush\fR()
+function, and the trace log shall be closed.
+.P
+When a trace log is closed, all the information that may be retrieved
+later from the trace log through the trace interface shall have been
+written to the trace log. This information includes the trace
+attributes, the list of trace event types (with the mapping between
+trace event names and trace event type identifiers), and the trace
+status.
+.P
+In addition, unspecified information shall be written to the trace
+log to allow detection of a valid trace log during the
+\fIposix_trace_open\fR()
+operation.
+.P
+The
+\fIposix_trace_shutdown\fR()
+function shall not return until all trace events have been flushed.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return a value of
+zero. Otherwise, they shall return the corresponding error number.
+.P
+The
+\fIposix_trace_create\fR()
+and
+\fIposix_trace_create_withlog\fR()
+functions store the trace stream identifier value in the object
+pointed to by
+.IR trid ,
+if successful.
+.SH ERRORS
+The
+\fIposix_trace_create\fR()
+and
+\fIposix_trace_create_withlog\fR()
+functions shall fail if:
+.TP
+.BR EAGAIN
+No more trace streams can be started now.
+{TRACE_SYS_MAX}
+has been exceeded.
+.TP
+.BR EINTR
+The operation was interrupted by a signal. No trace stream was
+created.
+.TP
+.BR EINVAL
+One or more of the trace parameters specified by the
+.IR attr
+parameter is invalid.
+.TP
+.BR ENOMEM
+The implementation does not currently have sufficient memory to create
+the trace stream with the specified parameters.
+.TP
+.BR EPERM
+The caller does not have appropriate privileges to trace the process
+specified by
+.IR pid .
+.TP
+.BR ESRCH
+The
+.IR pid
+argument does not refer to an existing process.
+.P
+The
+\fIposix_trace_create_withlog\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The
+.IR file_desc
+argument is not a valid file descriptor open for writing.
+.TP
+.BR EINVAL
+The
+.IR file_desc
+argument refers to a file with a file type that does not support the
+log policy associated with the trace log.
+.TP
+.BR ENOSPC
+No space left on device. The device corresponding to the argument
+.IR file_desc
+does not contain the space required to create this trace log.
+.P
+The
+\fIposix_trace_flush\fR()
+and
+\fIposix_trace_shutdown\fR()
+functions shall fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR trid
+argument does not correspond to an active trace stream with log.
+.TP
+.BR EFBIG
+The trace log file has attempted to exceed an implementation-defined
+maximum file size.
+.TP
+.BR ENOSPC
+No space left on device.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fIposix_trace_create\fR(),
+\fIposix_trace_create_withlog\fR(),
+\fIposix_trace_flush\fR(),
+and
+\fIposix_trace_shutdown\fR()
+functions may be removed in a future version.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIclock_getres\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIposix_trace_attr_destroy\fR\^(\|)",
+.IR "\fIposix_trace_clear\fR\^(\|)",
+.IR "\fIposix_trace_close\fR\^(\|)",
+.IR "\fIposix_trace_eventid_equal\fR\^(\|)",
+.IR "\fIposix_trace_eventtypelist_getnext_id\fR\^(\|)",
+.IR "\fIposix_trace_get_attr\fR\^(\|)",
+.IR "\fIposix_trace_get_filter\fR\^(\|)",
+.IR "\fIposix_trace_getnext_event\fR\^(\|)",
+.IR "\fIposix_trace_start\fR\^(\|)",
+.IR "\fIposix_trace_start\fR\^(\|)",
+.IR "\fItime\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<trace.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

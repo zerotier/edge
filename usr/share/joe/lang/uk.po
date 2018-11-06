@@ -1,0 +1,2188 @@
+# Ukrainian messages for joe editor
+# Yura Kalinichenko <yugk@svitonline.com>, 2006.
+#
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: 3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-08-21 21:49-0400\n"
+"PO-Revision-Date: 2006-05-22 22:56-0400\n"
+"Last-Translator: Yura Kalinichenko <yugk@svitonline.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=koi8-u\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: b.c:41
+msgid "No error"
+msgstr "Без помилок"
+
+#: b.c:42
+msgid "New File"
+msgstr "Новий Файл"
+
+#: b.c:43
+msgid "Error reading file"
+msgstr "Помилка читання файла"
+
+#: b.c:44
+msgid "Error seeking file"
+msgstr "Помилка позиц╕онування в файл╕"
+
+#: b.c:45
+msgid "Error opening file"
+msgstr "Помилка в╕дкриття файла"
+
+#: b.c:46
+msgid "Error writing file"
+msgstr "Помилка запису файла"
+
+#: b.c:47
+msgid "File on disk is newer"
+msgstr "Файл на диску - нов╕щий"
+
+#: b.c:3375
+#, c-format
+msgid ""
+"\n"
+"*** File '%s'\n"
+msgstr ""
+"\n"
+"*** Файл '%s'\n"
+
+#: b.c:3377
+msgid ""
+"\n"
+"*** File '(Unnamed)'\n"
+msgstr ""
+"\n"
+"*** Файл '(Без╤мен╕)'\n"
+
+#: cmd.c:230
+#, fuzzy
+msgid "Could not create lock. (I) edit anyway, (Q) cancel edit? "
+msgstr ""
+"Не можу створити файл блокування. (I)редактувати все р╕вно, (Q)в╕дм╕на ? "
+
+#: cmd.c:231
+#, fuzzy, c-format
+msgid "Locked by %s. (S)teal lock, (I) edit anyway, (Q) cancel edit? "
+msgstr "Заблоковано %s. (S)перехватити, (I)╕гнорувати, (Q)в╕дм╕на? "
+
+#: cmd.c:233
+msgid "|steal the lock|sS"
+msgstr "|перехвачення блокування|sSыЫ╕╤"
+
+#: cmd.c:234
+msgid "|cancel edit due to lock|qQ"
+msgstr "|выдм╕на редактування через блокування|qQйЙ"
+
+#: cmd.c:235
+#, fuzzy
+msgid "|ignore lock, continue with edit|iI"
+msgstr "|╕гнорування блокування, продовжу╓ться редактування|iIшШ"
+
+#: cmd.c:286
+msgid "Notice: File on disk changed! (hit %{abort} to continue)  "
+msgstr "Увага: Файл на диску зм╕нено! (натисн╕ть %{abort} для продовження) "
+
+#: cmd.c:346
+#, fuzzy
+msgid "Modify other window first for macro"
+msgstr "Спочатку модиф╕куйте ╕нше в╕кно для макро"
+
+#: cmd.c:354
+msgid "Other buffer is read only"
+msgstr "Другий буфер - т╕льки для читання"
+
+#: cmd.c:369 options.c:357
+msgid "Read only"
+msgstr "Т╕лькиЧтн"
+
+#: cmd.c:567 cmd.c:577
+msgid "No such command"
+msgstr "Нема╓ тако╖ команди"
+
+#: cmd.c:594
+#, fuzzy
+msgid "Command: "
+msgstr "Команда: "
+
+#: help.c:77
+#, c-format
+msgid ""
+"\n"
+"%d: EOF before end of help text\n"
+msgstr ""
+"\n"
+"%d: EOF перед к╕нцем текста п╕дказки\n"
+
+#: kbd.c:420
+msgid "No such keymap"
+msgstr "Нема╓ тако╖ раскладки клав╕атури"
+
+#: kbd.c:457
+msgid "Change keymap: "
+msgstr "Зм╕на раскладки клав╕атури: "
+
+#: macro.c:535
+msgid "Macro to record (0-9 or %{abort} to abort): "
+msgstr "Номер макро (0-9 або %{abort} для в╕дм╕ни): "
+
+#: macro.c:572
+#, fuzzy
+msgid "Delay in seconds between macro invocation (%{abort} to abort): "
+msgstr "Номер колонки (%{abort} для в╕дм╕ни): "
+
+#: macro.c:588
+#, fuzzy
+msgid "Macro to play (0-9 or %{abort} to abort): "
+msgstr "Номер макро (0-9 або %{abort} для в╕дм╕ни): "
+
+#: macro.c:692
+msgid "Play-"
+msgstr "Виконую-"
+
+#: macro.c:721
+msgid "No. times to repeat next command (%{abort} to abort): "
+msgstr "Ск. раз╕в повторити команду (%{abort} для в╕дм╕ни): "
+
+#: macro.c:754
+msgid "If (%{abort} to abort): "
+msgstr "If (%{abort} для в╕дм╕ни): "
+
+#: macro.c:761
+msgid "Elsif without if"
+msgstr "Elsif без if"
+
+#: macro.c:767
+msgid "Else if: "
+msgstr ""
+
+#: macro.c:776
+msgid "Else without if"
+msgstr "Else без if"
+
+#: macro.c:787
+msgid "Endif without if"
+msgstr "Endif без if"
+
+#: macro.c:830
+#, c-format
+msgid "Repeat %s%d"
+msgstr "Повторити %s%d"
+
+#: macro.c:843
+msgid "Repeat"
+msgstr "Повтор"
+
+#: main.c:355
+msgid "Couldn't load termcap/terminfo entry\n"
+msgstr "Не можу загрузити описання termcap/terminfo\n"
+
+#: main.c:368 main.c:379 main.c:438 main.c:448 main.c:465
+#, fuzzy, c-format
+msgid "There were errors in '%s'.  Falling back on default.\n"
+msgstr "Були помилки при '%s'.  Використовувати все р╕вно?"
+
+#: main.c:428
+#, c-format
+msgid "Warning: %s is newer than your %s.\n"
+msgstr "Попередження: %s нов╕щий за ваш %s.\n"
+
+#: main.c:469
+#, c-format
+msgid "Couldn't open '%s'\n"
+msgstr "Не можу в╕дкрити '%s'\n"
+
+#: main.c:476
+msgid "rc file has no :main key binding section or no bindings.  Bye.\n"
+msgstr "в rc-файл╕ в╕дсутня розкладка клав╕атури в секц╕╖ :main. Bye.\n"
+
+#: main.c:508
+#, c-format
+msgid "Unknown option '%s'\n"
+msgstr "Нев╕дома опц╕я '%s'\n"
+
+#: main.c:654
+#, c-format
+msgid "\\i** Joe's Own Editor v%s ** (%s) ** Copyright %s 2015 **\\i"
+msgstr ""
+
+#: mmenu.c:155
+#, fuzzy
+msgid "No such menu"
+msgstr "Нема╓ тако╖ команди"
+
+#: mmenu.c:169
+msgid "Menu: "
+msgstr ""
+
+#: options.c:300
+msgid "Overtype mode"
+msgstr "Режим зам╕ни"
+
+#: options.c:300
+msgid "Insert mode"
+msgstr "Режим вставки"
+
+#: options.c:301
+msgid "Hex edit mode"
+msgstr "16ричн.редакт."
+
+#: options.c:301
+msgid "Text edit mode"
+msgstr "Текст.редакт."
+
+#: options.c:301
+#, fuzzy
+msgid "Hex edit display mode"
+msgstr "16ричн.редакт."
+
+#: options.c:302
+msgid "Hide ANSI sequences"
+msgstr ""
+
+#: options.c:302
+msgid "Reveal ANSI sequences"
+msgstr ""
+
+#: options.c:302
+msgid "Hide ANSI mode"
+msgstr ""
+
+#: options.c:303
+#, fuzzy
+msgid "Status line context enabled"
+msgstr "Строку статуса включено"
+
+#: options.c:303
+#, fuzzy
+msgid "Status line context disabled"
+msgstr "Строку статуса вимкнено"
+
+#: options.c:303
+#, fuzzy
+msgid "Status line context display mode"
+msgstr "Строка статуса зм╕ню╓ться безперервно"
+
+#: options.c:304
+msgid "Autoindent enabled"
+msgstr "Автов╕ступ включено"
+
+#: options.c:304
+msgid "Autoindent disabled"
+msgstr "Автов╕ступ вимкнено"
+
+#: options.c:304
+#, fuzzy
+msgid "Autoindent mode"
+msgstr "I Автов╕дступ "
+
+#: options.c:305
+msgid "Wordwrap enabled"
+msgstr "Автоперенос включено"
+
+#: options.c:305
+msgid "Wordwrap disabled"
+msgstr "Автоперенос вимкнено"
+
+#: options.c:305
+#, fuzzy
+msgid "Word wrap mode"
+msgstr "W Автоперенос "
+
+#: options.c:306
+#, fuzzy, c-format
+msgid "Tab width (%lld): "
+msgstr "В╕дстань м╕ж табулостопами (%d): "
+
+#: options.c:306
+#, fuzzy
+msgid "Tab width"
+msgstr "D Ширина Tab "
+
+#: options.c:307
+#, c-format
+msgid "Left margin (%d): "
+msgstr "Л╕вий край (%d): "
+
+#: options.c:307
+#, fuzzy
+msgid "Left margin "
+msgstr "L Л╕вий край "
+
+#: options.c:308
+#, c-format
+msgid "Right margin (%d): "
+msgstr "Правий край (%d): "
+
+#: options.c:308
+#, fuzzy
+msgid "Right margin "
+msgstr "R Правий край "
+
+#: options.c:309
+msgid "Restore cursor position when files loaded"
+msgstr "Позиц╕я курсора буде в╕дновлюватись при загрузц╕ файл╕в"
+
+#: options.c:309
+msgid "Don't restore cursor when files loaded"
+msgstr "Позиц╕я курсора не буде в╕дновлюватись при загрузц╕ файл╕в"
+
+#: options.c:309
+#, fuzzy
+msgid "Restore cursor mode"
+msgstr "  В╕дновлення курсора "
+
+#: options.c:310
+msgid "Standard regular expression format"
+msgstr ""
+
+#: options.c:310
+msgid "JOE regular expression format"
+msgstr ""
+
+#: options.c:310
+msgid "Standard or JOE regular expression syntax"
+msgstr ""
+
+#: options.c:311
+msgid "Rectangle mode"
+msgstr "Режим прямокутних блок╕в"
+
+#: options.c:311
+msgid "Text-stream mode"
+msgstr "Режим построчних блок╕в"
+
+#: options.c:311
+#, fuzzy
+msgid "Rectangular region mode"
+msgstr "Режим прямокутних блок╕в"
+
+#: options.c:312
+#, fuzzy
+msgid "Search ignores case by default"
+msgstr "Пошук ╕гнору╓ рег╕стр за умовчанням"
+
+#: options.c:312
+#, fuzzy
+msgid "Case sensitive search by default"
+msgstr "Пошук врахову╓ рег╕стр за умовчанням"
+
+#: options.c:312
+#, fuzzy
+msgid "Case insensitive search mode "
+msgstr "Пошук врахову╓ рег╕стр за умовчанням"
+
+#: options.c:313
+msgid "Search wraps"
+msgstr "Цикличний пошук"
+
+#: options.c:313
+msgid "Search doesn't wrap"
+msgstr "Пошук не цикличний"
+
+#: options.c:313
+#, fuzzy
+msgid "Search wraps mode"
+msgstr "Цикличний пошук"
+
+#: options.c:314
+msgid "Menu explorer mode"
+msgstr "Режим меню"
+
+#: options.c:314
+#, fuzzy
+msgid "Simple completion mode"
+msgstr "Просте доповнення"
+
+#: options.c:315
+msgid "Menu above prompt"
+msgstr "Меню над запитом"
+
+#: options.c:315
+msgid "Menu below prompt"
+msgstr "Меню п╕д запитом"
+
+#: options.c:315
+#, fuzzy
+msgid "Menu above/below mode"
+msgstr "Режим меню"
+
+#: options.c:316
+#, fuzzy
+msgid "Tags menu disabled"
+msgstr "# комментар╕ не враховуються"
+
+#: options.c:316
+#, fuzzy
+msgid "Tags menu enabled"
+msgstr "# комментар╕ враховуються"
+
+#: options.c:316
+msgid "Tags menu mode"
+msgstr ""
+
+#: options.c:317
+msgid "Search prompting on"
+msgstr "Запит пошуку вкл."
+
+#: options.c:317
+msgid "Search prompting off"
+msgstr "Запит пошуку вимк."
+
+#: options.c:317
+#, fuzzy
+msgid "Search prompting mode"
+msgstr "Запит пошуку вкл."
+
+#: options.c:318
+#, fuzzy
+msgid "Jump into menu is on"
+msgstr "  Скачок в меню вкл."
+
+#: options.c:318
+#, fuzzy
+msgid "Jump into menu is off"
+msgstr "  Скачок в меню вимк."
+
+#: options.c:318
+#, fuzzy
+msgid "Jump into menu mode"
+msgstr "  Скачок в меню "
+
+#: options.c:319
+msgid "Autoswap ^KB and ^KK"
+msgstr "Автообм╕н ^KB и ^KK"
+
+#: options.c:319
+#, fuzzy
+msgid "Autoswap off "
+msgstr "  Автообм╕н вимк"
+
+#: options.c:319
+#, fuzzy
+msgid "Autoswap mode "
+msgstr "  Автообм╕н "
+
+#: options.c:320
+msgid "Indent char %d (SPACE=32, TAB=9, %{abort} to abort): "
+msgstr "Символ вир╕внювання %d (ПРОБ╤Л=32, TAB=9, %{abort} для в╕дм╕ни): "
+
+#: options.c:320
+#, fuzzy
+msgid "Indent char "
+msgstr "  Символ вир╕внювання "
+
+#: options.c:321
+#, fuzzy
+msgid "Indent step %lld (%{abort} to abort): "
+msgstr "Шаг вир╕внювання %d (%{abort} для в╕дм╕ни): "
+
+#: options.c:321
+#, fuzzy
+msgid "Indent step "
+msgstr "  Шаг вир╕внювання "
+
+#: options.c:322
+msgid "One space after periods for paragraph reformat"
+msgstr "Один проб╕л п╕сля крапки при форматуванн╕ абзаца"
+
+#: options.c:322
+msgid "Two spaces after periods for paragraph reformat"
+msgstr "Два проб╕ла п╕сля крапки при форматуванн╕ абзаца"
+
+#: options.c:322
+#, fuzzy
+msgid "French spacing mode"
+msgstr "  Французський проб╕л "
+
+#: options.c:323
+#, fuzzy
+msgid "One space after paragraph line"
+msgstr "Один проб╕л п╕сля крапки при форматуванн╕ абзаца"
+
+#: options.c:323
+#, fuzzy
+msgid "No spaces after paragraph lines"
+msgstr "Два проб╕ла п╕сля крапки при форматуванн╕ абзаца"
+
+#: options.c:323
+#, fuzzy
+msgid "Flowed text mode"
+msgstr "16ричн.редакт."
+
+#: options.c:324
+msgid "Highlighting enabled"
+msgstr "Подсв╕чування дозволено"
+
+#: options.c:324
+msgid "Highlighting disabled"
+msgstr "Подсв╕чування заборонено"
+
+#: options.c:324
+#, fuzzy
+msgid "Syntax highlighting mode"
+msgstr "H П╕дсв╕чування "
+
+#: options.c:325
+msgid "Inserting spaces when tab key is hit"
+msgstr "Вставка проб╕л╕в при натисканн╕ Tab"
+
+#: options.c:325
+msgid "Inserting tabs when tab key is hit"
+msgstr "Вставка табулятор╕в при натисканн╕ Tab"
+
+#: options.c:325
+#, fuzzy
+msgid "No tabs mode"
+msgstr "  Без таб╕в "
+
+#: options.c:326
+msgid "Cursor will be recentered on scrolls"
+msgstr "Курсор буде центруватися при скролл╕"
+
+#: options.c:326
+msgid "Cursor will not be recentered on scroll"
+msgstr "Курсор не буде центруватися при скролл╕"
+
+#: options.c:326
+#, fuzzy
+msgid "Center on scroll mode"
+msgstr "C Центр при скролл╕ "
+
+#: options.c:327
+#, fuzzy, c-format
+msgid "Columns to scroll left or -1 for 1/2 window (%d): "
+msgstr "Ск. строк залишати для PgUp/PgDn або -1 для 1/2 в╕кна (%d): "
+
+#: options.c:327
+msgid "Left scroll amount"
+msgstr ""
+
+#: options.c:328
+#, fuzzy, c-format
+msgid "Columns to scroll right or -1 for 1/2 window (%d): "
+msgstr "Ск. строк залишати для PgUp/PgDn або -1 для 1/2 в╕кна (%d): "
+
+#: options.c:328
+msgid "Right scroll amount"
+msgstr ""
+
+#: options.c:329
+msgid "Automatically detect MS-DOS files"
+msgstr "Файли MS-DOS будуть автовизначуватись"
+
+#: options.c:329
+msgid "Do not automatically detect MS-DOS files"
+msgstr "Файли MS-DOS не будуть автовизначуватись"
+
+#: options.c:329
+#, fuzzy
+msgid "Auto detect CR-LF mode"
+msgstr "  Автовизначення CR-LF "
+
+#: options.c:330
+msgid "Automatically detect indentation"
+msgstr "Символи в╕дступ╕в будуть автовизначуватись"
+
+#: options.c:330
+msgid "Do not automatically detect indentation"
+msgstr "Символи в╕дступ╕в не будуть автовизначуватись"
+
+#: options.c:330
+#, fuzzy
+msgid "Guess indent mode"
+msgstr "  Вгадувати в╕дступ "
+
+#: options.c:331
+#, fuzzy
+msgid "Automatically detect non-UTF-8 in UTF-8 locale"
+msgstr "Не-UTF-8 кодування в локал╕ UTF-8 будуть автовизначуватись"
+
+#: options.c:331
+#, fuzzy
+msgid "Do not automatically detect non-UTF-8"
+msgstr "Не-UTF-8 кодування в локал╕ UTF-8 не будуть автовизначуватись"
+
+#: options.c:331
+#, fuzzy
+msgid "Guess non-UTF-8 mode"
+msgstr "  Вгадувати не-UTF-8 "
+
+#: options.c:332
+#, fuzzy
+msgid "Automatically detect UTF-8 in non-UTF-8 locale"
+msgstr "Кодування UTF-8 в не-UTF-8 локал╕ буде автовизначуватись"
+
+#: options.c:332
+#, fuzzy
+msgid "Do not automatically detect UTF-8"
+msgstr "Кодування UTF-8 не буде автовизначуватись"
+
+#: options.c:332
+#, fuzzy
+msgid "Guess UTF-8 mode"
+msgstr "  Вгадувати UTF-8 "
+
+#: options.c:333
+#, fuzzy
+msgid "Automatically detect UTF-16"
+msgstr "Кодування UTF-8 не буде автовизначуватись"
+
+#: options.c:333
+#, fuzzy
+msgid "Do not automatically detect UTF-16"
+msgstr "Кодування UTF-8 не буде автовизначуватись"
+
+#: options.c:333
+#, fuzzy
+msgid "Guess UTF-16 mode"
+msgstr "  Вгадувати UTF-8 "
+
+#: options.c:334
+msgid "Menu is transposed"
+msgstr "Меню переносиме"
+
+#: options.c:334
+msgid "Menus are not transposed"
+msgstr "Меню непереносиме"
+
+#: options.c:334
+#, fuzzy
+msgid "Transpose menus mode"
+msgstr "  Переносим╕сть меню "
+
+#: options.c:335
+msgid "CR-LF is line terminator"
+msgstr "К╕нець строки CR-LF"
+
+#: options.c:335
+msgid "LF is line terminator"
+msgstr "К╕нец строки LF"
+
+#: options.c:335
+msgid "CR-LF (MS-DOS) mode"
+msgstr ""
+
+#: options.c:336
+msgid "Line numbers enabled"
+msgstr "Нумерац╕ю строк включено"
+
+#: options.c:336
+msgid "Line numbers disabled"
+msgstr "Нумерац╕ю строк вимкнено"
+
+#: options.c:336
+#, fuzzy
+msgid "Line numbers mode"
+msgstr "N Номера строк "
+
+#: options.c:337
+msgid "Anchored block marking on"
+msgstr "Заякорена в╕дм╕тка блока вкл."
+
+#: options.c:337
+msgid "Anchored block marking off"
+msgstr "Заякорена в╕дм╕тка блока вимк."
+
+#: options.c:337
+#, fuzzy
+msgid "Region marking mode"
+msgstr "Режим прямокутних блок╕в"
+
+#: options.c:338
+msgid "Characters above 127 shown as-is"
+msgstr "8-битн╕ символи показуються як ╓"
+
+#: options.c:338
+msgid "Characters above 127 shown in inverse"
+msgstr "8-битн╕ символи показуются в ╕нверс╕╖"
+
+#: options.c:338
+#, fuzzy
+msgid "Display meta chars as-is mode"
+msgstr "  8-б╕тн╕ символи "
+
+#: options.c:339
+msgid "Last line forced to have NL when file saved"
+msgstr "В к╕нц╕ файла буде додаватися переведення строки при збереженн╕"
+
+#: options.c:339
+msgid "Last line not forced to have NL"
+msgstr "Не буде форсуватися додавання переведення строки в конц╕ файла"
+
+#: options.c:339
+#, fuzzy
+msgid "Force last NL mode"
+msgstr "F Останн╕й LF "
+
+#: options.c:340
+msgid "~/.joe_state file will be updated"
+msgstr "Файл ~/.joe_state буде зм╕нюватись"
+
+#: options.c:340
+msgid "~/.joe_state file will not be updated"
+msgstr "Файл ~/.joe_state НЕ буде зм╕нюватись"
+
+#: options.c:340
+#, fuzzy
+msgid "Joe_state file mode"
+msgstr "  Файл joe_state "
+
+#: options.c:341
+#, fuzzy
+msgid "Nobackup enabled"
+msgstr "Автоперенос включено"
+
+#: options.c:341
+#, fuzzy
+msgid "Nobackup disabled"
+msgstr "Автоперенос вимкнено"
+
+#: options.c:341
+msgid "No backup mode"
+msgstr ""
+
+#: options.c:342
+msgid "Backup files will not be made"
+msgstr "Резервн╕ файли не будуть створюватися"
+
+#: options.c:342
+msgid "Backup files will be made"
+msgstr "Резервн╕ файли будуть створюватися"
+
+#: options.c:342
+#, fuzzy
+msgid "Disable backups mode"
+msgstr "  Заборона резерв-я "
+
+#: options.c:343
+#, fuzzy
+msgid "DEADJOE files will not be made"
+msgstr "Резервн╕ файли не будуть створюватися"
+
+#: options.c:343
+#, fuzzy
+msgid "DEADJOE files will be made"
+msgstr "Резервн╕ файли будуть створюватися"
+
+#: options.c:343
+msgid "Disable DEADJOE mode"
+msgstr ""
+
+#: options.c:344
+msgid "Files will not be locked"
+msgstr "Файли не будуть блокуватися"
+
+#: options.c:344
+msgid "Files will be locked"
+msgstr "Файли будуть блокуваться"
+
+#: options.c:344
+#, fuzzy
+msgid "Disable locks mode"
+msgstr "  Заборона блок. "
+
+#: options.c:345
+#, fuzzy
+msgid "No file modification time check"
+msgstr "Не буде перев╕рятися час модиф╕кац╕╖ файла"
+
+#: options.c:345
+#, fuzzy
+msgid "File modification time checking enabled"
+msgstr "Перев╕ря╓ться час модиф╕кац╕╖ файла"
+
+#: options.c:345
+#, fuzzy
+msgid "Disable mtime check mode"
+msgstr "  Заборона контроля mtime "
+
+#: options.c:346
+msgid "No current dir"
+msgstr "Без поточно╖ директор╕╖"
+
+#: options.c:346
+msgid "Current dir enabled"
+msgstr "Поточна директор╕я включена"
+
+#: options.c:346
+#, fuzzy
+msgid "Disable current dir "
+msgstr "  Заборона поточ. директор╕╖ "
+
+#: options.c:347
+msgid "Hardlinks will be broken"
+msgstr "Жорстк╕ посилання будуть розриватися"
+
+#: options.c:347
+msgid "Hardlinks not broken"
+msgstr "Жорстк╕ посилання не будуть розриватися"
+
+#: options.c:347
+#, fuzzy
+msgid "Break hard links "
+msgstr "  Розрив жорст.пос. "
+
+#: options.c:348
+#, fuzzy
+msgid "Links will be broken"
+msgstr "Жорстк╕ посилання будуть розриватися"
+
+#: options.c:348
+#, fuzzy
+msgid "Links not broken"
+msgstr "Жорстк╕ посилання не будуть розриватися"
+
+#: options.c:348
+#, fuzzy
+msgid "Break links "
+msgstr "  Розрив жорст.пос. "
+
+#: options.c:349
+msgid "Highlighting turned off after block operations"
+msgstr "В╕дм╕тка блока вимика╓ться п╕сля операц╕╖"
+
+#: options.c:349
+msgid "Highlighting not turned off after block operations"
+msgstr "В╕дм╕тка блока не вимика╓ться п╕сля операц╕╖"
+
+#: options.c:349
+#, fuzzy
+msgid "Auto unmark "
+msgstr "AвтоДеМарк "
+
+#: options.c:350
+msgid "Prompt for filename in save & exit command"
+msgstr "Запит ╕мен╕ файла при выход╕ з╕ збереженням"
+
+#: options.c:350
+msgid "Don't prompt for filename in save & exit command"
+msgstr "Не запитувати им'я файла при выход╕ з╕ збереженням"
+
+#: options.c:350
+#, fuzzy
+msgid "Exit ask "
+msgstr "  Вих╕д з запитом "
+
+#: options.c:351
+msgid "Warning bell enabled"
+msgstr "Дзв╕нок дозволений"
+
+#: options.c:351
+msgid "Warning bell disabled"
+msgstr "Дзв╕нок заборонено"
+
+#: options.c:351
+#, fuzzy
+msgid "Beeps "
+msgstr "B Дзв╕нок "
+
+#: options.c:352
+msgid "Top-most status line disabled"
+msgstr "Строку статуса вимкнено"
+
+#: options.c:352
+msgid "Top-most status line enabled"
+msgstr "Строку статуса включено"
+
+#: options.c:352
+#, fuzzy
+msgid "Disable status line "
+msgstr "  Заборона строки стат. "
+
+#: options.c:353
+msgid "Status line updated constantly"
+msgstr "Строка статуса зм╕ню╓ться безперервно"
+
+#: options.c:353
+msgid "Status line updated once/sec"
+msgstr "Строка статуса зм╕ню╓ться раз на секунду"
+
+#: options.c:353
+#, fuzzy
+msgid "Fast status line "
+msgstr "  Швидка строка статуса "
+
+#: options.c:354
+#, c-format
+msgid "Lines to keep for PgUp/PgDn or -1 for 1/2 window (%d): "
+msgstr "Ск. строк залишати для PgUp/PgDn або -1 для 1/2 в╕кна (%d): "
+
+#: options.c:354
+#, fuzzy
+msgid "No. PgUp/PgDn lines "
+msgstr "  К╕льк. строк PgUp/PgDn "
+
+#: options.c:355
+msgid "No. undo records to keep, or (0 for infinite): "
+msgstr ""
+
+#: options.c:355
+msgid "No. undo records "
+msgstr ""
+
+#: options.c:356
+msgid "Start search after a search repeats previous search"
+msgstr "Пошук продовжу╓ться з попередн╕м зразком"
+
+#: options.c:356
+msgid "Start search always starts a new search"
+msgstr "Завжди запитувати новий зразок пошуку"
+
+#: options.c:356
+#, fuzzy
+msgid "Continued search "
+msgstr "  Продовження пошука "
+
+#: options.c:357
+msgid "Full editing"
+msgstr "Зм╕ни дозволено"
+
+#: options.c:357
+#, fuzzy
+msgid "Read only "
+msgstr "Т╕лькиЧтн"
+
+#: options.c:358
+msgid "Smart home key enabled"
+msgstr "Розумна повед╕нка клав╕ши Home дозволена"
+
+#: options.c:358
+msgid "Smart home key disabled"
+msgstr "Розумна повед╕нка клав╕ши Home заборонена"
+
+#: options.c:358
+#, fuzzy
+msgid "Smart home key "
+msgstr "  Розумний Home "
+
+#: options.c:359
+#, fuzzy
+msgid "Smart home goes to indentation first"
+msgstr "Розумний Home переходить на перший символ"
+
+#: options.c:359
+msgid "Smart home goes home first"
+msgstr "Розумний Home переходить на початок строки"
+
+#: options.c:359
+#, fuzzy
+msgid "To indent first "
+msgstr "  На перший символ "
+
+#: options.c:360
+msgid "Smart backspace key enabled"
+msgstr "Розумна повед╕нка клав╕ши BS дозволена"
+
+#: options.c:360
+msgid "Smart backspace key disabled"
+msgstr "Розумна повед╕нка клав╕ши BS заборонена"
+
+#: options.c:360
+#, fuzzy
+msgid "Smart backspace "
+msgstr "  Розумний BS "
+
+#: options.c:361
+msgid "Indentation clean up enabled"
+msgstr "Виправлення в╕дступ╕в дозволено"
+
+#: options.c:361
+msgid "Indentation clean up disabled"
+msgstr "Виправлення в╕дступ╕в заборонене"
+
+#: options.c:361
+#, fuzzy
+msgid "Clean up indents "
+msgstr "  Виправлення в╕дступ╕в "
+
+#: options.c:362
+msgid "Picture drawing mode enabled"
+msgstr "Режим малювання дозволений"
+
+#: options.c:362
+msgid "Picture drawing mode disabled"
+msgstr "Режим малювання заборонений"
+
+#: options.c:362
+#, fuzzy
+msgid "Picture mode "
+msgstr "Режим малювання "
+
+#: options.c:363
+#, c-format
+msgid "Backup files stored in (%s): "
+msgstr "Резервн╕ файли збер╕гаються в (%s): "
+
+#: options.c:363
+#, fuzzy
+msgid "Path to backup files "
+msgstr "  Шлях до резервних файл╕в "
+
+#: options.c:364
+msgid "Select syntax (%{abort} to abort): "
+msgstr "Вибер╕ть синтаксис (%{abort} для в╕дм╕ни)"
+
+#: options.c:364
+#, fuzzy
+msgid "Syntax"
+msgstr "Y Синтаксис"
+
+#: options.c:365
+msgid "Select file character set (%{abort} to abort): "
+msgstr "Вкаж╕ть файл кодового набора (%{abort} для в╕дм╕ни): "
+
+#: options.c:365
+#, fuzzy
+msgid "Encoding "
+msgstr "Кодування "
+
+#: options.c:366
+#, fuzzy
+msgid "Select file type (%{abort} to abort): "
+msgstr "Вкаж╕ть файл кодового набора (%{abort} для в╕дм╕ни): "
+
+#: options.c:366
+#, fuzzy
+msgid "File type "
+msgstr "Файл "
+
+#: options.c:367
+#, fuzzy
+msgid "Highlighter context enabled"
+msgstr "Подсв╕чування дозволено"
+
+#: options.c:367
+#, fuzzy
+msgid "Highlighter context disabled"
+msgstr "Подсв╕чування заборонено"
+
+#: options.c:367
+msgid "^G uses highlighter context "
+msgstr ""
+
+#: options.c:368
+msgid "Single quoting enabled"
+msgstr "Одиночн╕ лапки враховуються"
+
+#: options.c:368
+msgid "Single quoting disabled"
+msgstr "Одиночн╕ лапки не враховуються"
+
+#: options.c:368
+#, fuzzy
+msgid "^G ignores '... ' "
+msgstr "  ^G ╕гнор. '...' "
+
+#: options.c:369
+#, fuzzy
+msgid "Double quoting disabled"
+msgstr "Одиночн╕ лапки не враховуються"
+
+#: options.c:369
+#, fuzzy
+msgid "Double quoting enabled"
+msgstr "Одиночн╕ лапки враховуються"
+
+#: options.c:369
+#, fuzzy
+msgid "^G ignores \"... \" "
+msgstr "  ^G ╕гнор. '...' "
+
+#: options.c:370
+msgid "/* comments enabled"
+msgstr "/* комментар╕ враховуються"
+
+#: options.c:370
+msgid "/* comments disabled"
+msgstr "/* комментарии не враховуються"
+
+#: options.c:370
+#, fuzzy
+msgid "^G ignores /*...*/ "
+msgstr "  ^G игнор. /*...*/ "
+
+#: options.c:371
+msgid "// comments enabled"
+msgstr "// комментар╕ враховуються"
+
+#: options.c:371
+msgid "// comments disabled"
+msgstr "// комментар╕ не враховуються"
+
+#: options.c:371
+#, fuzzy
+msgid "^G ignores //... "
+msgstr "  ^G игнор. //... "
+
+#: options.c:372
+msgid "# comments enabled"
+msgstr "# комментар╕ враховуються"
+
+#: options.c:372
+msgid "# comments disabled"
+msgstr "# комментар╕ не враховуються"
+
+#: options.c:372
+#, fuzzy
+msgid "^G ignores #... "
+msgstr "  ^G игнор. #... "
+
+#: options.c:373
+msgid "-- comments enabled"
+msgstr "-- комментар╕ враховуються"
+
+#: options.c:373
+msgid "-- comments disabled"
+msgstr "-- комментар╕ не враховуються"
+
+#: options.c:373
+#, fuzzy
+msgid "^G ignores --... "
+msgstr "  ^G игнор. --... "
+
+#: options.c:374
+msgid "; comments enabled"
+msgstr "; комментар╕ враховуються"
+
+#: options.c:374
+msgid "; comments disabled"
+msgstr "; комментар╕ не враховуються"
+
+#: options.c:374
+#, fuzzy
+msgid "^G ignores ;... "
+msgstr "  ^G игнор. ;... "
+
+#: options.c:375
+#, fuzzy, c-format
+msgid "% comments enabled"
+msgstr "# комментар╕ враховуються"
+
+#: options.c:375
+#, fuzzy, c-format
+msgid "% comments disabled"
+msgstr "# комментар╕ не враховуються"
+
+#: options.c:375
+#, fuzzy
+msgid "^G ignores %... "
+msgstr "  ^G игнор. #... "
+
+#: options.c:376
+#, c-format
+msgid "Text delimiters (%s): "
+msgstr "Обмежувач╕ текста (%s): "
+
+#: options.c:376
+#, fuzzy
+msgid "Text delimiters "
+msgstr "  Обмежувач╕ текста "
+
+#: options.c:377
+#, c-format
+msgid "Language (%s): "
+msgstr "Мова (%s): "
+
+#: options.c:377
+#, fuzzy
+msgid "Language "
+msgstr "V Мова "
+
+#: options.c:378
+#, c-format
+msgid "Characters which can indent paragraphs (%s): "
+msgstr "Символи, якими може починатися абзац (%s): "
+
+#: options.c:378
+#, fuzzy
+msgid "Paragraph indent chars "
+msgstr "  Символ вир╕внювання "
+
+#: options.c:379
+#, fuzzy, c-format
+msgid "Characters which begin non-paragraph lines (%s): "
+msgstr "Символи, якими може починатися абзац (%s): "
+
+#: options.c:379
+#, fuzzy
+msgid "Non-paragraph chars "
+msgstr "  Символ вир╕внювання "
+
+#: options.c:380
+msgid "Clicking can move the cursor past end of line"
+msgstr "Мишею можна перенести курсор за к╕нець строки"
+
+#: options.c:380
+msgid "Clicking past end of line moves cursor to the end"
+msgstr "Клик за концем строки перенесе курсор в ╖╖ к╕нець"
+
+#: options.c:380
+#, fuzzy
+msgid "Click past end "
+msgstr "  Клик за строкою "
+
+#: options.c:381
+msgid "Mouse action is done with the right button"
+msgstr "Д╕я миш╕ активу╓ться правою кнопкою"
+
+#: options.c:381
+msgid "Mouse action is done with the left button"
+msgstr "Д╕я миш╕ активу╓ться л╕вою кнопкою"
+
+#: options.c:381
+#, fuzzy
+msgid "Right button "
+msgstr "  Права кнопка "
+
+#: options.c:382
+msgid "Suppress startup notice"
+msgstr ""
+
+#: options.c:383
+msgid "Suppress exit message"
+msgstr ""
+
+#: options.c:384
+msgid "Help is UTF-8"
+msgstr ""
+
+#: options.c:385
+msgid "Disable XON/XOFF"
+msgstr ""
+
+#: options.c:386
+msgid "Orphan extra files"
+msgstr ""
+
+#: options.c:387
+msgid "Start editor with help displayed"
+msgstr ""
+
+#: options.c:388
+msgid "Emit padding NULs"
+msgstr ""
+
+#: options.c:389
+msgid "No. screen lines (if no window size ioctl)"
+msgstr ""
+
+#: options.c:390
+msgid "Baud rate"
+msgstr ""
+
+#: options.c:391
+msgid "No. screen columns (if no window size ioctl)"
+msgstr ""
+
+#: options.c:392
+msgid "No. screen lines to skip"
+msgstr ""
+
+#: options.c:393
+msgid "Suppress tty init sequence"
+msgstr ""
+
+#: options.c:394
+msgid "Bracketed paste mode"
+msgstr ""
+
+#: options.c:395
+msgid "Paste quoting hack"
+msgstr ""
+
+#: options.c:396
+msgid "Suppress history preserving linefeeds"
+msgstr ""
+
+#: options.c:397
+msgid "Enable mouse"
+msgstr ""
+
+#: options.c:398
+msgid "Screen update uses tabs"
+msgstr ""
+
+#: options.c:399
+msgid "Assume terminal supports color"
+msgstr ""
+
+#: options.c:400
+msgid "Assume terminal supports 256 colors"
+msgstr ""
+
+#: options.c:401
+msgid "Assume xterm patched for JOE"
+msgstr ""
+
+#: options.c:515
+#, fuzzy
+msgid "No such file type"
+msgstr "Нема╓ тако╖ раскладки клав╕атури"
+
+#: options.c:877 options.c:896 options.c:908 options.c:920
+msgid "Value out of range"
+msgstr "Значення поза диапазоном"
+
+#: options.c:946
+msgid "Syntax definition file not found"
+msgstr "Файл визначення синтаксиса не знайдено"
+
+#: options.c:1047
+msgid "UTF-8 encoding not allowed with hexadecimal windows"
+msgstr ""
+
+#: options.c:1055
+#, c-format
+msgid "%s encoding assumed for this file"
+msgstr "Вважа╓ться, що файл у кодуванн╕ %s"
+
+#: options.c:1058
+msgid "Character set not found"
+msgstr "Кодування нев╕доме"
+
+#: options.c:1368
+#, fuzzy
+msgid "No such option"
+msgstr "Нема╓ тако╖ команди"
+
+#: options.c:1383
+msgid "Option: "
+msgstr ""
+
+#: rc.c:16
+msgid "Missing or empty :main keymap\n"
+msgstr ""
+
+#: rc.c:21
+msgid "Missing or empty :prompt keymap\n"
+msgstr ""
+
+#: rc.c:26
+msgid "Missing or empty :query keymap\n"
+msgstr ""
+
+#: rc.c:31
+msgid "Missing or empty :querya keymap\n"
+msgstr ""
+
+#: rc.c:36
+msgid "Missing or empty :querysr keymap\n"
+msgstr ""
+
+#: rc.c:41
+msgid "Missing or empty :shell keymap\n"
+msgstr ""
+
+#: rc.c:45
+msgid "Missing or empty :vtshell keymap\n"
+msgstr ""
+
+#: rc.c:64
+#, fuzzy, c-format
+msgid "%s %d: Unknown command in macro\n"
+msgstr ""
+"\n"
+"%s %d: Нев╕дома команда в макро"
+
+#: rc.c:106
+#, fuzzy, c-format
+msgid "Processing '%s'...\n"
+msgstr "Обробка '%s'..."
+
+#: rc.c:186
+#, fuzzy, c-format
+msgid "%s %d: Unknown option %s\n"
+msgstr ""
+"\n"
+"%s %d: Нев╕дома опц╕я %s"
+
+#: rc.c:221
+#, fuzzy, c-format
+msgid "%s %d: macro missing from :def\n"
+msgstr ""
+"\n"
+"%s %d: макро в╕дсутн╓ в╕д :def"
+
+#: rc.c:225
+#, fuzzy, c-format
+msgid "%s %d: command name missing from :def\n"
+msgstr ""
+"\n"
+"%s %d: ╕м'я команды в╕дсутн╓ в╕д :def"
+
+#: rc.c:236
+#, fuzzy, c-format
+msgid "%s %d: context name missing from :inherit\n"
+msgstr ""
+"\n"
+"%s %d: найменування контекста в╕дсутн╓ в╕д :inherit"
+
+#: rc.c:240
+#, fuzzy, c-format
+msgid "%s %d: No context selected for :inherit\n"
+msgstr ""
+"\n"
+"%s %d: Не выбраний контекст для :inherit"
+
+#: rc.c:272
+#, fuzzy, c-format
+msgid "%s %d: Couldn't open %s\n"
+msgstr ""
+"\n"
+"%s %d: Не можу в╕дкрити %s"
+
+#: rc.c:280
+#, fuzzy, c-format
+msgid "%s %d: :include missing file name\n"
+msgstr ""
+"\n"
+"%s %d: :include без ╕мен╕ файла"
+
+#: rc.c:293
+#, fuzzy, c-format
+msgid "%s %d: No context selected for :delete\n"
+msgstr ""
+"\n"
+"%s %d: Не выбраний контекст для :delete"
+
+#: rc.c:304
+#, fuzzy, c-format
+msgid "%s %d: :defmap missing name\n"
+msgstr ""
+"\n"
+"%s %d: :include без ╕мен╕ файла"
+
+#: rc.c:329
+#, fuzzy, c-format
+msgid "%s %d: Invalid context name\n"
+msgstr ""
+"\n"
+"%s %d: Неприпустиме ╕м'я контекста"
+
+#: rc.c:340
+#, fuzzy, c-format
+msgid "%s %d: No context selected for macro to key-sequence binding\n"
+msgstr ""
+"\n"
+"%s %d: Не выбраний контекст для макро розкладки клав╕атури"
+
+#: rc.c:361
+#, fuzzy, c-format
+msgid "%s %d: Bad key sequence '%s'\n"
+msgstr ""
+"\n"
+"%s %d: Неприпустима посл╕довн╕сть клав╕ш '%s'"
+
+#: rc.c:372
+#, c-format
+msgid "Finished processing %s\n"
+msgstr ""
+
+#: scrn.c:824
+msgid ""
+"Sorry, your terminal can't do absolute cursor positioning.\n"
+"It's broken\n"
+msgstr ""
+"Вибачте, ваш терм╕нал не вм╕╓ позиц╕онувати курсор.\n"
+"Викиньте його\n"
+
+#: selinux.c:35 selinux.c:83 selinux.c:138
+#, c-format
+msgid "Could not get security context for %s"
+msgstr "Не можу отримати контекст секретност╕ для %s"
+
+#: selinux.c:41
+msgid ""
+"\n"
+"Could not get security context for "
+msgstr ""
+"\n"
+"Не можу отримати контекст секретност╕ для "
+
+#: selinux.c:51
+#, c-format
+msgid "Could not set security context for %s"
+msgstr "Не можу встановити контекст секретност╕ для %s"
+
+#: selinux.c:90
+#, c-format
+msgid "Could not set default security context for %s"
+msgstr "Не можу встановити контекст секретност╕ за умовчанням для %s"
+
+#: selinux.c:111
+msgid "Could not reset default security context"
+msgstr "Не можу скинути контекст секретност╕ за умовчанням"
+
+#: selinux.c:143
+#, c-format
+msgid "%s Security Context %s"
+msgstr "%s Контекст Секрет. %s"
+
+#: syntax.c:475
+#, c-format
+msgid "%s %d: Class already defined\n"
+msgstr "%s %d: Класс вже визначений\n"
+
+#: syntax.c:488
+#, fuzzy, c-format
+msgid "%s %d: Missing class name\n"
+msgstr "%s %d: В╕дсутн╓ ╕м'я стану\n"
+
+#: syntax.c:574
+#, fuzzy, c-format
+msgid "%s %d: Missing parameter name\n"
+msgstr "%s %d: В╕дсутн╓ ╕м'я стану\n"
+
+#: syntax.c:590
+#, fuzzy, c-format
+msgid "%s %d: Missing )\n"
+msgstr "%s %d: В╕дсутня )\n"
+
+#: syntax.c:625 syntax.c:627 syntax.c:636 syntax.c:647
+#, c-format
+msgid "%s %d: Missing value for option\n"
+msgstr "%s %d: В╕дсутн╓ значення для опц╕╖\n"
+
+#: syntax.c:641 syntax.c:789
+#, fuzzy, c-format
+msgid "%s %d: Missing subroutine name\n"
+msgstr "%s %d: В╕дсутн╓ ╕м'я п╕дпрограми\n"
+
+#: syntax.c:681 syntax.c:848
+#, c-format
+msgid "%s %d: Missing state name\n"
+msgstr "%s %d: В╕дсутн╓ ╕м'я стану\n"
+
+#: syntax.c:683
+#, c-format
+msgid "%s %d: Missing string\n"
+msgstr "%s %d: В╕дсутня строка\n"
+
+#: syntax.c:695
+#, c-format
+msgid "%s %d: Unknown option\n"
+msgstr "%s %d: Нев╕дома опц╕я\n"
+
+#: syntax.c:768
+#, fuzzy, c-format
+msgid "%s %d: missing parameter for ifdef\n"
+msgstr "%s %d: В╕дсутный параметр для ifdef\n"
+
+#: syntax.c:778
+#, c-format
+msgid "%s %d: else with no matching if\n"
+msgstr "%s %d: else без парного if\n"
+
+#: syntax.c:785
+#, c-format
+msgid "%s %d: endif with no matching if\n"
+msgstr "%s %d: endif без парного if\n"
+
+#: syntax.c:804
+#, fuzzy, c-format
+msgid "%s %d: Unknown control statement\n"
+msgstr "%s %d: Нев╕домий управляючий оператор\n"
+
+#: syntax.c:807
+#, fuzzy, c-format
+msgid "%s %d: Missing control statement name\n"
+msgstr "%s %d: В╕дсутн╓ ╕м'я управляючого оператора\n"
+
+#: syntax.c:834
+#, c-format
+msgid "%s %d: Unknown class\n"
+msgstr "%s %d: Нев╕домий клас\n"
+
+#: syntax.c:842
+#, fuzzy, c-format
+msgid "%s %d: Unknown context\n"
+msgstr "%s %d: Нев╕дома опц╕я\n"
+
+#: syntax.c:846
+#, c-format
+msgid "%s %d: Missing color for state definition\n"
+msgstr "%s %d: В╕дсутн╕й кол╕р для визначення стану\n"
+
+#: syntax.c:873
+#, c-format
+msgid "%s %d: Bad string\n"
+msgstr "%s %d: Неприпустима строка\n"
+
+#: syntax.c:884
+#, c-format
+msgid "%s %d: Missing jump\n"
+msgstr "%s %d: В╕дсутн╕й перех╕д\n"
+
+#: syntax.c:886
+#, c-format
+msgid "%s %d: No state\n"
+msgstr "%s %d: Нема╓ стану\n"
+
+#: syntax.c:888
+#, c-format
+msgid "%s %d: Unknown character\n"
+msgstr "%s %d: Нев╕домий символ\n"
+
+#: syntax.c:895
+#, c-format
+msgid "%s %d: ifdef with no matching endif\n"
+msgstr "%s %d: ifdef без парного endif\n"
+
+#: tab.c:234 tab.c:294
+msgid "Couldn't read directory "
+msgstr "Не можу прочитати директор╕ю"
+
+#: termcap.c:224
+msgid "Couldn't load termcap entry.  Using ansi default\n"
+msgstr "Не можу прочитати описання termcap. Використовую ANSI за умовчанням\n"
+
+#: termcap.c:245
+#, fuzzy, c-format
+msgid "termcap: %s is out of date\n"
+msgstr "%s устар╕в\n"
+
+#: tty.c:340
+msgid "Couldn't open /dev/tty\n"
+msgstr "Не можу в╕дкрити /dev/tty\n"
+
+#: tty.c:817
+msgid "You are at the command shell.  Type 'exit' to return\n"
+msgstr "Вы в командн╕й строц╕. Введ╕ть 'exit' для повернення\n"
+
+#: tty.c:883
+msgid "You have suspended the program.  Type 'fg' to return\n"
+msgstr "Вы призупинили програму. Введ╕ть 'fg' для повернення\n"
+
+#: tty.c:1252
+#, c-format
+msgid "Couldn't execute shell '%s'\n"
+msgstr "Не можу виконати шел '%s'\n"
+
+#: tw.c:354
+msgid "Unnamed"
+msgstr "Без╤мен╕"
+
+#: tw.c:360
+msgid "(Modified)"
+msgstr "(Зм╕нено)"
+
+#: tw.c:364
+msgid "(Read only)"
+msgstr "(Т╕лькиЧитання)"
+
+#: tw.c:539
+msgid "*SHELL*"
+msgstr ""
+
+#: tw.c:543
+#, c-format
+msgid "(Macro %d recording...)"
+msgstr "(Запис макро %d...)"
+
+#: tw.c:841 tw.c:869 ufile.c:1196 ufile.c:1407
+msgid "Lose changes to this file (y,n,%{abort})? "
+msgstr "В╕дм╕нити зм╕нення файла (y,n,%{abort})? "
+
+#: ublock.c:291
+msgid "Selection cleared."
+msgstr "В╕дм╕тку знято."
+
+#: ublock.c:299 ublock.c:316
+msgid "Selection started."
+msgstr "Початок в╕дм╕тки."
+
+#: ublock.c:440 ublock.c:530 ublock.c:590 ublock.c:924 ublock.c:960
+#: ublock.c:1133 ufile.c:435 umath.c:274 undo.c:480
+msgid "No block"
+msgstr "Нема╓ блока"
+
+#: ublock.c:789 ublock.c:874
+msgid "Selected lines not properly indented"
+msgstr "В╕дм╕чен╕ строки мають нев╕рний в╕дступ"
+
+#: ublock.c:968 ublock.c:972
+#, fuzzy
+msgid "Couldn't create pipe"
+msgstr "Не можу прочитати директор╕ю"
+
+#: ublock.c:1117 ushell.c:198
+msgid "Sorry, no sub-processes in DOS (yet)"
+msgstr "Вибачте, п╕дпроцесы в DOS не п╕дтримуються (поки що)"
+
+#: ublock.c:1122
+msgid "Command to filter block through (%{abort} to abort): "
+msgstr "Команда для ф╕льтрац╕╖ блока (%{abort} для в╕дм╕ни): "
+
+#: ublock.c:1127
+msgid "Command to filter file through (%{abort} to abort): "
+msgstr "Команда для ф╕льтрац╕╖ файла (%{abort} для в╕дм╕ни): "
+
+#: uedit.c:1434
+msgid "Invalid line number"
+msgstr "Неприпустимий номер строки"
+
+#: uedit.c:1443
+msgid "Go to line (%{abort} to abort): "
+msgstr "Номер строки (%{abort} для в╕дм╕ни): "
+
+#: uedit.c:1475
+msgid "Invalid column number"
+msgstr "Неприпустимий номер колонки"
+
+#: uedit.c:1484
+msgid "Go to column (%{abort} to abort): "
+msgstr "Номер колонки (%{abort} для в╕дм╕ни): "
+
+#: uedit.c:1516
+msgid "Invalid byte number"
+msgstr "Неприпустимий номер байта"
+
+#: uedit.c:1525
+msgid "Go to byte (%{abort} to abort): "
+msgstr "Номер байта (%{abort} для в╕дм╕ни): "
+
+#: uedit.c:2021
+msgid "Unicode (ISO-10646) character in hex (%{abort} to abort): "
+msgstr "Символ Unicode (ISO-10646) в 16ричному вид╕ (%{abort} для в╕дм╕ни): "
+
+#: uedit.c:2148
+msgid "Ctrl- (or 0-9 for dec. ascii, x for hex, or o for octal)"
+msgstr "Ctrl- (або 0-9 для дес. кода, x - для 16, или o - для 8)"
+
+#: uedit.c:2222
+msgid "Quote"
+msgstr "Апостроф"
+
+#: uedit.c:2295
+#, c-format
+msgid "Mark %d set"
+msgstr "М╕тку %d встановлено"
+
+#: uedit.c:2309
+msgid "Set mark (0-9):"
+msgstr "Номер м╕тки (0-9):"
+
+#: uedit.c:2329
+#, c-format
+msgid "Mark %d not set"
+msgstr "М╕тку %d не встановлено"
+
+#: uedit.c:2342
+msgid "Goto bookmark (0-9):"
+msgstr "Перейти до закладки (0-9): "
+
+#: uedit.c:2376 usearch.c:1199 utag.c:62
+msgid "Not found"
+msgstr "Не знайдено"
+
+#: uedit.c:2392
+#, fuzzy
+msgid "Forward to char: "
+msgstr "Вперед до символа: "
+
+#: uedit.c:2403
+#, fuzzy
+msgid "Backward to char: "
+msgstr "Назад до символа: "
+
+#: uedit.c:2423
+#, fuzzy
+msgid "Message (%{abort} to abort): "
+msgstr "Пов╕домлення (%{abort} для в╕дм╕ни): "
+
+#: uedit.c:2470
+msgid "Insert (%{abort} to abort): "
+msgstr "Вставити (%{abort} для в╕дм╕ни): "
+
+#: uerror.c:415 uerror.c:448 uerror.c:464
+#, fuzzy, c-format
+msgid "%d messages found"
+msgstr "%ld пов╕домлень знайдено"
+
+#: uerror.c:417 uerror.c:450 uerror.c:466
+msgid "No messages found"
+msgstr "Жодного пов╕домлення не знайдено"
+
+#: uerror.c:428 uerror.c:499
+#, fuzzy
+msgid "No messages"
+msgstr "Нема╓ пов╕домлень"
+
+#: uerror.c:432
+#, fuzzy, c-format
+msgid "%d messages cleared"
+msgstr "%ld пов╕домлень знайдено"
+
+#: uerror.c:607 uerror.c:620
+msgid "No more errors"
+msgstr "Б╕льше нема╓ помилок"
+
+#: ufile.c:34
+msgid "(Unnamed)"
+msgstr "(Без╤мен╕)"
+
+#: ufile.c:39 ufile.c:46
+#, c-format
+msgid "File %s saved"
+msgstr "Файл %s збережений"
+
+#: ufile.c:41 ufile.c:44
+#, c-format
+msgid "File %s not saved"
+msgstr "Файл %s не збережено"
+
+#: ufile.c:48
+#, c-format
+msgid "File %s not changed so no update needed"
+msgstr "Файл %s не зм╕нено, т.я. не було модиф╕кац╕й"
+
+#: ufile.c:68
+msgid "Some files have not been saved."
+msgstr "Деяк╕ файли не збережен╕."
+
+#: ufile.c:70
+msgid "All modified files have been saved."
+msgstr "Вс╕ модиф╕кован╕ файли збережен╕."
+
+#: ufile.c:72
+msgid "No modified files, so no updates needed."
+msgstr "Жоден файл не модиф╕кувався, зм╕нювати н╕чого."
+
+#: ufile.c:110
+msgid "System (%{abort} to abort): "
+msgstr "Система (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:276
+msgid "|yes|yY"
+msgstr "|yes|yYнН"
+
+#: ufile.c:277
+msgid "|no|nN"
+msgstr "|no|nNтТ"
+
+#: ufile.c:308
+msgid "Couldn't make backup file... file not saved"
+msgstr "Не можу створити резервний файл... файл не збережений"
+
+#: ufile.c:320
+msgid "Could not make backup file.  Save anyway (y,n,%{abort})? "
+msgstr "Не могу створити резервный файл. Збер╕гати все р╕вно (y,n,%{abort})? "
+
+#: ufile.c:409 ufile.c:425
+#, c-format
+msgid "Block written to file %s"
+msgstr "Блок записаний в файл %s"
+
+#: ufile.c:494
+msgid "File exists. Overwrite (y,n,%{abort})? "
+msgstr "Файл ╕сну╓. Перезаписувати (y,n,%{abort})? "
+
+#: ufile.c:501
+msgid "File on disk is newer. Overwrite (y,n,%{abort})? "
+msgstr "Файл на диску - нов╕щий. Перезаписувати (y,n,%{abort})? "
+
+#: ufile.c:518 ufile.c:1080 ufile.c:1282
+#, fuzzy
+msgid "Name of file to save (%{help} for help): "
+msgstr "╤м'я файла для збереження (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:550
+#, fuzzy
+msgid "Name of file to write (%{help} for help): "
+msgstr "╤м'я файла для запису (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:685
+msgid "Load original file from disk (y,n,%{abort})? "
+msgstr "Загрузити ориг╕нальний файл з диска (y,n,%{abort})? "
+
+#: ufile.c:724
+#, c-format
+msgid "Directory prefix set to %s"
+msgstr ""
+
+#: ufile.c:733
+msgid "Can't replace modified file"
+msgstr "Не можу зам╕нити модиф╕кований файл"
+
+#: ufile.c:742
+#, fuzzy
+msgid "Name of file to edit (%{help} for help): "
+msgstr "╤м'я файла для редактування (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:753
+#, fuzzy
+msgid "Set current directory (%{abort} to abort): "
+msgstr "Чим зам╕няти (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:768 ufile.c:1262
+msgid "Name of buffer to edit (%{abort} to abort): "
+msgstr "╤м'я буфера для редактування (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:917 ufile.c:926
+msgid "Name of scratch buffer to edit (%{abort} to abort): "
+msgstr "╤м'я буфера чернетки для редактування (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:1044
+#, fuzzy
+msgid "Name of file to insert (%{help} for help): "
+msgstr "╤м'я файла для вставки (%{abort} для в╕дм╕ни): "
+
+#: ufile.c:1116
+msgid "Save changes to this file (y,n,%{abort})? "
+msgstr "Зберегти зм╕ни цього файла (y,n,%{abort})? "
+
+#: ufile.c:1317
+msgid "File %s has been modified.  Save it (y,n,%{abort})? "
+msgstr "Файл %s зм╕нено. Збер╕гти його (y,n,%{abort})? "
+
+#: ufile.c:1394
+#, fuzzy
+msgid "File reloaded"
+msgstr "Файл %s збережений"
+
+#: ufile.c:1403
+msgid "Can only reload plain files"
+msgstr ""
+
+#: ufile.c:1437
+#, c-format
+msgid "%d files reloaded"
+msgstr ""
+
+#: uisrch.c:262
+msgid "I-find: "
+msgstr ""
+
+#: umath.c:22
+msgid "Float point exception"
+msgstr "Переривання за плаваючою точкою"
+
+#: umath.c:181 umath.c:291 umath.c:310
+msgid "Missing )"
+msgstr "В╕дсутня )"
+
+#: umath.c:192
+msgid "Syntax error in macro"
+msgstr "Синтаксична помилка в макро"
+
+#: umath.c:197
+msgid "Missing ("
+msgstr "В╕дсутня ("
+
+#: umath.c:230 umath.c:236 umath.c:243 umath.c:251 umath.c:260 umath.c:710
+#: umath.c:748 umath.c:786 umath.c:824 umath.c:862 umath.c:900 umath.c:938
+#: umath.c:976
+msgid "No numbers in block"
+msgstr "В блоц╕ нема╓ чисел"
+
+#: umath.c:316
+msgid "Called object is not a function"
+msgstr "Виклика╓мий об'╓кт - не функц╕я"
+
+#: umath.c:330
+msgid "Factorial can only take positive integers"
+msgstr "Фактор╕ал може обчислюватись т╕льки для позитивних ц╕лих"
+
+#: umath.c:428
+msgid "Left side of = is not an l-value"
+msgstr "У л╕в╕й частин╕ р╕вняння - не l-значення"
+
+#: umath.c:442
+msgid "Recursion depth exceeded"
+msgstr "Перевищена глибина рекурс╕╖"
+
+#: umath.c:463
+msgid "Extra junk after end of expr"
+msgstr "Зайв╕ символи п╕сля к╕нця оператора"
+
+#: undo.c:463
+msgid "Modified flag cleared"
+msgstr "Флаг модиф╕кац╕╖ скинутий"
+
+#: usearch.c:315 usearch.c:379
+msgid "Wrapped"
+msgstr "Спочатку"
+
+#: usearch.c:684
+msgid "|all files|aA"
+msgstr "|вс╕ файли|aAфФ"
+
+#: usearch.c:685
+#, fuzzy
+msgid "|error list files|eE"
+msgstr "|файли списк╕в помилок|eEуУ"
+
+#: usearch.c:686
+msgid "|search and replace|rR"
+msgstr "|пошук та зам╕щення|rRкК"
+
+#: usearch.c:687
+msgid "|backwards|bB"
+msgstr "|назад|bBиИ"
+
+#: usearch.c:688
+msgid "|ignore case|iI"
+msgstr "|игнорувати рег╕стр|iIшШ"
+
+#: usearch.c:689
+msgid "|restrict to highlighted block|kK"
+msgstr "|всереден╕ в╕дм╕ченого блока|kKлЛ"
+
+#: usearch.c:690
+msgid "|don't ignore case|sS"
+msgstr "|не игнорувати рег╕стр|sSыЫ╕╤"
+
+#: usearch.c:691
+msgid "|wrap|wW"
+msgstr "|цикл╕чний|wWцЦ"
+
+#: usearch.c:692
+#, fuzzy
+msgid "|don't wrap|nN"
+msgstr "|не цикл╕чний|nNтТ"
+
+#: usearch.c:693
+msgid "|regex|xX"
+msgstr ""
+
+#: usearch.c:694
+msgid "|no regex|yY"
+msgstr ""
+
+#: usearch.c:695
+msgid "|regex_debug|v"
+msgstr ""
+
+#: usearch.c:747
+#, fuzzy
+msgid "Replace with (%{help} for help): "
+msgstr "Чим зам╕няти (%{abort} для в╕дм╕ни): "
+
+#: usearch.c:764
+#, fuzzy
+msgid "case (S)ensitive (R)eplace (B)ackwards Bloc(K) (%{help} for help): "
+msgstr ""
+"(S)врах.рег╕стра (R)зам╕на (B)назад бло(K) (A)вс╕ файли NNN (%{abort} - "
+"в╕дм╕на): "
+
+#: usearch.c:766
+#, fuzzy
+msgid "(I)gnore (R)eplace (B)ackwards Bloc(K) (%{help} for help): "
+msgstr ""
+"(I)игн.рег. (R)зам╕на (B)назад бло(K) (A)вс╕ файли NNN (%{abort} - в╕дм╕на): "
+
+#: usearch.c:858
+#, fuzzy
+msgid "Find (%{help} for help) [%s]: "
+msgstr "Що шукати (%{abort} для в╕дм╕ни) [%s]: "
+
+#: usearch.c:860
+msgid "Find (%{help} for help): "
+msgstr ""
+
+#: usearch.c:997
+msgid "|rest of file|rR"
+msgstr "|до к╕нця файла|rR"
+
+#: usearch.c:998
+msgid "|backup|bB"
+msgstr "|резерв|bBиИ"
+
+#: usearch.c:1033
+msgid "Replace (Y)es (N)o (R)est (B)ackup (%{abort} to abort)?"
+msgstr "Зам╕няти (Y)так (N)н╕ (R)все (B)повернути (%{abort} для в╕дм╕ни): "
+
+#: usearch.c:1108
+msgid "Character set of buffer does not match character set of search string"
+msgstr ""
+
+#: usearch.c:1197
+msgid "Not found (search restricted to marked block)"
+msgstr "Не знайдено (пошук обмежений блоком)"
+
+#: usearch.c:1204
+msgid "Infinite loop aborted: your search repeatedly matched same place"
+msgstr "Безк╕нечний цикл перерваний: ваш пошук зациклився на одному м╕сц╕"
+
+#: ushell.c:211
+msgid "Program already running in this window"
+msgstr "Програма вуже викону╓ться в цьому в╕кн╕"
+
+#: ushell.c:235
+msgid "No ptys available"
+msgstr "Нема╓ в╕льних псевдотерминал╕в"
+
+#: ushell.c:241
+msgid "Write failed when writing first command to shell"
+msgstr ""
+
+#: ushell.c:265
+msgid "\"SHELL\" environment variable not defined or exported"
+msgstr "Зм╕нну середовища \"SHELL\" не визначено або не экспортировано"
+
+#: ushell.c:284
+msgid ":vtshell keymap is missing"
+msgstr ""
+
+#: ushell.c:297
+msgid ":shell keymap is missing"
+msgstr ""
+
+#: ushell.c:328
+msgid "Program to run: "
+msgstr "Виконати програму: "
+
+#: ushell.c:374
+msgid "Build command: "
+msgstr "Команда побудови: "
+
+#: ushell.c:383
+msgid "Enter build command (for example, 'make'): "
+msgstr "Вкаж╕ть команду побудови (наприклад, 'make'): "
+
+#: ushell.c:400
+msgid "Grep command: "
+msgstr "Команда пошука: "
+
+#: ushell.c:409
+msgid "Enter grep command (for example, 'grep -n foo *.c'): "
+msgstr "Вкаж╕ть команду пошука (наприклад, 'grep -n foo *.c'): "
+
+#: ushell.c:442
+msgid "Kill program (y,n,%{abort})?"
+msgstr "Перервати програму (y,n,%{abort})?"
+
+#: utag.c:77
+msgid "Last match"
+msgstr ""
+
+#: utag.c:79
+msgid "There are more matches"
+msgstr ""
+
+#: utag.c:199
+msgid "Couldn't open tags file"
+msgstr "Не можу в╕дкрити файл тег╕в"
+
+#: utag.c:513
+msgid "Tag search: "
+msgstr "Шукати тег: "
+
+#: vfile.c:182
+msgid "vfile: out of memory\n"
+msgstr "vfile: нема╓ пам'ят╕\n"
+
+#: vfile.c:243
+#, c-format
+msgid "Couldn't open file '%s'\n"
+msgstr "Не можу в╕дкрити файл '%s'\n"
+
+#: w.c:866
+#, fuzzy
+msgid "There are no messages"
+msgstr "В╕дсутн╕й буфер пов╕домлення"

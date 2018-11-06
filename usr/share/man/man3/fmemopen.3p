@@ -1,0 +1,280 @@
+'\" et
+.TH FMEMOPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fmemopen
+\(em open a memory buffer stream
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+FILE *fmemopen(void *restrict \fIbuf\fP, size_t \fIsize\fP,
+    const char *restrict \fImode\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIfmemopen\fR()
+function shall associate the buffer given by the
+.IR buf
+and
+.IR size
+arguments with a stream. The
+.IR buf
+argument shall be either a null pointer or point to a buffer that is at
+least
+.IR size
+bytes long.
+.P
+The
+.IR mode
+argument points to a string. If the string is one of the following,
+the stream shall be opened in the indicated mode. Otherwise, the behavior
+is undefined.
+.IP "\fIr\fP" 8
+Open the stream for reading.
+.IP "\fIw\fP" 8
+Open the stream for writing.
+.IP "\fIa\fP" 8
+Append; open the stream for writing at the first null byte.
+.IP "\fIr\fP+" 8
+Open the stream for update (reading and writing).
+.IP "\fIw\fP+" 8
+Open the stream for update (reading and writing). Truncate the
+buffer contents.
+.IP "\fIa\fP+" 8
+Append; open the stream for update (reading and writing);
+the initial position is at the first null byte.
+.P
+Implementations shall accept all mode strings allowed by
+\fIfopen\fR(),
+but the use of the character
+.BR 'b' 
+shall produce implementation-defined results, where the resulting
+.BR "FILE *"
+need not behave the same as if
+.BR 'b' 
+were omitted.
+.P
+If a null pointer is specified as the
+.IR buf
+argument,
+\fIfmemopen\fR()
+shall allocate
+.IR size
+bytes of memory as if by a call to
+\fImalloc\fR().
+This buffer shall be automatically freed when the stream is closed.
+Because this feature is only useful when the stream is opened for
+updating (because there is no way to get a pointer to the buffer) the
+\fIfmemopen\fR()
+call may fail if the
+.IR mode
+argument does not include a
+.BR '+' .
+.P
+The stream shall maintain a current position in the buffer. This position
+shall be initially set to either the beginning of the buffer (for
+.IR r
+and
+.IR w
+modes) or to the first null byte in the buffer (for
+.IR a
+modes). If no null byte is found in append mode, the initial position
+shall be set to one byte after the end of the buffer.
+.P
+If
+.IR buf
+is a null pointer, the initial position shall always be set to the
+beginning of the buffer.
+.P
+The stream shall also maintain the size of the current buffer contents;
+use of
+\fIfseek\fR()
+or
+\fIfseeko\fR()
+on the stream with SEEK_END shall seek relative to this size. For modes
+.IR r
+and
+.IR r+
+the size shall be set to the value given by the
+.IR size
+argument. For modes
+.IR w
+and
+.IR w+
+the initial size shall be zero and for modes
+.IR a
+and
+.IR a+
+the initial size shall be either the position of the first null byte in
+the buffer or the value of the
+.IR size
+argument if no null byte is found.
+.P
+A read operation on the stream shall not advance the current buffer
+position beyond the current buffer size. Reaching the buffer size in a
+read operation shall count as ``end-of-file''. Null bytes in the buffer
+shall have no special meaning for reads. The read operation shall start
+at the current buffer position of the stream.
+.P
+A write operation shall start either at the current position of the stream
+(if
+.IR mode
+has not specified
+.BR 'a' 
+as the first character) or at the current size of the stream (if
+.IR mode
+had
+.BR 'a' 
+as the first character). If the current position at the end of the write
+is larger than the current buffer size, the current buffer size shall
+be set to the current position. A write operation on the stream shall
+not advance the current buffer size beyond the size given in the
+.IR size
+argument.
+.P
+When a stream open for writing is flushed or closed, a null byte shall be
+written at the current position or at the end of the buffer, depending
+on the size of the contents. If a stream open for update is flushed or
+closed and the last write has advanced the current buffer size, a null
+byte shall be written at the end of the buffer if it fits.
+.P
+An attempt to seek a memory buffer stream to a negative position or to
+a position larger than the buffer size given in the
+.IR size
+argument shall fail.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIfmemopen\fR()
+shall return a pointer to the object controlling the stream. Otherwise,
+a null pointer shall be returned, and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fIfmemopen\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The
+.IR size
+argument specifies a buffer size of zero.
+.P
+The
+\fIfmemopen\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR mode
+argument is not valid.
+.TP
+.BR EINVAL
+The
+.IR buf
+argument is a null pointer and the
+.IR mode
+argument does not include a
+.BR '+' 
+character.
+.TP
+.BR ENOMEM
+The
+.IR buf
+argument is a null pointer and the allocation of a buffer of length
+.IR size
+has failed.
+.TP
+.BR EMFILE
+{FOPEN_MAX}
+streams are currently open in the calling process.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <string.h>
+.P
+static char buffer[] = "foobar";
+.P
+int
+main (void)
+{
+    int ch;
+    FILE *stream;
+.P
+    stream = fmemopen(buffer, strlen (buffer), "r");
+    if (stream == NULL)
+        /* handle error */;
+.P
+    while ((ch = fgetc(stream)) != EOF)
+        printf("Got %c\en", ch);
+.P
+    fclose(stream);
+    return (0);
+}
+.fi \fR
+.P
+.RE
+.P
+This program produces the following output:
+.sp
+.RS 4
+.nf
+\fB
+Got f
+Got o
+Got o
+Got b
+Got a
+Got r
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+This interface has been introduced to eliminate many of the errors
+encountered in the construction of strings, notably overflowing of
+strings. This interface prevents overflow.
+.SH "FUTURE DIRECTIONS"
+A future revision of this standard may mandate specific behavior when the
+.IR mode
+argument includes
+.BR 'b' .
+.SH "SEE ALSO"
+.IR "\fIfdopen\fR\^(\|)",
+.IR "\fIfopen\fR\^(\|)",
+.IR "\fIfreopen\fR\^(\|)",
+.IR "\fIfseek\fR\^(\|)",
+.IR "\fImalloc\fR\^(\|)",
+.IR "\fIopen_memstream\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

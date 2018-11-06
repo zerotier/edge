@@ -1,0 +1,892 @@
+'\" et
+.TH WAIT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+wait,
+waitpid
+\(em wait for a child process to stop or terminate
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/wait.h>
+.P
+pid_t wait(int *\fIstat_loc\fP);
+pid_t waitpid(pid_t \fIpid\fP, int *\fIstat_loc\fP, int \fIoptions\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIwait\fR()
+and
+\fIwaitpid\fR()
+functions shall obtain status information pertaining to one of the
+caller's child processes. Various options permit status information to
+be obtained for child processes that have terminated or stopped. If
+status information is available for two or more child processes, the
+order in which their status is reported is unspecified.
+.P
+The
+\fIwait\fR()
+function shall suspend execution of the calling thread until status
+information for one of the terminated child processes of the calling
+process is available, or until delivery of a signal whose action is
+either to execute a signal-catching function or to terminate the
+process. If more than one thread is suspended in
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+awaiting termination of the same process, exactly one thread shall
+return the process status at the time of the target process
+termination. If status information is available prior to the call to
+\fIwait\fR(),
+return shall be immediate.
+.P
+The
+\fIwaitpid\fR()
+function shall be equivalent to
+\fIwait\fR()
+if the
+.IR pid
+argument is (\fBpid_t\fP)\(mi1 and the
+.IR options
+argument is 0. Otherwise, its behavior shall be modified by the values
+of the
+.IR pid
+and
+.IR options
+arguments.
+.P
+The
+.IR pid
+argument specifies a set of child processes for which
+.IR status
+is requested. The
+\fIwaitpid\fR()
+function shall only return the status of a child process from this set:
+.IP " *" 4
+If
+.IR pid
+is equal to (\fBpid_t\fP)\(mi1,
+.IR status
+is requested for any child process. In this respect,
+\fIwaitpid\fR()
+is then equivalent to
+\fIwait\fR().
+.IP " *" 4
+If
+.IR pid
+is greater than 0, it specifies the process ID of a single child
+process for which
+.IR status
+is requested.
+.IP " *" 4
+If
+.IR pid
+is 0,
+.IR status
+is requested for any child process whose process group ID is equal to
+that of the calling process.
+.IP " *" 4
+If
+.IR pid
+is less than (\fBpid_t\fP)\(mi1,
+.IR status
+is requested for any child process whose process group ID is equal to
+the absolute value of
+.IR pid .
+.P
+The
+.IR options
+argument is constructed from the bitwise-inclusive OR of zero or more
+of the following flags, defined in the
+.IR <sys/wait.h> 
+header:
+.IP WCONTINUED 12
+The
+\fIwaitpid\fR()
+function shall report the status of any continued child process
+specified by
+.IR pid
+whose status has not been reported since it continued from a job
+control stop.
+.IP WNOHANG 12
+The
+\fIwaitpid\fR()
+function shall not suspend execution of the calling thread if
+.IR status
+is not immediately available for one of the child processes specified
+by
+.IR pid .
+.IP WUNTRACED 12
+The status of any child processes specified by
+.IR pid
+that are stopped, and whose status has not yet been reported since they
+stopped, shall also be reported to the requesting process.
+.P
+If the calling process has SA_NOCLDWAIT set or has SIGCHLD set to
+SIG_IGN,
+and the process has no unwaited-for children that were transformed into
+zombie processes, the calling thread shall block until all of the
+children of the process containing the calling thread terminate, and
+\fIwait\fR()
+and
+\fIwaitpid\fR()
+shall fail and set
+.IR errno
+to
+.BR [ECHILD] .
+.P
+If
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+return because the status of a child process is available, these
+functions shall return a value equal to the process ID of the child
+process. In this case, if the value of the argument
+.IR stat_loc
+is not a null pointer, information shall be stored in the location
+pointed to by
+.IR stat_loc .
+The value stored at the location pointed to by
+.IR stat_loc
+shall be 0 if and only if the status returned is from a terminated
+child process that terminated by one of the following means:
+.IP " 1." 4
+The process returned 0 from
+\fImain\fR().
+.IP " 2." 4
+The process called
+\fI_exit\fR()
+or
+\fIexit\fR()
+with a
+.IR status
+argument of 0.
+.IP " 3." 4
+The process was terminated because the last thread in the process
+terminated.
+.P
+Regardless of its value, this information may be
+interpreted using the following macros, which are defined in
+.IR <sys/wait.h> 
+and evaluate to integral expressions; the
+.IR stat_val
+argument is the integer value pointed to by
+.IR stat_loc .
+.IP "WIFEXITED(\fIstat_val\fP)" 6
+.br
+Evaluates to a non-zero value if
+.IR status
+was returned for a child process that terminated normally.
+.IP "WEXITSTATUS(\fIstat_val\fP)" 6
+.br
+If the value of WIFEXITED(\fIstat_val\fP) is non-zero, this macro
+evaluates to the low-order 8 bits of the
+.IR status
+argument that the child process passed to
+\fI_exit\fR()
+or
+\fIexit\fR(),
+or the value the child process returned from
+\fImain\fR().
+.IP "WIFSIGNALED(\fIstat_val\fP)" 6
+.br
+Evaluates to a non-zero value if
+.IR status
+was returned for a child process that terminated due to the receipt of
+a signal that was not caught (see
+.IR <signal.h> ).
+.IP "WTERMSIG(\fIstat_val\fP)" 6
+.br
+If the value of WIFSIGNALED(\fIstat_val\fP) is non-zero, this macro
+evaluates to the number of the signal that caused the termination of
+the child process.
+.IP "WIFSTOPPED(\fIstat_val\fP)" 6
+.br
+Evaluates to a non-zero value if
+.IR status
+was returned for a child process that is currently stopped.
+.IP "WSTOPSIG(\fIstat_val\fP)" 6
+.br
+If the value of WIFSTOPPED(\fIstat_val\fP) is non-zero, this macro
+evaluates to the number of the signal that caused the child process to
+stop.
+.IP "WIFCONTINUED(\fIstat_val\fP)" 6
+.br
+Evaluates to a non-zero value if
+.IR status
+was returned for a child process that has continued from a job control
+stop.
+.P
+It is unspecified whether the
+.IR status
+value returned by calls to
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+for processes created by
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+can indicate a WIFSTOPPED(\fIstat_val\fP) before subsequent calls to
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+indicate WIFEXITED(\fIstat_val\fP) as the result of an error detected
+before the new process image starts executing.
+.P
+It is unspecified whether the
+.IR status
+value returned by calls to
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+for processes created by
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+can indicate a WIFSIGNALED(\fIstat_val\fP) if a signal is sent to the
+parent's process group after
+\fIposix_spawn\fR()
+or
+\fIposix_spawnp\fR()
+is called.
+.P
+If the information pointed to by
+.IR stat_loc
+was stored by a call to
+\fIwaitpid\fR()
+that specified the WUNTRACED flag
+and did not specify the WCONTINUED flag,
+exactly one of the macros WIFEXITED(*\fIstat_loc\fR),
+WIFSIGNALED(*\fIstat_loc\fR), and WIFSTOPPED(*\fIstat_loc\fR)
+shall evaluate to a non-zero value.
+.P
+If the information pointed to by
+.IR stat_loc
+was stored by a call to
+\fIwaitpid\fR()
+that specified the WUNTRACED
+and WCONTINUED
+flags, exactly one of the macros WIFEXITED(*\fIstat_loc\fR),
+WIFSIGNALED(*\fIstat_loc\fR), WIFSTOPPED(*\fIstat_loc\fR),
+and WIFCONTINUED(*\fIstat_loc\fR)
+shall evaluate to a non-zero value.
+.P
+If the information pointed to by
+.IR stat_loc
+was stored by a call to
+\fIwaitpid\fR()
+that did not specify the WUNTRACED
+or WCONTINUED
+flags, or by a call to the
+\fIwait\fR()
+function, exactly one of the macros WIFEXITED(*\fIstat_loc\fR) and
+WIFSIGNALED(*\fIstat_loc\fR) shall evaluate to a non-zero value.
+.P
+If the information pointed to by
+.IR stat_loc
+was stored by a call to
+\fIwaitpid\fR()
+that did not specify the WUNTRACED flag
+and specified the WCONTINUED flag,
+or by a call to the
+\fIwait\fR()
+function, exactly one of the macros WIFEXITED(*\fIstat_loc\fR),
+WIFSIGNALED(*\fIstat_loc\fR),
+and WIFCONTINUED(*\fIstat_loc\fR)
+shall evaluate to a non-zero value.
+.P
+If _POSIX_REALTIME_SIGNALS is defined, and the implementation queues
+the SIGCHLD signal, then if
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+returns because the status of a child process is available, any pending
+SIGCHLD signal associated with the process ID of the child process
+shall be discarded. Any other pending SIGCHLD signals shall remain
+pending.
+.P
+Otherwise, if SIGCHLD is blocked, if
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+return because the status of a child process is available, any pending
+SIGCHLD signal shall be cleared unless the status of another child
+process is available.
+.P
+For all other conditions, it is unspecified whether child
+.IR status
+will be available when a SIGCHLD signal is delivered.
+.P
+There may be additional implementation-defined circumstances under
+which
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+report
+.IR status .
+This shall not occur unless the calling process or one of its child
+processes explicitly makes use of a non-standard extension. In these
+cases the interpretation of the reported
+.IR status
+is implementation-defined.
+.P
+If a parent process terminates without waiting for all of its child
+processes to terminate, the remaining child processes shall be assigned
+a new parent process ID corresponding to an implementation-defined
+system process.
+.SH "RETURN VALUE"
+If
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+returns because the status of a child process is available, these
+functions shall return a value equal to the process ID of the child
+process for which
+.IR status
+is reported. If
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+returns due to the delivery of a signal to the calling process, \(mi1
+shall be returned and
+.IR errno
+set to
+.BR [EINTR] .
+If
+\fIwaitpid\fR()
+was invoked with WNOHANG set in
+.IR options ,
+it has at least one child process specified by
+.IR pid
+for which
+.IR status
+is not available, and
+.IR status
+is not available for any process specified by
+.IR pid ,
+0 is returned. Otherwise, \(mi1 shall be returned, and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIwait\fR()
+function shall fail if:
+.TP
+.BR ECHILD
+The calling process has no existing unwaited-for child processes.
+.TP
+.BR EINTR
+The function was interrupted by a signal. The value of the location
+pointed to by
+.IR stat_loc
+is undefined.
+.P
+The
+\fIwaitpid\fR()
+function shall fail if:
+.TP
+.BR ECHILD
+The process specified by
+.IR pid
+does not exist or is not a child of the calling process, or the process
+group specified by
+.IR pid
+does not exist or does not have any member process that is a child of
+the calling process.
+.TP
+.BR EINTR
+The function was interrupted by a signal. The value of the location
+pointed to by
+.IR stat_loc
+is undefined.
+.TP
+.BR EINVAL
+The
+.IR options
+argument is not valid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Waiting for a Child Process and then Checking its Status"
+.P
+The following example demonstrates the use of
+\fIwaitpid\fR(),
+\fIfork\fR(),
+and the macros used to interpret the status value returned by
+\fIwaitpid\fR()
+(and
+\fIwait\fR()).
+The code segment creates a child process which does some unspecified
+work. Meanwhile the parent loops performing calls to
+\fIwaitpid\fR()
+to monitor the status of the child. The loop terminates when child
+termination is detected.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+\&...
+.P
+pid_t child_pid, wpid;
+int status;
+.P
+child_pid = fork();
+if (child_pid == \(mi1) {      /* fork() failed */
+    perror("fork");
+    exit(EXIT_FAILURE);
+}
+.P
+if (child_pid == 0) {       /* This is the child */
+    /* Child does some work and then terminates */
+    ...
+.P
+} else {                    /* This is the parent */
+    do {
+        wpid = waitpid(child_pid, &status, WUNTRACED
+#ifdef WCONTINUED       /* Not all implementations support this */
+        | WCONTINUED
+#endif
+        );
+        if (wpid == \(mi1) {
+            perror("waitpid");
+            exit(EXIT_FAILURE);
+        }
+.P
+        if (WIFEXITED(status)) {
+            printf("child exited, status=%d\en", WEXITSTATUS(status));
+.P
+        } else if (WIFSIGNALED(status)) {
+            printf("child killed (signal %d)\en", WTERMSIG(status));
+.P
+        } else if (WIFSTOPPED(status)) {
+            printf("child stopped (signal %d)\en", WSTOPSIG(status));
+.P
+#ifdef WIFCONTINUED     /* Not all implementations support this */
+        } else if (WIFCONTINUED(status)) {
+            printf("child continued\en");
+#endif
+        } else {    /* Non-standard case -- may never happen */
+            printf("Unexpected status (0x%x)\en", status);
+        }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+}
+.fi \fR
+.P
+.RE
+.SS "Waiting for a Child Process in a Signal Handler for SIGCHLD"
+.P
+The following example demonstrates how to use
+\fIwaitpid\fR()
+in a signal handler for SIGCHLD without passing \(mi1 as the
+.IR pid
+argument. (See the APPLICATION USAGE section below for the reasons
+why passing a
+.IR pid
+of \(mi1 is not recommended.) The method used here relies on the
+standard behavior of
+\fIwaitpid\fR()
+when SIGCHLD is blocked. On historical non-conforming systems, the
+status of some child processes might not be reported.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+.P
+#define CHILDREN 10
+.P
+static void
+handle_sigchld(int signum, siginfo_t *sinfo, void *unused)
+{
+    int sav_errno = errno;
+    int status;
+.P
+    /*
+     * Obtain status information for the child which
+     * caused the SIGCHLD signal and write its exit code
+     * to stdout.
+    */
+    if (sinfo->si_code != CLD_EXITED)
+    {
+        static char msg[] = "wrong si_code\en";
+        write(2, msg, sizeof msg \(mi 1);
+    }
+    else if (waitpid(sinfo->si_pid, &status, 0) =\|= \(mi1)
+    {
+        static char msg[] = "waitpid() failed\en";
+        write(2, msg, sizeof msg \(mi 1);
+    }
+    else if (!WIFEXITED(status))
+    {
+        static char msg[] = "WIFEXITED was false\en";
+        write(2, msg, sizeof msg \(mi 1);
+    }
+    else
+    {
+        int code = WEXITSTATUS(status);
+        char buf[2];
+        buf[0] = '0' + code;
+        buf[1] = '\en';
+        write(1, buf, 2);
+    }
+    errno = sav_errno;
+}
+.P
+int
+main(void)
+{
+    int i;
+    pid_t pid;
+    struct sigaction sa;
+.P
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = handle_sigchld;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGCHLD, &sa, NULL) =\|= \(mi1)
+    {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
+.P
+    for (i = 0; i < CHILDREN; i++)
+    {
+        switch (pid = fork())
+        {
+        case \(mi1:
+            perror("fork");
+            exit(EXIT_FAILURE);
+        case 0:
+            sleep(2);
+            _exit(i);
+        }
+    }
+.P
+    /* Wait for all the SIGCHLD signals, then terminate on SIGALRM */
+    alarm(3);
+    for (;;)
+        pause();
+.P
+    return 0; /* NOTREACHED */
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Calls to
+\fIwait\fR()
+will collect information about any child process. This may result in
+interactions with other interfaces that may be waiting for their own
+children (such as by use of
+\fIsystem\fR()).
+For this and other reasons it is recommended that portable applications
+not use
+\fIwait\fR(),
+but instead use
+\fIwaitpid\fR().
+For these same reasons, the use of
+\fIwaitpid\fR()
+with a
+.IR pid
+argument of \(mi1, and the use of
+\fIwaitid\fR()
+with the
+.IR idtype
+argument set to P_ALL, are also not recommended for portable applications.
+.SH RATIONALE
+A call to the
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+function only returns
+.IR status
+on an immediate child process of the calling process; that is, a child
+that was produced by a single
+\fIfork\fR()
+call (perhaps followed by an
+.IR exec
+or other function calls) from the parent. If a child produces
+grandchildren by further use of
+\fIfork\fR(),
+none of those grandchildren nor any of their descendants affect the
+behavior of a
+\fIwait\fR()
+from the original parent process. Nothing in this volume of POSIX.1\(hy2008 prevents an
+implementation from providing extensions that permit a process to get
+.IR status
+from a grandchild or any other process, but a process that does not use
+such extensions must be guaranteed to see
+.IR status
+from only its direct children.
+.P
+The
+\fIwaitpid\fR()
+function is provided for three reasons:
+.IP " 1." 4
+To support job control
+.IP " 2." 4
+To permit a non-blocking version of the
+\fIwait\fR()
+function
+.IP " 3." 4
+To permit a library routine, such as
+\fIsystem\fR()
+or
+\fIpclose\fR(),
+to wait for its children without interfering with other terminated
+children for which the process has not waited
+.P
+The first two of these facilities are based on the
+.IR wait3 (\|)
+function provided by 4.3 BSD. The function uses the
+.IR options
+argument, which is equivalent to an argument to
+.IR wait3 (\|).
+The WUNTRACED
+flag is used only in conjunction with job control on systems supporting
+job control. Its name comes from 4.3 BSD
+and refers to the fact that there are two types of stopped processes in
+that implementation: processes being traced via the
+\fIptrace\fR()
+debugging facility and (untraced) processes stopped by job control
+signals. Since
+\fIptrace\fR()
+is not part of this volume of POSIX.1\(hy2008, only the second type is relevant. The name
+WUNTRACED was retained because its usage is the same, even though the
+name is not intuitively meaningful in this context.
+.P
+The third reason for the
+\fIwaitpid\fR()
+function is to permit independent sections of a process to spawn and
+wait for children without interfering with each other. For example,
+the following problem occurs in developing a portable shell, or command
+interpreter:
+.sp
+.RS 4
+.nf
+\fB
+stream = popen("/bin/true");
+(void) system("sleep 100");
+(void) pclose(stream);
+.fi \fR
+.P
+.RE
+.P
+On all historical implementations, the final
+\fIpclose\fR()
+fails to reap the
+\fIwait\fR()
+.IR status
+of the
+\fIpopen\fR().
+.P
+The status values are retrieved by macros, rather than given as
+specific bit encodings as they are in most historical implementations
+(and thus expected by existing programs). This was necessary to
+eliminate a limitation on the number of signals an implementation can
+support that was inherent in the traditional encodings. This volume of POSIX.1\(hy2008
+does require that a
+.IR status
+value of zero corresponds to a process calling
+.IR _exit (0),
+as this is the most common encoding expected by existing programs.
+Some of the macro names were adopted from 4.3 BSD.
+.P
+These macros syntactically operate on an arbitrary integer value. The
+behavior is undefined unless that value is one stored by a successful
+call to
+\fIwait\fR()
+or
+\fIwaitpid\fR()
+in the location pointed to by the
+.IR stat_loc
+argument. An early proposal attempted to make this clearer by specifying
+each argument as *\fIstat_loc\fP rather than
+.IR stat_val .
+However, that did not follow the conventions of other specifications in
+\&this volume of POSIX.1\(hy2008 or traditional usage. It also could have implied that the
+argument to the macro must literally be *\fIstat_loc\fP; in fact, that
+value can be stored or passed as an argument to other functions before
+being interpreted by these macros.
+.P
+The extension that affects
+\fIwait\fR()
+and
+\fIwaitpid\fR()
+and is common in historical implementations is the
+\fIptrace\fR()
+function. It is called by a child process and causes that child to
+stop and return a
+.IR status
+that appears identical to the
+.IR status
+indicated by WIFSTOPPED.
+The
+.IR status
+of
+\fIptrace\fR()
+children is traditionally returned regardless of the WUNTRACED
+flag (or by the
+\fIwait\fR()
+function). Most applications do not need to concern themselves with
+such extensions because they have control over what extensions they or
+their children use. However, applications, such as command
+interpreters, that invoke arbitrary processes may see this behavior
+when those arbitrary processes misuse such extensions.
+.P
+Implementations that support
+.BR core
+file creation or other implementation-defined actions on termination
+of some processes traditionally provide a bit in the
+.IR status
+returned by
+\fIwait\fR()
+to indicate that such actions have occurred.
+.P
+Allowing the
+\fIwait\fR()
+family of functions to discard a pending SIGCHLD signal that is
+associated with a successfully waited-for child process puts them into
+the
+\fIsigwait\fR()
+and
+\fIsigwaitinfo\fR()
+category with respect to SIGCHLD.
+.P
+This definition allows implementations to treat a pending SIGCHLD
+signal as accepted by the process in
+\fIwait\fR(),
+with the same meaning of ``accepted'' as when that word is applied to
+the
+\fIsigwait\fR()
+family of functions.
+.P
+Allowing the
+\fIwait\fR()
+family of functions to behave this way permits an implementation to be
+able to deal precisely with SIGCHLD signals.
+.P
+In particular, an implementation that does accept (discard) the SIGCHLD
+signal can make the following guarantees regardless of the queuing
+depth of signals in general (the list of waitable children can hold the
+SIGCHLD queue):
+.IP " 1." 4
+If a SIGCHLD signal handler is established via
+\fIsigaction\fR()
+without the SA_RESETHAND flag, SIGCHLD signals can be accurately
+counted; that is, exactly one SIGCHLD signal will be delivered to or
+accepted by the process for every child process that terminates.
+.IP " 2." 4
+A single
+\fIwait\fR()
+issued from a SIGCHLD signal handler can be guaranteed to return
+immediately with status information for a child process.
+.IP " 3." 4
+When SA_SIGINFO is requested, the SIGCHLD signal handler can be
+guaranteed to receive a non-null pointer to a
+.BR siginfo_t
+structure that describes a child process for which a wait via
+\fIwaitpid\fR()
+or
+\fIwaitid\fR()
+will not block or fail.
+.IP " 4." 4
+The
+\fIsystem\fR()
+function will not cause the SIGCHLD handler of a process to be
+called as a result of the
+\fIfork\fR()/\c
+.IR exec
+executed within
+\fIsystem\fR()
+because
+\fIsystem\fR()
+will accept the SIGCHLD signal when it performs a
+\fIwaitpid\fR()
+for its child process. This is a desirable behavior of
+\fIsystem\fR()
+so that it can be used in a library without causing side-effects to the
+application linked with the library.
+.P
+An implementation that does not permit the
+\fIwait\fR()
+family of functions to accept (discard) a pending SIGCHLD signal
+associated with a successfully waited-for child, cannot make the
+guarantees described above for the following reasons:
+.IP "Guarantee #1" 6
+.br
+Although it might be assumed that reliable queuing of all SIGCHLD
+signals generated by the system can make this guarantee, the
+counter-example is the case of a process that blocks SIGCHLD and
+performs an indefinite loop of
+\fIfork\fR()/\c
+\fIwait\fR()
+operations. If the implementation supports queued signals, then
+eventually the system will run out of memory for the queue. The
+guarantee cannot be made because there must be some limit to the depth
+of queuing.
+.IP "Guarantees #2 and #3" 6
+.br
+These cannot be guaranteed unless the
+\fIwait\fR()
+family of functions accepts the SIGCHLD signal. Otherwise, a
+\fIfork\fR()/\c
+\fIwait\fR()
+executed while SIGCHLD is blocked (as in the
+\fIsystem\fR()
+function) will result in an invocation of the handler when SIGCHLD is
+unblocked, after the process has disappeared.
+.IP "Guarantee #4" 6
+.br
+Although possible to make this guarantee,
+\fIsystem\fR()
+would have to set the SIGCHLD handler to SIG_DFL so that the SIGCHLD
+signal generated by its
+\fIfork\fR()
+would be discarded (the SIGCHLD default action is to be ignored), then
+restore it to its previous setting. This would have the undesirable
+side-effect of discarding all SIGCHLD signals pending to the process.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^",
+.IR "\fIexit\fR\^(\|)",
+.IR "\fIfork\fR\^(\|)",
+.IR "\fIsystem\fR\^(\|)",
+.IR "\fIwaitid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.11" ", " "Memory Synchronization",
+.IR "\fB<signal.h>\fP",
+.IR "\fB<sys_wait.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

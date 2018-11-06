@@ -1,0 +1,102 @@
+'\" et
+.TH tar.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+tar.h
+\(em extended tar definitions
+.SH SYNOPSIS
+.LP
+.nf
+#include <tar.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <tar.h> 
+header shall define the following symbolic constants with the
+indicated values.
+.P
+General definitions:
+.TS
+center box tab(@);
+cB | cB | cB
+lw(15) | cf5w(15) | lw(40).
+Name@Value@Description
+_
+TMAGIC@"ustar"@ustar plus null byte.
+TMAGLEN@6@Length of the above.
+TVERSION@"00"@00 without a null byte.
+TVERSLEN@2@Length of the above.
+.TE
+.P
+.IR Typeflag
+field definitions:
+.TS
+center box tab(@);
+cB | cB | cB
+lw(15) | cf5w(15) | lw(40).
+Name@Value@Description
+_
+REGTYPE@'0'@Regular file.
+AREGTYPE@'\e0'@Regular file.
+LNKTYPE@'1'@Link.
+SYMTYPE@'2'@Symbolic link.
+CHRTYPE@'3'@Character special.
+BLKTYPE@'4'@Block special.
+DIRTYPE@'5'@Directory.
+FIFOTYPE@'6'@FIFO special.
+CONTTYPE@'7'@Reserved.
+.TE
+.P
+\fIMode\fP field bit definitions (octal):
+.TS
+center box tab(@);
+cB | cB | cB
+lw(15) | cw(15) | lw(40).
+Name@Value@Description
+_
+TSUID@04000@Set UID on execution.
+TSGID@02000@Set GID on execution.
+TSVTX@01000@\*!On directories, restricted deletion flag.\0\0\0\*?
+TUREAD@00400@Read by owner.
+TUWRITE@00200@Write by owner special.
+TUEXEC@00100@Execute/search by owner.
+TGREAD@00040@Read by group.
+TGWRITE@00020@Write by group.
+TGEXEC@00010@Execute/search by group.
+TOREAD@00004@Read by other.
+TOWRITE@00002@Write by other.
+TOEXEC@00001@Execute/search by other.
+.TE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIpax\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

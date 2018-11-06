@@ -1,0 +1,120 @@
+'\" et
+.TH PTHREAD_MUTEX_CONSISTENT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_mutex_consistent \(em
+mark state protected by robust mutex as consistent
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_mutex_consistent(pthread_mutex_t *\fImutex\fP);
+.fi
+.SH DESCRIPTION
+If
+.IR mutex
+is a robust mutex in an inconsistent state, the
+\fIpthread_mutex_consistent\fR()
+function can be used to mark the state protected by the mutex
+referenced by
+.IR mutex
+as consistent again.
+.P
+If an owner of a robust mutex terminates while holding the mutex, the
+mutex becomes inconsistent and the next thread that acquires the mutex
+lock shall be notified of the state by the return value
+.BR [EOWNERDEAD] .
+In this case, the mutex does not become normally usable again until the
+state is marked consistent.
+.P
+If the thread which acquired the mutex lock with the return value
+.BR [EOWNERDEAD] 
+terminates before calling either
+\fIpthread_mutex_consistent\fR()
+or
+\fIpthread_mutex_unlock\fR(),
+the next thread that acquires the mutex lock shall be notified about
+the state of the mutex by the return value
+.BR [EOWNERDEAD] .
+.P
+The behavior is undefined if the value specified by the
+.IR mutex
+argument to
+\fIpthread_mutex_consistent\fR()
+does not refer to an initialized mutex.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIpthread_mutex_consistent\fR()
+function shall return zero. Otherwise, an error value shall be returned
+to indicate the error.
+.SH ERRORS
+The
+\fIpthread_mutex_consistent\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The mutex object referenced by
+.IR mutex
+is not robust or does not protect an inconsistent state.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The
+\fIpthread_mutex_consistent\fR()
+function is only responsible for notifying the implementation that the
+state protected by the mutex has been recovered and that normal
+operations with the mutex can be resumed. It is the responsibility of
+the application to recover the state so it can be reused. If the
+application is not able to perform the recovery, it can notify the
+implementation that the situation is unrecoverable by a call to
+\fIpthread_mutex_unlock\fR()
+without a prior call to
+\fIpthread_mutex_consistent\fR(),
+in which case subsequent threads that attempt to lock the mutex will
+fail to acquire the lock and be returned
+.BR [ENOTRECOVERABLE] .
+.SH RATIONALE
+If an implementation detects that the value specified by the
+.IR mutex
+argument to
+\fIpthread_mutex_consistent\fR()
+does not refer to an initialized mutex, it is recommended that the
+function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIpthread_mutex_lock\fR\^(\|)",
+.IR "\fIpthread_mutexattr_getrobust\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,155 @@
+'\" et
+.TH SIGSETJMP "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sigsetjmp
+\(em set jump point for a non-local goto
+.SH SYNOPSIS
+.LP
+.nf
+#include <setjmp.h>
+.P
+int sigsetjmp(sigjmp_buf \fIenv\fP, int \fIsavemask\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsigsetjmp\fR()
+function shall be equivalent to the
+\fIsetjmp\fR()
+function, except as follows:
+.IP " *" 4
+References to
+\fIsetjmp\fR()
+are equivalent to
+\fIsigsetjmp\fR().
+.IP " *" 4
+References to
+\fIlongjmp\fR()
+are equivalent to
+\fIsiglongjmp\fR().
+.IP " *" 4
+If the value of the
+.IR savemask
+argument is not 0,
+\fIsigsetjmp\fR()
+shall also save the current signal mask of the calling thread as part
+of the calling environment.
+.SH "RETURN VALUE"
+If the return is from a successful direct invocation,
+\fIsigsetjmp\fR()
+shall return 0. If the return is from a call to
+\fIsiglongjmp\fR(),
+\fIsigsetjmp\fR()
+shall return a non-zero value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The distinction between
+\fIsetjmp\fR()/\c
+\fIlongjmp\fR()
+and
+\fIsigsetjmp\fR()/\c
+\fIsiglongjmp\fR()
+is only significant for programs which use
+\fIsigaction\fR(),
+\fIsigprocmask\fR(),
+or
+\fIsigsuspend\fR().
+.P
+Note that since this function is defined in terms of
+\fIsetjmp\fR(),
+if
+.IR savemask
+is zero, it is unspecified whether the signal mask is saved.
+.SH RATIONALE
+The ISO\ C standard specifies various restrictions on the usage of the
+\fIsetjmp\fR()
+macro in order to permit implementors to recognize the name in the
+compiler and not implement an actual function. These same restrictions
+apply to the
+\fIsigsetjmp\fR()
+macro.
+.P
+There are processors that cannot easily support these calls, but this
+was not considered a sufficient reason to exclude them.
+.P
+4.2 BSD, 4.3 BSD, and XSI-conformant systems provide functions named
+\fI_setjmp\fR()
+and
+\fI_longjmp\fR()
+that, together with
+\fIsetjmp\fR()
+and
+\fIlongjmp\fR(),
+provide the same functionality as
+\fIsigsetjmp\fR()
+and
+\fIsiglongjmp\fR().
+On those systems,
+\fIsetjmp\fR()
+and
+\fIlongjmp\fR()
+save and restore signal masks, while
+\fI_setjmp\fR()
+and
+\fI_longjmp\fR()
+do not. On System V Release 3
+and in corresponding issues of the SVID,
+\fIsetjmp\fR()
+and
+\fIlongjmp\fR()
+are explicitly defined not to save and restore signal masks. In order
+to permit existing practice in both cases, the relation of
+\fIsetjmp\fR()
+and
+\fIlongjmp\fR()
+to signal masks is not specified, and a new set of functions is defined
+instead.
+.P
+The
+\fIlongjmp\fR()
+and
+\fIsiglongjmp\fR()
+functions operate as in the previous issue provided the matching
+\fIsetjmp\fR()
+or
+\fIsigsetjmp\fR()
+has been performed in the same thread. Non-local jumps into contexts
+saved by other threads would be at best a questionable practice and
+were not considered worthy of standardization.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIpthread_sigmask\fR\^(\|)",
+.IR "\fIsiglongjmp\fR\^(\|)",
+.IR "\fIsignal\fR\^(\|)",
+.IR "\fIsigsuspend\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<setjmp.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

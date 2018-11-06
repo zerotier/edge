@@ -1,0 +1,366 @@
+'\" et
+.TH SIGTIMEDWAIT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sigtimedwait,
+sigwaitinfo
+\(em wait for queued signals
+.SH SYNOPSIS
+.LP
+.nf
+#include <signal.h>
+.P
+int sigtimedwait(const sigset_t *restrict \fIset\fP,
+    siginfo_t *restrict \fIinfo\fP,
+    const struct timespec *restrict \fItimeout\fP);
+int sigwaitinfo(const sigset_t *restrict \fIset\fP,
+    siginfo_t *restrict \fIinfo\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsigtimedwait\fR()
+function shall be equivalent to
+\fIsigwaitinfo\fR()
+except that if none of the signals specified by
+.IR set
+are pending,
+\fIsigtimedwait\fR()
+shall wait for the time interval specified in the
+.BR timespec
+structure referenced by
+.IR timeout .
+If the
+.BR timespec
+structure pointed to by
+.IR timeout
+is zero-valued and if none of the signals specified by
+.IR set
+are pending, then
+\fIsigtimedwait\fR()
+shall return immediately with an error. If
+.IR timeout
+is the null pointer, the behavior is unspecified.
+If the Monotonic Clock option is supported, the CLOCK_MONOTONIC clock
+shall be used to measure the time interval specified by the
+.IR timeout
+argument.
+.P
+The
+\fIsigwaitinfo\fR()
+function selects the pending signal from the set specified by
+.IR set .
+Should any of multiple pending signals in the range SIGRTMIN to
+SIGRTMAX be selected,
+it shall be the lowest numbered one. The selection order between
+realtime and non-realtime signals, or between multiple pending
+non-realtime signals, is unspecified. If no signal in
+.IR set
+is pending at the time of the call, the calling thread shall be
+suspended until one or more signals in
+.IR set
+become pending or until it is interrupted by an unblocked, caught
+signal.
+.P
+The
+\fIsigwaitinfo\fR()
+function shall be equivalent to the
+\fIsigwait\fR()
+function if the
+.IR info
+argument is NULL. If the
+.IR info
+argument is non-NULL, the
+\fIsigwaitinfo\fR()
+function shall be equivalent to
+\fIsigwait\fR(),
+except that the selected signal number shall be stored in the
+.IR si_signo
+member, and the cause of the signal shall be stored in the
+.IR si_code
+member. If any value is queued to the selected signal, the first such
+queued value shall be dequeued and, if the
+.IR info
+argument is non-NULL, the value shall be stored in the
+.IR si_value
+member of
+.IR info .
+The system resource used to queue the signal shall be released and
+returned to the system for other use. If no value is queued, the
+content of the
+.IR si_value
+member is undefined. If no further signals are queued for the selected
+signal, the pending indication for that signal shall be reset.
+.SH "RETURN VALUE"
+Upon successful completion (that is, one of the signals specified by
+.IR set
+is pending or is generated)
+\fIsigwaitinfo\fR()
+and
+\fIsigtimedwait\fR()
+shall return the selected signal number. Otherwise, the function shall
+return a value of \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIsigtimedwait\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+No signal specified by
+.IR set
+was generated within the specified timeout period.
+.P
+The
+\fIsigtimedwait\fR()
+and
+\fIsigwaitinfo\fR()
+functions may fail if:
+.TP
+.BR EINTR
+The wait was interrupted by an unblocked, caught signal. It shall be
+documented in system documentation whether this error causes these
+functions to fail.
+.br
+.P
+The
+\fIsigtimedwait\fR()
+function may also fail if:
+.TP
+.BR EINVAL
+The
+.IR timeout
+argument specified a
+.IR tv_nsec
+value less than zero or greater than or equal to 1\|000 million.
+.P
+An implementation should only check for this error if no signal is
+pending in
+.IR set
+and it is necessary to wait.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The
+\fIsigtimedwait\fR()
+function times out and returns an
+.BR [EAGAIN] 
+error. Application developers should note that this is inconsistent
+with other functions such as
+\fIpthread_cond_timedwait\fR()
+that return
+.BR [ETIMEDOUT] .
+.P
+Note that in order to ensure that generated signals are queued and signal
+values passed to
+\fIsigqueue\fR()
+are available in
+.IR si_value ,
+applications which use
+\fIsigwaitinfo\fR()
+or
+\fIsigtimedwait\fR()
+need to set the SA_SIGINFO flag for each signal in the set (see
+.IR "Section 2.4" ", " "Signal Concepts").
+This means setting each signal to be handled by a three-argument
+signal-catching function, even if the handler will never be called.
+It is not possible (portably) to set a signal handler to SIG_DFL while
+setting the SA_SIGINFO flag, because assigning to the
+.IR sa_handler
+member of
+.BR "struct sigaction"
+instead of the
+.IR sa_sigaction
+member would result in undefined behavior, and SIG_DFL need not be
+assignment-compatible with
+.IR sa_sigaction .
+Even if an assignment of SIG_DFL to
+.IR sa_sigaction
+is accepted by the compiler, the implementation need not treat this value
+as special\(emit could just be taken as the address of a signal-catching
+function.
+.SH RATIONALE
+Existing programming practice on realtime systems uses the ability to
+pause waiting for a selected set of events and handle the first event
+that occurs in-line instead of in a signal-handling function. This
+allows applications to be written in an event-directed style similar to
+a state machine. This style of programming is useful for largescale
+transaction processing in which the overall throughput of an
+application and the ability to clearly track states are more important
+than the ability to minimize the response time of individual event
+handling.
+.P
+It is possible to construct a signal-waiting macro function out of the
+realtime signal function mechanism defined in this volume of POSIX.1\(hy2008. However, such a
+macro has to include the definition of a generalized handler for all
+signals to be waited on. A significant portion of the overhead of
+handler processing can be avoided if the signal-waiting function is
+provided by the kernel. This volume of POSIX.1\(hy2008 therefore provides two signal-waiting
+functions\(emone that waits indefinitely and one with a timeout\(emas
+part of the overall realtime signal function specification.
+.P
+The specification of a function with a timeout allows an application
+to be written that can be broken out of a wait after a set period of
+time if no event has occurred. It was argued that setting a timer
+event before the wait and recognizing the timer event in the wait would
+also implement the same functionality, but at a lower performance
+level. Because of the performance degradation associated with the
+user-level specification of a timer event and the subsequent
+cancellation of that timer event after the wait completes for a valid
+event, and the complexity associated with handling potential race
+conditions associated with the user-level method, the separate
+function has been included.
+.P
+Note that the semantics of the
+\fIsigwaitinfo\fR()
+function are nearly identical to that of the
+\fIsigwait\fR()
+function defined by this volume of POSIX.1\(hy2008. The only difference is that
+\fIsigwaitinfo\fR()
+returns the queued signal value in the
+.IR value
+argument. The return of the queued value is required so that
+applications can differentiate between multiple events queued to the
+same signal number.
+.P
+The two distinct functions are being maintained because some
+implementations may choose to implement the POSIX Threads Extension functions and not
+implement the queued signals extensions. Note, though, that
+\fIsigwaitinfo\fR()
+does not return the queued value if the
+.IR value
+argument is NULL, so the POSIX Threads Extension
+\fIsigwait\fR()
+function can be implemented as a macro on
+\fIsigwaitinfo\fR().
+.P
+The
+\fIsigtimedwait\fR()
+function was separated from the
+\fIsigwaitinfo\fR()
+function to address concerns regarding the overloading of the
+.IR timeout
+pointer to indicate indefinite wait (no timeout), timed wait, and
+immediate return, and concerns regarding consistency with other
+functions where the conditional and timed waits were separate
+functions from the pure blocking function. The semantics of
+\fIsigtimedwait\fR()
+are specified such that
+\fIsigwaitinfo\fR()
+could be implemented as a macro with a null pointer for
+.IR timeout .
+.P
+The
+.IR sigwait
+functions provide a synchronous mechanism for threads to wait for
+asynchronously-generated signals. One important question was how many
+threads that are suspended in a call to a
+\fIsigwait\fR()
+function for a signal should return from the call when the signal is
+sent. Four choices were considered:
+.IP " 1." 4
+Return an error for multiple simultaneous calls to
+.IR sigwait
+functions for the same signal.
+.IP " 2." 4
+One or more threads return.
+.IP " 3." 4
+All waiting threads return.
+.IP " 4." 4
+Exactly one thread returns.
+.P
+Prohibiting multiple calls to
+\fIsigwait\fR()
+for the same signal was felt to be overly restrictive. The ``one or
+more'' behavior made implementation of conforming packages easy at the
+expense of forcing POSIX threads clients to protect against multiple
+simultaneous calls to
+\fIsigwait\fR()
+in application code in order to achieve predictable behavior. There
+was concern that the ``all waiting threads'' behavior would result in
+``signal broadcast storms'', consuming excessive CPU resources by
+replicating the signals in the general case. Furthermore, no
+convincing examples could be presented that delivery to all was either
+simpler or more powerful than delivery to one.
+.P
+Thus, the consensus was that exactly one thread that was suspended in a
+call to a
+.IR sigwait
+function for a signal should return when that signal occurs. This is
+not an onerous restriction as:
+.IP " *" 4
+A multi-way signal wait can be built from the single-way wait.
+.IP " *" 4
+Signals should only be handled by application-level code, as library
+routines cannot guess what the application wants to do with signals
+generated for the entire process.
+.IP " *" 4
+Applications can thus arrange for a single thread to wait for any given
+signal and call any needed routines upon its arrival.
+.P
+In an application that is using signals for interprocess communication,
+signal processing is typically done in one place. Alternatively, if
+the signal is being caught so that process cleanup can be done, the
+signal handler thread can call separate process cleanup routines for
+each portion of the application. Since the application main line
+started each portion of the application, it is at the right abstraction
+level to tell each portion of the application to clean up.
+.P
+Certainly, there exist programming styles where it is logical to
+consider waiting for a single signal in multiple threads. A simple
+\fIsigwait_multiple\fR()
+routine can be constructed to achieve this goal. A possible
+implementation would be to have each
+\fIsigwait_multiple\fR()
+caller registered as having expressed interest in a set of signals.
+The caller then waits on a thread-specific condition variable. A
+single server thread calls a
+\fIsigwait\fR()
+function on the union of all registered signals. When the
+\fIsigwait\fR()
+function returns, the appropriate state is set and condition variables
+are broadcast. New
+\fIsigwait_multiple\fR()
+callers may cause the pending
+\fIsigwait\fR()
+call to be canceled and reissued in order to update the set of signals
+being waited for.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.4" ", " "Signal Concepts",
+.IR "Section 2.8.1" ", " "Realtime Signals",
+.IR "\fIpause\fR\^(\|)",
+.IR "\fIpthread_sigmask\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)",
+.IR "\fIsigpending\fR\^(\|)",
+.IR "\fIsigsuspend\fR\^(\|)",
+.IR "\fIsigwait\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<signal.h>\fP",
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

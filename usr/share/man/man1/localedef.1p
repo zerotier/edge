@@ -1,0 +1,327 @@
+'\" et
+.TH LOCALEDEF "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+localedef \(em define locale environment
+.SH SYNOPSIS
+.LP
+.nf
+localedef \fB[\fR\(mic\fB] [\fR\(mif \fIcharmap\fB] [\fR\(mii \fIsourcefile\fB] [\fR\(miu \fIcode_set_name\fB] \fIname\fR
+.fi
+.SH DESCRIPTION
+The
+.IR localedef
+utility shall convert source definitions for locale categories into a
+format usable by the functions and utilities whose operational behavior
+is determined by the setting of the locale environment variables
+defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale".
+It is implementation-defined whether users have the capability to create
+new locales, in addition to those supplied by the implementation. If
+the symbolic constant POSIX2_LOCALEDEF is defined, the system supports
+the creation of new locales.
+On XSI-conformant systems, the symbolic constant POSIX2_LOCALEDEF
+shall be defined.
+.P
+The utility shall read source definitions for one or more locale
+categories belonging to the same locale from the file named in the
+.BR \(mii
+option (if specified) or from standard input.
+.P
+The
+.IR name
+operand identifies the target locale. The utility shall support the
+creation of
+.IR public ,
+or generally accessible locales, as well as
+.IR private ,
+or restricted-access locales. Implementations may restrict the
+capability to create or modify public locales to users with
+appropriate privileges.
+.P
+Each category source definition shall be identified by the
+corresponding environment variable name and terminated by an
+.BR END
+.IR category-name
+statement. The following categories shall be supported. In addition,
+the input may contain source for implementation-defined categories.
+.IP "\fILC_CTYPE\fR" 10
+Defines character classification and case conversion.
+.IP "\fILC_COLLATE\fR" 10
+.br
+Defines collation rules.
+.IP "\fILC_MONETARY\fR" 10
+.br
+Defines the format and symbols used in formatting of monetary
+information.
+.IP "\fILC_NUMERIC\fR" 10
+.br
+Defines the decimal delimiter, grouping, and grouping symbol for
+non-monetary numeric editing.
+.IP "\fILC_TIME\fR" 10
+Defines the format and content of date and time information.
+.IP "\fILC_MESSAGES\fR" 10
+.br
+Defines the format and values of affirmative and negative responses.
+.SH OPTIONS
+The
+.IR localedef
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mic\fP" 10
+Create permanent output even if warning messages have been issued.
+.IP "\fB\(mif\ \fIcharmap\fR" 10
+Specify the pathname of a file containing a mapping of character
+symbols and collating element symbols to actual character encodings.
+The format of the
+.IR charmap
+is described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.4" ", " "Character Set Description File".
+The application shall ensure that this option is specified if symbolic
+names (other than collating symbols defined in a
+.BR collating-symbol
+keyword) are used. If the
+.BR \(mif
+option is not present, an implementation-defined character mapping
+shall be used.
+.IP "\fB\(mii\ \fIinputfile\fR" 10
+The pathname of a file containing the source definitions. If this
+option is not present, source definitions shall be read from standard
+input. The format of the
+.IR inputfile
+is described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 7.3" ", " "Locale Definition".
+.IP "\fB\(miu\ \fIcode_set_name\fR" 10
+.br
+Specify the name of a codeset used as the target mapping of character
+symbols and collating element symbols whose encoding values are defined
+in terms of the ISO/IEC\ 10646\(hy1:\|2000 standard position constant values.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIname\fR" 10
+Identifies the locale; see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale"
+for a description of the use of this name. If the name contains one
+or more
+<slash>
+characters,
+.IR name
+shall be interpreted as a pathname where the created locale definitions
+shall be stored. If
+.IR name
+does not contain any
+<slash>
+characters, the interpretation of the name is implementation-defined
+and the locale shall be public. The ability to create public locales in
+this way may be restricted to users with appropriate privileges. (As a
+consequence of specifying one
+.IR name ,
+although several categories can be processed in one execution, only
+categories belonging to the same locale can be processed.)
+.SH STDIN
+Unless the
+.BR \(mii
+option is specified, the standard input shall be a text file containing
+one or more locale category source definitions, as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 7.3" ", " "Locale Definition".
+When lines are continued using the escape character mechanism,
+there is no limit to the length of the accumulated continued line.
+.SH "INPUT FILES"
+The character set mapping file specified as the
+.IR charmap
+option-argument is described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.4" ", " "Character Set Description File".
+If a locale category source definition contains a
+.BR copy
+statement, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+and the
+.BR copy
+statement names a valid, existing locale, then
+.IR localedef
+shall behave as if the source definition had contained a valid category
+source definition for the named locale.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR localedef :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+(This variable has no affect on
+.IR localedef ;
+the POSIX locale is used for this category.)
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files). This variable has
+no affect on the processing of
+.IR localedef
+input data; the POSIX locale is used for this purpose, regardless of
+the value of this variable.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The utility shall report all categories successfully processed, in an
+unspecified format.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The format of the created output is unspecified. If the
+.IR name
+operand does not contain a
+<slash>,
+the existence of an output file for the locale is unspecified.
+.SH "EXTENDED DESCRIPTION"
+When the
+.BR \(miu
+option is used, the
+.IR code_set_name
+option-argument shall be interpreted as an implementation-defined
+name of a codeset to which the ISO/IEC\ 10646\(hy1:\|2000 standard position constant values shall be
+converted via an implementation-defined method. Both the ISO/IEC\ 10646\(hy1:\|2000 standard
+position constant values and other formats (decimal, hexadecimal, or
+octal) shall be valid as encoding values within the
+.IR charmap
+file. The codeset represented by the implementation-defined name can
+be any codeset that is supported by the implementation.
+.P
+When conflicts occur between the
+.IR charmap
+specification of <\fIcode_set_name\fP>, <\fImb_cur_max\fP>, or
+<\fImb_cur_min\fP> and the implementation-defined interpretation of
+these respective items for the codeset represented by the
+.BR \(miu
+option-argument
+.IR code_set_name ,
+the result is unspecified.
+.P
+When conflicts occur between the
+.IR charmap
+encoding values specified for symbolic names of characters of the
+portable character set and the implementation-defined assignment of
+character encoding values, the result is unspecified.
+.P
+If a non-printable character in the
+.IR charmap
+has a width specified that is not
+.BR \(mi1 ,
+the result will be undefined.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+No errors occurred and the locales were successfully created.
+.IP "\01" 6
+Warnings occurred and the locales were successfully created.
+.IP "\02" 6
+The locale specification exceeded implementation limits or the coded
+character set or sets used were not supported by the implementation,
+and no locale was created.
+.IP "\03" 6
+The capability to create new locales is not supported by the
+implementation.
+.IP >3 6
+Warnings or errors occurred and no output was created.
+.SH "CONSEQUENCES OF ERRORS"
+If an error is detected, no permanent output shall be created.
+.P
+If warnings occur, permanent output shall be created if the
+.BR \(mic
+option was specified. The following conditions shall cause warning
+messages to be issued:
+.IP " *" 4
+If a symbolic name not found in the
+.IR charmap
+file is used for the descriptions of the
+.IR LC_CTYPE
+or
+.IR LC_COLLATE
+categories (for other categories, this shall be an error condition).
+.IP " *" 4
+If the number of operands to the
+.BR order
+keyword exceeds the
+{COLL_WEIGHTS_MAX}
+limit.
+.IP " *" 4
+If optional keywords not supported by the implementation are present in
+the source.
+.P
+Other implementation-defined conditions may also cause warnings.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.IR charmap
+definition is optional, and is contained outside the locale
+definition. This allows both completely self-defined source files, and
+generic sources (applicable to more than one codeset). To aid
+portability, all
+.IR charmap
+definitions must use the same symbolic names for the portable character
+set. As explained in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.4" ", " "Character Set Description File",
+it is implementation-defined whether or not users or applications can
+provide additional character set description files. Therefore, the
+.BR \(mif
+option might be operable only when an implementation-defined
+.IR charmap
+is named.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The output produced by the
+.IR localedef
+utility is implementation-defined. The
+.IR name
+operand is used to identify the specific locale. (As a consequence,
+although several categories can be processed in one execution, only
+categories belonging to the same locale can be processed.)
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIlocale\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.4" ", " "Character Set Description File",
+.IR "Chapter 7" ", " "Locale",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

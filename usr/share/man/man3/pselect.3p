@@ -1,0 +1,504 @@
+'\" et
+.TH PSELECT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pselect,
+select
+\(em synchronous I/O multiplexing
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/select.h>
+.P
+int pselect(int \fInfds\fP, fd_set *restrict \fIreadfds\fP,
+    fd_set *restrict \fIwritefds\fP, fd_set *restrict \fIerrorfds\fP,
+    const struct timespec *restrict \fItimeout\fP,
+    const sigset_t *restrict \fIsigmask\fP);
+int select(int \fInfds\fP, fd_set *restrict \fIreadfds\fP,
+    fd_set *restrict \fIwritefds\fP, fd_set *restrict \fIerrorfds\fP,
+    struct timeval *restrict \fItimeout\fP);
+void FD_CLR(int \fIfd\fP, fd_set *\fIfdset\fP);
+int FD_ISSET(int \fIfd\fP, fd_set *\fIfdset\fP);
+void FD_SET(int \fIfd\fP, fd_set *\fIfdset\fP);
+void FD_ZERO(fd_set *\fIfdset\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpselect\fR()
+function shall examine the file descriptor sets whose addresses are
+passed in the
+.IR readfds ,
+.IR writefds ,
+and
+.IR errorfds
+parameters to see whether some of their descriptors are ready for reading,
+are ready for writing, or have an exceptional condition pending,
+respectively.
+.P
+The
+\fIselect\fR()
+function shall be equivalent to the
+\fIpselect\fR()
+function, except as follows:
+.IP " *" 4
+For the
+\fIselect\fR()
+function, the timeout period is given in seconds and microseconds in an
+argument of type
+.BR "struct timeval" ,
+whereas for the
+\fIpselect\fR()
+function the timeout period is given in seconds and nanoseconds in an
+argument of type
+.BR "struct timespec" .
+.IP " *" 4
+The
+\fIselect\fR()
+function has no
+.IR sigmask
+argument; it shall behave as
+\fIpselect\fR()
+does when
+.IR sigmask
+is a null pointer.
+.IP " *" 4
+Upon successful completion, the
+\fIselect\fR()
+function may modify the object pointed to by the
+.IR timeout
+argument.
+.P
+The
+\fIpselect\fR()
+and
+\fIselect\fR()
+functions shall support regular files, terminal and pseudo-terminal
+devices,
+STREAMS-based files,
+FIFOs, pipes, and sockets. The behavior of
+\fIpselect\fR()
+and
+\fIselect\fR()
+on file descriptors that refer to other types of file is unspecified.
+.P
+The
+.IR nfds
+argument specifies the range of descriptors to be tested. The first
+.IR nfds
+descriptors shall be checked in each set; that is, the descriptors from
+zero through
+.IR nfds \(mi1
+in the descriptor sets shall be examined.
+.P
+If the
+.IR readfds
+argument is not a null pointer, it points to an object of type
+.BR fd_set
+that on input specifies the file descriptors to be checked for being
+ready to read, and on output indicates which file descriptors are ready
+to read.
+.P
+If the
+.IR writefds
+argument is not a null pointer, it points to an object of type
+.BR fd_set
+that on input specifies the file descriptors to be checked for being
+ready to write, and on output indicates which file descriptors are
+ready to write.
+.P
+If the
+.IR errorfds
+argument is not a null pointer, it points to an object of type
+.BR fd_set
+that on input specifies the file descriptors to be checked for error
+conditions pending, and on output indicates which file descriptors have
+error conditions pending.
+.P
+Upon successful completion, the
+\fIpselect\fR()
+or
+\fIselect\fR()
+function shall modify the objects pointed to by the
+.IR readfds ,
+.IR writefds ,
+and
+.IR errorfds
+arguments to indicate which file descriptors are ready for reading,
+ready for writing, or have an error condition pending, respectively,
+and shall return the total number of ready descriptors in all the
+output sets. For each file descriptor less than
+.IR nfds ,
+the corresponding bit shall be set upon successful completion if it
+was set on input and the associated condition is true for that file
+descriptor.
+.P
+If none of the selected descriptors are ready for the requested
+operation, the
+\fIpselect\fR()
+or
+\fIselect\fR()
+function shall block until at least one of the requested operations
+becomes ready, until the
+.IR timeout
+occurs, or until interrupted by a signal.
+The
+.IR timeout
+parameter controls how long the
+\fIpselect\fR()
+or
+\fIselect\fR()
+function shall take before timing out. If the
+.IR timeout
+parameter is not a null pointer, it specifies a maximum interval to
+wait for the selection to complete. If the specified time interval
+expires without any requested operation becoming ready, the function
+shall return. If the
+.IR timeout
+parameter is a null pointer, then the call to
+\fIpselect\fR()
+or
+\fIselect\fR()
+shall block indefinitely until at least one descriptor meets the
+specified criteria. To effect a poll, the
+.IR timeout
+parameter should not be a null pointer, and should point to a
+zero-valued
+.BR timespec
+structure.
+.P
+The use of a timeout does not affect any pending timers set up by
+\fIalarm\fR()
+or
+\fIsetitimer\fR().
+.P
+Implementations may place limitations on the maximum timeout interval
+supported. All implementations shall support a maximum timeout interval
+of at least 31 days. If the
+.IR timeout
+argument specifies a timeout interval greater than the
+implementation-defined maximum value, the maximum value shall be used
+as the actual timeout value. Implementations may also place limitations
+on the granularity of timeout intervals. If the requested timeout
+interval requires a finer granularity than the implementation supports,
+the actual timeout interval shall be rounded up to the next supported
+value.
+.P
+If
+.IR sigmask
+is not a null pointer, then the
+\fIpselect\fR()
+function shall replace the signal mask of the caller by the set of
+signals pointed to by
+.IR sigmask
+before examining the descriptors, and shall restore the signal mask of
+the calling thread before returning.
+.P
+A descriptor shall be considered ready for reading when a call to an
+input function with O_NONBLOCK clear would not block, whether or not
+the function would transfer data successfully. (The function might
+return data, an end-of-file indication, or an error other than one
+indicating that it is blocked, and in each of these cases the
+descriptor shall be considered ready for reading.)
+.P
+A descriptor shall be considered ready for writing when a call to an
+output function with O_NONBLOCK clear would not block, whether or not
+the function would transfer data successfully.
+.P
+If a socket has a pending error, it shall be considered to have an
+exceptional condition pending. Otherwise, what constitutes an
+exceptional condition is file type-specific. For a file descriptor for
+use with a socket, it is protocol-specific except as noted below. For
+other file types it is implementation-defined. If the operation is
+meaningless for a particular file type,
+\fIpselect\fR()
+or
+\fIselect\fR()
+shall indicate that the descriptor is ready for read or write
+operations, and shall indicate that the descriptor has no exceptional
+condition pending.
+.P
+If a descriptor refers to a socket, the implied input function is the
+\fIrecvmsg\fR()
+function with parameters requesting normal and ancillary data, such
+that the presence of either type shall cause the socket to be marked as
+readable. The presence of out-of-band data shall be checked if the
+socket option SO_OOBINLINE has been enabled, as out-of-band data is
+enqueued with normal data. If the socket is currently listening, then
+it shall be marked as readable if an incoming connection request has
+been received, and a call to the
+\fIaccept\fR()
+function shall complete without blocking.
+.P
+If a descriptor refers to a socket, the implied output function is the
+\fIsendmsg\fR()
+function supplying an amount of normal data equal to the current value
+of the SO_SNDLOWAT option for the socket. If a non-blocking call to
+the
+\fIconnect\fR()
+function has been made for a socket, and the connection attempt has
+either succeeded or failed leaving a pending error, the socket shall be
+marked as writable.
+.P
+A socket shall be considered to have an exceptional condition pending
+if a receive operation with O_NONBLOCK clear for the open file
+description and with the MSG_OOB flag set would return out-of-band data
+without blocking. (It is protocol-specific whether the MSG_OOB flag
+would be used to read out-of-band data.) A socket shall also be
+considered to have an exceptional condition pending if an out-of-band
+data mark is present in the receive queue. Other circumstances under
+which a socket may be considered to have an exceptional condition
+pending are protocol-specific and implementation-defined.
+.P
+If the
+.IR readfds ,
+.IR writefds ,
+and
+.IR errorfds
+arguments are all null pointers and the
+.IR timeout
+argument is not a null pointer, the
+\fIpselect\fR()
+or
+\fIselect\fR()
+function shall block for the time specified, or until interrupted by
+a signal. If the
+.IR readfds ,
+.IR writefds ,
+and
+.IR errorfds
+arguments are all null pointers and the
+.IR timeout
+argument is a null pointer, the
+\fIpselect\fR()
+or
+\fIselect\fR()
+function shall block until interrupted by a signal.
+.P
+File descriptors associated with regular files shall always select true
+for ready to read, ready to write, and error conditions.
+.P
+On failure, the objects pointed to by the
+.IR readfds ,
+.IR writefds ,
+and
+.IR errorfds
+arguments shall not be modified. If the timeout interval expires
+without the specified condition being true for any of the specified
+file descriptors, the objects pointed to by the
+.IR readfds ,
+.IR writefds ,
+and
+.IR errorfds
+arguments shall have all bits set to 0.
+.P
+File descriptor masks of type
+.BR fd_set
+can be initialized and tested with
+\fIFD_CLR\fR(),
+\fIFD_ISSET\fR(),
+\fIFD_SET\fR(),
+and
+\fIFD_ZERO\fR().
+It is unspecified whether each of these is a macro or a function. If a
+macro definition is suppressed in order to access an actual function,
+or a program defines an external identifier with any of these names,
+the behavior is undefined.
+.P
+\fIFD_CLR\fR(\fIfd\fR, \fIfdsetp\fR) shall remove the file descriptor
+.IR fd
+from the set pointed to by
+.IR fdsetp .
+If
+.IR fd
+is not a member of this set, there shall be no effect on the set, nor
+will an error be returned.
+.P
+\fIFD_ISSET\fR(\fIfd\fR, \fIfdsetp\fR) shall evaluate to non-zero if
+the file descriptor
+.IR fd
+is a member of the set pointed to by
+.IR fdsetp ,
+and shall evaluate to zero otherwise.
+.P
+\fIFD_SET\fR(\fIfd\fR, \fIfdsetp\fR) shall add the file descriptor
+.IR fd
+to the set pointed to by
+.IR fdsetp .
+If the file descriptor
+.IR fd
+is already in this set, there shall be no effect on the set, nor will
+an error be returned.
+.P
+\fIFD_ZERO\fR(\fIfdsetp\fR) shall initialize the descriptor set pointed
+to by
+.IR fdsetp
+to the null set. No error is returned if the set is not empty at the
+time
+\fIFD_ZERO\fR()
+is invoked.
+.P
+The behavior of these macros is undefined if the
+.IR fd
+argument is less than 0 or greater than or equal to FD_SETSIZE, or if
+.IR fd
+is not a valid file descriptor, or if any of the arguments are
+expressions with side-effects.
+.P
+If a thread gets canceled during a
+\fIpselect\fR()
+call, the signal mask in effect when executing the registered cleanup
+functions is either the original signal mask or the signal mask
+installed as part of the
+\fIpselect\fR()
+call.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIpselect\fR()
+and
+\fIselect\fR()
+functions shall return the total number of bits set in the bit masks.
+Otherwise, \(mi1 shall be returned, and
+.IR errno
+shall be set to indicate the error.
+.P
+\fIFD_CLR\fR(),
+\fIFD_SET\fR(),
+and
+\fIFD_ZERO\fR()
+do not return a value.
+\fIFD_ISSET\fR()
+shall return a non-zero value if the bit for the file descriptor
+.IR fd
+is set in the file descriptor set pointed to by
+.IR fdset ,
+and 0 otherwise.
+.SH ERRORS
+Under the following conditions,
+\fIpselect\fR()
+and
+\fIselect\fR()
+shall fail and set
+.IR errno
+to:
+.TP
+.BR EBADF
+One or more of the file descriptor sets specified a file descriptor
+that is not a valid open file descriptor.
+.TP
+.BR EINTR
+The function was interrupted before any of the selected events occurred
+and before the timeout interval expired.
+.RS 12 
+.P
+If SA_RESTART has been set for the interrupting signal, it is
+implementation-defined whether the function restarts or returns with
+.BR [EINTR] .
+.RE
+.TP
+.BR EINVAL
+An invalid timeout interval was specified.
+.TP
+.BR EINVAL
+The
+.IR nfds
+argument is less than 0 or greater than FD_SETSIZE.
+.TP
+.BR EINVAL
+One of the specified file descriptors refers to a STREAM or multiplexer
+that is linked (directly or indirectly) downstream from a multiplexer.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+In earlier versions of the Single UNIX Specification, the
+\fIselect\fR()
+function was defined in the
+.IR <sys/time.h> 
+header. This is now changed to
+.IR <sys/select.h> .
+The rationale for this change was as follows: the introduction of the
+\fIpselect\fR()
+function included the
+.IR <sys/select.h> 
+header and the
+.IR <sys/select.h> 
+header defines all the related definitions for the
+\fIpselect\fR()
+and
+\fIselect\fR()
+functions. Backwards-compatibility to existing XSI implementations is
+handled by allowing
+.IR <sys/time.h> 
+to include
+.IR <sys/select.h> .
+.P
+Code which wants to avoid the ambiguity of the signal mask for thread
+cancellation handlers can install an additional cancellation handler
+which resets the signal mask to the expected value.
+.sp
+.RS 4
+.nf
+\fB
+void cleanup(void *arg)
+{
+    sigset_t *ss = (sigset_t *) arg;
+    pthread_sigmask(SIG_SETMASK, ss, NULL);
+}
+.P
+int call_pselect(int nfds, fd_set *readfds, fd_set *writefds,
+    fd_set errorfds, const struct timespec *timeout,
+    const sigset_t *sigmask)
+{
+    sigset_t oldmask;
+    int result;
+    pthread_sigmask(SIG_SETMASK, NULL, &oldmask);
+    pthread_cleanup_push(cleanup, &oldmask);
+    result = pselect(nfds, readfds, writefds, errorfds, timeout, sigmask);
+    pthread_cleanup_pop(0);
+    return result;
+}
+.fi \fR
+.P
+.RE
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIaccept\fR\^(\|)",
+.IR "\fIalarm\fR\^(\|)",
+.IR "\fIconnect\fR\^(\|)",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIgetitimer\fR\^(\|)",
+.IR "\fIpoll\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIrecvmsg\fR\^(\|)",
+.IR "\fIsendmsg\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_select.h>\fP",
+.IR "\fB<sys_time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

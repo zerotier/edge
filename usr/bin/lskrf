@@ -1,0 +1,2811 @@
+#!/usr/bin/perl
+#
+# Copyright 2005-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+#
+# lskrf
+#
+#	This script lists the keyrecs in a keyrec file.
+#
+
+use strict;
+
+use Getopt::Long qw(:config no_ignore_case_always);
+
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::defaults;
+use Net::DNS::SEC::Tools::keyrec;
+use Net::DNS::SEC::Tools::tooloptions;
+
+#
+# Version information.
+#
+my $NAME   = "lskrf";
+my $VERS   = "$NAME version: 2.1.0";
+my $DTVERS = "DNSSEC-Tools Version: 2.1";
+
+
+#######################################################################
+
+#
+# Data required for command line options.
+#
+my %options = ();			# Filled option array.
+my @opts =
+(
+	"all",				# List all keyrecs.
+	"zones",			# List zone keyrecs.
+	"sets",				# List set keyrecs.
+	"keys",				# List key keyrecs.
+	"ksk",				# List KSK keyrecs.
+		"kcur",			# List Current KSK key keyrecs.
+		"kpub",			# List Published KSK key keyrecs.
+		"kobs",			# List obsolete KSK key keyrecs.
+		"krev",			# List revoked KSK key keyrecs.
+		"kinv",			# List revoked and obs. KSK key keyrecs.
+	"zsk",				# List ZSK keyrecs.
+		"cur",			# List Current ZSK key keyrecs.
+		"new",			# List New ZSK key keyrecs.
+		"pub",			# List Published ZSK key keyrecs.
+		"zobs",			# List obsolete ZSK key keyrecs.
+		"zrev",			# List revoked ZSK key keyrecs.
+		"zinv",			# List revoked and obs. ZSK key keyrecs.
+	"obs",				# List all obsolete-key keyrecs.
+	"rev",				# List all revoked-key keyrecs.
+	"invalid",			# List all obs- and rev-key keyrecs.
+
+	"ref",				# List referenced key keyrecs.
+	"unref",			# List unreferenced key keyrecs.
+	"valid",			# List unexpired zone keyrecs.
+	"expired",			# List expired zone keyrecs.
+
+	"z-archdir",			# List zone's archive directories.
+	"z-dirs",			# Show zone's directories.
+	"z-dates",			# Show zone's date fields.
+	"z-expdate",			# Show zone's expiration date.
+	"z-kskcount",			# Show zone's KSK count.
+	"z-ksk",			# Show zone's KSK data.
+	"z-kskcur",			# Show zone's Current KSK set.
+	"z-kskdir",			# Show zone's KSK directory.
+	"z-kskpub",			# Show zone's Published KSK set.
+	"z-sets",			# Show zone's signing sets.
+	"z-signdate",			# Show zone's signing date.
+	"z-signfile",			# Show zone's signed zonefile.
+	"z-zonefile",			# Show zone's zonefile.
+	"z-zsk",			# Show zone's ZSK data.
+	"z-zskcount",			# Show zone's ZSK count.
+	"z-zskcur",			# Show zone's Current ZSK set.
+	"z-zskdir",			# Show zone's ZSK directory.
+	"z-zsknew",			# Show zone's New ZSK set.
+	"z-zskpub",			# Show zone's Published ZSK set.
+
+	"s-keys",			# Show set's keys.
+	"s-lastmod",			# Show set's last modification.
+	"s-type",			# Show set's types.
+	"s-zone",			# Show set's zone.
+
+	"s-ksk",			# List ZSK signing sets.
+		"s-kcur",		# List Current KSK signing sets.
+		"s-kpub",		# List Published KSK signing sets.
+		"s-kobs",		# List obsolete KSK signing sets.
+		"s-krev",		# List revoked KSK signing sets.
+	"s-zsk",			# List ZSK signing sets.
+		"s-zcur",		# List Current ZSK signing sets.
+		"s-zpub",		# List Published ZSK signing sets.
+		"s-znew",		# List New ZSK signing sets.
+		"s-zobs",		# List obsolete ZSK signing sets.
+		"s-zrev",		# List revoked ZSK signing sets.
+
+	"k-algorithm",			# Show encryption algorithm.
+	"k-enddate",			# Show end date.
+	"k-length",			# Show key's length.
+	"k-lifespan",			# Show key's lifespan.
+	"k-path",			# Show key's path.
+	"k-random",			# Show key's random number generator.
+	"k-signdate",			# Show key's signing date.
+	"k-zone",			# Show key's zonefile.
+
+	"count",			# Only give a count of matching keyrecs.
+	"label",			# Give a leading record label.
+	"headers",			# Give column headers output.
+	"nodate",			# Don't show the date.
+	"terse",			# Give terse output.
+	"long",				# Give long output.
+	"Version",			# Display the version number.
+
+	"help",				# Give a full usage message and exit.
+	"h-zones",			# Give zone-option help message & exit.
+	"h-sets",			# Give set-option help message & exit.
+	"h-keys",			# Give key-option help message & exit.
+);
+
+#
+# Flag values for the various options.  Variable/option connection should
+# be obvious.
+#
+my $allflag;
+my $zonesflag;
+my $archdirflag;
+my $setsflag;
+my $keysflag;
+my $kskflag;
+my $kcurflag;
+my $kpubflag;
+my $kobsflag;
+my $krevflag;
+my $kinvflag;
+my $obsflag;
+my $zskflag;
+my $zcurflag;
+my $zdatesflag;
+my $zdirsflag;
+my $zksksflag;
+my $zsetsflag;
+my $zzsksflag;
+my $znewflag;
+my $zpubflag;
+my $zobsflag;
+my $zrevflag;
+my $zinvflag;
+
+my $refflag;
+my $unrefflag;
+my $validflag;
+my $expiredflag;
+my $revflag;
+my $invflag;
+
+my $cntflag;
+my $nodateflag;
+my $headerflag;
+my $terse;
+my $long;
+
+my $count	= 0;			# Record-match count.
+my $version	= 0;			# Display the version number.
+
+#########################################
+#
+# Data for building output.
+#
+my $COLSPACE	= 4;			# Space between columns.
+
+my $ZONE	= 'Zone';		# Hash key for zones.
+my $SET		= 'Set';		# Hash key for sets.
+my $KEY		= 'Key Name';		# Hash key for keys.
+
+my $HEADER_KRN	= "<<<header>>>";	# Name for column header "keyrec".
+my %lengths	= ();			# Hash hash for lengths of columns;
+
+my $prevkey;				# Previous rollrec key added to output.
+
+my $z_archdir;				# Print the zone's archive directory.
+my $z_expdate;				# Print the zone's expiration date.
+my $z_kskcount;				# Print the zone's KSK count.
+my $z_kskcur;				# Print the zone's Current KSK set.
+my $z_kskdir;				# Print the zone's KSK directory.
+my $z_kskpub;				# Print the zone's Published KSK set.
+my $z_label;				# Print a leading label for zones.
+my $z_signdate;				# Print the zone's signing date.
+my $z_signfile;				# Print the zone's signed zone file.
+my $z_zonefile;				# Print the zone's zone file.
+my $z_zskcount;				# Print the zone's ZSK count.
+my $z_zskcur;				# Print the zone's Current ZSK set.
+my $z_zskdir;				# Print the zone's KSK directory.
+my $z_zsknew;				# Print the zone's New ZSK set.
+my $z_zskpub;				# Print the zone's Published ZSK set.
+
+my $s_keys;				# Print the set's key list.
+my $s_label = 0;			# Print a leading label for sets.
+my $s_lastmod;				# Print the set's last mod date.
+my $s_type;				# Print the set's type.
+my $s_zone;				# Print the set's zone.
+
+my $k_algorithm	= 0;			# Key's algorithm
+my $k_enddate	= 0;			# Key's end date.
+my $k_date	= 0;			# Key's signing date.
+my $k_label	= 0;			# Label for output.
+my $k_length	= 0;			# Key's length.
+my $k_life	= 0;			# Key's lifespan.
+my $k_random	= 0;			# Key's random number generator.
+my $k_path	= 0;			# Key's path.
+my $k_zonename	= 0;			# Key's owning zone.
+
+my $h_zone	= 0;			# Zone help message flag.
+my $h_set	= 0;			# Set help message flag.
+my $h_key	= 0;			# Key help message flag.
+
+#######################################################################
+
+
+my @krnames;				# List of keyrecs in the file.
+
+my %zones    = ();			# Zone keyrecs.
+my %sets     = ();			# Set keyrecs.
+my %settypes = ();			# Set types to display.
+my %allkeys  = ();			# All key keyrecs.
+my %selkeys  = ();			# Keys selected for output.
+my %kskkeys  = ();			# KSK keyrecs.
+my %zskkeys  = ();			# ZSK keyrecs.
+my %kcurkeys = ();			# Current KSK keyrecs.
+my %kpubkeys = ();			# Published KSK keyrecs.
+my %kobskeys = ();			# Obsolete KSK keyrecs.
+my %krevkeys = ();			# Obsolete KSK keyrecs.
+my %zcurkeys = ();			# Current ZSK keyrecs.
+my %znewkeys = ();			# New ZSK keyrecs.
+my %zpubkeys = ();			# Published ZSK keyrecs.
+my %zobskeys = ();			# Obsolete ZSK keyrecs.
+my %zrevkeys = ();			# Revoked ZSK keyrecs.
+
+my $archive;				# Default archive directory.
+
+my $ret;				# Return code from main().
+
+$ret = main();
+exit($ret);
+
+#-----------------------------------------------------------------------------
+# Routine:	main()
+#
+sub main()
+{
+	my $argc = @ARGV;		# Number of command line arguments.
+	my $errors = 0;			# Total error count.
+
+	erraction(ERR_EXIT);
+
+	#
+	# Check our options.
+	#
+	doopts($argc);
+
+	#
+	# Read the keyrec files.
+	#
+	while($argc > 0)
+	{
+		getkeyrecs($ARGV[0]);
+		shift @ARGV;
+		$argc = @ARGV;
+	}
+
+	#
+	# Cook up the output:  build a header line and calculate the maximum
+	# length of each field.
+	#
+	makeheaders();
+	maxlens();
+
+	#
+	# Give the output.
+	#
+	showzones()	if($zonesflag);
+	showsets()	if($setsflag);
+	showkeys()	if($keysflag);
+
+	#
+	# If the matching-record count should be given, give the count in
+	# requested format.
+	#
+	if($cntflag)
+	{
+		if($terse)
+		{
+			print "$count\n";
+		}
+		else
+		{
+			my $plural = "s";
+			$plural = "" if($count == 1);
+
+			print "$count matching record$plural\n";
+		}
+	}
+	return(0);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	doopts()
+#
+# Purpose:	This routine shakes and bakes our command line options.
+#		A bunch of option variables are set according to the specified
+#		options.  Then a little massaging is done to make sure that
+#		the proper actions are taken.  A few options imply others, so
+#		the implied options are set if the implying options are given.
+#
+sub doopts
+{
+	my $argc = shift;			# Command line argument count.
+	my %dtconf;				# DNSSEC-Tools config values.
+
+	#
+	# Parse the options.
+	#
+	GetOptions(\%options,@opts) || usage();
+
+	#
+	# Handle a few immediate flags.
+	#
+	version() if(defined($options{'Version'}));
+	usage(1)   if(defined($options{'help'}));
+
+	#
+	# Set our option variables based on the parsed options.
+	#
+	$allflag	= $options{'all'}	|| 0;
+	$zonesflag	= $options{'zones'}	|| 0;
+	$setsflag	= $options{'sets'}	|| 0;
+	$keysflag	= $options{'keys'}	|| 0;
+	$kskflag	= $options{'ksk'}	|| 0;
+	$kcurflag	= $options{'kcur'}	|| 0;
+	$kpubflag	= $options{'kpub'}	|| 0;
+	$kobsflag	= $options{'kobs'}	|| 0;
+	$krevflag	= $options{'krev'}	|| 0;
+	$kinvflag	= $options{'kinv'}	|| 0;
+	$zskflag	= $options{'zsk'}	|| 0;
+	$zcurflag	= $options{'cur'}	|| 0;
+	$znewflag	= $options{'new'}	|| 0;
+	$zpubflag	= $options{'pub'}	|| 0;
+	$zobsflag	= $options{'zobs'}	|| 0;
+	$zrevflag	= $options{'zrev'}	|| 0;
+	$zinvflag	= $options{'zinv'}	|| 0;
+	$obsflag	= $options{'obs'}	|| 0;
+	$revflag	= $options{'rev'}	|| 0;
+
+	$zdatesflag	= $options{'z-dates'}	|| 0;
+	$zdirsflag	= $options{'z-dirs'}	|| 0;
+	$zksksflag	= $options{'z-ksk'}	|| 0;
+	$zsetsflag	= $options{'z-sets'}	|| 0;
+	$zzsksflag	= $options{'z-zsk'}	|| 0;
+
+	$refflag	= $options{'ref'}	|| 0;
+	$unrefflag	= $options{'unref'}	|| 0;
+	$validflag	= $options{'valid'}	|| 0;
+	$expiredflag	= $options{'expired'}	|| 0;
+	$invflag	= $options{'invalid'}	|| 0;
+
+	$cntflag	= $options{'count'}	|| 0;
+	$nodateflag	= $options{'nodate'}	|| 0;
+	$headerflag	= $options{'headers'}	|| 0;
+	$terse		= $options{'terse'}	|| 0;
+	$long		= $options{'long'}	|| 0;
+
+	$h_zone		= $options{'h-zones'}	|| 0;
+	$h_set		= $options{'h-sets'}	|| 0;
+	$h_key		= $options{'h-keys'}	|| 0;
+
+	#
+	# Set some KSK-related set-display hash fields based on options.
+	#
+	$settypes{'kskcur'} = 1 if(defined($options{'s-kcur'}));
+	$settypes{'kskobs'} = 1 if(defined($options{'s-kobs'}));
+	$settypes{'kskpub'} = 1 if(defined($options{'s-kpub'}));
+	$settypes{'kskrev'} = 1 if(defined($options{'s-krev'}));
+	if(defined($options{'s-ksk'}))
+	{
+		$settypes{'kskcur'} = 1;
+		$settypes{'kskobs'} = 1;
+		$settypes{'kskpub'} = 1;
+		$settypes{'kskrev'} = 1;
+	}
+
+	#
+	# Set some ZSK-related set-display hash fields based on options.
+	#
+	$settypes{'zskcur'} = 1 if(defined($options{'s-zcur'}));
+	$settypes{'zsknew'} = 1 if(defined($options{'s-znew'}));
+	$settypes{'zskobs'} = 1 if(defined($options{'s-zobs'}));
+	$settypes{'zskpub'} = 1 if(defined($options{'s-zpub'}));
+	$settypes{'zskrev'} = 1 if(defined($options{'s-zrev'}));
+	if(defined($options{'s-zsk'}))
+	{
+		$settypes{'zskcur'} = 1;
+		$settypes{'zsknew'} = 1;
+		$settypes{'zskobs'} = 1;
+		$settypes{'zskpub'} = 1;
+		$settypes{'zskrev'} = 1;
+	}
+
+	#
+	# If any set-types flags were given, we'll turn on the show-sets flag.
+	#
+	$setsflag = 1 if(%settypes != 0);
+
+	#
+	# Check for specific help messages.
+	#
+	usage(0) if($h_zone || $h_set || $h_key);
+
+	#
+	# Ensure we were given a keyrec file to check.
+	#
+	$argc = @ARGV;
+	usage(1) if($argc == 0);
+
+	#
+	# Get the configuration values.
+	#
+	%dtconf = parseconfig();
+	$archive = $dtconf{'archivedir'};
+
+	#
+	# If the valid-zone or the expired-zone option was given, but the
+	# zones specifier wasn't, we'll assume they want all the zones listed.
+	#
+	if($terse && $long)
+	{
+		print STDERR "lskrf:  only one of -long and -terse may be specified\n";
+		exit(1);
+	}
+
+	#
+	# If both -ref and -unref were given, we'll turn off both flags.
+	#
+	if($refflag && $unrefflag)
+	{
+		$refflag = 0;
+		$unrefflag = 0;
+	}
+
+	#
+	# If the valid-zone or the expired-zone option was given, but the
+	# zones specifier wasn't, we'll assume they want all the zones listed.
+	#
+	if(($validflag || $expiredflag)	 && !$zonesflag)
+	{
+		$zonesflag = 1;
+	}
+
+	#############################################################
+	#
+	# WARNING:  Code order beyond this point is critical.  Do *NOT* modify
+	#	    anything in the rest of this routine if you are an idiot.
+	#
+
+	#
+	# If the -invalid option was given, convert it to -obs and -rev.
+	#
+	if($invflag)
+	{
+		$obsflag = 1;
+		$revflag = 1;
+	}
+
+	#
+	# If the -obs option was given, convert it to -kobs and -zobs.
+	#
+	if($obsflag)
+	{
+		$kobsflag = 1;
+		$zobsflag = 1;
+	}
+
+	#
+	# If the -rev option was given, convert it to -krev and -zrev.
+	#
+	if($revflag)
+	{
+		$krevflag = 1;
+		$zrevflag = 1;
+	}
+
+	#
+	# If none of the normal record selection flags were given but
+	# either the referenced or unreferenced record flags were given,
+	# then we'll assume the user wants all the referenced sets and keys.
+	#
+	if(!$allflag && !$zonesflag && !$setsflag && !$keysflag &&
+	   !$kskflag && !$kcurflag  && !$kpubflag &&
+	   !$zskflag && !$zcurflag  && !$zpubflag && !$znewflag &&
+	   !$kobsflag && !$krevflag && !$zobsflag && !$zrevflag	)
+	{
+		if($refflag || $unrefflag)
+		{
+			$setsflag = 1;
+			$keysflag = 1;
+		}
+		elsif(!$refflag && !$unrefflag)
+		{
+			print STDERR "no record-selection options were chosen\n";
+			exit(1);
+		}
+
+		#
+		# Turn on display of obsolete keys if the unreferenced flag
+		# was given.
+		#
+		if($unrefflag)
+		{
+			$kobsflag = 1;
+			$zobsflag = 1;
+		}
+	}
+
+	#
+	# Select all records if the "-all" option was given.  This option
+	# overrides almost everything.
+	#
+	if($allflag)
+	{
+		$zonesflag   = 1;
+		$setsflag    = 1;
+		$keysflag    = 1;
+
+		$refflag     = 0;
+		$unrefflag   = 0;
+		$validflag   = 0;
+		$expiredflag = 0;
+
+	}
+
+	#
+	# Set the appropriate keys flags.  The obsolete and revoked keys must
+	# be explicitly requested.  The all-keys flag won't pick up either.
+	#
+	if($keysflag)
+	{
+		$kskflag = 1;
+		$zskflag = 1;
+	}
+
+	if($kskflag)
+	{
+		$kcurflag = 1;
+		$kpubflag = 1;
+	}
+
+	if($zskflag)
+	{
+		$zcurflag = 1;
+		$znewflag = 1;
+		$zpubflag = 1;
+	}
+
+	#
+	# Set up some zone output flags.
+	#
+	if($zonesflag)
+	{
+		#
+		# Set our defaults.
+		#
+		$z_label    = 1;
+		$z_archdir  = 0;
+		$z_expdate  = 0;
+		$z_kskcount = 0;
+		$z_kskcur   = 0;
+		$z_kskdir   = 0;
+		$z_kskpub   = 0;
+		$z_signdate = 1;
+		$z_signfile = 1;
+		$z_zonefile = 1;
+		$z_zskcount = 0;
+		$z_zskcur   = 0;
+		$z_zskdir   = 0;
+		$z_zsknew   = 0;
+		$z_zskpub   = 0;
+
+		#
+		# Set the flags for -long
+		#
+		if($long)
+		{
+			$z_archdir  = 1;
+			$z_expdate  = 1;
+			$z_kskcount = 1;
+			$z_kskcur   = 1;
+			$z_kskdir   = 1;
+			$z_kskpub   = 1;
+			$z_zskcount = 1;
+			$z_zskcur   = 1;
+			$z_zskdir   = 1;
+			$z_zsknew   = 1;
+			$z_zskpub   = 1;
+		}
+
+		#
+		# Set the flags for -terse.
+		#
+		if($terse)
+		{
+			$z_archdir  = 0;
+			$z_label    = 0;
+			$z_signdate = 0;
+			$z_signfile = 0;
+			$z_zonefile = 0;
+		}
+
+		#
+		# Set the flags for -z-dates.
+		#
+		if($zdatesflag)
+		{
+			$z_expdate  = 1;
+			$z_signdate = 1;
+		}
+
+		#
+		# Set the flags for -z-dirs.
+		#
+		if($zdirsflag)
+		{
+			$z_archdir = 1;
+			$z_kskdir  = 1;
+			$z_zskdir  = 1;
+		}
+
+		#
+		# Set the flags for -z-sets.
+		#
+		if($zsetsflag)
+		{
+			$z_kskcur   = 1;
+			$z_kskpub   = 1;
+			$z_zskcur   = 1;
+			$z_zsknew   = 1;
+			$z_zskpub   = 1;
+		}
+
+		#
+		# Set the flags for -z-ksk.
+		#
+		if($zksksflag)
+		{
+			$z_kskcount = 1;
+			$z_kskcur   = 1;
+			$z_kskdir   = 1;
+			$z_kskpub   = 1;
+		}
+
+		#
+		# Set the flags for -z-zsk.
+		#
+		if($zzsksflag)
+		{
+			$z_zskcount = 1;
+			$z_zskcur   = 1;
+			$z_zskdir   = 1;
+			$z_zsknew   = 1;
+			$z_zskpub   = 1;
+		}
+
+		#
+		# Set some values for flags.
+		#
+		$z_archdir  = 1 if(defined($options{'z-archdir'}));
+		$z_expdate  = 1 if(defined($options{'z-expdate'}));
+		$z_kskcount = 1 if(defined($options{'z-kskcount'}));
+		$z_kskcur   = 1 if(defined($options{'z-kskcur'}));
+		$z_kskdir   = 1 if(defined($options{'z-kskdir'}));
+		$z_kskpub   = 1 if(defined($options{'z-kskpub'}));
+		$z_signdate = 1 if(defined($options{'z-signdate'}));
+		$z_signfile = 1 if(defined($options{'z-signfile'}));
+		$z_zonefile = 1 if(defined($options{'z-zonefile'}));
+		$z_zskcount = 1 if(defined($options{'z-zskcount'}));
+		$z_zskcur   = 1 if(defined($options{'z-zskcur'}));
+		$z_zskdir   = 1 if(defined($options{'z-zskdir'}));
+		$z_zsknew   = 1 if(defined($options{'z-zsknew'}));
+		$z_zskpub   = 1 if(defined($options{'z-zskpub'}));
+
+		$z_label    = 1 if(defined($options{'label'}));
+
+	}
+
+	#
+	# Set up some set output flags.
+	#
+	if($setsflag)
+	{
+		#
+		# Set our defaults.
+		#
+		$s_label   = 1;
+		$s_type	   = 1;
+		$s_keys	   = 0;
+		$s_lastmod = 0;
+		$s_zone    = 1;
+
+		#
+		# Set the non-defaults for -long.
+		#
+		if($long)
+		{
+			$s_keys	   = 1;
+			$s_lastmod = 1;
+			$s_zone	   = 1;
+		}
+
+		#
+		# Set the non-defaults for -terse.
+		#
+		if($terse)
+		{
+			$s_label = 0;
+			$s_type	 = 0;
+			$s_keys	 = 0;
+			$s_zone  = 0;
+		}
+
+		$s_label   = 1 if(defined($options{'label'}));
+		$s_type	   = 1 if(defined($options{'s-type'}));
+		$s_keys	   = 1 if(defined($options{'s-keys'}));
+		$s_lastmod = 1 if(defined($options{'s-lastmod'}));
+		$s_zone	   = 1 if(defined($options{'s-zone'}));
+
+	}
+
+	#
+	# Set up some key output flags.
+	#
+	if($kskflag  || $kcurflag || $kpubflag ||
+	   $zskflag  || $zcurflag || $zpubflag || $znewflag ||
+	   $kobsflag || $krevflag || $zobsflag || $zrevflag)
+	{
+		#
+		# Set our defaults.
+		#
+		$k_algorithm = 0;
+		$k_date	     = 1;
+		$k_enddate   = 0;
+		$k_label     = 1;
+		$k_length    = 0;
+		$k_life	     = 0;
+		$k_path	     = 0;
+		$k_random    = 0;
+		$k_zonename  = 1;
+
+		#
+		# Set the non-defaults for -long.
+		#
+		if($long)
+		{
+			$k_algorithm = 1;
+			$k_enddate   = 1;
+			$k_length    = 1;
+			$k_life	     = 1;
+			$k_path	     = 1;
+			$k_random    = 1;
+		}
+
+		#
+		# Set the non-defaults for -terse.
+		#
+		if($terse)
+		{
+			$k_date	    = 0;
+			$k_label    = 0;
+			$k_zonename = 0;
+		}
+
+		#
+		# Set some values for flags.
+		#
+		$k_algorithm = 1 if(defined($options{'k-algorithm'}));
+		$k_enddate   = 1 if(defined($options{'k-enddate'}));
+		$k_date      = 1 if(defined($options{'k-signdate'}));
+		$k_length    = 1 if(defined($options{'k-length'}));
+		$k_life      = 1 if(defined($options{'k-lifespan'}));
+		$k_path      = 1 if(defined($options{'k-path'}));
+		$k_random    = 1 if(defined($options{'k-random'}));
+		$k_zonename  = 1 if(defined($options{'k-zone'}));
+
+		$k_label     = 1 if(defined($options{'label'}));
+
+		#
+		# $keysflag isn't used any more for output selection, so we'll
+		# set it to indicate that some keys should be printed.
+		#
+		$keysflag = 1;
+	}
+
+	#
+	# If -headers was given, we'll turn off the label flags.
+	#
+	if($headerflag)
+	{
+		$z_label = 0 if(!defined($options{'label'}));
+		$s_label = 0 if(!defined($options{'label'}));
+		$k_label = 1;
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	getkeyrecs()
+#
+# Purpose:	This routine reads the specified keyrec file and puts each
+#		keyrec into the appropriate keyrec hash table.  There are
+#		hashes for zones, KSK keys, ZSK keys, current KSKs, obsolete
+#		KSKs, revoked KSKs, current ZSKs, new ZSKs, published ZSKs,
+#		obsolete ZSKs, and revoked ZSKs.
+#
+sub getkeyrecs
+{
+	my $krfile = shift;			# Keyrec file.
+
+	keyrec_read($krfile);
+
+	@krnames = keyrec_names();
+
+	foreach my $krn (sort(@krnames))
+	{
+		my $kr;				# Reference to keyrec.
+		my %keyrec;			# Keyrec.
+		my $type;			# Keyrec's type.
+		my $name;			# Key for set hash entry.
+
+		$kr = keyrec_fullrec($krn);
+		%keyrec = %$kr;
+
+		$type = $keyrec{'keyrec_type'};
+
+		if($type eq 'zone')
+		{
+			my $archdir;
+
+			#
+			# Set the archive directory to the default if one
+			# isn't defined for the zone.
+			#
+			if(!defined($kr->{'archivedir'}))
+			{
+				$kr->{'archivedir'} = $archive;
+			}
+
+			$zones{$krn} = $kr;
+		}
+		elsif($type eq 'set')
+		{
+			$name = "$krn($kr->{'zonename'})";
+			$sets{$name} = $kr;
+		}
+		elsif($type eq 'kskcur')
+		{
+			$allkeys{$krn}	= $kr;
+			$kcurkeys{$krn}	= $kr;
+			$kskkeys{$krn}	= $kr;
+		}
+		elsif($type eq 'kskpub')
+		{
+			$allkeys{$krn}	= $kr;
+			$kpubkeys{$krn}	= $kr;
+			$kskkeys{$krn}	= $kr;
+		}
+		elsif($type eq 'kskrev')
+		{
+			$krevkeys{$krn}	= $kr;
+			$kskkeys{$krn}	= $kr;
+		}
+		elsif($type eq 'kskobs')
+		{
+			if(defined($kr->{'set_type'}))
+			{
+				$name = "$krn($kr->{'zonename'})";
+				$sets{$name} = $kr;
+			}
+			else
+			{
+				$kobskeys{$krn}	= $kr;
+				$kskkeys{$krn}	= $kr;
+			}
+		}
+		elsif($type eq 'zskcur')
+		{
+			$allkeys{$krn}	= $kr;
+			$zcurkeys{$krn}	= $kr;
+			$zskkeys{$krn}	= $kr;
+		}
+		elsif($type eq 'zsknew')
+		{
+			$allkeys{$krn}	= $kr;
+			$znewkeys{$krn}	= $kr;
+			$zskkeys{$krn}	= $kr;
+		}
+		elsif($type eq 'zskpub')
+		{
+			$allkeys{$krn}	= $kr;
+			$zpubkeys{$krn}	= $kr;
+			$zskkeys{$krn}	= $kr;
+		}
+		elsif($type eq 'zskrev')
+		{
+			$zrevkeys{$krn}	= $kr;
+			$zskkeys{$krn}	= $kr;
+		}
+		elsif($type eq 'zskobs')
+		{
+			if(defined($kr->{'set_type'}))
+			{
+				$name = "$krn($kr->{'zonename'})";
+				$sets{$name} = $kr;
+			}
+			else
+			{
+				$zobskeys{$krn}	= $kr;
+				$zskkeys{$krn}	= $kr;
+			}
+		}
+	}
+}
+
+#----------------------------------------------------------------------
+# Routine:	makeheaders()
+#
+# Purpose:	Build header lines as a fake keyrec.
+#
+sub makeheaders
+{
+	return if(!$headerflag);
+
+	#
+	# Build the headers for zones.
+	#
+	if($zonesflag)
+	{
+		my %kr = ();
+		$kr{'keyrec_name'}	= $ZONE;
+		$kr{'keyrec_type'}	= 'Zone';
+		$kr{'zonefile'}		= 'Zone File';
+		$kr{'signedzone'}	= 'Signed File';
+		$kr{'kskcount'}		= 'KSK Count';
+		$kr{'kskcur'}		= 'Current KSK';
+		$kr{'kskdirectory'}	= 'KSK Directory';
+		$kr{'kskpub'}		= 'Published KSK';
+		$kr{'zskcount'}		= 'ZSK Count';
+		$kr{'zskcur'}		= 'Current ZSK';
+		$kr{'zskdirectory'}	= 'ZSK Directory';
+		$kr{'zsknew'}		= 'New ZSK';
+		$kr{'zskpub'}		= 'Published ZSK';
+		$kr{'keyrec_signdate'}	= 'Signing Date';
+		$kr{'expdate'}		= 'Expiration Date';
+		$kr{'archivedir'}	= 'Archive Directory';
+		$zones{$HEADER_KRN} = \%kr;
+	}
+
+	#
+	# Build the headers for signing sets.
+	#
+	if($setsflag)
+	{
+		my %kr = ();
+		$kr{'keyrec_name'}	= $SET;
+		$kr{'keyrec_type'}	= 'Set';
+		$kr{'keys'}		= 'Keys';
+		$kr{'set_type'}		= 'Set Type';
+		$kr{'zonename'}		= 'Zone Name';
+		$kr{'keyrec_setdate'}	= 'Last Set Modification';
+		$sets{$HEADER_KRN} = \%kr;
+	}
+
+	#
+	# Build the headers for keys.
+	#
+	if($keysflag)
+	{
+		my %kr = ();
+		$kr{'keyrec_name'}	= 'Key Name';
+		$kr{'keyrec_type'}	= 'Key Type';
+		$kr{'algorithm'}	= 'Algorithm';
+		$kr{'enddate'}		= 'End Date';
+		$kr{'keyrec_gendate'}	= 'Key Generation';
+		$kr{'keylength'}	= 'Key Length';
+		$kr{'keylife'}		= 'Key Life';
+		$kr{'keypath'}		= 'Key Path';
+		$kr{'random'}		= 'Random Generator';
+		$kr{'zonename'}		= 'Zone Name';
+
+		#
+		# Are these five needed?
+		#
+		$kr{'keyrec_gensecs'}	= 'Key Generation';
+		$kr{'ksklength'}	= 'Key Length';
+		$kr{'ksklife'}		= 'Key Life';
+		$kr{'zsklength'}	= 'Key Length';
+		$kr{'zsklife'}		= 'Key Life';
+
+		$allkeys{$HEADER_KRN} = \%kr;
+		$selkeys{$HEADER_KRN} = \%kr;
+	}
+
+}
+
+#----------------------------------------------------------------------
+# Routine:	maxlens()
+#
+# Purpose:	Calculate the maximum length of each keyrec field for the
+#		zone, signing set, and key keyrecs.  Length data for each
+#		type of keyrec will be saved separately.
+#		After finding the longest length for each field, we'll
+#		add a little buffer space.
+#
+sub maxlens
+{
+	#
+	# Initialize the lengths hashes.
+	#
+	%lengths = ();
+
+	#
+	# If we'll be printing zones, we'll calculate the maximum length
+	# of each field in each zone keyrec.
+	#
+	if($zonesflag)
+	{
+		#
+		# Loop through the zone list and get data on the desired zones.
+		#
+		foreach my $name (sort(keys(%zones)))
+		{
+			my $rref  = $zones{$name};
+			my %kr = %$rref;
+
+			foreach my $fld (sort(keys(%kr)))
+			{
+				if(length($kr{$fld}) > $lengths{$ZONE}{$fld})
+				{
+					$lengths{$ZONE}{$fld} = length($kr{$fld});
+				}
+			}
+		}
+
+		#
+		# Hardcode the length of the expiration date string.
+		# Unless we change our system of time-keeping, this will be 24.
+		#
+		$lengths{$ZONE}{'expdate'} = 24;
+
+		#
+		# Add a little buffer space between fields.
+		#
+		foreach my $fld (sort(keys(%{$lengths{$ZONE}})))
+		{
+			my $newlen;
+
+			$newlen = $lengths{$ZONE}{$fld};
+			$newlen += $COLSPACE;
+			$lengths{$ZONE}{$fld} = $newlen;
+		}
+	}
+
+	#
+	# If we'll be printing signing sets, we'll calculate the maximum
+	# length of each field in each set keyrec.
+	#
+	if($setsflag)
+	{
+		#
+		# Loop through the set list and get data on the desired sets.
+		#
+		foreach my $name (sort(keys(%sets)))
+		{
+			my $rref  = $sets{$name};
+			my %kr = %$rref;
+
+			foreach my $fld (sort(keys(%kr)))
+			{
+				if(length($kr{$fld}) > $lengths{$SET}{$fld})
+				{
+					$lengths{$SET}{$fld} = length($kr{$fld});
+				}
+			}
+		}
+
+		#
+		# Add a little buffer space between fields.
+		#
+		foreach my $fld (sort(keys(%{$lengths{$SET}})))
+		{
+			my $newlen;
+
+			$newlen = $lengths{$SET}{$fld};
+			$newlen += $COLSPACE;
+			$lengths{$SET}{$fld} = $newlen;
+		}
+	}
+
+	#
+	# If we'll be printing keys, we'll calculate the maximum length
+	# of each field in each set keyrec.
+	#
+	if($keysflag)
+	{
+		#
+		# Loop through the selected key list and get data on the
+		# desired keys.
+		#
+		foreach my $name (sort(keys(%selkeys)))
+		{
+			my $rref  = $selkeys{$name};
+			my %kr;
+
+			#
+			# Skip undefined hash keys.
+			#
+			next if(!defined($rref));
+
+			%kr = %$rref;
+
+			#
+			# Go through the keyrec's fields and check them
+			# against the saved maximum lengths of key fields.
+			#
+			foreach my $fl (sort(keys(%kr)))
+			{
+				if(length($kr{$fl}) > $lengths{$KEY}{$fl})
+				{
+					$lengths{$KEY}{$fl} = length($kr{$fl});
+				}
+			}
+		}
+
+		#
+		# Add a little buffer space between fields.
+		#
+		foreach my $fld (sort(keys(%{$lengths{$KEY}})))
+		{
+			my $newlen;
+
+			$newlen = $lengths{$KEY}{$fld};
+			$newlen += $COLSPACE;
+			$lengths{$KEY}{$fld} = $newlen;
+		}
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	showzones()
+#
+# Purpose:	This routine displays zone data.  It has three output formats:
+#
+#			normal	A zone label, the zone name, the zone file,
+#				and the zone's signing date are displayed.
+#
+#			terse	The zone name is displayed.
+#
+#			long	A zone label, the zone name, the zone file,
+#				the zone's signing date, and the zone's date
+#				of expiry are displayed.
+#
+#		If one of the zone expiration flags was given then there is
+#		also a check made to see if the zone is expired.
+#
+sub showzones
+{
+	my $out = "";				# Output string to build.
+
+	my $signdate;				# Zone's signing date.
+	my $zonename;				# Zone's name.
+	my $zonefile;				# Zone's zonefile.
+	my $signfile;				# Zone's signed zonefile.
+
+	my $archdir;				# Zone's archive directory.
+	my $endtime;				# Calculated expiration date.
+	my $expdate;				# Expiration date in seconds.
+	my $kskcount;				# KSK count.
+	my $kskcur;				# Current KSK's signing set.
+	my $kskdir;				# KSK's directory.
+	my $kskpub;				# Published KSK's signing set.
+	my $signsecs;				# Signing date in seconds.
+	my $zskcount;				# ZSK count.
+	my $zskcur;				# Current ZSK's signing set.
+	my $zskdir;				# ZSK's directory.
+	my $zsknew;				# New ZSK's signing set.
+	my $zskpub;				# Published ZSK's signing set.
+
+	#
+	# Reset our previous key value.
+	#
+	$prevkey = '';
+
+	#
+	# Loop through the zone list and give data on the desired zones.
+	#
+	foreach my $zk (sort(keys(%zones)))
+	{
+		my $krr = $zones{$zk};
+		my %kr = %$krr;
+
+		#
+		# Check the zone-validity flags against the zone to see if
+		# the record should be displayed.
+		#
+		if(($validflag	 &&  expiredzone($zk))	||
+		   ($expiredflag && !expiredzone($zk)))
+		{
+			next;
+		}
+
+		#
+		# Bump the matching-records count.
+		#
+		$count++ if($zk ne $HEADER_KRN);
+
+		#
+		# Stay cloaked if only the count of matching records
+		# should be given.
+		#
+		next if($cntflag);
+
+		#
+		# Get a bunch of data from the zone keyrec.
+		#
+		$archdir  = $kr{'archivedir'};
+		$endtime  = $kr{'endtime'};
+		$expdate  = $kr{'expdate'};
+		$kskcount = $kr{'kskcount'};
+		$kskcur	  = $kr{'kskcur'} || "<unset>";
+		$kskpub	  = $kr{'kskpub'} || "<unset>";
+		$kskdir	  = $kr{'kskdirectory'} || ".";
+		$signdate = $kr{'keyrec_signdate'};
+		$signsecs = $kr{'keyrec_signsecs'};
+		$signfile = $kr{'signedzone'};
+		$zonefile = $kr{'zonefile'};
+		$zskcount = $kr{'zskcount'};
+		$zskcur	  = $kr{'zskcur'} || "<unset>";
+		$zsknew	  = $kr{'zsknew'} || "<unset>";
+		$zskpub	  = $kr{'zskpub'} || "<unset>";
+		$zskdir	  = $kr{'zskdirectory'} || ".";
+
+		#
+		# Do some non-header manipulations.
+		#
+		if($zk ne $HEADER_KRN)
+		{
+			#
+			# Get a string holding the zone's expiration date.
+			#
+			$endtime = $signsecs + $endtime;
+			$expdate = gmtime($endtime);
+			$zones{$zk}{'expdate'} = $expdate;
+
+			#
+			# Make sure we have numeric key counts.
+			#
+			$kskcount = '0' if($kskcount eq '');
+			$zskcount = '0' if($zskcount eq '');
+			$zones{$zk}{'kskcount'} = $kskcount;
+			$zones{$zk}{'zskcount'} = $zskcount;
+
+			#
+			# Save the current directories.
+			#
+			$zones{$zk}{'kskdir'} = $kskdir;
+			$zones{$zk}{'zskdir'} = $zskdir;
+		}
+
+		$zones{$zk}{'kskcur'} = $kskcur;
+		$zones{$zk}{'kskpub'} = $kskpub;
+		$zones{$zk}{'zskcur'} = $zskcur;
+		$zones{$zk}{'zsknew'} = $zsknew;
+		$zones{$zk}{'zskpub'} = $zskpub;
+
+		#
+		# Get the zone's name.
+		#
+		$zonename = $HEADER_KRN if($zonename eq "");
+		$zonename = $zk;
+
+		#
+		# Build the output string.
+		#
+		$prevkey = 'first-field';
+		$out  = outstr($ZONE,$zk,'keyrec_type','zone',$z_label,0);
+		$out .= outstr($ZONE,$zk,'keyrec_name',$zonename,1,0);
+		$out .= outstr($ZONE,$zk,'zonefile',$zonefile,$z_zonefile,0);
+		$out .= outstr($ZONE,$zk,'signedzone',$signfile,$z_signfile,0);
+		$out .= outstr($ZONE,$zk,'kskcount',$kskcount,$z_kskcount,0);
+		$out .= outstr($ZONE,$zk,'kskcur',$kskcur,$z_kskcur,0);
+		$out .= outstr($ZONE,$zk,'kskpub',$kskpub,$z_kskpub,0);
+		$out .= outstr($ZONE,$zk,'kskdirectory',$kskdir,$z_kskdir,0);
+		$out .= outstr($ZONE,$zk,'zskcount',$zskcount,$z_zskcount,0);
+		$out .= outstr($ZONE,$zk,'zskcur',$zskcur,$z_zskcur,0);
+		$out .= outstr($ZONE,$zk,'zskpub',$zskpub,$z_zskpub,0);
+		$out .= outstr($ZONE,$zk,'zsknew',$zsknew,$z_zsknew,0);
+		$out .= outstr($ZONE,$zk,'zskdirectory',$zskdir,$z_zskdir,0);
+		$out .= outstr($ZONE,$zk,'keyrec_signdate',$signdate,$z_signdate,1);
+		$out .= outstr($ZONE,$zk,'expdate',$expdate,$z_expdate,1);
+		$out .= outstr($ZONE,$zk,'archivedir',$archdir,$z_archdir,0);
+
+		#
+		# Write the output string.
+		#
+		print "$out\n";
+
+	}
+
+	print "\n" if($headerflag && ($setsflag || $keysflag));
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	showsets()
+#
+# Purpose:	This routine displays set data.  It has three output formats:
+#
+#			normal	A label, the set name, the set's zone, and the
+#				set's keys are displayed.
+#
+#			terse	The set name and the set's zone are displayed.
+#
+#			long	A label, the set name, the set's keys, the set's
+#				zone, the set's creation date are displayed.
+#
+sub showsets
+{
+	my $out = "";				# Output string to build.
+
+	my $setname;				# Set's name.
+	my $settype;				# Set's type.
+	my $keylist;				# Set's key list.
+	my $moddate;				# Set's creation date.
+	my $zone;				# Set's zonename.
+
+	my $checktypes = 0;			# Flag for checking types.
+	my $endtime;				# Calculated expiration date.
+	my $setsecs;				# Signing date in seconds.
+
+	#
+	# Reset our previous key value.
+	#
+	$prevkey = '';
+
+	#
+	# Set our check-types flag.
+	#
+	$checktypes = 1 if(%settypes != 0);
+
+	#
+	# Loop through the set list and give data on the desired sets.
+	#
+	foreach my $sk (sort(keys(%sets)))
+	{
+		my $krr = $sets{$sk};		# Reference to set's keyrec.
+		my %kr = %$krr;			# Set's keyrec.
+
+		#
+		# Check this set's reference state against the command options.
+		#
+		if($sk ne $HEADER_KRN)
+		{
+			my $sn;					# Set name.
+
+			#
+			# Get just the set name.
+			#
+			$sk =~ /(.*)\(.*\)/;
+			$sn = $1;
+
+			#
+			# Skip this keyrec if we should.
+			#		(Nice and obscure, no?)
+			#
+			if(($refflag   && !refdkeyrec($sn)) ||
+			   ($unrefflag &&  refdkeyrec($sn)))
+			{
+				next;
+			}
+		}
+
+		#
+		# Get a bunch of data from the set keyrec.
+		#
+		$zone	 = $kr{'zonename'};
+		$settype = $kr{'set_type'};
+		$keylist = $kr{'keys'};
+	 	$moddate = $kr{'keyrec_setdate'};
+
+		#
+		# Skip this record if we aren't supposed to show this set type. 
+		#
+		next if($checktypes && !defined($settypes{$settype}));
+
+		#
+		# Bump the matching-records count.
+		#
+		$count++ if($sk ne $HEADER_KRN);
+
+		#
+		# Stay cloaked if only the count of matching records
+		# should be given.
+		#
+		next if($cntflag);
+
+		#
+		# Get the set's name (stripping off the zone.)
+		#
+		$sk =~ /(.*)\(.*\)/;
+		$setname = $1;
+		$setname = $HEADER_KRN if($setname eq "");
+
+		#
+		# Convert the set's type into a pretty version.
+		#
+		if($settype ne 'Set Type')
+		{
+			$settype =~ /^([kz]sk)(.+)$/i;
+			my $type1 = uc($1);
+			my $type2 = $2;
+			$settype = "$type1-$type2";
+			$sets{$sk}{'set_type'} = $settype;
+		}
+		else
+		{
+			if($setname ne $HEADER_KRN)
+			{
+				$settype = '(unknown set type)';
+			}
+		}
+
+		#
+		# If this is the active "super" set of revoked KSKs, we'll
+		# capitalize the suffix.
+		#
+		if($settype eq 'KSK-rev')
+		{
+			my $zkr = $zones{$zone};
+			if($zkr->{'kskrev'} eq $setname)
+			{
+				$settype = "KSK-REV";
+			}
+		}
+
+		#
+		# Build the output string.
+		#
+		$prevkey = 'first-field';
+		$out  = outstr($SET,$sk,'keyrec_type','set',$s_label,0);
+		$out .= outstr($SET,$sk,'keyrec_name',$setname,1,0);
+		$out .= outstr($SET,$sk,'zonename',$zone,$s_zone,0);
+		$out .= outstr($SET,$sk,'set_type',$settype,$s_type,0);
+		$out .= outstr($SET,$sk,'keyrec_setdate',$moddate,$s_lastmod,1);
+		$out .= outstr($SET,$sk,'keys',$keylist,$s_keys,0);
+
+		#
+		# Write the output string.
+		#
+		print "$out\n";
+
+	}
+
+	print "\n" if($headerflag && ($keysflag));
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	showkeys()
+#
+# Purpose:	This routine goes through the key-related hashes and prints
+#		output for them.  It's only done if the appropriate option
+#		has been given, blah blah blah.
+#
+sub showkeys
+{
+	my $krr;			# Reference to a key's keyrec.
+
+	#
+	# Select a header line.
+	#
+	if($headerflag)
+	{
+		$krr = $selkeys{$HEADER_KRN};
+		selkey($HEADER_KRN,$krr,'');
+	}
+
+	#
+	# Select the information about the Current KSK keys.
+	#
+	if($kcurflag)
+	{
+		foreach my $k (sort(keys(%kcurkeys)))
+		{
+			$krr = $kcurkeys{$k};
+			selkey($k,$krr,"KSK-cur");
+		}
+	}
+
+	#
+	# Select the information about the Published KSK keys.
+	#
+	if($kpubflag)
+	{
+		foreach my $k (sort(keys(%kpubkeys)))
+		{
+			$krr = $kpubkeys{$k};
+			selkey($k,$krr,"KSK-pub");
+		}
+	}
+
+	#
+	# Select the information about the revoked KSK keys.
+	#
+	if($krevflag)
+	{
+		foreach my $k (sort(keys(%krevkeys)))
+		{
+			$krr = $krevkeys{$k};
+			selkey($k,$krr,"KSK-rev");
+		}
+	}
+
+	#
+	# Select the information about the obsolete KSK keys.
+	#
+	if($kobsflag)
+	{
+		foreach my $k (sort(keys(%kobskeys)))
+		{
+			$krr = $kobskeys{$k};
+			selkey($k,$krr,"KSK-obs");
+		}
+	}
+
+	#
+	# Select the information about the Current ZSK keys.
+	#
+	if($zcurflag)
+	{
+		foreach my $k (sort(keys(%zcurkeys)))
+		{
+			$krr = $zcurkeys{$k};
+			selkey($k,$krr,"ZSK-cur");
+		}
+	}
+
+	#
+	# Select the information about the Published ZSK keys.
+	#
+	if($zpubflag)
+	{
+		foreach my $k (sort(keys(%zpubkeys)))
+		{
+			$krr = $zpubkeys{$k};
+			selkey($k,$krr,"ZSK-pub");
+		}
+	}
+
+	#
+	# Select the information about the New ZSK keys.
+	#
+	if($znewflag)
+	{
+		foreach my $k (sort(keys(%znewkeys)))
+		{
+			$krr = $znewkeys{$k};
+			selkey($k,$krr,"ZSK-new");
+		}
+	}
+
+	#
+	# Select the information about the obsolete ZSK keys.
+	#
+	if($zobsflag)
+	{
+		foreach my $k (sort(keys(%zobskeys)))
+		{
+			$krr = $zobskeys{$k};
+			selkey($k,$krr,"ZSK-obs");
+		}
+	}
+
+	#
+	# Select the information about the revoked ZSK keys.
+	#
+	if($zrevflag)
+	{
+		foreach my $k (sort(keys(%zrevkeys)))
+		{
+			$krr = $zrevkeys{$k};
+			selkey($k,$krr,"ZSK-rev");
+		}
+	}
+
+	#
+	# Write the selected key data.
+	#
+	writekeys();
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	expiredzone()
+#
+# Purpose:	This routine determines if a specified zone has expired or
+#		if it's still valid.
+#
+# Return Values:
+#		 1 - the zone has expired
+#		 0 - the zone has not expired
+#
+sub expiredzone
+{
+	my $zn = shift;				# Zone name to be checked.
+	my %zkr;				# Zone keyrec.
+	my $zkrref;				# Reference to zone keyrec.
+
+	my $endtime;				# Zone's end-time.
+	my $signsecs;				# Zone's signing date.
+
+	my $curtime = time();			# Current time.
+	my $secs;				# Seconds in "+nnn" endtime.
+	my $finaltime;				# Time zone expires.
+
+	#
+	# Get the zone's keyrec.
+	#
+	$zkrref = $zones{$zn};
+	%zkr = %$zkrref;
+
+	#
+	# Pull some data from the keyrec.
+	#
+	$endtime  = $zkr{'endtime'};
+	$signsecs = $zkr{'keyrec_signsecs'};
+
+	#
+	# Get the number of seconds until the zone's end time.
+	#
+	if($endtime =~ /^+/)
+	{
+		$endtime =~ /\+([0-9]+)/;
+		$secs = $1;
+	}
+
+	#
+	# Calculate the zone's expiration date.
+	#
+	$finaltime = $signsecs + $secs;
+
+	#
+	# If the zone has expired, we'll return success.  If not, we'll
+	# return failure.
+	#
+	if($finaltime <= $curtime)
+	{
+		return(1);
+	}
+
+	return(0);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	refdkeyrec()
+#
+# Purpose:	This routine determines if a named keyrec is referenced.
+#		Zones reference signing sets, signing sets reference zones.
+#		For a set keyrec to be referenced, it must be listed in a
+#		zone keyrec.  For a key keyrec to be referenced, it must be
+#		listed in a set keyrec which is listed in a zone.
+#
+# Return Values:
+#		 1 - the keyrec is referenced
+#		 0 - the keyrec is not referenced
+#
+sub refdkeyrec
+{
+	my $kn = shift;			# Keyrec name to be checked.
+
+	my $krtype;			# Type of specified keyrec.
+
+	#
+	# Get the key's type and return false if this is a zone.
+	#
+	$krtype = keyrec_recval($kn,'keyrec_type');
+	return(0) if($krtype eq 'zone');
+
+	#
+	# If this is a signing set, we'll see if any of the zones has it
+	# as an active set.
+	#
+	if($krtype eq 'set')
+	{
+		#
+		# Check each zone to see if this signing set is one of the
+		# zone's active sets.  If so, return true.
+		#
+		foreach my $zn (keys(%zones))
+		{
+			my %zkr;			# Zone keyrec.
+			my $zkrref;			# Ref. to zone keyrec.
+
+			$zkrref = $zones{$zn};
+			%zkr = %$zkrref;
+			if(($zkr{'kskcur'} eq $kn) ||
+			   ($zkr{'kskpub'} eq $kn) ||
+			   ($zkr{'zskcur'} eq $kn) ||
+			   ($zkr{'zskpub'} eq $kn) ||
+			   ($zkr{'zsknew'} eq $kn))
+			{
+				return(1);
+			}
+		}
+
+		#
+		# The signing set wasn't found in any of the zones so
+		# we'll return false.
+		#
+		return(0);
+	}
+
+	#
+	# Check each signing set to see if it's using this key.
+	#
+	foreach my $sn (keys(%sets))
+	{
+		my %skr;			# Set keyrec.
+		my $skrref;			# Ref. to set keyrec.
+
+		$sn =~ /(.*)\(.*\)/;
+		$sn = $1;
+
+
+		#
+		# If this signing set holds this key, we'll see if it
+		# is referenced by a zone.
+		#
+		if(keyrec_signset_haskey($sn,$kn))
+		{
+			return(1) if(refdkeyrec($sn));
+		}
+	}
+
+	#
+	# Didn't find a reference to the key, so we'll return failure.
+	#
+	return(0);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	selkey()
+#
+# Purpose:	This routine selects the keys whose data will be displayed.
+#		It is called for several types of KSKs and of ZSK.  It handles
+#		the referenced-key options, depending on whether or not the
+#		specified key is actually referenced.
+#
+sub selkey
+{
+	my $key	 = shift;		# Key name.
+	my $kkr	 = shift;		# Reference to key's keyrec.
+	my $lbl	 = shift;		# Output label.
+
+	my %kr = %$kkr;			# Key's keyrec.
+
+	my $algorithm;			# Key's algorithm.
+	my $ender;			# Key's lifespan date (in seconds.)
+	my $gendate = "";		# Key's date.
+	my $enddate = "";		# Key's end-date (in text.)
+	my $length;			# Key's length.
+	my $life;			# Key's lifespan.
+	my $path;			# Key's path.
+	my $random;			# Key's random number generator.
+	my $zonename;			# Name of key's owning zone.
+	my $out  = "";			# Output string.
+
+	#
+	# Check this key's reference state against the command options.
+	#
+	if($key ne $HEADER_KRN)
+	{
+		if(($refflag   && !refdkeyrec($key)) ||
+		   ($unrefflag &&  refdkeyrec($key)))
+		{
+			return;
+		}
+	}
+
+	#
+	# Bump the matching-records count.
+	#
+	$count++ if($key ne $HEADER_KRN);
+
+	#
+	# Run silent if only the count of matching records should be given.
+	#
+	return if($cntflag);
+
+	#
+	# Set up some -long specific stuff.
+	#
+	if($long)
+	{
+		$lbl .= "-key";
+	}
+
+	#
+	# Get the key's data.
+	#
+	$algorithm = $kr{'algorithm'};
+	$path	   = $kr{'keypath'};
+	$random	   = $kr{'random'};
+	$zonename  = $kr{'zonename'};
+	$gendate   = "$kr{'keyrec_gendate'}" if(!$nodateflag);
+
+	#
+	# Set some key-type-specific values.
+	#
+	if($kr{'keyrec_type'} =~ /^ksk/)
+	{
+		$lbl	.= "\t" if($long);
+		$length	 = $kr{'ksklength'};
+		$life	 = $kr{'ksklife'};
+	}
+	else
+	{
+		$length	= $kr{'zsklength'};
+		$life	= $kr{'zsklife'}
+	}
+
+	#
+	# Do some field-specific data majigulations.
+	#
+	if($key eq $HEADER_KRN)
+	{
+		$enddate = $kr{'enddate'};
+	}
+	else
+	{
+		#
+		# Calculate the key's end-date.
+		#
+		$ender = $kr{'keyrec_gensecs'} + $life;
+		$enddate = gmtime($ender);
+
+		#
+		# Set a dummy value if the lifetime wasn't set yet.
+		#
+		$life = "unset" if($life eq "");
+	}
+
+	#
+	# Save the calculated end date.
+	#
+	$allkeys{$key}{'enddate'} = $enddate;
+
+	#
+	# Save the key data to the selected-keys hash.
+	#
+	$selkeys{$key}{'keyrec_name'}	= $key;
+	$selkeys{$key}{'keyrec_type'}	= $kr{'keyrec_type'};
+	$selkeys{$key}{'algorithm'}	= $algorithm;
+	$selkeys{$key}{'enddate'}	= $enddate;
+	$selkeys{$key}{'gendate'}	= $gendate;
+	$selkeys{$key}{'keylength'}	= $length;
+	$selkeys{$key}{'keylife'}	= $life;
+	$selkeys{$key}{'keypath'}	= $path;
+	$selkeys{$key}{'random'}	= $random;
+	$selkeys{$key}{'zonename'}	= $zonename;
+}
+
+#----------------------------------------------------------------------
+# Routine:	writekeys()
+#
+# Purpose:	This routine is the master routine for writing key data.
+#		It does a but of final data massage and then writes the
+#		data in order key-type-specific order.
+#
+sub writekeys
+{
+	#
+	# Adjust the key's type a bit.
+	#
+	foreach my $key (sort(keys(%selkeys)))
+	{
+		my $keytype;				# Key's type.
+
+		$keytype = $selkeys{$key}{'keyrec_type'};
+		$keytype =~ s/^ksk/KSK-/;
+		$keytype =~ s/^zsk/ZSK-/;
+		$selkeys{$key}{'keyrec_type'} = $keytype;
+	}
+
+	#
+	# Now that we have the actual keys, recalculate the maximum lengths.
+	#
+	$zonesflag = $setsflag = 0;
+	maxlens();
+
+	#
+	# Write each of the key types in a nice orderly fashion.
+	#
+	foreach my $kt ('Key Type',
+			'KSK-cur', 'KSK-pub', 'KSK-rev', 'KSK-obs',
+			'ZSK-cur', 'ZSK-pub', 'ZSK-new', 'ZSK-rev', 'ZSK-obs' )
+	{
+		writekeytype($kt);
+	}
+
+}
+
+#----------------------------------------------------------------------
+# Routine:	writekeytype()
+#
+# Purpose:	This routine performs the actual output operations for key
+#		data.  It creates an output string for each of the keys saved
+#		in the %selkeys hash.  However, it only works for a specific,
+#		caller-specified type of key.
+#
+sub writekeytype
+{
+	my $keytype = shift;				# Type of key to write.
+
+	#
+	# Write the selected keys.
+	#
+	foreach my $key (sort(keys(%selkeys)))
+	{
+		my $out = '';				# Output string.
+		my $algorithm;				# Key's algorithm.
+		my $enddate;				# Key's expiration date.
+		my $gendate;				# Key's generation date.
+		my $length;				# Key's length.
+		my $life;				# Key's lifespan.
+		my $path;				# Key's path.
+		my $random;				# Key's randomizer.
+		my $type;				# Key's type.
+		my $zonename;				# Key's zone.
+
+		#
+		# Make sure we're only looking at the requested key type.
+		#
+		$type = $selkeys{$key}{'keyrec_type'};
+		next if($type ne $keytype);
+
+		#
+		# Set-up for output line.
+		#
+		$prevkey = 'first-field';
+
+		#
+		# Save the key data to the selected-keys hash.
+		#
+		$algorithm = $selkeys{$key}{'algorithm'};
+		$enddate   = $selkeys{$key}{'enddate'};
+		$gendate   = $selkeys{$key}{'gendate'};
+		$length	   = $selkeys{$key}{'keylength'};
+		$life	   = $selkeys{$key}{'keylife'};
+		$path	   = $selkeys{$key}{'keypath'};
+		$random	   = $selkeys{$key}{'random'};
+		$zonename  = $selkeys{$key}{'zonename'};
+
+		#
+		# Build the output string.
+		#
+		$out  = outstr($KEY,$key,'keyrec_type',$type,$k_label,0);
+		$out .= outstr($KEY,$key,'keyrec_name',$key,1,0);
+		$out .= outstr($KEY,$key,'zonename',$zonename,$k_zonename,0);
+		$out .= outstr($KEY,$key,'algorithm',$algorithm,$k_algorithm,0);
+		$out .= outstr($KEY,$key,'keylength',$length,$k_length,0);
+		$out .= outstr($KEY,$key,'gendate',$gendate,$k_date,1);
+		$out .= outstr($KEY,$key,'keylife',$life,$k_life,0);
+		$out .= outstr($KEY,$key,'enddate',$enddate,$k_enddate,1);
+		$out .= outstr($KEY,$key,'keypath',$path,$k_path,0);
+		$out .= outstr($KEY,$key,'random',$random,$k_random,0);
+
+		#
+		# Write the output string.
+		#
+		print "$out\n";
+	}
+}
+
+#----------------------------------------------------------------------
+# Routine:	outstr()
+#
+# Purpose:	Build an output line.  We'll do whatever spacing is required
+#		so that each type's records line up nicely.  The built output
+#		line is returned to the caller.
+#
+sub outstr
+{
+	my $dtype = shift;		# Type of these data.
+	my $krname = shift;		# Zone/set/key name.
+	my $key  = shift;		# Hashkey.
+	my $val	 = shift;		# Value to print.
+	my $flag = shift;		# Output flag.
+	my $usequotes = shift;		# Quotes flag.
+
+	my $ret;			# Return string.
+
+	my $krgroup;			# Keyrec group to consult.
+	my $maxcollen;			# Max field length of previous field.
+	my $prevcollen;			# Length of previous field's value.
+	my $numspaces = 0;		# Spaces to add to previous field.
+	my $spaces = '';		# Spaces to add.
+
+	#
+	# Return if the given flag isn't set and -long wasn't given.
+	#
+	return('') if(!$flag);
+
+	#
+	# Figure out which group of keyrecs to use.  We're intentionally
+	# not using a default for this and will thus allow things to die
+	# horrible death if this routine is improperly used.
+	#
+	if($dtype eq $ZONE)
+	{
+		$krgroup = \%zones;
+	}
+	elsif($dtype eq $SET)
+	{
+		$krgroup = \%sets;
+	}
+	elsif($dtype eq $KEY)
+	{
+		$krgroup = \%selkeys;
+	}
+
+	#
+	# Use the data's type as the name field for the header line.
+	#
+	if(($key eq 'keyrec_name') && ($val eq $HEADER_KRN))
+	{
+		$val = $dtype;
+		$krgroup->{$krname}{$key} = $dtype;
+	}
+
+	#
+	# Add in the appropriate header for zone and set data.
+	# (Key keyrecs have their type header pre-set.)
+	#
+	if((($key eq 'keyrec_type')	&&
+	    ($krname eq $HEADER_KRN))		&&
+	   (($val eq 'zone') || ($val eq 'set')))
+	{
+		$val = "Type";
+		$krgroup->{$krname}{$key} = $val;
+	}
+
+	#
+	# Figure out spacing for this column.
+	#
+	$maxcollen  = $lengths{$dtype}{$prevkey};
+	$prevcollen = length($krgroup->{$krname}{$prevkey});
+	$numspaces  = $maxcollen - $prevcollen;
+
+	#
+	# Build the spacing.
+	#
+	$spaces = ' ' x $numspaces if($numspaces > 0);
+
+	#
+	# Build the output line.
+	#
+	$ret = $spaces . $val;
+
+	#
+	# For some fields we'll add quotes around the value.
+	# We won't add quotes if we're printing headers.
+	#
+	$usequotes = 0 if($headerflag);
+	if($usequotes && ($krname ne $HEADER_KRN))
+	{
+		$ret =~ s/$spaces$val/$spaces\"$val\"/;
+	}
+
+	#
+	# Save the hash key and return the output string to the caller.
+	#
+	$prevkey = $key;
+	return($ret);
+}
+
+#----------------------------------------------------------------------
+# Routine:	version()
+#
+# Purpose:	Print the version number(s) and exit.
+#
+sub version
+{
+	print STDERR "$VERS\n";
+	print STDERR "$DTVERS\n";
+
+	exit(0);
+}
+
+
+#-----------------------------------------------------------------------------
+# Routine:	usage()
+#
+sub usage
+{
+	my $allflag = shift;				# Show-all flag.
+
+	if($allflag)
+	{
+		$h_zone	= 1;
+		$h_set	= 1;
+		$h_key	= 1;
+	}
+
+	print STDERR "usage:  lskrf [options] <keyrec-file>\n";
+	if($allflag)
+	{
+		print STDERR "\trecord-selection options:\n";
+		print STDERR "\t\t-all		list all records\n";
+		print STDERR "\t\t-zones\t	list all zones\n";
+		print STDERR "\t\t-sets		list all signing sets\n";
+		print STDERR "\t\t-keys		list all keys\n";
+		print STDERR "\t\t-ksk		list KSK keys\n";
+		print STDERR "\t\t  -kcur		list Current KSK keys\n";
+		print STDERR "\t\t  -kpub		list Published KSK keys\n";
+		print STDERR "\t\t  -kobs		list obsolete KSK keys\n";
+		print STDERR "\t\t  -krev		list revoked KSK keys\n";
+		print STDERR "\t\t-zsk		list ZSK keys\n";
+		print STDERR "\t\t  -cur		list Current ZSK keys\n";
+		print STDERR "\t\t  -pub		list Published ZSK keys\n";
+		print STDERR "\t\t  -new		list New ZSK keys\n";
+		print STDERR "\t\t  -zobs		list obsolete ZSK keys\n";
+		print STDERR "\t\t  -zrev		list revoked ZSK keys\n";
+		print STDERR "\t\t-obs		list obsolete KSK and ZSK keys\n";
+		print STDERR "\t\t-rev		list revoked KSK and ZSK keys\n";
+		print STDERR "\t\t-invalid	list obsolete and revoked KSK and ZSK keys\n";
+
+		print STDERR "\trecord-attribute options:\n";
+		print STDERR "\t\t-valid\t	show keyrecs of unexpired zones\n";
+		print STDERR "\t\t-expired	show keyrecs of expired zones\n";
+		print STDERR "\t\t-ref		show referenced key keyrecs\n";
+		print STDERR "\t\t-unref\t	show unreferenced key keyrecs\n";
+
+		print STDERR "\toutput-format options:\n";
+		print STDERR "\t\t-count		only give count of matching keyrecs\n";
+		print STDERR "\t\t-label		show record-type label\n";
+		print STDERR "\t\t-headers	give explanatory column headers\n";
+		print STDERR "\t\t-life		display date\n";
+		print STDERR "\t\t-long		long output\n";
+		print STDERR "\t\t-nodate		do not display date\n";
+		print STDERR "\t\t-terse\t	terse output\n";
+		print STDERR "\t\t-Version	Show version information\n";
+	}
+
+	if($h_zone)
+	{
+		print STDERR "\tzone-attribute options:\n";
+		print STDERR "\t\t-z-archdir	show zone's key-archive directory\n";
+		print STDERR "\t\t-z-dates	show zone's time-stamps\n";
+		print STDERR "\t\t-z-dirs		show zone's directories\n";
+		print STDERR "\t\t-z-expdate	show zone's expiration date\n";
+		print STDERR "\t\t-z-ksk		show zone's KSK data\n";
+		print STDERR "\t\t-z-kskcount	show zone's KSK count\n";
+		print STDERR "\t\t-z-kskcur	show zone's Current KSK signing set\n";
+		print STDERR "\t\t-z-kskdir	show zone's KSK directory\n";
+		print STDERR "\t\t-z-kskpub	show zone's Published KSK signing set\n";
+		print STDERR "\t\t-z-sets		show zone's signing sets\n";
+		print STDERR "\t\t-z-signdate	show zone's signing date\n";
+		print STDERR "\t\t-z-signfile	show zone's signed zonefile\n";
+		print STDERR "\t\t-z-zonefile	show zone's zonefile\n";
+		print STDERR "\t\t-z-zsk		show zone's ZSK data\n";
+		print STDERR "\t\t-z-zskcount	show zone's ZSK count\n";
+		print STDERR "\t\t-z-zskcur	show zone's Current ZSK signing set\n";
+		print STDERR "\t\t-z-zskdir	show zone's ZSK directory\n";
+		print STDERR "\t\t-z-zsknew	show zone's New ZSK signing set\n";
+		print STDERR "\t\t-z-zskpub	show zone's Published ZSK signing set\n";
+	}
+
+	if($h_set)
+	{
+		print STDERR "\tset-attribute options:\n";
+		print STDERR "\t\t-s-keys		show set's keys\n";
+		print STDERR "\t\t-s-lastmod	show set's last modification date\n";
+		print STDERR "\t\t-s-type	        show set's type\n";
+		print STDERR "\t\t-s-zone		show set's zone\n";
+	}
+
+	if($h_key)
+	{
+		print STDERR "\tkey-attribute options:\n";
+		print STDERR "\t\t-k-algorithm	show key's algorithm\n";
+		print STDERR "\t\t-k-enddate	show key's end-date\n";
+		print STDERR "\t\t-k-length	show key's length\n";
+		print STDERR "\t\t-k-lifespan	show key's lifespan\n";
+		print STDERR "\t\t-k-path		show key's path\n";
+		print STDERR "\t\t-k-random	show key's random number generator\n";
+		print STDERR "\t\t-k-signdate	show key's signing date\n";
+		print STDERR "\t\t-k-zone		show key's zonefile\n";
+	}
+
+	if($allflag)
+	{
+		print STDERR "\thelp options:\n";
+		print STDERR "\t\t-help		full help message\n";
+		print STDERR "\t\t-h-zones	zone-options help message \n";
+		print STDERR "\t\t-h-sets		set-options help message \n";
+		print STDERR "\t\t-h-keys		key-options help message \n";
+	}
+
+	exit(0);
+}
+
+1;
+
+##############################################################################
+#
+
+=pod
+
+=head1 NAME
+
+lskrf - List the I<keyrec>s in a DNSSEC-Tools I<keyrec> file
+
+=head1 SYNOPSIS
+
+  lskrf [options] <keyrec-files>
+
+=head1 DESCRIPTION
+
+B<lskrf> lists the contents of the specified I<keyrec> files.  All
+I<keyrec> files are loaded before the output is displayed.  If any I<keyrec>s
+have duplicated names, whether within one file or across multiple files, the
+later I<keyrec> will be the one whose data are displayed.
+
+B<lskrf> has three base output formats.  In ascending levels of detail, these
+formats are terse output, default format, and long format.  Terse output is
+given when the B<-terse> option is specified; long output is given when the
+B<-long> option is specified.
+
+The output displayed for each record in a I<keyrec> file depends on the
+selected records, the selected attributes, and the selected output format.
+Each option in these option groups is described in detail in the OPTIONS
+section; the three basic output formats are described in the OUTPUT FORMATS
+section.
+
+=head1 OUTPUT FORMATS
+
+I<keyrec> files hold three types of I<keyrec> records:  zone records, signing
+set records, and key records.  Each type of I<keyrec> record contains
+I<keyrec> fields related to that type.  Zone I<keyrec> records contain data
+about all the keys associated with a particular zone; set I<keyrec> records
+contain data about all the keys associated with a particular signing set; key
+I<keyrec> records contain key lengths and algorithms for each particular key.
+(There is the case of subordinate revoked and obsolete signing sets.  These
+are stored in key I<keyrec> records, but they contain the I<set_type> entry
+which key I<keyrec>s do not.)
+The data to be printed must be specified by selecting some combination of the
+B<-zone>, B<-sets>, B<-keys>, and  B<-all> options.  There are also options
+for specifying specific types of keys to be printed.
+
+The three base output formats are the default format, the terse format, and
+the long format.  The B<-terse> option indicates that a minimal amount of
+output is desired; the B<-long> option indicates that a great deal of output
+is desired.  The record-selection and attribute-selection options may be used
+in conjunction with B<-terse> to display exactly the set of I<keyrec> fields
+needed.  The default output format is a middle ground between terse and long
+output and is that used when neither B<-terse> nor B<-long> is given.
+
+=head2 Zone I<keyrec> Output
+
+The table below shows the zone I<keyrec> fields displayed for each output
+format.
+
+    keyrec field         default        terse        long
+    ------------         -------        -----        ----
+    keyrec type            yes           no          yes
+    zone name              yes           yes         yes
+    zone file              yes           no          yes
+    signed zonefile        yes           no          yes
+    signing date           yes           no          yes
+    expiration date        no            no          yes
+    archive directory      no            no          yes
+    KSK count              no            no          yes
+    KSK directory          no            no          yes
+    current KSK set        no            no          yes
+    published KSK set      no            no          yes
+    ZSK count              no            no          yes
+    ZSK directory          no            no          yes
+    current ZSK set        no            no          yes
+    published ZSK set      no            no          yes
+    new ZSK set            no            no          yes
+
+=head2 Set I<keyrec> Output
+
+The table below shows the signing set I<keyrec> fields displayed for each
+output format.
+
+    keyrec field                 default        terse        long
+    ------------                 -------        -----        ----
+    keyrec type                    yes           no          yes
+    set name                       yes           yes         yes
+    zone name                      yes           no          yes
+    type                           yes           no          yes
+    keys                           no            no          yes
+    last modification date         no            no          yes
+
+=head2 Key I<keyrec> Output
+
+The table below shows the key I<keyrec> fields displayed for each
+output format.
+
+    keyrec field               default       terse       long
+    ------------               -------       -----       ----
+    keyrec type                yes           no          yes
+    key name                   yes           yes         yes
+    algorithm                  no            no          yes
+    end date                   no            no          yes
+    generation date            yes           no          yes
+    key length                 no            no          yes
+    key life                   no            no          yes
+    key path                   no            no          yes
+    keys                       no            no          yes
+    random number generator    no            no          yes
+    zone name                  yes           no          yes
+
+=head1 OPTIONS
+
+B<lskrf> takes three types of options:  record-selection options,
+record-attribute options, and output-style options.  These option
+sets are detailed below.
+
+Record-selection options are required options; at least one record-selection
+option B<must> be selected.  Record-attribute options and output-style options
+are optional options; any number of these option I<may> be selected.
+
+=head2 Record-Selection Options
+
+These options select the types of I<keyrec> that will be displayed.
+
+=over 4
+
+=item B<-all>
+
+This option displays all the records in a I<keyrec> file.
+
+=item B<-zones>
+
+This option displays the zones in a I<keyrec> file.
+
+=item B<-sets>
+
+This option displays the signing sets in a I<keyrec> file.
+
+=item B<-keys>
+
+This option displays the keys in a I<keyrec> file.
+
+The key data are sorted by key type in the following order:  Current KSKs,
+Published KSKs, Current ZSKs, Published ZSKs, New ZSKs, Obsolete KSKs, and
+Obsolete ZSKs.
+
+=item B<-ksk>
+
+This option displays the KSK keys in a I<keyrec> file.
+
+=item B<-kcur>
+
+This option displays the Current KSK keys in a I<keyrec> file.
+
+=item B<-kpub>
+
+This option displays the Published KSK keys in a I<keyrec> file.
+
+=item B<-kobs>
+
+This option displays the obsolete KSK keys in a I<keyrec> file.  This option
+must be give if obsolete KSK keys are to be displayed.
+
+=item B<-krev>
+
+This option displays the revoked KSK keys in a I<keyrec> file.  This option
+must be give if revoked KSK keys are to be displayed.
+
+=item B<-zsk>
+
+This option displays the ZSK keys in a I<keyrec> file.  It does not include
+obsolete ZSK keys; the B<-obs> option must be specified to display obsolete
+keys.
+
+=item B<-cur>
+
+This option displays the Current ZSK keys in a I<keyrec> file.
+
+=item B<-new>
+
+This option displays the New ZSK keys in a I<keyrec> file.
+
+=item B<-pub>
+
+This option displays the Published ZSK keys in a I<keyrec> file.
+
+=item B<-zobs>
+
+This option displays the obsolete ZSK keys in a I<keyrec> file.  This option
+must be give if obsolete ZSK keys are to be displayed.
+
+=item B<-zrev>
+
+This option displays the revoked ZSK keys in a I<keyrec> file.  This option
+must be give if revoked ZSK keys are to be displayed.
+
+=item B<-obs>
+
+This option displays the obsolete KSK and ZSK keys in a I<keyrec> file.
+This option is a shorthand method specifying the B<-kobs> and B<-zobs> options.
+
+=item B<-rev>
+
+This option displays the revoked KSK and ZSK keys in a I<keyrec> file.
+This option is a shorthand method specifying the B<-krev> and B<-zrev> options.
+
+=item B<-invalid>
+
+This option displays the obsolete and revoked KSK and ZSK keys in a I<keyrec>
+file.  This option is a shorthand method specifying the B<-obs> and B<-rev>
+options.
+
+=back
+
+=head2 Record-Attribute Options
+
+These options select subsets of the I<keyrec>s chosen by the
+record-selection options. 
+
+=over 4
+
+=item B<-valid>
+
+This option displays the valid zones in a I<keyrec> file.
+It implies the B<-zones> option.
+
+=item B<-expired>>
+
+This option displays the expired zones in a I<keyrec> file.
+It implies the B<-zones> option.
+
+=item B<-ref>
+
+This option displays the referenced signing set I<keyrec>s and the referenced
+key I<keyrec>s in a I<keyrec> file, depending upon other selected options.
+
+Referenced state depends on the following:
+
+  * Signing sets are considered to be referenced if they
+    are listed in a zone keyrec.
+
+  * KSKs are considered to be referenced if they are listed
+    in a signing set keyrec that is listed in a zone keyrec.
+
+  * ZSKs are considered to be referenced if they are listed
+    in a signing set keyrec that is listed in a zone keyrec.
+
+This option may be used with either the B<-sets> or B<-keys> options.  If it
+isn't used with any record-selection options, then it is assumed that both
+B<-sets> and B<-keys> have been specified.
+
+=item B<-unref>
+
+This option displays the unreferenced signing set I<keyrec>s or the
+unreferenced key I<keyrec>s in a I<keyrec> file, depending upon other
+selected options.
+
+Unreferenced state depends on the following:
+
+  * Signing sets are considered to be unreferenced if they
+    are not listed in a zone keyrec.
+
+  * KSKs are considered to be unreferenced if they are not listed
+    in a signing set keyrec that is listed in a zone keyrec.
+
+  * ZSKs are considered to be unreferenced if they are not listed
+    in a signing set keyrec that is listed in a zone keyrec.
+
+  * Obsolete ZSKs are checked, whether or not the -obs flag
+    was specified.
+
+This option may be used with either the B<-sets> or B<-keys> options.  If it
+isn't used with any record-selection options, then it is assumed that both
+B<-sets> and B<-keys> have been specified.
+
+=back
+
+=head2 Zone-Attribute Options
+
+These options allow specific zone fields to be included in the output.  If
+combined with the B<-terse> option, only those fields specifically desired
+will be printed.  These options must be used with the B<-zone> option.
+
+=over 4
+
+=item B<-z-archdir>
+
+Display the zone's archive directory.  If an archive directory is not
+explicitly set for the zone, the default directory will be listed.
+
+=item B<-z-dates>
+
+Display the zone's time-stamps.  These are the signing date and the
+expiration date.
+
+=item B<-z-dirs>
+
+Display the zone's directories.  These directories are the KSK directory,
+the ZSK directory, and the key archive directory.
+
+=item B<-z-expdate>
+
+Display the zone's expiration date.
+
+=item B<-z-ksk>
+
+Display the zone's KSK data.  This is the equivalent of specifying the
+B<-z-kskcount>, B<-z-kskcur>, B<-z-kskdir>, and B<-z-kskpub> options.
+
+=item B<-z-kskcount>
+
+Display the zone's KSK count.
+
+=item B<-z-kskcur>
+
+Display the zone's Current KSK signing set.
+If this is not defined, then "<unset>" will be given.
+
+=item B<-z-kskdir>
+
+Display the zone's KSK directory.
+If this is not defined, then "." will be given.
+
+=item B<-z-kskpub>
+
+Display the zone's Published KSK signing set.
+If this is not defined, then "<unset>" will be given.
+
+=item B<-z-sets>
+
+Display the zone's signing sets.  This is the equivalent of specifying the
+B<-z-kskcur>, B<-z-kskpub>, B<-z-zskcur>, B<-z-zsknew>, and B<-z-zskpub>
+options.
+
+=item B<-z-signdate>
+
+Display the zone's signing date.
+
+=item B<-z-signfile>
+
+Display the zone's signed zonefile.
+
+=item B<-z-zonefile>
+
+Display the zone's zonefile.
+
+=item B<-z-zsk>
+
+Display the zone's ZSK data.  This is the equivalent of specifying the
+B<-z-zskcount>, B<-z-zskcur>, B<-z-zskdir>, B<-z-zsknew>, and B<-z-zskpub>
+options.
+
+=item B<-z-zskcount>
+
+Display the zone's ZSK count.
+
+=item B<-z-zskcur>
+
+Display the zone's Current ZSK signing set.
+If this is not defined, then "<unset>" will be given.
+
+=item B<-z-zskdir>
+
+Display the zone's ZSK directory.
+If this is not defined, then "." will be given.
+
+=item B<-z-zsknew>
+
+Display the zone's New ZSK signing set.
+If this is not defined, then "<unset>" will be given.
+
+=item B<-z-zskpub>
+
+Display the zone's Published ZSK signing set.
+If this is not defined, then "<unset>" will be given.
+
+=back
+
+=head2 Set-Attribute Options
+
+These options allow specific set fields to be included in the output.  If
+combined with the B<-terse> option, only those fields specifically desired
+will be printed.  These options must be used with the B<-sets> option.
+
+If RFC5011 processing is enabled, there is special handling of the zone's set
+I<keyrec> of revoked KSK keys.  The "kskrev" field in the zone's I<keyrec>
+points to a set I<keyrec>, marked as being of type "kskrev".  This set
+I<keyrec>, in turn, points to a number of other set I<keyrec>s, all of which
+are also marked as being of type "kskrev".  The group of all revoked KSK keys
+is found by consulting that subsidiary set of "kskrev" set I<keyrec>s.  When
+the ages of these revoked keys exceeds their revocation periods, they are
+marked as being obsolete ("kskobs").  If this happens as part of normal
+rollover, these revoked key and set I<keyrec>s are all removed from the chain
+of active, revoked I<keyrec>s.  If this happens to a key that's part of a
+larger set of keys, it is removed from that signing set and put in its own
+new signing set.  B<lskrf> displays the type of the "kskrev" set (listed in
+the zone I<keyrec>) as "KSK-REV", and all other revoked KSK I<keyrec>s are
+listed as "KSK-rev".
+
+=over 4
+
+=item B<-s-keys>
+
+Display the set's keys.
+
+=item B<-s-lastmod>
+
+Display the set's date of last modification.
+
+=item B<-s-type>
+
+Display the set's type.
+
+=item B<-s-zone>
+
+Display the set's zone name.
+
+=item B<-s-ksk>
+
+Display KSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-kcur>
+
+Display current KSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-kobs>
+
+Display obsolete KSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-kpub>
+
+Display published KSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-krev>
+
+Display revoked KSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-zsk>
+
+Display ZSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-zcur>
+
+Display current ZSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-znew>
+
+Display new ZSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-zobs>
+
+Display obsolete ZSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-zpub>
+
+Display published ZSK signing sets.  This option implies the B<-sets> option.
+
+=item B<-s-zrev>
+
+Display revoked ZSK signing sets.  This option implies the B<-sets> option.
+
+=back
+
+=head2 Key-Attribute Options
+
+These options allow specific key fields to be included in the output.  If
+combined with the B<-terse> option, only those fields specifically desired
+will be printed.  These options must be used with the B<-key> option.
+
+=over 4
+
+=item B<-k-algorithm>
+
+Display the key's encryption algorithm.
+
+=item B<-k-enddate>
+
+Display the key's end-date, calculated by adding the key's lifespan to its
+signing date.
+
+=item B<-k-length>
+
+Display the key's length.
+
+=item B<-k-lifespan>
+
+Display the key's lifespan (in seconds.) This lifespan is B<only> related to
+the time between key rollover.  There is no other lifespan associated with a
+key.
+
+=item B<-k-path>
+
+Display the key's path.
+
+=item B<-k-random>
+
+Display the key's random number generator.
+
+=item B<-k-signdate>
+
+Display the key's signing date.
+
+=item B<-k-zone>
+
+Display the key's zonefile.
+
+=back
+
+=head2 Output-Format Options
+
+These options define how the I<keyrec> information will be displayed.
+
+Without any of these options, the zone name, zone file, zone-signing date,
+and a label will be displayed for zones.  For types, the key name, the key's
+zone, the key's generation date, and a label will be displayed if these
+options aren't given.
+
+=over 4
+
+=item B<-count>
+
+The count of matching records will be displayed, but the matching records
+will not be.
+
+=item B<-nodate>
+
+The key's generation date will not be printed if this flag is given.
+
+=item B<-headers>
+
+Display explanatory column headers.  If this flag is given, then entry labels
+will not be printed unless explicitly requested by use of the B<-label>
+option.
+
+=item B<-label>
+
+A label for the I<keyrec>'s type will be given.
+
+=item B<-long>
+
+The long form of output will be given.  See the OUTPUT FORMATS section for
+details on data printed for each type of I<keyrec> record.
+
+Long zone output can get I<very> wide, depending on the data.
+
+=item B<-terse>
+
+This options displays only the name of the zones or keys selected by other
+options.
+
+=item B<-Version>
+
+Displays the version information for B<lskrf> and the DNSSEC-Tools package.
+
+=item B<-help>
+
+Display a usage message and exit.
+
+=item B<-h-zones>
+
+Display the zone-attribute options and exit.
+
+=item B<-h-sets>
+
+Display the set-attribute options and exit.
+
+=item B<-h-keys>
+
+Display the key-attribute options and exit.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2005-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<zonesigner(8)>
+
+B<Net::DNS::SEC::Tools::keyrec.pm(3)>
+
+B<file-keyrec(5)>
+
+=cut
+

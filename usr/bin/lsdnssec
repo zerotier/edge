@@ -1,0 +1,869 @@
+#!/usr/bin/perl
+#
+# Copyright 2009-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+
+use strict;
+
+use Getopt::Long qw(:config no_ignore_case_always);
+
+use Net::DNS::SEC::Tools::BootStrap;
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::defaults;
+use Net::DNS::SEC::Tools::dnssectools;
+use Net::DNS::SEC::Tools::keyrec;
+use Net::DNS::SEC::Tools::rollrec;
+use Net::DNS::SEC::Tools::rollmgr;
+use Net::DNS::SEC::Tools::tooloptions;
+use Net::DNS::SEC::Tools::timetrans;
+use Net::DNS::SEC::Tools::QWPrimitives;
+use POSIX qw(getcwd);
+use IO::Dir;
+use Data::Dumper;
+
+#
+# Detect required Perl modules.
+#
+dnssec_tools_load_mods('Date::Parse'	=> "",
+		       'Date::Format'	=> "",);
+
+my %opts = (d => '5',
+	    t => 'kskpub,kskcur,zskpub,zskcur');
+
+DTGetOptions(config => [qw(allow_zero)],
+	     \%opts,
+		['GUI:VERSION',"DNSSEC-Tools Version: 2.1"],
+
+#		['o|obsolete', 'Show obsolete keys/etc as well as current'],
+
+		['z|zone=s',   'Show information only about zone1,zone2,...'],
+		['p|phase=i',  'Show only zones in rollerd phase N (0 = any phase)'],
+
+	        ['k|key-data',    'Show keying data (default = everything)'],
+	        ['r|roll-status', 'Show rolling status (default = everything)'],
+
+	        ['t|key-types=s', "Show these keys (default = $opts{t})"],
+	        ['K|key-gen-time', "Calculate age based on key gen time not roll time"],
+
+		['d|detail=i', 'Details level (1-9, 5 = default)',
+		 values => [1..9], type => 'menu', default => 5],
+
+	        ['M|monitor',    'Give data for monitor systems'],
+
+		["debug",
+		 "Debugging output (show extra processing information)."],
+
+		['GUI:otherargs_text',"[FILES OR DIRECTORIES...]"],
+	       ) || exit(1);
+
+@ARGV = (getcwd()) if ($#ARGV == -1);
+# XXX: deal with '.' passed in on the command line
+
+my @files = @ARGV;
+my @filestodo;
+my %zoneinfo;
+
+my $todaystime = time();
+my $gmtime = str2time(scalar gmtime());
+
+my @rolltypes = qw(roll);  # keywords for how rollrec data is stored.
+
+# Ensure the requested level of detail is within our acceptable range.
+if (($opts{'d'} < 1) || ($opts{'d'} > 9)) {
+    print STDERR "invalid -d option:  $opts{'d'}\n";
+    exit(1);
+}
+
+# -M implies -r and -d 1.
+if ($opts{'M'}) {
+    $opts{'r'} = 1;
+    $opts{'d'} = 1;
+}
+
+# generate the list of files to read in.
+expand_files(@files);
+
+# load the contents of everything into memory.
+load_files(@filestodo);
+
+# print summarized results
+print_zone_information();
+
+
+#
+# load the various types of files we understand
+#
+
+my %krfdata;
+my %krfkeys;
+my %krfzones;
+my %krfsets;
+
+sub remember_keyrecs {
+    my @krnames = keyrec_names();
+    foreach my $krn (@krnames) {
+	debug("looking up: $krn\n");
+	my $krf = keyrec_fullrec($krn);
+
+	# err....  If it doesn't know what it is, then we certainly won't.
+	next if (!defined($krf->{'keyrec_type'}));
+
+	# generically store it
+	push @{$krfdata{$krf->{'zonename'}}{$krf->{'keyrec_type'}}}, {%$krf};
+
+	# store by type
+
+	if ($krf->{'keyrec_type'} eq 'zone') {
+	    # zones
+	    $krfzones{$krf->{'keyrec_name'}} = $krf;
+	} elsif ($krf->{'keyrec_type'} eq 'set') {
+	    # sets 
+	    $krfsets{$krf->{'zonename'}}{$krf->{'set_type'}} = {%$krf};
+	} else {
+	    # keys
+	    $krfkeys{$krf->{'zonename'}}{$krf->{'keyrec_name'}} = {%$krf};
+	}
+    }
+}
+
+my %rrdata;
+my %rrlookup;
+
+sub remember_rollrecs {
+    my @rrnames = rollrec_names();
+    foreach my $rrn (@rrnames) {
+	debug("looking up rr: $rrn\n");
+	my $rr = rollrec_fullrec($rrn);
+	if ($rr->{'rollrec_type'}) {
+	    push @{$rrdata{$rr->{'rollrec_name'}}{$rr->{'rollrec_type'}}}, $rr;
+	    $rrlookup{$rr->{'rollrec_name'}} = $rr;
+	}
+    }
+}
+
+sub load_files {
+    my @todolist = @_;
+    foreach my $file (@todolist) {
+	if ($file =~ /\.krf$/) {
+	    # load it as a krf
+	    keyrec_read($file);
+	    remember_keyrecs();
+	} elsif ($file =~ /\.(rollrec|rrf)$/) {
+	    # load it as a rollrec
+	    rollrec_read($file);
+	    remember_rollrecs();
+	} else {
+	    # XXX: maybe look at the first line to determine what it is?
+	}
+	# XXX: load .signed files and look for sig expiry times?
+    }
+}
+
+# expand the list of files/directories to just all the files
+# i.e. remove the directories and replace with their file contents
+sub expand_files {
+    my @files = @_;
+    my @errext = ();
+    my @errrd = ();
+    my $errors = 0;
+    foreach my $file (@files) {
+	if (! -e $file) {
+	    push @errext, $file;
+	    next;
+	}
+	if (-f $file) {
+	    push @filestodo, $file;
+	} elsif (-d $file) {
+	    my $dirh = IO::Dir->new($file);
+	    my $direntry;
+	    $file .= "/" if ($file !~ /\/$/);
+	    while (defined($direntry = $dirh->read)) {
+		my $fullfile = $file . $direntry;
+		push @filestodo, $fullfile if (-f $fullfile);
+		# XXX: add recursive option.
+	    }
+	}
+    }
+
+    # Get the keyrec files from any specified rollrecs.
+    my @morefiles = ();
+    foreach my $file (@filestodo) {
+	if ($file =~ /\.(rollrec|rrf)$/) {
+	    rollrec_read($file);
+	    foreach my $rrn (rollrec_names()) {
+		my $krf = rollrec_recval($rrn, 'keyrec');
+		if(-e $krf && -f $krf) {
+		    push @morefiles, $krf
+		}
+	    }
+	    rollrec_close();
+	}
+    }
+    push @filestodo, @morefiles;
+
+    # Find the files that we can't read.
+    foreach my $file (@filestodo) {
+	if (! -r $file) {
+	    push @errrd, $file;
+	}
+    }
+
+    # Give an error and exit if unreadable or nonexistent file were specified.
+    $errors = @errext + @errrd;
+    if ($errors) {
+        if ($opts{'M'}) {
+	    if ($errors == 1) {
+	        print "1 file does not exist or is unreadable\n";
+	    } else {
+	        print $errors . " files do not exist or are unreadable\n";
+	    }
+	    exit(2);
+	}
+
+        if (@errext > 0) {
+	    if (@errext == 1) {
+	        print "1 named file does not exist\n";
+	    } else {
+	        print @errext . " named files do not exist\n";
+	    }
+	    if ($opts{'d'} > 5) {
+	        foreach my $file (sort(@errext)) {
+		    print "\t$file\n";
+	        }
+	    }
+        }
+
+        if (@errrd > 0) {
+	    if (@errext == 1) {
+	        print "1 file is not readable\n";
+	    } else {
+	        print @errext . " files are not readable\n";
+	    }
+	    if ($opts{'d'} > 5) {
+	        foreach my $file (sort(@errrd)) {
+		    print "\t$file\n";
+	        }
+	    }
+        }
+
+        exit(2);
+    }
+
+}
+
+sub get_ksk_phase3_length {
+    my ($rollrec) = @_;
+
+    my $length = $rollrec->{'maxttl'}*2;
+
+    if ($rollrec->{'istrustanchor'}) {
+	# we should do a proper RFC5011 waiting period
+	# use either their defined value or a default of 60 days
+	# The 60 days comes from the rollerd 60 day default
+	my $addtime = dt_parse_duration($rollrec->{'holddowntime'});
+	
+	$addtime ||= (2*30*24*60*60);
+
+	$length += $addtime;
+    }
+
+    return $length;
+}
+
+sub print_life_graph {
+    my ($percent, $word) = @_;
+
+    $word ||= "life";
+
+    my $spaces = " " x (4-length($word));
+
+    print "  $word:$spaces |";
+    print "=" x int(65*($percent/100));
+    print "O";
+    print "-" x (65-int(65*($percent/100)));
+    print ($percent < 100 ? "|" : "X");
+    print "\n";
+}
+
+sub print_key {
+    my ($keytype, $key) = @_;
+    my $keymaintype = substr($keytype, 0, 3);
+
+    my $keytag = $key->{'keyrec_name'};
+    $keytag =~ s/.*\+//;
+
+    return if($keytag eq '');
+
+    my $smalltype   = substr($keytype, 0, 3);
+    my $smallstatus = substr($keytype, 3, 3);
+
+    my $life = $key->{$smalltype . 'life'};
+
+    my $keystarttime;
+    # pull the date from the rollrec file:
+    #   - this is the end of the last roll time, rather than key age
+    if (exists($rrdata{$key->{'zonename'}}) &&
+	exists($rrdata{$key->{'zonename'}}{'roll'}) &&
+	exists($rrdata{$key->{'zonename'}}{'roll'}[0]) &&
+	exists($rrdata{$key->{'zonename'}}{'roll'}[0]{'zsk_rollsecs'})) {
+	$keystarttime = $rrdata{$key->{'zonename'}}{'roll'}[0]{'zsk_rollsecs'};
+    }
+
+    my $useGenLife = $opts{'K'};
+    if ($useGenLife || !defined($keystarttime)) {
+	# the age of the key is based on the actual generation date
+	$keystarttime = $key->{'keyrec_gensecs'};
+	$useGenLife = 1;
+    }
+	
+    my $age = $todaystime - $keystarttime;
+    my $percent;
+
+    if ($age > $life) {
+	$percent = 100;
+    } else {
+	$percent = int(100*($age/$life));
+    }
+
+    printf("  key:  %05.5d %3.3s %3.3s %4.4d %-12.12s %3.3d%% %30s|\n",
+	   $keytag, uc($keytype), $smallstatus,
+	   $key->{$smalltype . 'length'}, $key->{'algorithm'},
+	   $percent, fuzzytimetrans($life));
+
+    if ($opts{'d'} > 8) {
+	printf("  file: %s\n", $key->{'keypath'});
+    }
+
+    if ($useGenLife) {
+	if ($opts{'d'} > 4) {
+	    print_life_graph($percent);
+	}
+
+	if ($percent == 100 && $opts{'d'} > 1) {
+	    print "  WARN:       *** key has passed its expected lifetime ***\n";
+	} elsif ($opts{'d'} > 6) {
+	    print "        (" . fuzzytimetrans($life-$age) . " remaining)\n";
+	}
+    }
+
+    print "\n" if ($useGenLife && $opts{'d'} > 2);
+
+    return [$keymaintype, $percent, ($percent == 100 ? 0 : $life - $age), $life];
+}
+
+sub print_roll {
+    my ($rolltype, $rollrec, $keylives) = @_;
+
+    my $type;
+
+    if ($rollrec->{'zskphase'} > 0) {
+	$type = 'zsk';
+    } elsif ($rollrec->{'kskphase'} > 0) {
+	$type = 'ksk';
+    } else {
+	print("  roll: not currently rolling any keys\n");
+	return;
+    }
+
+    my $phase = $rollrec->{$type . 'phase'};
+    my $pmsg = '';
+
+    $pmsg = '- ' . rollmgr_get_phase(uc($type), $phase)
+      if ($opts{'d'} > 5);
+    printf("  roll: %3.3s phase:  %d %s\n", uc($type), $phase, $pmsg);
+
+    printf("        started:    $rollrec->{phasestart}\n")
+      if ($opts{'d'} > 6);
+
+    my $started = str2time($rollrec->{'phasestart'});
+
+    #
+    # bar graph
+    #
+    my $rolltimelength = 0;
+    my $currentperiod = 0;
+
+    my $barlength = 66;
+
+    my @phasespots;
+
+    if ($type eq 'zsk') {
+	# phase 1
+	$rolltimelength += $rollrec->{'maxttl'}*2;
+	$phasespots[1] = 0;
+
+	if ($phase == 1) {
+	    $currentperiod += ($gmtime - $started);
+	} else {
+	    $currentperiod = $rolltimelength;
+	}
+
+	# phase 2
+	$phasespots[2] = $rolltimelength;
+	# $rolltimelength += 0;
+	# $currentperiod += 0;
+
+	# phase 3
+	$phasespots[3] = $rolltimelength;
+	if ($phase == 3) {
+	    $currentperiod = $rolltimelength + ($gmtime - $started);
+	} else {
+	    $currentperiod = $rolltimelength + $rollrec->{'maxttl'}*2;
+	}
+	$rolltimelength += $rollrec->{'maxttl'}*2;
+
+	# phase 4
+	$phasespots[4] = $rolltimelength;
+	# $rolltimelength += 0;
+	# $currentperiod += 0;
+
+	my $percentdone = $currentperiod / $rolltimelength;
+
+	if ($opts{'d'} > 4) {
+	    #
+	    # now construct the timeline based on the gathered information
+	    #
+
+	    my $outstring = "=" x int($barlength * $percentdone);
+	    $outstring .= "-" x int($barlength - ($barlength * $percentdone));
+
+	    my $lastpt = -1;
+	    foreach my $phasepoint (1..4) {
+		my $pt =
+		  int($barlength * $phasespots[$phasepoint]/$rolltimelength);
+		$pt++ if ($lastpt == $pt);
+
+		$pt -= 1 if ($pt == $barlength);
+
+		substr($outstring, $pt, 1, $phasepoint);
+		$lastpt = $pt;
+	    }
+
+	    # and finally print it out
+	    printf("  time: |%s|\n", $outstring);
+	}
+
+    } elsif ($type eq 'ksk') {
+	# phase 1
+	$rolltimelength += $rollrec->{'maxttl'}*2;
+	$phasespots[1] = 0;
+
+	if ($phase == 1) {
+	    $currentperiod += ($gmtime - $started);
+	} else {
+	    $currentperiod = $rolltimelength;
+	}
+
+	# phase 2
+	$phasespots[2] = $rolltimelength;
+	# $rolltimelength += 0;
+	# $currentperiod += 0;
+
+	# phase 3
+	$phasespots[3] = $rolltimelength;
+	$rolltimelength += get_ksk_phase3_length($rollrec);
+
+	if ($phase == 3) {
+	    $currentperiod = $phasespots[3] + ($gmtime - $started);
+	} else {
+	    $currentperiod = $rolltimelength;
+	}
+
+	# phase 4
+	$phasespots[4] = $rolltimelength;
+	# $rolltimelength += 0;
+	# $currentperiod += 0;
+
+	# phase 5
+	$phasespots[5] = $rolltimelength;
+	# $rolltimelength += 0;
+	# $currentperiod += 0;
+
+	# phase 6
+	$phasespots[6] = $rolltimelength;
+	# $rolltimelength += 0;
+	# $currentperiod += 0;
+
+	# phase 7
+	# XXX: rollerd needs to be fixed to wait for 2*parent_TTL
+	$phasespots[7] = $rolltimelength;
+	# $rolltimelength += 0;
+	# $currentperiod += 0;
+
+	my $percentdone = $currentperiod / $rolltimelength;
+
+	#
+	# now construct the timeline based on the gathered information
+	#
+
+	if ($opts{'d'} > 4) {
+	    my $outstring = "=" x int($barlength * $percentdone);
+	    $outstring .= "-" x int($barlength - ($barlength * $percentdone));
+
+	    my $lastpt = -1;
+	    foreach my $phasepoint (1..7) {
+		my $pt =
+		  int($barlength * $phasespots[$phasepoint]/$rolltimelength);
+		$pt++ if ($lastpt == $pt);
+
+		$pt = $barlength-2 if ($pt > $barlength-2);
+
+		substr($outstring, $pt, 1, $phasepoint);
+		$lastpt = $pt;
+	    }
+
+	    # ugly hack to force fit 4, 5 and 6 phases in to the left
+	    $outstring =~ s/.7/67/ if ($outstring !~ /6/);
+	    $outstring =~ s/.6/56/ if ($outstring !~ /5/);
+	    $outstring =~ s/.5/45/ if ($outstring !~ /4/);
+
+	    # and finally print it out
+	    printf("  time: |%s|\n", $outstring);
+	}
+    }
+
+    #
+    # remaining time
+    #
+    if ($opts{'d'} > 4 &&
+	(($type eq 'zsk' &&
+	  ($phase == 1 || $phase == 3)) ||
+	 ($type eq 'ksk' &&
+	  ($phase == 1 || $phase == 3)))
+       ) {
+	my $timeremaining = $rollrec->{'maxttl'}*2;
+	$timeremaining = get_ksk_phase3_length($rollrec)
+	  if ($type eq 'ksk' && $phase == 3);
+
+	$timeremaining -= ($gmtime - $started);
+
+	my $phaseremaining = "";
+	if ($timeremaining > 0) {
+	    $phaseremaining = fuzzytimetrans($timeremaining);
+	} else {
+	    $phaseremaining = "none -- ready for next phase";
+	}
+
+	printf("  time: remaining phase $phase: %-30.30s %17.17s\n", $phaseremaining, "total: " . fuzzytimetrans($rolltimelength) . "|");
+    }
+
+    if ($opts{'d'} > 2) {
+	printf("\n");
+    }
+
+    return $type;
+}
+
+sub monitor_roll
+{
+    my ($rolltype, $rollrec, $keylives) = @_;
+
+    my $type;
+    my $outstr;
+
+    if ($rollrec->{'zskphase'} > 0) {
+	$type = 'zsk';
+    } elsif ($rollrec->{'kskphase'} > 0) {
+	$type = 'ksk';
+    } else {
+	print("$rollrec->{'zonename'}:  not currently rolling any keys:\n");
+	return;
+    }
+
+    my $phase = $rollrec->{$type . 'phase'};
+
+    $outstr = "$rollrec->{'zonename'}:  " . uc($type) . " phase $phase:  ";
+
+    #
+    # remaining time
+    #
+    if (($phase == 1) || ($phase == 3)) {
+	my $timeremaining = $rollrec->{'maxttl'} * 2;
+        my $started = str2time($rollrec->{'phasestart'});
+
+	$timeremaining = get_ksk_phase3_length($rollrec)
+	  if ($type eq 'ksk' && $phase == 3);
+
+	$timeremaining -= ($gmtime - $started);
+
+	my $phaseremaining = "";
+	if ($timeremaining > 0) {
+	    $outstr .= fuzzytimetrans($timeremaining) . " remaining: $timeremaining seconds";
+	} else {
+	    $outstr .= "moving to next phase: 0 seconds";
+	}
+    } else {
+	$outstr .= "phase active: 0 seconds";
+    }
+
+    print "$outstr\n";
+}
+
+sub find_zone_phases {
+    my ($phaseNeeded) = @_;
+    my @zones;
+
+    foreach my $zone (%rrdata) {
+	foreach my $rolltype (@rolltypes) {
+	    if ($phaseNeeded > 0) {
+		if ($rrdata{$zone}{$rolltype}[0]{'zskphase'} eq $phaseNeeded ||
+		    $rrdata{$zone}{$rolltype}[0]{'kskphase'} eq $phaseNeeded) {
+		    push @zones, $zone;
+	        }
+	    } elsif ($rrdata{$zone}{$rolltype}[0]{'zskphase'} > 0 ||
+		     $rrdata{$zone}{$rolltype}[0]{'kskphase'} > 0) {
+		push @zones, $zone;
+	    }
+	}
+    }
+    return @zones;
+}
+
+sub print_zone_information {
+    my $zonelineformat = "%-30s\n";
+
+    my @zones;
+    if ($opts{'z'}) {
+	@zones = split(/\s*,\s*/, $opts{'z'});
+    } elsif (exists($opts{'p'})) {
+	@zones = find_zone_phases($opts{'p'});
+    } else {
+	@zones = keys(%krfzones);
+    }
+
+    rollmgr_phasemsg('long') if ($opts{'d'} > 5);
+
+    foreach my $zone (sort(@zones)) {
+	my %keylives;
+	my %keyremaining;
+	my %keylifetimes;
+	next if ($zone eq '');
+
+	# Print monitor info.
+	if ($opts{'M'}) {
+	    foreach my $rolltype (@rolltypes) {
+		foreach my $roll (@{$rrdata{$zone}{$rolltype}}) {
+		    monitor_roll($rolltype, $rrlookup{$roll->{'rollrec_name'}});
+		}
+	    }
+
+	    print "\n" if (! $opts{'M'} > 2);
+	    next;
+	}
+
+	print "Zone: $zone\n";
+
+	# print each active key
+	if ($opts{'k'} || !($opts{'k'} || $opts{'r'})) {
+	    foreach my $keytype (split(/,\s*/, $opts{'t'})) {
+		foreach my $keyname (split(/ /, $krfsets{$zone}{$keytype}{'keys'})) {
+		    my $keydata = print_key($keytype, $krfkeys{$zone}{$keyname});
+		    $keylives{$keydata->[0]} = 
+			max($keydata->[1], $keylives{$keydata->[0]});
+		    $keyremaining{$keydata->[0]} = 
+			max($keydata->[2], $keyremaining{$keydata->[0]});
+		    $keylifetimes{$keydata->[0]} = 
+			max($keydata->[3], $keylifetimes{$keydata->[0]});
+		}
+	    }
+	}
+
+	print "\n" if ($opts{'d'} > 2);
+
+	# print each roller roll
+	my $being_rolled;
+	if ($opts{'r'} || !($opts{'k'} || $opts{'r'})) {
+	    foreach my $rolltype (@rolltypes) {
+		foreach my $roll (@{$rrdata{$zone}{$rolltype}}) {
+		    $being_rolled = print_roll($rolltype, $rrlookup{$roll->{'rollrec_name'}});
+		}
+	    }
+	}
+
+	print "\n" if ($opts{'d'} > 2 && !$opts{'K'} && !defined($being_rolled));
+
+	if (!$opts{'K'}) {
+	    # we print expiry times for the entire zsk/ksk collection instead of
+	    # per key in this case.
+	    foreach my $keytype (keys(%keylives)) {
+		if ($keytype eq $being_rolled) {
+		    next;
+		}
+		print_life_graph($keylives{$keytype}, $keytype);
+		if ($keyremaining{$keytype} == 0) {
+		    printf("  life:  None left!  Key should be rolled soon.\n");
+		} else {
+		    printf("  life:  " .
+			   fuzzytimetrans($keyremaining{$keytype})
+			   . " left (out of " .
+			   fuzzytimetrans($keylifetimes{$keytype})
+			   . ")\n");
+		}
+	    }
+	}
+
+	if ($opts{'d'} > 8) {
+	    print "  keys: ";
+	    foreach my $type (keys(%{$krfdata{$zone}})) {
+		next if ($type eq 'set');
+		print "$type=" . $#{$krfdata{$zone}{$type}} . " ";
+	    }
+	    print "\n";
+	}
+
+	print "\n";
+    }
+}
+
+sub max {
+    return $_[0] if (!defined($_[1]));
+    return $_[1] if (!defined($_[0]));
+    return ($_[0] > $_[1] ? $_[0] : $_[1]);
+}
+
+sub min {
+    return ($_[0] < $_[1] ? $_[0] : $_[1]);
+}
+
+#######################################################################
+# debugging output
+#
+sub debug {
+    print STDERR @_ if ($opts{'debug'});
+}
+
+#######################################################################
+
+=pod
+
+=head1 NAME
+
+lsdnssec - List DNSSEC components of zones from files or directories
+
+=head1 SYNOPSIS
+
+  lsdnssec [-d 1-9] [OPTIONS] [FILES OR DIRECTORIES...]
+
+=head1 DESCRIPTION
+
+The B<lsdnssec> program summarizes information about DNSSEC-related files.
+These files may be specified on the command line or found in directories
+that were given on the command line.  The B<-d> flag controls the amount
+of detail in the B<lsdnssec> output.
+
+B<lsdnssec> displays the following information about each zone for which it
+collects information:
+
+=over
+
+=item keys
+
+Key information is shown about the keys currently in use.  A bar graph is
+included that shows the age of the key with respect to the configured
+expected key lifetime.
+
+This information is collected from any B<.krf> files B<lsdnssec> finds.
+
+=item rolling status
+
+If any zone keys are being rolled via B<rollerd>, then the status of the
+rolling state is shown.  The time needed to reach the next state is also
+displayed.
+
+This information is collected from any B<.rollrec> or B<.rrf> files found by
+B<lsdnssec>.
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item B<-z ZONENAME1[,ZONENAME2]>
+
+=item B<--zone=ZONENAME1[,ZONENAME2]>
+
+Only prints information about the named zone(s).
+
+=item B<-p NUMBER>
+
+=item B<--phase=NUMBER>
+
+Only prints information about zones currently being rolled by B<rollerd>
+and where either a zsk or a ksk rollover is taking place and is in
+phase NUMBER.
+
+If the phase NUMBER is specified as 0, then any zone in any rolling
+phase will be printed (but not zones that aren't being rolled at all).
+
+This flag is especially useful to find all of your zones that are
+currently in KSK rolling phase 6, which requires operator intervention
+to propagate the new DS records into the parent zone.
+
+=item B<-r>
+
+=item B<--roll-status>
+
+Show only rolling information from the rollrec files.  By default both
+roll-state and key information is shown.
+
+=item B<-k>
+
+=item B<--key-data>
+
+Show only keying information from the krf files.  By default both
+roll-state and key information is shown.
+
+=item B<-K>
+
+=item B<--key-gen-time>
+
+Normally B<rollerd> calculates the age of a key based on the last time a
+key was rolled.  However, it's also possible to calculate the age of a
+key based on the difference between the time of execution and when the key
+was created (which was typically before the rolling began).
+The I<-K> flag switches to this second mode of key age calculation
+(which will not match how B<rollerd> actually performs).
+
+=item B<-M>
+
+=item B<--monitor>
+
+The I<-M> flag gives an abbreviated version of B<lsdnssec> output that is
+intended for use by monitoring systems.  It displays the zone name, the
+rollover phase, and the time remaining in that phase.  This option implicitly
+sets the I<-r> flag on and sets the detail level to 1.
+
+=item B<-d 1-9>
+
+=item B<--detail 1-9>
+
+Controls the amount of information shown in the output.  A level of 9
+shows everything; a level of 1 shows a minimal amount.  The
+default level is 5.
+
+=item B<--debug>
+
+Turns on extra debugging information.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2009-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wes Hardaker <hardaker AT AT AT users.sourceforge.net>
+
+=head1 SEE ALSO
+
+B<lskrf(1)>
+
+B<zonesigner(8)>,
+B<rollerd(8)>
+
+=cut
+

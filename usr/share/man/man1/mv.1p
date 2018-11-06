@@ -1,0 +1,529 @@
+'\" et
+.TH MV "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mv
+\(em move files
+.SH SYNOPSIS
+.LP
+.nf
+mv \fB[\fR\(miif\fB] \fIsource_file target_file\fR
+.P
+mv \fB[\fR\(miif\fB] \fIsource_file\fR... \fItarget_dir\fR
+.fi
+.SH DESCRIPTION
+In the first synopsis form, the
+.IR mv
+utility shall move the file named by the
+.IR source_file
+operand to the destination specified by the
+.IR target_file .
+This first synopsis form is assumed when the final operand does not
+name an existing directory and is not a symbolic link referring to
+an existing directory. In this case, if
+.IR source_file
+names a non-directory file and
+.IR target_file
+ends with a trailing
+<slash>
+character,
+.IR mv
+shall treat this as an error and no
+.IR source_file
+operands will be processed.
+.P
+In the second synopsis form,
+.IR mv
+shall move each file named by a
+.IR source_file
+operand to a destination file in the existing directory named by the
+.IR target_dir
+operand, or referenced if
+.IR target_dir
+is a symbolic link referring to an existing directory. The
+destination path for each
+.IR source_file
+shall be the concatenation of the target directory, a single
+<slash>
+character if the target did not end in a
+<slash>,
+and the last pathname component of the
+.IR source_file .
+This second form is assumed when the final operand names an existing
+directory.
+.P
+If any operand specifies an existing file of a type not
+specified by the System Interfaces volume of POSIX.1\(hy2008, the behavior is implementation-defined.
+.P
+For each
+.IR source_file
+the following steps shall be taken:
+.IP " 1." 4
+If the destination path exists, the
+.BR \(mif
+option is not specified, and either of the following conditions is
+true:
+.RS 4 
+.IP " a." 4
+The permissions of the destination path do not permit writing and the
+standard input is a terminal.
+.IP " b." 4
+The
+.BR \(mii
+option is specified.
+.P
+the
+.IR mv
+utility shall write a prompt to standard error and read a line from
+standard input. If the response is not affirmative,
+.IR mv
+shall do nothing more with the current
+.IR source_file
+and go on to any remaining
+.IR source_file s.
+.RE
+.IP " 2." 4
+If the
+.IR source_file
+operand and destination path name the same existing file, then the
+destination path shall not be removed, and one of the following shall
+occur:
+.RS 4 
+.IP " a." 4
+No change is made to
+.IR source_file ,
+no error occurs, and no diagnostic is issued.
+.IP " b." 4
+No change is made to
+.IR source_file ,
+a diagnostic is issued to standard error identifying the two names,
+and the exit status is affected.
+.IP " c." 4
+If the
+.IR source_file
+operand and destination path name distinct directory entries, then the
+.IR source_file
+operand is removed, no error occurs, and no diagnostic is issued.
+.P
+The
+.IR mv
+utility shall do nothing more with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+.RE
+.IP " 3." 4
+The
+.IR mv
+utility shall perform actions equivalent to the
+\fIrename\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008, called with the following arguments:
+.RS 4 
+.IP " a." 4
+The
+.IR source_file
+operand is used as the
+.IR old
+argument.
+.IP " b." 4
+The destination path is used as the
+.IR new
+argument.
+.P
+If this succeeds,
+.IR mv
+shall do nothing more with the current
+.IR source_file
+and go on to any remaining
+.IR source_file s.
+If this fails for any reasons other than those described for the
+.IR errno
+.BR [EXDEV] 
+in the System Interfaces volume of POSIX.1\(hy2008,
+.IR mv
+shall write a diagnostic message to standard error, do nothing more
+with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+.RE
+.IP " 4." 4
+If the destination path exists, and it is a file of type directory and
+.IR source_file
+is not a file of type directory, or it is a file not of type directory
+and
+.IR source_file
+is a file of type directory,
+.IR mv
+shall write a diagnostic message to standard error, do nothing more
+with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+If the destination path exists and was created by a previous step, it
+is unspecified whether this will treated as an error or the destination
+path will be overwritten.
+.IP " 5." 4
+If the destination path exists,
+.IR mv
+shall attempt to remove it. If this fails for any reason,
+.IR mv
+shall write a diagnostic message to standard error, do nothing more
+with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+.IP " 6." 4
+The file hierarchy rooted in
+.IR source_file
+shall be duplicated as a file hierarchy rooted in the destination path. If
+.IR source_file
+or any of the files below it in the hierarchy are symbolic links, the
+links themselves shall be duplicated, including their contents, rather
+than any files to which they refer. The following characteristics of
+each file in the file hierarchy shall be duplicated:
+.RS 4 
+.IP " *" 4
+The time of last data modification and time of last access
+.IP " *" 4
+The user ID and group ID
+.IP " *" 4
+The file mode
+.P
+If the user ID, group ID, or file mode of a regular file cannot be
+duplicated, the file mode bits S_ISUID and S_ISGID shall not be
+duplicated.
+.P
+When files are duplicated to another file system, the implementation
+may require that the process invoking
+.IR mv
+has read access to each file being duplicated.
+.P
+If files being duplicated to another file system have hard links to
+other files, it is unspecified whether the files copied to the new
+file system have the hard links preserved or separate copies are created
+for the linked files.
+.P
+If the duplication of the file hierarchy fails for any reason,
+.IR mv
+shall write a diagnostic message to standard error, do nothing more
+with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+.P
+If the duplication of the file characteristics fails for any reason,
+.IR mv
+shall write a diagnostic message to standard error, but this failure
+shall not cause
+.IR mv
+to modify its exit status.
+.RE
+.IP " 7." 4
+The file hierarchy rooted in
+.IR source_file
+shall be removed. If this fails for any reason,
+.IR mv
+shall write a diagnostic message to the standard error, do nothing more
+with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+.SH OPTIONS
+The
+.IR mv
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mif\fP" 10
+Do not prompt for confirmation if the destination path exists. Any
+previous occurrence of the
+.BR \(mii
+option is ignored.
+.IP "\fB\(mii\fP" 10
+Prompt for confirmation if the destination path exists. Any previous
+occurrence of the
+.BR \(mif
+option is ignored.
+.P
+Specifying more than one of the
+.BR \(mif
+or
+.BR \(mii
+options shall not be considered an error. The last option specified
+shall determine the behavior of
+.IR mv .
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIsource_file\fR" 10
+A pathname of a file or directory to be moved.
+.IP "\fItarget_file\fR" 10
+A new pathname for the file or directory being moved.
+.IP "\fItarget_dir\fR" 10
+A pathname of an existing directory into which to move the input
+files.
+.SH STDIN
+The standard input shall be used to read an input line in response to
+each prompt specified in the STDERR section. Otherwise, the standard
+input shall not be used.
+.SH "INPUT FILES"
+The input files specified by each
+.IR source_file
+operand can be of any file type.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR mv :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements used in the extended regular
+expression defined for the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files), the behavior of
+character classes used in the extended regular expression defined for
+the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale used to process affirmative responses, and the
+locale used to affect the format and contents of diagnostic messages
+and prompts written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+Prompts shall be written to the standard error under the conditions
+specified in the DESCRIPTION section. The prompts shall contain the
+destination pathname, but their format is otherwise unspecified.
+Otherwise, the standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The output files may be of any file type.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All input files were moved successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+If the copying or removal of
+.IR source_file
+is prematurely terminated by a signal or error,
+.IR mv
+may leave a partial copy of
+.IR source_file
+at the source or destination. The
+.IR mv
+utility shall not modify both
+.IR source_file
+and the destination path simultaneously; termination at any point shall
+leave either
+.IR source_file
+or the destination path complete.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Some implementations mark for update the last file status change timestamp
+of renamed files and some do not. Applications which make use of the
+last file status change timestamp may behave differently with respect
+to renamed files unless they are designed to allow for either behavior.
+.P
+The specification ensures that
+.IR mv
+.BR a
+.BR a
+will not alter the contents of file
+.BR a ,
+and allows the implementation to issue an error that a file cannot be
+moved onto itself. Likewise, when
+.BR a
+and
+.BR b
+are hard links to the same file,
+.IR mv
+.BR a
+.BR b
+will not alter
+.BR b ,
+but if a diagnostic is not issued, then it is unspecified whether
+.BR a
+is left untouched (as it would be by the
+\fIrename\fR()
+function) or unlinked (reducing the link count of
+.BR b ).
+.SH EXAMPLES
+If the current directory contains only files
+.BR a
+(of any type defined by the System Interfaces volume of POSIX.1\(hy2008),
+.BR b
+(also of any type), and a directory
+.BR c :
+.sp
+.RS 4
+.nf
+\fB
+mv a b c
+mv c d
+.fi \fR
+.P
+.RE
+.P
+results with the original files
+.BR a
+and
+.BR b
+residing in the directory
+.BR d
+in the current directory.
+.SH RATIONALE
+Early proposals diverged from the SVID and BSD historical practice in
+that they required that when the destination path exists, the
+.BR \(mif
+option is not specified, and input is not a terminal,
+.IR mv
+fails. This was done for compatibility with
+.IR cp .
+The current text returns to historical practice. It should be noted
+that this is consistent with the
+\fIrename\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008, which does not require write permission
+on the target.
+.P
+For absolute clarity, paragraph (1), describing the behavior of
+.IR mv
+when prompting for confirmation, should be interpreted in the following
+manner:
+.sp
+.RS 4
+.nf
+\fB
+if (exists AND (NOT f_option) AND
+    ((not_writable AND input_is_terminal) OR i_option))
+.fi \fR
+.P
+.RE
+.P
+The
+.BR \(mii
+option exists on BSD systems, giving applications and users a way to
+avoid accidentally unlinking files when moving others. When the
+standard input is not a terminal, the 4.3 BSD
+.IR mv
+deletes all existing destination paths without prompting, even when
+.BR \(mii
+is specified; this is inconsistent with the behavior of the 4.3 BSD
+.IR cp
+utility, which always generates an error when the file is unwritable
+and the standard input is not a terminal. The standard developers
+decided that use of
+.BR \(mii
+is a request for interaction, so when the destination
+path exists, the utility takes instructions from whatever responds to
+standard input.
+.P
+The
+\fIrename\fR()
+function is able to move directories within the same file system. Some
+historical versions of
+.IR mv
+have been able to move directories, but not to a different file system.
+The standard developers considered that this was an annoying
+inconsistency, so this volume of POSIX.1\(hy2008 requires directories to be able to be moved
+even across file systems. There is no
+.BR \(miR
+option to confirm that moving a directory is actually intended, since
+such an option was not required for moving directories in historical
+practice. Requiring the application to specify it sometimes, depending
+on the destination, seemed just as inconsistent. The semantics of the
+\fIrename\fR()
+function were preserved as much as possible. For example,
+.IR mv
+is not permitted to ``rename'' files to or from directories, even
+though they might be empty and removable.
+.P
+Historic implementations of
+.IR mv
+did not exit with a non-zero exit status if they were unable to
+duplicate any file characteristics when moving a file across file
+systems, nor did they write a diagnostic message for the user. The
+former behavior has been preserved to prevent scripts from breaking; a
+diagnostic message is now required, however, so that users are alerted
+that the file characteristics have changed.
+.P
+The exact format of the interactive prompts is unspecified. Only the
+general nature of the contents of prompts are specified because
+implementations may desire more descriptive prompts than those used on
+historical implementations. Therefore, an application not using the
+.BR \(mif
+option or using the
+.BR \(mii
+option relies on the system to provide the most suitable dialog
+directly with the user, based on the behavior specified.
+.P
+When
+.IR mv
+is dealing with a single file system and
+.IR source_file
+is a symbolic link, the link itself is moved as a consequence of the
+dependence on the
+\fIrename\fR()
+functionality, per the DESCRIPTION. Across file systems, this has to be
+made explicit.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIcp\fR\^",
+.IR "\fIln\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIrename\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

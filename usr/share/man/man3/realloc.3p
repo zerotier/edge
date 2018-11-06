@@ -1,0 +1,176 @@
+'\" et
+.TH REALLOC "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+realloc
+\(em memory reallocator
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdlib.h>
+.P
+void *realloc(void *\fIptr\fP, size_t \fIsize\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIrealloc\fR()
+function shall deallocate the old object pointed to by
+.IR ptr
+and return a pointer to a new object that has the size specified by
+.IR size .
+The contents of the new object shall be the same as that of the old
+object prior to deallocation, up to the lesser of the new and old
+sizes. Any bytes in the new object beyond the size of the old object
+have indeterminate values. If the size of the space requested is zero,
+the behavior shall be implementation-defined: either a null pointer is
+returned, or the behavior shall be as if the size were some non-zero
+value, except that the returned pointer shall not be used to access
+an object. If the space cannot be allocated, the object shall remain
+unchanged.
+.P
+If
+.IR ptr
+is a null pointer,
+\fIrealloc\fR()
+shall be equivalent to
+\fImalloc\fR()
+for the specified size.
+.P
+If
+.IR ptr
+does not match a pointer returned earlier by
+\fIcalloc\fR(),
+\fImalloc\fR(),
+or
+\fIrealloc\fR()
+or if the space has previously been deallocated by a call to
+\fIfree\fR()
+or
+\fIrealloc\fR(),
+the behavior is undefined.
+.P
+The order and contiguity of storage allocated by successive calls to
+\fIrealloc\fR()
+is unspecified. The pointer returned if the allocation succeeds shall
+be suitably aligned so that it may be assigned to a pointer to any type
+of object and then used to access such an object in the space allocated
+(until the space is explicitly freed or reallocated). Each such
+allocation shall yield a pointer to an object disjoint from any other
+object. The pointer returned shall point to the start (lowest byte
+address) of the allocated space. If the space cannot be allocated, a
+null pointer shall be returned.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIrealloc\fR()
+shall return a pointer to the (possibly moved) allocated space. If
+.IR size
+is 0, either:
+.IP " *" 4
+A null pointer shall be returned
+and
+.IR errno
+set to an implementation-defined value.
+.IP " *" 4
+A unique pointer that can be successfully passed to
+\fIfree\fR()
+shall be returned, and the memory object pointed to by
+.IR ptr
+shall be freed. The application shall ensure that the pointer is not
+used to access an object.
+.P
+If there is not enough available memory,
+\fIrealloc\fR()
+shall return a null pointer
+and set
+.IR errno
+to
+.BR [ENOMEM] .
+If
+\fIrealloc\fR()
+returns a null pointer
+and
+.IR errno
+has been set to
+.BR [ENOMEM] ,
+the memory referenced by
+.IR ptr
+shall not be changed.
+.SH ERRORS
+The
+\fIrealloc\fR()
+function shall fail if:
+.TP
+.BR ENOMEM
+Insufficient memory is available.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The description of
+\fIrealloc\fR()
+has been modified from previous versions of this standard to align
+with the ISO/IEC\ 9899:\|1999 standard. Previous versions explicitly permitted a call to
+.IR realloc \c
+(\fIp\fI, 0) to free the space pointed to by
+.IR p
+and return a null pointer. While this behavior could be interpreted as
+permitted by this version of the standard, the C language committee have
+indicated that this interpretation is incorrect. Applications should
+assume that if
+\fIrealloc\fR()
+returns a null pointer, the space pointed to by
+.IR p
+has not been freed. Since this could lead to double-frees, implementations
+should also set
+.IR errno
+if a null pointer actually indicates a failure, and applications should
+only free the space if
+.IR errno
+was changed.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+This standard defers to the ISO\ C standard. While that standard currently has
+language that might permit
+.IR realloc \c
+(\fIp\fI, 0), where
+.IR p
+is not a null pointer, to free
+.IR p
+while still returning a null pointer, the committee responsible for that
+standard is considering clarifying the language to explicitly prohibit
+that alternative.
+.SH "SEE ALSO"
+.IR "\fIcalloc\fR\^(\|)",
+.IR "\fIfree\fR\^(\|)",
+.IR "\fImalloc\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdlib.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

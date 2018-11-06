@@ -1,0 +1,278 @@
+'\" et
+.TH CONFSTR "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+confstr
+\(em get configurable variables
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+size_t confstr(int \fIname\fP, char *\fIbuf\fP, size_t \fIlen\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIconfstr\fR()
+function shall return configuration-defined string values. Its use and
+purpose are similar to
+\fIsysconf\fR(),
+but it is used where string values rather than numeric values are
+returned.
+.P
+The
+.IR name
+argument represents the system variable to be queried. The
+implementation shall support the following name values, defined in
+.IR <unistd.h> .
+It may support others:
+.P
+.nf
+_CS_PATH
+_CS_POSIX_V7_ILP32_OFF32_CFLAGS
+_CS_POSIX_V7_ILP32_OFF32_LDFLAGS
+_CS_POSIX_V7_ILP32_OFF32_LIBS
+_CS_POSIX_V7_ILP32_OFFBIG_CFLAGS
+_CS_POSIX_V7_ILP32_OFFBIG_LDFLAGS
+_CS_POSIX_V7_ILP32_OFFBIG_LIBS
+_CS_POSIX_V7_LP64_OFF64_CFLAGS
+_CS_POSIX_V7_LP64_OFF64_LDFLAGS
+_CS_POSIX_V7_LP64_OFF64_LIBS
+_CS_POSIX_V7_LPBIG_OFFBIG_CFLAGS
+_CS_POSIX_V7_LPBIG_OFFBIG_LDFLAGS
+_CS_POSIX_V7_LPBIG_OFFBIG_LIBS
+_CS_POSIX_V7_THREADS_CFLAGS
+_CS_POSIX_V7_THREADS_LDFLAGS
+_CS_POSIX_V7_WIDTH_RESTRICTED_ENVS
+_CS_V7_ENV
+_CS_POSIX_V6_ILP32_OFF32_CFLAGS
+_CS_POSIX_V6_ILP32_OFF32_LDFLAGS
+_CS_POSIX_V6_ILP32_OFF32_LIBS
+_CS_POSIX_V6_ILP32_OFFBIG_CFLAGS
+_CS_POSIX_V6_ILP32_OFFBIG_LDFLAGS
+_CS_POSIX_V6_ILP32_OFFBIG_LIBS
+_CS_POSIX_V6_LP64_OFF64_CFLAGS
+_CS_POSIX_V6_LP64_OFF64_LDFLAGS
+_CS_POSIX_V6_LP64_OFF64_LIBS
+_CS_POSIX_V6_LPBIG_OFFBIG_CFLAGS
+_CS_POSIX_V6_LPBIG_OFFBIG_LDFLAGS
+_CS_POSIX_V6_LPBIG_OFFBIG_LIBS
+_CS_POSIX_V6_WIDTH_RESTRICTED_ENVS
+_CS_V6_ENV
+.fi
+.P
+If
+.IR len
+is not 0, and if
+.IR name
+has a configuration-defined value,
+\fIconfstr\fR()
+shall copy that value into the
+.IR len -byte
+buffer pointed to by
+.IR buf .
+If the string to be returned is longer than
+.IR len
+bytes, including the terminating null, then
+\fIconfstr\fR()
+shall truncate the string to
+.IR len \(mi1
+bytes and null-terminate the result. The application can detect that
+the string was truncated by comparing the value returned by
+\fIconfstr\fR()
+with
+.IR len .
+.P
+If
+.IR len
+is 0 and
+.IR buf
+is a null pointer, then
+\fIconfstr\fR()
+shall still return the integer value as defined below, but shall not
+return a string. If
+.IR len
+is 0 but
+.IR buf
+is not a null pointer, the result is unspecified.
+.P
+After a call to:
+.sp
+.RS 4
+.nf
+\fB
+confstr(_CS_V7_ENV, buf, sizeof(buf))
+.fi \fR
+.P
+.RE
+.P
+the string stored in
+.IR buf
+will contain the
+<space>-separated
+list of variable=value environment variable pairs required by the
+implementation to create a conforming environment, as described in the
+implementations' conformance documentation.
+.P
+If the implementation supports the POSIX shell option, the string
+stored in
+.IR buf
+after a call to:
+.sp
+.RS 4
+.nf
+\fB
+confstr(_CS_PATH, buf, sizeof(buf))
+.fi \fR
+.P
+.RE
+.P
+can be used as a value of the
+.IR PATH
+environment variable that accesses all of the standard utilities of
+POSIX.1\(hy2008, if the return value is less than or equal to
+.IR sizeof (\c
+.IR buf ).
+.SH "RETURN VALUE"
+If
+.IR name
+has a configuration-defined value,
+\fIconfstr\fR()
+shall return the size of buffer that would be needed to hold the entire
+configuration-defined value including the terminating null. If this
+return value is greater than
+.IR len ,
+the string returned in
+.IR buf
+is truncated.
+.P
+If
+.IR name
+is invalid,
+\fIconfstr\fR()
+shall return 0 and set
+.IR errno
+to indicate the error.
+.P
+If
+.IR name
+does not have a configuration-defined value,
+\fIconfstr\fR()
+shall return 0 and leave
+.IR errno
+unchanged.
+.SH ERRORS
+The
+\fIconfstr\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR name
+argument is invalid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+An application can distinguish between an invalid
+.IR name
+parameter value and one that corresponds to a configurable variable
+that has no configuration-defined value by checking if
+.IR errno
+is modified. This mirrors the behavior of
+\fIsysconf\fR().
+.P
+The original need for this function was to provide a way of finding the
+configuration-defined default value for the environment variable
+.IR PATH .
+Since
+.IR PATH
+can be modified by the user to include directories that could contain
+utilities replacing the standard utilities in the Shell and Utilities volume of POSIX.1\(hy2008, applications
+need a way to determine the system-supplied
+.IR PATH
+environment variable value that contains the correct search path for
+the standard utilities.
+.P
+An application could use:
+.sp
+.RS 4
+.nf
+\fB
+confstr(name, (char *)NULL, (size_t)0)
+.fi \fR
+.P
+.RE
+.P
+to find out how big a buffer is needed for the string value; use
+\fImalloc\fR()
+to allocate a buffer to hold the string; and call
+\fIconfstr\fR()
+again to get the string. Alternately, it could allocate a fixed, static
+buffer that is big enough to hold most answers (perhaps 512 or 1\|024
+bytes), but then use
+\fImalloc\fR()
+to allocate a larger buffer if it finds that this is too small.
+.SH RATIONALE
+Application developers can normally determine any configuration
+variable by means of reading from the stream opened by a call to:
+.sp
+.RS 4
+.nf
+\fB
+popen("command -p getconf variable", "r");
+.fi \fR
+.P
+.RE
+.P
+The
+\fIconfstr\fR()
+function with a
+.IR name
+argument of _CS_PATH returns a string that can be used as a
+.IR PATH
+environment variable setting that will reference the standard shell and
+utilities as described in the Shell and Utilities volume of POSIX.1\(hy2008.
+.P
+The
+\fIconfstr\fR()
+function copies the returned string into a buffer supplied by the
+application instead of returning a pointer to a string. This allows a
+cleaner function in some implementations (such as those with
+lightweight threads) and resolves questions about when the application
+must copy the string returned.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^",
+.IR "\fIfpathconf\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIc99\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

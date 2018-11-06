@@ -1,0 +1,325 @@
+'\" et
+.TH netdb.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+netdb.h
+\(em definitions for network database operations
+.SH SYNOPSIS
+.LP
+.nf
+#include <netdb.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <netdb.h> 
+header may define the
+.BR in_port_t
+type and the
+.BR in_addr_t
+type as described in
+.IR <netinet/in.h> .
+.P
+The
+.IR <netdb.h> 
+header shall define the
+.BR hostent
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+char   *h_name       \fROfficial name of the host.\fR
+char  **h_aliases    \fRA pointer to an array of pointers to\fR
+                     \fRalternative host names, terminated by a\fR
+                     \fRnull pointer.\fR
+int     h_addrtype   \fRAddress type.\fR
+int     h_length     \fRThe length, in bytes, of the address.\fR
+char  **h_addr_list  \fRA pointer to an array of pointers to network\fR
+                     \fRaddresses (in network byte order) for the host,\fR
+                     \fRterminated by a null pointer.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netdb.h> 
+header shall define the
+.BR netent
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+char     *n_name      \fROfficial, fully-qualified (including the\fR
+                      \fRdomain) name of the host.\fR
+char    **n_aliases   \fRA pointer to an array of pointers to\fR
+                      \fRalternative network names, terminated by a\fR
+                      \fRnull pointer.\fR
+int       n_addrtype  \fRThe address type of the network.\fR
+uint32_t  n_net       \fRThe network number, in host byte order.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netdb.h> 
+header shall define the
+.BR uint32_t
+type as described in
+.IR <inttypes.h> .
+.P
+The
+.IR <netdb.h> 
+header shall define the
+.BR protoent
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+char   *p_name     \fROfficial name of the protocol.\fR
+char  **p_aliases  \fRA pointer to an array of pointers to\fR
+                   \fRalternative protocol names, terminated by\fR
+                   \fRa null pointer.\fR
+int     p_proto    \fRThe protocol number.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netdb.h> 
+header shall define the
+.BR servent
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+char   *s_name     \fROfficial name of the service.\fR
+char  **s_aliases  \fRA pointer to an array of pointers to\fR
+                   \fRalternative service names, terminated by\fR
+                   \fRa null pointer.\fR
+int     s_port     \fRA value which, when converted to uint16_t,\fR
+                   \fRyields the port number in network byte order\fR
+                   \fRat which the service resides.\fR
+char   *s_proto    \fRThe name of the protocol to use when\fR
+                   \fRcontacting the service.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netdb.h> 
+header shall define the IPPORT_RESERVED symbolic constant with the
+value of the highest reserved Internet port number.
+.SS "Address Information Structure"
+.P
+The
+.IR <netdb.h> 
+header shall define the
+.BR addrinfo
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+int               ai_flags      \fRInput flags.\fR
+int               ai_family     \fRAddress family of socket.\fR
+int               ai_socktype   \fRSocket type.\fR
+int               ai_protocol   \fRProtocol of socket.\fR
+socklen_t         ai_addrlen    \fRLength of socket address.\fR
+struct sockaddr  *ai_addr       \fRSocket address of socket.\fR
+char             *ai_canonname  \fRCanonical name of service location.\fR
+struct addrinfo  *ai_next       \fRPointer to next in list.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netdb.h> 
+header shall define the following symbolic constants that evaluate to
+bitwise-distinct integer constants for use in the
+.IR flags
+field of the
+.BR addrinfo
+structure:
+.IP AI_PASSIVE 14
+Socket address is intended for
+\fIbind\fR().
+.IP AI_CANONNAME 14
+Request for canonical name.
+.IP AI_NUMERICHOST 14
+Return numeric host address as name.
+.IP AI_NUMERICSERV 14
+Inhibit service name resolution.
+.IP AI_V4MAPPED 14
+If no IPv6 addresses are found, query for IPv4 addresses and return
+them to the caller as IPv4-mapped IPv6 addresses.
+.IP AI_ALL 14
+Query for both IPv4 and IPv6 addresses.
+.IP AI_ADDRCONFIG 14
+Query for IPv4 addresses only when an IPv4 address is configured;
+query for IPv6 addresses only when an IPv6 address is configured.
+.P
+The
+.IR <netdb.h> 
+header shall define the following symbolic constants that evaluate
+to bitwise-distinct integer constants for use in the
+.IR flags
+argument to
+\fIgetnameinfo\fR():
+.IP NI_NOFQDN 14
+Only the nodename portion of the FQDN is returned for local hosts.
+.IP NI_NUMERICHOST 14
+The numeric form of the node's address is returned instead of its
+name.
+.IP NI_NAMEREQD 14
+Return an error if the node's name cannot be located in the database.
+.IP NI_NUMERICSERV 14
+The numeric form of the service address is returned instead of its name.
+.IP NI_NUMERICSCOPE 14
+.br
+For IPv6 addresses, the numeric form of the scope identifier is
+returned instead of its name.
+.IP NI_DGRAM 14
+Indicates that the service is a datagram service (SOCK_DGRAM).
+.SS "Address Information Errors"
+.P
+The
+.IR <netdb.h> 
+header shall define the following symbolic constants for use as
+error values for
+\fIgetaddrinfo\fR()
+and
+\fIgetnameinfo\fR().
+The values shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP EAI_AGAIN 14
+The name could not be resolved at this time. Future attempts may
+succeed.
+.IP EAI_BADFLAGS 14
+The flags had an invalid value.
+.IP EAI_FAIL 14
+A non-recoverable error occurred.
+.IP EAI_FAMILY 14
+The address family was not recognized or the address length was invalid
+for the specified family.
+.IP EAI_MEMORY 14
+There was a memory allocation failure.
+.IP EAI_NONAME 14
+The name does not resolve for the supplied parameters.
+.RS 14 
+.P
+NI_NAMEREQD is set and the host's name cannot be located, or both
+.IR nodename
+and
+.IR servname
+were null.
+.RE
+.IP EAI_SERVICE 14
+The service passed was not recognized for the specified socket type.
+.IP EAI_SOCKTYPE 14
+The intended socket type was not recognized.
+.IP EAI_SYSTEM 14
+A system error occurred. The error code can be found in
+.IR errno .
+.IP EAI_OVERFLOW 14
+An argument buffer overflowed.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+void              endhostent(void);
+void              endnetent(void);
+void              endprotoent(void);
+void              endservent(void);
+void              freeaddrinfo(struct addrinfo *);
+const char       *gai_strerror(int);
+int               getaddrinfo(const char *restrict, const char *restrict,
+                      const struct addrinfo *restrict,
+                      struct addrinfo **restrict);
+struct hostent   *gethostent(void);
+int               getnameinfo(const struct sockaddr *restrict, socklen_t,
+                      char *restrict, socklen_t, char *restrict,
+                      socklen_t, int);
+struct netent    *getnetbyaddr(uint32_t, int);
+struct netent    *getnetbyname(const char *);
+struct netent    *getnetent(void);
+struct protoent  *getprotobyname(const char *);
+struct protoent  *getprotobynumber(int);
+struct protoent  *getprotoent(void);
+struct servent   *getservbyname(const char *, const char *);
+struct servent   *getservbyport(int, const char *);
+struct servent   *getservent(void);
+void              sethostent(int);
+void              setnetent(int);
+void              setprotoent(int);
+void              setservent(int);
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netdb.h> 
+header shall define the
+.BR socklen_t
+type through
+.BR typedef ,
+as described in
+.IR <sys/socket.h> .
+.P
+Inclusion of the
+.IR <netdb.h> 
+header may also make visible all symbols from
+.IR <netinet/in.h> ,
+.IR <sys/socket.h> ,
+and
+.IR <inttypes.h> .
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<inttypes.h>\fP",
+.IR "\fB<netinet_in.h>\fP",
+.IR "\fB<sys_socket.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIbind\fR\^(\|)",
+.IR "\fIendhostent\fR\^(\|)",
+.IR "\fIendnetent\fR\^(\|)",
+.IR "\fIendprotoent\fR\^(\|)",
+.IR "\fIendservent\fR\^(\|)",
+.IR "\fIfreeaddrinfo\fR\^(\|)",
+.IR "\fIgai_strerror\fR\^(\|)",
+.IR "\fIgetnameinfo\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,806 @@
+'\" et
+.TH CP "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cp
+\(em copy files
+.SH SYNOPSIS
+.LP
+.nf
+cp \fB[\fR\(miPfip\fB] \fIsource_file target_file\fR
+.P
+cp \fB[\fR\(miPfip\fB] \fIsource_file\fR... \fItarget\fR
+.P
+cp \(miR \fB[\fR\(miH|\(miL|\(miP\fB] [\fR\(mifip\fB] \fIsource_file\fR... \fItarget\fR
+.fi
+.SH DESCRIPTION
+The first synopsis form is denoted by two operands, neither of which
+are existing files of type directory. The
+.IR cp
+utility shall copy the contents of
+.IR source_file
+(or, if
+.IR source_file
+is a file of type symbolic link, the contents of the file referenced by
+.IR source_file )
+to the destination path named by
+.IR target_file.
+.P
+The second synopsis form is denoted by two or more operands where the
+.BR \(miR
+option is not specified and the first synopsis form is not
+applicable. It shall be an error if any
+.IR source_file
+is a file of type directory, if
+.IR target
+does not exist, or if
+.IR target
+does not name a directory. The
+.IR cp
+utility shall copy the contents of each
+.IR source_file
+(or, if
+.IR source_file
+is a file of type symbolic link, the contents of the file referenced by
+.IR source_file )
+to the destination path named by the concatenation of
+.IR target ,
+a single
+<slash>
+character if
+.IR target
+did not end in a
+<slash>,
+and the last component of
+.IR source_file .
+.P
+The third synopsis form is denoted by two or more operands where the
+.BR \(miR
+option is specified. The
+.IR cp
+utility shall copy each file in the file hierarchy rooted in each
+.IR source_file
+to a destination path named as follows:
+.IP " *" 4
+If
+.IR target
+exists and names an existing directory, the name of the corresponding
+destination path for each file in the file hierarchy shall be the
+concatenation of
+.IR target ,
+a single
+<slash>
+character if
+.IR target
+did not end in a
+<slash>,
+and the pathname of the file relative to the directory containing
+.IR source_file .
+.IP " *" 4
+If
+.IR target
+does not exist and two operands are specified, the name of the
+corresponding destination path for
+.IR source_file
+shall be
+.IR target ;
+the name of the corresponding destination path for all other files in
+the file hierarchy shall be the concatenation of
+.IR target ,
+a
+<slash>
+character, and the pathname of the file relative to
+.IR source_file .
+.P
+It shall be an error if
+.IR target
+does not exist and more than two operands are specified, or if
+.IR target
+exists and does not name a directory.
+.P
+In the following description, the term
+.IR dest_file
+refers to the file named by the destination path. The term
+.IR source_file
+refers to the file that is being copied, whether specified as an
+operand or a file in a file hierarchy rooted in a
+.IR source_file
+operand. If
+.IR source_file
+is a file of type symbolic link:
+.IP " *" 4
+If the
+.BR \(miR
+option was not specified,
+.IR cp
+shall take actions based on the type and contents of the file referenced
+by the symbolic link, and not by the symbolic link itself, unless the
+.BR \(miP
+option was specified.
+.IP " *" 4
+If the
+.BR \(miR
+option was specified:
+.RS 4 
+.IP -- 4
+If none of the options
+.BR \(miH ,
+.BR \(miL ,
+nor
+.BR \(miP
+were specified, it is unspecified which of
+.BR \(miH ,
+.BR \(miL ,
+or
+.BR \(miP
+will be used as a default.
+.IP -- 4
+If the
+.BR \(miH
+option was specified,
+.IR cp
+shall take actions based on the type and contents of the
+file referenced by any symbolic link specified as a
+.IR source_file
+operand.
+.IP -- 4
+If the
+.BR \(miL
+option was specified,
+.IR cp
+shall take actions based on the type and contents of the
+file referenced by any symbolic link specified as a
+.IR source_file
+operand or any symbolic links encountered during traversal of a
+file hierarchy.
+.IP -- 4
+If the
+.BR \(miP
+option was specified,
+.IR cp
+shall copy any symbolic link specified as a
+.IR source_file
+operand and any symbolic links encountered during traversal of a
+file hierarchy, and shall not follow any symbolic links.
+.RE
+.P
+For each
+.IR source_file ,
+the following steps shall be taken:
+.IP " 1." 4
+If
+.IR source_file
+references the same file as
+.IR dest_file ,
+.IR cp
+may write a diagnostic message to standard error; it shall do nothing
+more with
+.IR source_file
+and shall go on to any remaining files.
+.IP " 2." 4
+If
+.IR source_file
+is of type directory, the following steps shall be taken:
+.RS 4 
+.IP " a." 4
+If the
+.BR \(miR
+option was not specified,
+.IR cp
+shall write a diagnostic message to standard error, do nothing more
+with
+.IR source_file ,
+and go on to any remaining files.
+.IP " b." 4
+If
+.IR source_file
+was not specified as an operand and
+.IR source_file
+is dot or dot-dot,
+.IR cp
+shall do nothing more with
+.IR source_file
+and go on to any remaining files.
+.IP " c." 4
+If
+.IR dest_file
+exists and it is a file type not specified by the System Interfaces volume of POSIX.1\(hy2008, the behavior
+is implementation-defined.
+.IP " d." 4
+If
+.IR dest_file
+exists and it is not of type directory,
+.IR cp
+shall write a diagnostic message to standard error, do nothing more
+with
+.IR source_file
+or any files below
+.IR source_file
+in the file hierarchy, and go on to any remaining files.
+.IP " e." 4
+If the directory
+.IR dest_file
+does not exist, it shall be created with file permission bits set to
+the same value as those of
+.IR source_file ,
+modified by the file creation mask of the user if the
+.BR \(mip
+option was not specified, and then bitwise-inclusively OR'ed with
+S_IRWXU. If
+.IR dest_file
+cannot be created,
+.IR cp
+shall write a diagnostic message to standard error, do nothing more
+with
+.IR source_file ,
+and go on to any remaining files. It is unspecified if
+.IR cp
+attempts to copy files in the file hierarchy rooted in
+.IR source_file .
+.IP " f." 4
+The files in the directory
+.IR source_file
+shall be copied to the directory
+.IR dest_file ,
+taking the four steps (1 to 4) listed here with the files as
+.IR source_file s.
+.IP " g." 4
+If
+.IR dest_file
+was created, its file permission bits shall be changed (if necessary)
+to be the same as those of
+.IR source_file ,
+modified by the file creation mask of the user if the
+.BR \(mip
+option was not specified.
+.IP " h." 4
+The
+.IR cp
+utility shall do nothing more with
+.IR source_file
+and go on to any remaining files.
+.RE
+.IP " 3." 4
+If
+.IR source_file
+is of type regular file, the following steps shall be taken:
+.RS 4 
+.IP " a." 4
+The behavior is unspecified if
+.IR dest_file
+exists and was written by a previous step. Otherwise, if
+.IR dest_file
+exists, the following steps shall be taken:
+.RS 4 
+.IP " i." 5
+If the
+.BR \(mii
+option is in effect, the
+.IR cp
+utility shall write a prompt to the standard error and read a line from
+the standard input. If the response is not affirmative,
+.IR cp
+shall do nothing more with
+.IR source_file
+and go on to any remaining files.
+.IP ii. 5
+A file descriptor for
+.IR dest_file
+shall be obtained by performing actions equivalent to the
+\fIopen\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008 called using
+.IR dest_file
+as the
+.IR path
+argument, and the bitwise-inclusive OR of O_WRONLY and O_TRUNC as the
+.IR oflag
+argument.
+.IP iii. 5
+If the attempt to obtain a file descriptor fails and the
+.BR \(mif
+option is in effect,
+.IR cp
+shall attempt to remove the file by performing actions equivalent to
+the
+\fIunlink\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008 called using
+.IR dest_file
+as the
+.IR path
+argument. If this attempt succeeds,
+.IR cp
+shall continue with step 3b.
+.RE
+.IP " b." 4
+If
+.IR dest_file
+does not exist, a file descriptor shall be obtained by performing
+actions equivalent to the
+\fIopen\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008 called using
+.IR dest_file
+as the
+.IR path
+argument, and the bitwise-inclusive OR of O_WRONLY and O_CREAT as the
+.IR oflag
+argument. The file permission bits of
+.IR source_file
+shall be the
+.IR mode
+argument.
+.IP " c." 4
+If the attempt to obtain a file descriptor fails,
+.IR cp
+shall write a diagnostic message to standard error, do nothing more with
+.IR source_file ,
+and go on to any remaining files.
+.IP " d." 4
+The contents of
+.IR source_file
+shall be written to the file descriptor. Any write errors shall cause
+.IR cp
+to write a diagnostic message to standard error and continue to step
+3e.
+.IP " e." 4
+The file descriptor shall be closed.
+.IP " f." 4
+The
+.IR cp
+utility shall do nothing more with
+.IR source_file .
+If a write error occurred in step 3d, it is unspecified if
+.IR cp
+continues with any remaining files. If no write error occurred in step
+3d,
+.IR cp
+shall go on to any remaining files.
+.RE
+.IP " 4." 4
+Otherwise, the
+.BR \(miR
+option was specified, and the following steps shall be taken:
+.RS 4 
+.IP " a." 4
+The
+.IR dest_file
+shall be created with the same file type as
+.IR source_file .
+.IP " b." 4
+If
+.IR source_file
+is a file of type FIFO, the file permission bits shall be the same as
+those of
+.IR source_file,
+modified by the file creation mask of the user if the
+.BR \(mip
+option was not specified. Otherwise, the permissions, owner ID, and
+group ID of
+.IR dest_file
+are implementation-defined.
+.RS 4 
+.P
+If this creation fails for any reason,
+.IR cp
+shall write a diagnostic message to standard error, do nothing more
+with
+.IR source_file ,
+and go on to any remaining files.
+.RE
+.IP " c." 4
+If
+.IR source_file
+is a file of type symbolic link, and the options require the symbolic
+link itself to be acted upon, the pathname contained in
+.IR dest_file
+shall be the same as the pathname contained in
+.IR source_file .
+.RS 4 
+.P
+If this fails for any reason,
+.IR cp
+shall write a diagnostic message to standard error, do nothing more
+with
+.IR source_file ,
+and go on to any remaining files.
+.RE
+.RE
+.P
+If the implementation provides additional or alternate access control
+mechanisms (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.4" ", " "File Access Permissions"),
+their effect on copies of files is implementation-defined.
+.SH OPTIONS
+The
+.IR cp
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mif\fP" 10
+If a file descriptor for a destination file cannot be obtained, as
+described in step 3.a.ii., attempt to unlink the destination file and
+proceed.
+.IP "\fB\(miH\fP" 10
+Take actions based on the type and contents of the file referenced by
+any symbolic link specified as a
+.IR source_file
+operand.
+.IP "\fB\(mii\fP" 10
+Write a prompt to standard error before copying to any existing
+non-directory destination file. If the response from the standard input
+is affirmative, the copy shall be attempted; otherwise, it shall not.
+.IP "\fB\(miL\fP" 10
+Take actions based on the type and contents of the file referenced by
+any symbolic link specified as a
+.IR source_file
+operand or any symbolic links encountered during traversal of a
+file hierarchy.
+.IP "\fB\(miP\fP" 10
+Take actions on any symbolic link specified as a
+.IR source_file
+operand or any symbolic link encountered during traversal of a
+file hierarchy.
+.IP "\fB\(mip\fP" 10
+Duplicate the following characteristics of each source file in the
+corresponding destination file:
+.RS 10 
+.IP " 1." 4
+The time of last data modification and time of last access. If this
+duplication fails for any reason,
+.IR cp
+shall write a diagnostic message to standard error.
+.IP " 2." 4
+The user ID and group ID. If this duplication fails for any reason, it
+is unspecified whether
+.IR cp
+writes a diagnostic message to standard error.
+.IP " 3." 4
+The file permission bits and the S_ISUID and S_ISGID bits. Other,
+implementation-defined, bits may be duplicated as well. If this
+duplication fails for any reason,
+.IR cp
+shall write a diagnostic message to standard error.
+.P
+If the user ID or the group ID cannot be duplicated, the file
+permission bits S_ISUID and S_ISGID shall be cleared. If these bits are
+present in the source file but are not duplicated in the destination
+file, it is unspecified whether
+.IR cp
+writes a diagnostic message to standard error.
+.P
+The order in which the preceding characteristics are duplicated is
+unspecified. The
+.IR dest_file
+shall not be deleted if these characteristics cannot be preserved.
+.RE
+.IP "\fB\(miR\fR" 10
+Copy file hierarchies.
+.P
+Specifying more than one of the mutually-exclusive options
+.BR \(miH ,
+.BR \(miL ,
+and
+.BR \(miP
+shall not be considered an error. The last option specified shall
+determine the behavior of the utility.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIsource_file\fR" 10
+A pathname of a file to be copied. If a
+.IR source_file
+operand is
+.BR '\(mi' ,
+it shall refer to a file named
+.BR \(mi ;
+implementations shall not treat it as meaning standard input.
+.IP "\fItarget_file\fR" 10
+A pathname of an existing or nonexistent file, used for the output when
+a single file is copied. If a
+.IR target_file
+operand is
+.BR '\(mi' ,
+it shall refer to a file named
+.BR \(mi ;
+implementations shall not treat it as meaning standard output.
+.IP "\fItarget\fR" 10
+A pathname of a directory to contain the copied files.
+.SH STDIN
+The standard input shall be used to read an input line in response to
+each prompt specified in the STDERR section. Otherwise, the standard
+input shall not be used.
+.SH "INPUT FILES"
+The input files specified as operands may be of any file type.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR cp :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements used in the extended regular
+expression defined for the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files) and the behavior of
+character classes used in the extended regular expression defined for
+the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale used to process affirmative responses, and the
+locale used to affect the format and contents of diagnostic messages
+and prompts written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+A prompt shall be written to standard error under the conditions
+specified in the DESCRIPTION section. The prompt shall contain the
+destination pathname, but its format is otherwise unspecified.
+Otherwise, the standard error shall be used only for diagnostic
+messages.
+.SH "OUTPUT FILES"
+The output files may be of any type.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All files were copied successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+If
+.IR cp
+is prematurely terminated by a signal or error, files or file
+hierarchies may be only partially copied and files and directories may
+have incorrect permissions or access and modification times.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The set-user-ID and set-group-ID bits are explicitly cleared when files
+are created. This is to prevent users from creating programs that are
+set-user-ID or set-group-ID to them when copying files or to make
+set-user-ID or set-group-ID files accessible to new groups of users.
+For example, if a file is set-user-ID and the copy has a different
+group ID than the source, a new group of users has execute permission
+to a set-user-ID program than did previously. In particular, this is a
+problem for superusers copying users' trees.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The
+.BR \(mii
+option exists on BSD systems, giving applications and users a way to
+avoid accidentally removing files when copying. Although the 4.3 BSD
+version does not prompt if the standard input is not a terminal, the
+standard developers decided that use of
+.BR \(mii
+is a request for interaction, so when the destination path exists, the
+utility takes instructions from whatever responds on standard input.
+.P
+The exact format of the interactive prompts is unspecified. Only the
+general nature of the contents of prompts are specified because
+implementations may desire more descriptive prompts than those used on
+historical implementations. Therefore, an application using the
+.BR \(mii
+option relies on the system to provide the most suitable dialog
+directly with the user, based on the behavior specified.
+.P
+The
+.BR \(mip
+option is historical practice on BSD systems, duplicating the time of
+last data modification and time of last access. This volume of POSIX.1\(hy2008 extends it to
+preserve the user and group IDs, as well as the file permissions. This
+requirement has obvious problems in that the directories are almost
+certainly modified after being copied. This volume of POSIX.1\(hy2008 requires that the
+modification times be preserved. The statement that the order in which
+the characteristics are duplicated is unspecified is to permit
+implementations to provide the maximum amount of security for the user.
+Implementations should take into account the obvious security issues
+involved in setting the owner, group, and mode in the wrong order or
+creating files with an owner, group, or mode different from the final
+value.
+.P
+It is unspecified whether
+.IR cp
+writes diagnostic messages when the user and group IDs cannot be set
+due to the widespread practice of users using
+.BR \(mip
+to duplicate some portion of the file characteristics, indifferent to
+the duplication of others. Historic implementations only write
+diagnostic messages on errors other than
+.BR [EPERM] .
+.P
+Earlier versions of this standard included support for the
+.BR \(mir
+option to copy file hierarchies. The
+.BR \(mir
+option is historical practice on BSD and BSD-derived systems. This
+option is no longer specified by POSIX.1\(hy2008 but may be present
+in some implementations. The
+.BR \(miR
+option was added as a close synonym to the
+.BR \(mir
+option, selected for consistency with all other options in this volume of POSIX.1\(hy2008 that
+do recursive directory descent.
+.P
+The difference between
+.BR \(miR
+and the removed
+.BR \(mir
+option is in the treatment by
+.IR cp
+of file types other than regular and directory. It was
+implementation-defined how the
+.BR \(mi
+option treated special files to allow both historical implementations
+and those that chose to support
+.BR \(mir
+with the same abilities as
+.BR \(miR
+defined by this volume of POSIX.1\(hy2008. The original
+.BR \(mir
+flag, for historic reasons, did not handle special files any differently
+from regular files, but always read the file and copied its contents. This
+had obvious problems in the presence of special file types; for example,
+character devices, FIFOs, and sockets.
+.P
+When a failure occurs during the copying of a file hierarchy,
+.IR cp
+is required to attempt to copy files that are on the same level in the
+hierarchy or above the file where the failure occurred. It is
+unspecified if
+.IR cp
+shall attempt to copy files below the file where the failure occurred
+(which cannot succeed in any case).
+.P
+Permissions, owners, and groups of created special file types have been
+deliberately left as implementation-defined. This is to allow systems
+to satisfy special requirements (for example, allowing users to create
+character special devices, but requiring them to be owned by a certain
+group). In general, it is strongly suggested that the permissions,
+owner, and group be the same as if the user had run the historical
+.IR mknod ,
+.IR ln ,
+or other utility to create the file. It is also probable that
+additional privileges are required to create block, character, or
+other implementation-defined special file types.
+.P
+Additionally, the
+.BR \(mip
+option explicitly requires that all set-user-ID
+and set-group-ID permissions be
+discarded if any of the owner or group IDs cannot be set. This is to
+keep users from unintentionally giving away special privilege when
+copying programs.
+.P
+When creating regular files, historical versions of
+.IR cp
+use the mode of the source file as modified by the file mode creation
+mask. Other choices would have been to use the mode of the source file
+unmodified by the creation mask or to use the same mode as would be
+given to a new file created by the user (plus the execution bits of the
+source file) and then modify it by the file mode creation mask. In the
+absence of any strong reason to change historic practice, it was in
+large part retained.
+.P
+When creating directories, historical versions of
+.IR cp
+use the mode of the source directory, plus read, write, and search bits
+for the owner, as modified by the file mode creation mask. This is done
+so that
+.IR cp
+can copy trees where the user has read permission, but the owner does
+not. A side-effect is that if the file creation mask denies the owner
+permissions,
+.IR cp
+fails. Also, once the copy is done, historical versions of
+.IR cp
+set the permissions on the created directory to be the same as the
+source directory, unmodified by the file creation mask.
+.P
+This behavior has been modified so that
+.IR cp
+is always able to create the contents of the directory, regardless of
+the file creation mask. After the copy is done, the permissions are set
+to be the same as the source directory, as modified by the file
+creation mask. This latter change from historical behavior is to
+prevent users from accidentally creating directories with permissions
+beyond those they would normally set and for consistency with the
+behavior of
+.IR cp
+in creating files.
+.P
+It is not a requirement that
+.IR cp
+detect attempts to copy a file to itself; however, implementations are
+strongly encouraged to do so. Historical implementations have detected
+the attempt in most cases.
+.P
+There are two methods of copying subtrees in this volume of POSIX.1\(hy2008. The other method is
+described as part of the
+.IR pax
+utility (see
+.IR "\fIpax\fR\^").
+Both methods are historical practice. The
+.IR cp
+utility provides a simpler, more intuitive interface, while
+.IR pax
+offers a finer granularity of control. Each provides additional
+functionality to the other; in particular,
+.IR pax
+maintains the hard-link structure of the hierarchy, while
+.IR cp
+does not. It is the intention of the standard developers that the
+results be similar (using appropriate option combinations in both
+utilities). The results are not required to be identical; there seemed
+insufficient gain to applications to balance the difficulty of
+implementations having to guarantee that the results would be exactly
+identical.
+.P
+The wording allowing
+.IR cp
+to copy a directory to implementation-defined file types not
+specified by the System Interfaces volume of POSIX.1\(hy2008 is provided so that implementations supporting
+symbolic links are not required to prohibit copying directories to
+symbolic links. Other extensions to the System Interfaces volume of POSIX.1\(hy2008 file types may need to
+use this loophole as well.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImv\fR\^",
+.IR "\fIfind\fR\^",
+.IR "\fIln\fR\^",
+.IR "\fIpax\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.4" ", " "File Access Permissions",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIunlink\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

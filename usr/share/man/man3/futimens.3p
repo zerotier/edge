@@ -1,0 +1,383 @@
+'\" et
+.TH FUTIMENS "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+futimens, utimensat, utimes
+\(em set file access and modification times
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/stat.h>
+.P
+int futimens(int \fIfd\fP, const struct timespec \fItimes\fP[2]);
+int utimensat(int \fIfd\fP, const char *\fIpath\fP, const struct timespec \fItimes\fP[2],
+    int \fIflag\fP);
+.P
+#include <sys/time.h>
+.P
+int utimes(const char *\fIpath\fP, const struct timeval \fItimes\fP[2]);
+.fi
+.SH DESCRIPTION
+The
+\fIfutimens\fR()
+and
+\fIutimensat\fR()
+functions shall set the access and modification times of a file
+to the values of the
+.IR times
+argument. The
+\fIfutimens\fR()
+function changes the times of the file associated with the file
+descriptor
+.IR fd .
+The
+\fIutimensat\fR()
+function changes the times of the file pointed to by the
+.IR path
+argument, relative to the directory associated with the file
+descriptor
+.IR fd .
+Both functions allow time specifications accurate to the nanosecond.
+.P
+For
+\fIfutimens\fR()
+and
+\fIutimensat\fR(),
+the
+.IR times
+argument is an array of two
+.BR timespec
+structures. The first array member represents the date and time of
+last access, and the second member represents the date and time of last
+modification. The times in the
+.BR timespec
+structure are measured in seconds and nanoseconds since the Epoch. The
+file's relevant timestamp shall be set to the greatest value supported
+by the file system that is not greater than the specified time.
+.P
+If the
+.IR tv_nsec
+field of a
+.BR timespec
+structure has the special value UTIME_NOW, the file's relevant timestamp
+shall be set to the greatest value supported by the file system that is
+not greater than the current time. If the
+.IR tv_nsec
+field has the special value UTIME_OMIT, the file's relevant timestamp
+shall not be changed. In either case, the
+.IR tv_sec
+field shall be ignored.
+.P
+If the
+.IR times
+argument is a null pointer, both the access and modification timestamps
+shall be set to the greatest value supported by the file system that is
+not greater than the current time. If
+\fIutimensat\fR()
+is passed a relative path in the
+.IR path
+argument, the file to be used shall be relative to the directory
+associated with the file descriptor
+.IR fd
+instead of the current working directory. If the file descriptor was
+opened without O_SEARCH, the function shall check whether directory
+searches are permitted using the current permissions of the directory
+underlying the file descriptor. If the file descriptor was opened with
+O_SEARCH, the function shall not perform the check.
+.P
+If
+\fIutimensat\fR()
+is passed the special value AT_FDCWD in the
+.IR fd
+parameter, the current working directory shall be used.
+.P
+Only a process with the effective user ID equal to the user ID of the
+file, or with write access to the file, or with appropriate privileges
+may use
+\fIfutimens\fR()
+or
+\fIutimensat\fR()
+with a null pointer as the
+.IR times
+argument or with both
+.IR tv_nsec
+fields set to the special value UTIME_NOW. Only a process with the
+effective user ID equal to the user ID of the file or with appropriate
+privileges may use
+\fIfutimens\fR()
+or
+\fIutimensat\fR()
+with a non-null
+.IR times
+argument that does not have both
+.IR tv_nsec
+fields set to UTIME_NOW and does not have both
+.IR tv_nsec
+fields set to UTIME_OMIT. If both
+.IR tv_nsec
+fields are set to UTIME_OMIT, no ownership or permissions check shall be
+performed for the file, but other error conditions may still be detected
+(including
+.BR [EACCES] 
+errors related to the path prefix).
+.P
+Values for the
+.IR flag
+argument of
+\fIutimensat\fR()
+are constructed by a bitwise-inclusive OR of flags from the following
+list, defined in
+.IR <fcntl.h> :
+.IP AT_SYMLINK_NOFOLLOW 6
+.br
+If
+.IR path
+names a symbolic link, then the access and modification times
+of the symbolic link are changed.
+.br
+.P
+Upon completion,
+\fIfutimens\fR()
+and
+\fIutimensat\fR()
+shall mark the last file status change timestamp for update.
+.P
+The
+\fIutimes\fR()
+function shall be equivalent to the
+\fIutimensat\fR()
+function with the special value AT_FDCWD as the
+.IR fd
+argument and the
+.IR flag
+argument set to zero, except that the
+.IR times
+argument is a
+.BR timeval
+structure rather than a
+.BR timespec
+structure, and accuracy is only to the microsecond, not nanosecond,
+and rounding towards the nearest second may occur.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return 0.
+Otherwise, these functions shall return \(mi1 and set
+.IR errno
+to indicate the error. If \(mi1 is returned, the file times shall
+not be affected.
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EACCES
+The
+.IR times
+argument is a null pointer, or both
+.IR tv_nsec
+values are UTIME_NOW, and the effective user ID of the process
+does not match the owner of the file and write access is denied.
+.TP
+.BR EINVAL
+Either of the
+.IR times
+argument structures specified a
+.IR tv_nsec
+value that was neither UTIME_NOW nor UTIME_OMIT, and was a value less
+than zero or greater than or equal to 1\|000 million.
+.TP
+.BR EINVAL
+A new file timestamp would be a value whose
+.IR tv_sec
+component is not a value supported by the file system.
+.TP
+.BR EPERM
+The
+.IR times
+argument is not a null pointer, does not have both
+.IR tv_nsec
+fields set to UTIME_NOW, does not have both
+.IR tv_nsec
+fields set to UTIME_OMIT, the calling process' effective user ID does
+not match the owner of the file, and the calling process does not have
+appropriate privileges.
+.TP
+.BR EROFS
+The file system containing the file is read-only.
+.P
+The
+\fIfutimens\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The
+.IR fd
+argument is not a valid file descriptor.
+.P
+The
+\fIutimensat\fR()
+function shall fail if:
+.TP
+.BR EACCES
+.IR fd
+was not opened with O_SEARCH and the permissions of the directory
+underlying
+.IR fd
+do not permit directory searches.
+.TP
+.BR EBADF
+The
+.IR path
+argument does not specify an absolute path and the
+.IR fd
+argument is neither AT_FDCWD nor a valid file descriptor open
+for reading or searching.
+.TP
+.BR ENOTDIR
+The
+.IR path
+argument is not an absolute path and
+.IR fd
+is a file descriptor associated with a non-directory file.
+.P
+The
+\fIutimensat\fR()
+and
+\fIutimes\fR()
+functions shall fail if:
+.TP
+.BR EACCES
+Search permission is denied by a component of the path prefix.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.P
+The
+\fIutimensat\fR()
+and
+\fIutimes\fR()
+functions may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.P
+The
+\fIutimensat\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR flag
+argument is not valid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The purpose of the
+\fIutimensat\fR()
+function is to set the access and modification time of files in
+directories other than the current working directory without exposure
+to race conditions. Any part of the path of a file could be changed in
+parallel to a call to
+\fIutimes\fR(),
+resulting in unspecified behavior. By opening a file descriptor for
+the target directory and using the
+\fIutimensat\fR()
+function it can be guaranteed that the changed file is located relative
+to the desired directory.
+.P
+The standard developers considered including a special case for the
+permissions required by
+\fIutimensat\fR()
+when one
+.IR tv_nsec
+field is UTIME_NOW and the other is UTIME_OMIT. One possibility would
+be to include this case in with the cases where
+.IR times
+is a null pointer or both fields are UTIME_NOW, where the call is allowed
+if the process has write permission for the file. However, associating
+write permission with an update to just the last data access timestamp
+(which is normally updated by
+\fIread\fR())
+did not seem appropriate. The other possibility would be to specify that
+this one case is allowed if the process has read permission, but this
+was felt to be too great a departure from the
+\fIutime\fR()
+and
+\fIutimes\fR()
+functions on which
+\fIutimensat\fR()
+is based. If an application needs to set the last data access timestamp
+to the current time for a file on which it has read permission but is not
+the owner, it can do so by opening the file, reading one or more bytes
+(or reading a directory entry, if the file is a directory), and then
+closing it.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIread\fR\^(\|)",
+.IR "\fIutime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<sys_stat.h>\fP",
+.IR "\fB<sys_time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

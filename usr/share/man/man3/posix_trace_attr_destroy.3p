@@ -1,0 +1,125 @@
+'\" et
+.TH POSIX_TRACE_ATTR_DESTROY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+posix_trace_attr_destroy,
+posix_trace_attr_init
+\(em destroy and initialize the trace stream attributes object
+(\fBTRACING\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <trace.h>
+.P
+int posix_trace_attr_destroy(trace_attr_t *\fIattr\fP);
+int posix_trace_attr_init(trace_attr_t *\fIattr\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIposix_trace_attr_destroy\fR()
+function shall destroy an initialized trace attributes object.
+A destroyed
+.IR attr
+attributes object can be reinitialized using
+\fIposix_trace_attr_init\fR();
+the results of otherwise referencing the object after it
+has been destroyed are undefined.
+.P
+The
+\fIposix_trace_attr_init\fR()
+function shall initialize a trace attributes object
+.IR attr
+with the default value for all of the individual attributes used by a
+given implementation. The read-only
+.IR generation-version
+and
+.IR clock-resolution
+attributes of the newly initialized trace attributes object shall be
+set to their appropriate values (see
+.IR "Section 2.11.1.2" ", " "posix_trace_status_info Structure").
+.P
+Results are undefined if
+\fIposix_trace_attr_init\fR()
+is called specifying an already initialized
+.IR attr
+attributes object.
+.P
+Implementations may add extensions to the trace attributes object
+structure as permitted in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 2" ", " "Conformance".
+.P
+The resulting attributes object (possibly modified by setting
+individual attributes values), when used by
+\fIposix_trace_create\fR(),
+defines the attributes of the trace stream created. A single
+attributes object can be used in multiple calls to
+\fIposix_trace_create\fR().
+After one or more trace streams have been created using an attributes
+object, any function affecting that attributes object, including
+destruction, shall not affect any trace stream previously created. An
+initialized attributes object also serves to receive the attributes of
+an existing trace stream or trace log when calling the
+\fIposix_trace_get_attr\fR()
+function.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return a value of
+zero. Otherwise, they shall return the corresponding error number.
+.SH ERRORS
+The
+\fIposix_trace_attr_destroy\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of
+.IR attr
+is invalid.
+.P
+The
+\fIposix_trace_attr_init\fR()
+function shall fail if:
+.TP
+.BR ENOMEM
+Insufficient memory exists to initialize the trace attributes object.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fIposix_trace_attr_destroy\fR()
+and
+\fIposix_trace_attr_init\fR()
+functions may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIposix_trace_create\fR\^(\|)",
+.IR "\fIposix_trace_get_attr\fR\^(\|)",
+.IR "\fIuname\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<trace.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

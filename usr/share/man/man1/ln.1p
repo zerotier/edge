@@ -1,0 +1,469 @@
+'\" et
+.TH LN "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ln
+\(em link files
+.SH SYNOPSIS
+.LP
+.nf
+ln \fB[\fR\(mifs\fB] [\fR\(miL|\(miP\fB] \fIsource_file target_file\fR
+.P
+ln \fB[\fR\(mifs\fB] [\fR\(miL|\(miP\fB] \fIsource_file\fR... \fItarget_dir\fR
+.fi
+.SH DESCRIPTION
+In the first synopsis form, the
+.IR ln
+utility shall create a new directory entry (link) at the
+destination path specified by the
+.IR target_file
+operand. If the
+.BR \(mis
+option is specified, a symbolic link shall be created for the file
+specified by the
+.IR source_file
+operand. This first synopsis form shall be assumed when the final
+operand does not name an existing directory; if more than two operands
+are specified and the final is not an existing directory, an error
+shall result.
+.P
+In the second synopsis form, the
+.IR ln
+utility shall create a new directory entry (link), or if the
+.BR \(mis
+option is specified a symbolic link, for each file specified by a
+.IR source_file
+operand, at a destination path in the existing directory named by
+.IR target_dir .
+.P
+If the last operand specifies an existing file of a type not
+specified by the System Interfaces volume of POSIX.1\(hy2008, the behavior is implementation-defined.
+.P
+The corresponding destination path for each
+.IR source_file
+shall be the concatenation of the target directory pathname, a
+<slash>
+character if the target directory pathname did not end in a
+<slash>,
+and the last pathname component of the
+.IR source_file .
+The second synopsis form shall be assumed when the final operand names
+an existing directory.
+.P
+For each
+.IR source_file :
+.IP " 1." 4
+If the destination path exists and was created by a previous step,
+it is unspecified whether
+.IR ln
+shall write a diagnostic message to standard error, do nothing more with
+the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s;
+or will continue processing the current
+.IR source_file .
+If the destination path exists:
+.RS 4 
+.IP " a." 4
+If the
+.BR \(mif
+option is not specified,
+.IR ln
+shall write a diagnostic message to standard error, do nothing more
+with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+.IP " b." 4
+If
+.IR destination
+names the same directory entry as the current
+.IR source_file
+.IR ln
+shall write a diagnostic message to standard error, do nothing more with
+the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s .
+.IP " c." 4
+Actions shall be performed equivalent to the
+\fIunlink\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008, called using
+.IR destination
+as the
+.IR path
+argument. If this fails for any reason,
+.IR ln
+shall write a diagnostic message to standard error, do nothing more
+with the current
+.IR source_file ,
+and go on to any remaining
+.IR source_file s.
+.RE
+.IP " 2." 4
+If the
+.BR \(mis
+option is specified, actions shall be performed equivalent to the
+\fIsymlink\fR()
+function with
+.IR source_file
+as the
+.IR path1
+argument and the destination path as the
+.IR path2
+argument. The
+.IR ln
+utility shall do nothing more with
+.IR source_file
+and shall go on to any remaining files.
+.IP " 3." 4
+If
+.IR source_file
+is a symbolic link:
+.RS 4 
+.IP " a." 4
+If the
+.BR \(miP
+option is in effect, actions shall be performed equivalent to the
+\fIlinkat\fR()
+function with
+.IR source_file
+as the
+.IR path1
+argument, the destination path as the
+.IR path2
+argument, AT_FDCWD as the
+.IR fd1
+and
+.IR fd2
+arguments, and zero as the
+.IR flag
+argument.
+.IP " b." 4
+If the
+.BR \(miL
+option is in effect, actions shall be performed equivalent to the
+\fIlinkat\fR()
+function with
+.IR source_file
+as the
+.IR path1
+argument, the destination path as the
+.IR path2
+argument, AT_FDCWD as the
+.IR fd1
+and
+.IR fd2
+arguments, and AT_SYMLINK_FOLLOW as the
+.IR flag
+argument.
+.P
+The
+.IR ln
+utility shall do nothing more with
+.IR source_file
+and shall go on to any remaining files.
+.RE
+.IP " 4." 4
+Actions shall be performed equivalent to the
+\fIlink\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008 using
+.IR source_file
+as the
+.IR path1
+argument, and the destination path as the
+.IR path2
+argument.
+.SH OPTIONS
+The
+.IR ln
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mif\fP" 10
+Force existing destination pathnames to be removed to allow the link.
+.IP "\fB\(miL\fP" 10
+For each
+.IR source_file
+operand that names a file of type symbolic link, create a (hard)
+link to the file referenced by the symbolic link.
+.IP "\fB\(miP\fP" 10
+For each
+.IR source_file
+operand that names a file of type symbolic link, create a (hard)
+link to the symbolic link itself.
+.IP "\fB\(mis\fP" 10
+Create symbolic links instead of hard links. If the
+.BR \(mis
+option is specified, the
+.BR \(miL
+and
+.BR \(miP
+options shall be silently ignored.
+.P
+Specifying more than one of the mutually-exclusive options
+.BR \(miL
+and
+.BR \(miP
+shall not be considered an error. The last option specified shall
+determine the behavior of the utility (unless the
+.BR \(mis
+option causes it to be ignored).
+.P
+If the
+.BR \(mis
+option is not specified and neither a
+.BR \(miL
+nor a
+.BR \(miP
+option is specified, it is implementation-defined which of the
+.BR \(miL
+and
+.BR \(miP
+options will be used as the default.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIsource_file\fR" 10
+A pathname of a file to be linked. If the
+.BR \(mis
+option is specified, no restrictions on the type of file or on its
+existence shall be made. If the
+.BR \(mis
+option is not specified, whether a directory can be linked is
+implementation-defined.
+.IP "\fItarget_file\fR" 10
+The pathname of the new directory entry to be created.
+.IP "\fItarget_dir\fR" 10
+A pathname of an existing directory in which the new directory entries
+are created.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR ln :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All the specified files were linked successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The CONSEQUENCES OF ERRORS section does not require
+.IR ln
+.BR \(mif
+.IR "a b"
+to remove
+.IR b
+if a subsequent link operation would fail.
+.P
+Some historic versions of
+.IR ln
+(including the one specified by the SVID) unlink the destination file,
+if it exists, by default. If the mode does not permit writing, these
+versions prompt for confirmation before attempting the unlink. In these
+versions the
+.BR \(mif
+option causes
+.IR ln
+not to attempt to prompt for confirmation.
+.P
+This allows
+.IR ln
+to succeed in creating links when the target file already exists, even
+if the file itself is not writable (although the directory must be).
+Early proposals specified this functionality.
+.P
+This volume of POSIX.1\(hy2008 does not allow the
+.IR ln
+utility to unlink existing destination paths by default for the
+following reasons:
+.IP " *" 4
+The
+.IR ln
+utility has historically been used to provide locking for shell
+applications, a usage that is incompatible with
+.IR ln
+unlinking the destination path by default. There was no corresponding
+technical advantage to adding this functionality.
+.IP " *" 4
+This functionality gave
+.IR ln
+the ability to destroy the link structure of files, which changes the
+historical behavior of
+.IR ln .
+.IP " *" 4
+This functionality is easily replicated with a combination of
+.IR rm
+and
+.IR ln .
+.IP " *" 4
+It is not historical practice in many systems; BSD and BSD-derived
+systems do not support this behavior. Unfortunately, whichever behavior
+is selected can cause scripts written expecting the other behavior to
+fail.
+.IP " *" 4
+It is preferable that
+.IR ln
+perform in the same manner as the
+\fIlink\fR()
+function, which does not permit the target to exist already.
+.P
+This volume of POSIX.1\(hy2008 retains the
+.BR \(mif
+option to provide support for shell scripts depending on the SVID
+semantics. It seems likely that shell scripts would not be written to
+handle prompting by
+.IR ln
+and would therefore have specified the
+.BR \(mif
+option.
+.P
+The
+.BR \(mif
+option is an undocumented feature of many historical versions of the
+.IR ln
+utility, allowing linking to directories. These versions require
+modification.
+.P
+Early proposals of this volume of POSIX.1\(hy2008 also required a
+.BR \(mii
+option, which behaved like the
+.BR \(mii
+options in
+.IR cp
+and
+.IR mv ,
+prompting for confirmation before unlinking existing files. This was
+not historical practice for the
+.IR ln
+utility and has been omitted.
+.P
+The
+.BR \(miL
+and
+.BR \(miP
+options allow for implementing both common behaviors of the
+.IR ln
+utility. Earlier versions of this standard did not specify these options
+and required the behavior now described for the
+.BR \(miL
+option. Many systems by default or as an alternative provided a
+non-conforming
+.IR ln
+utility with the behavior now described for the
+.BR \(miP
+option. Since applications could not rely on
+.IR ln
+following links in practice, the
+.BR \(miL
+and
+.BR \(miP
+options were added to specify the desired behavior for the application.
+.P
+The
+.BR \(miL
+and
+.BR \(miP
+options are ignored when
+.BR \(mis
+is specified in order to allow an alias to be created to alter the
+default behavior when creating hard links (for example,
+.IR alias
+.IR ln ='\c
+.IR ln
+.BR \(miL ').
+They serve no purpose when
+.BR \(mis
+is specified, since
+.IR source_file
+is then just a string to be used as the contents of the created symbolic
+link and need not exist as a file.
+.P
+The specification ensures that
+.IR ln
+.BR a
+.BR a
+with or without the
+.BR \(mif
+option will not unlink the file
+.BR a .
+Earlier versions of this standard were unclear in this case.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIchmod\fR\^",
+.IR "\fIfind\fR\^",
+.IR "\fIpax\fR\^",
+.IR "\fIrm\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIlink\fR\^(\|)",
+.IR "\fIunlink\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

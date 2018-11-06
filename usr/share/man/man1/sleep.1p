@@ -1,0 +1,173 @@
+'\" et
+.TH SLEEP "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sleep
+\(em suspend execution for an interval
+.SH SYNOPSIS
+.LP
+.nf
+sleep \fItime\fR
+.fi
+.SH DESCRIPTION
+The
+.IR sleep
+utility shall suspend execution for at least the integral number of
+seconds specified by the
+.IR time
+operand.
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fItime\fR" 10
+A non-negative decimal integer specifying the number of seconds for
+which to suspend execution.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR sleep :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+If the
+.IR sleep
+utility receives a SIGALRM signal, one of the following actions shall
+be taken:
+.IP " 1." 4
+Terminate normally with a zero exit status.
+.IP " 2." 4
+Effectively ignore the signal.
+.IP " 3." 4
+Provide the default behavior for signals described in the ASYNCHRONOUS
+EVENTS section of
+.IR "Section 1.4" ", " "Utility Description Defaults".
+This could include terminating with a non-zero exit status.
+.P
+The
+.IR sleep
+utility shall take the standard action for all other signals.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The execution was successfully suspended for at least
+.IR time
+seconds, or a SIGALRM signal was received. See the ASYNCHRONOUS EVENTS
+section.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+The
+.IR sleep
+utility can be used to execute a command after a certain amount of
+time, as in:
+.sp
+.RS 4
+.nf
+\fB
+(sleep 105; \fIcommand\fP) &
+.fi \fR
+.P
+.RE
+.P
+or to execute a command every so often, as in:
+.sp
+.RS 4
+.nf
+\fB
+while true
+do
+    \fIcommand\fP
+    sleep 37
+done
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The exit status is allowed to be zero when
+.IR sleep
+is interrupted by the SIGALRM signal because most implementations of
+this utility rely on the arrival of that signal to notify them that the
+requested finishing time has been successfully attained. Such
+implementations thus do not distinguish this situation from the
+successful completion case. Other implementations are allowed to catch
+the signal and go back to sleep until the requested time expires or to
+provide the normal signal termination procedures.
+.P
+As with all other utilities that take integral operands and do not
+specify subranges of allowed values,
+.IR sleep
+is required by this volume of POSIX.1\(hy2008 to deal with
+.IR time
+requests of up to 2\|147\|483\|647 seconds. This may mean that some
+implementations have to make multiple calls to the delay mechanism of
+the underlying operating system if its argument range is less than
+this.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIwait\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIalarm\fR\^(\|)",
+.IR "\fIsleep\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

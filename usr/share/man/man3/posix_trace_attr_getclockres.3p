@@ -1,0 +1,190 @@
+'\" et
+.TH POSIX_TRACE_ATTR_GETCLOCKRES "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+posix_trace_attr_getclockres,
+posix_trace_attr_getcreatetime,
+posix_trace_attr_getgenversion,
+posix_trace_attr_getname,
+posix_trace_attr_setname
+\(em retrieve and set information about a trace stream
+(\fBTRACING\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <time.h>
+#include <trace.h>
+.P
+int posix_trace_attr_getclockres(const trace_attr_t *\fIattr\fP,
+    struct timespec *\fIresolution\fP);
+int posix_trace_attr_getcreatetime(const trace_attr_t *\fIattr\fP,
+    struct timespec *\fIcreatetime\fP);
+.P
+#include <trace.h>
+.P
+int posix_trace_attr_getgenversion(const trace_attr_t *\fIattr\fP,
+    char *\fIgenversion\fP);
+int posix_trace_attr_getname(const trace_attr_t *\fIattr\fP,
+    char *\fItracename\fP);
+int posix_trace_attr_setname(trace_attr_t *\fIattr\fP,
+    const char *\fItracename\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIposix_trace_attr_getclockres\fR()
+function shall copy the clock resolution of the clock used to generate
+timestamps from the
+.IR clock-resolution
+attribute of the attributes object pointed to by the
+.IR attr
+argument into the structure pointed to by the
+.IR resolution
+argument.
+.P
+The
+\fIposix_trace_attr_getcreatetime\fR()
+function shall copy the trace stream creation time from the
+.IR creation-time
+attribute of the attributes object pointed to by the
+.IR attr
+argument into the structure pointed to by the
+.IR createtime
+argument. The
+.IR creation-time
+attribute shall represent the time of creation of the trace stream.
+.P
+The
+\fIposix_trace_attr_getgenversion\fR()
+function shall copy the string containing version information from the
+.IR generation-version
+attribute of the attributes object pointed to by the
+.IR attr
+argument into the string pointed to by the
+.IR genversion
+argument. The
+.IR genversion
+argument shall be the address of a character array which can store at
+least
+{TRACE_NAME_MAX}
+characters.
+.P
+The
+\fIposix_trace_attr_getname\fR()
+function shall copy the string containing the trace name from the
+.IR trace-name
+attribute of the attributes object pointed to by the
+.IR attr
+argument into the string pointed to by the
+.IR tracename
+argument. The
+.IR tracename
+argument shall be the address of a character array which can store at
+least
+{TRACE_NAME_MAX}
+characters.
+.P
+The
+\fIposix_trace_attr_setname\fR()
+function shall set the name in the
+.IR trace-name
+attribute of the attributes object pointed to by the
+.IR attr
+argument, using the trace name string supplied by the
+.IR tracename
+argument. If the supplied string contains more than
+{TRACE_NAME_MAX}
+characters, the name copied into the
+.IR trace-name
+attribute may be truncated to one less than the length of
+{TRACE_NAME_MAX}
+characters. The default value is a null string.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return a value of
+zero. Otherwise, they shall return the corresponding error number.
+.P
+If successful, the
+\fIposix_trace_attr_getclockres\fR()
+function stores the
+.IR clock-resolution
+attribute value in the object pointed to by
+.IR resolution .
+Otherwise, the content of this object is unspecified.
+.P
+If successful, the
+\fIposix_trace_attr_getcreatetime\fR()
+function stores the trace stream creation time in the object pointed to
+by
+.IR createtime .
+Otherwise, the content of this object is unspecified.
+.P
+If successful, the
+\fIposix_trace_attr_getgenversion\fR()
+function stores the trace version information in the string pointed to
+by
+.IR genversion .
+Otherwise, the content of this string is unspecified.
+.P
+If successful, the
+\fIposix_trace_attr_getname\fR()
+function stores the trace name in the string pointed to by
+.IR tracename .
+Otherwise, the content of this string is unspecified.
+.SH ERRORS
+The
+\fIposix_trace_attr_getclockres\fR(),
+\fIposix_trace_attr_getcreatetime\fR(),
+\fIposix_trace_attr_getgenversion\fR(),
+and
+\fIposix_trace_attr_getname\fR()
+functions may fail if:
+.TP
+.BR EINVAL
+The value specified by one of the arguments is invalid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fIposix_trace_attr_getclockres\fR(),
+\fIposix_trace_attr_getcreatetime\fR(),
+\fIposix_trace_attr_getgenversion\fR(),
+\fIposix_trace_attr_getname\fR(),
+and
+\fIposix_trace_attr_setname\fR()
+functions may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIposix_trace_attr_destroy\fR\^(\|)",
+.IR "\fIposix_trace_create\fR\^(\|)",
+.IR "\fIposix_trace_get_attr\fR\^(\|)",
+.IR "\fIuname\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<time.h>\fP",
+.IR "\fB<trace.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

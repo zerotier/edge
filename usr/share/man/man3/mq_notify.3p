@@ -1,0 +1,196 @@
+'\" et
+.TH MQ_NOTIFY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mq_notify
+\(em notify process that a message is available
+(\fBREALTIME\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <mqueue.h>
+.P
+int mq_notify(mqd_t \fImqdes\fP, const struct sigevent *\fInotification\fP);
+.fi
+.SH DESCRIPTION
+If the argument
+.IR notification
+is not NULL, this function shall register the calling process to be
+notified of message arrival at an empty message queue associated with
+the specified message queue descriptor,
+.IR mqdes .
+The notification specified by the
+.IR notification
+argument shall be sent to the process when the message queue transitions
+from empty to non-empty. At any time, only one process may be
+registered for notification by a message queue. If the calling process
+or any other process has already registered for notification of message
+arrival at the specified message queue, subsequent attempts to register
+for that message queue shall fail.
+.P
+If
+.IR notification
+is NULL and the process is currently registered for notification by the
+specified message queue, the existing registration shall be removed.
+.P
+When the notification is sent to the registered process, its
+registration shall be removed. The message queue shall then be available
+for registration.
+.P
+If a process has registered for notification of message arrival at a
+message queue and some thread is blocked in
+\fImq_receive\fR()
+or
+\fImq_timedreceive\fR()
+waiting to receive a message when a message arrives at the queue, the
+arriving message shall satisfy the appropriate
+\fImq_receive\fR()
+or
+\fImq_timedreceive\fR(),
+respectively. The resulting behavior is as if the message queue remains
+empty, and no notification shall be sent.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fImq_notify\fR()
+function shall return a value of zero; otherwise, the function shall
+return a value of \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fImq_notify\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The
+.IR mqdes
+argument is not a valid message queue descriptor.
+.TP
+.BR EBUSY
+A process is already registered for notification by the message queue.
+.P
+The
+\fImq_notify\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The
+.IR notification
+argument is NULL and the process is currently not registered.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+The following program registers a notification request for the message
+queue named in its command-line argument. Notification is performed
+by creating a thread. The thread executes a function which reads one
+message from the queue and then terminates the process.
+.sp
+.RS 4
+.nf
+\fB
+#include <pthread.h>
+#include <mqueue.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+.P
+static void                     /* Thread start function */
+tfunc(union sigval sv)
+{
+    struct mq_attr attr;
+    ssize_t nr;
+    void *buf;
+    mqd_t mqdes = *((mqd_t *) sv.sival_ptr);
+.P
+    /* Determine maximum msg size; allocate buffer to receive msg */
+.P
+    if (mq_getattr(mqdes, &attr) == -1) {
+        perror("mq_getattr");
+        exit(EXIT_FAILURE);
+    }
+    buf = malloc(attr.mq_msgsize);
+.P
+    if (buf == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+.P
+    nr = mq_receive(mqdes, buf, attr.mq_msgsize, NULL);
+    if (nr == -1) {
+        perror("mq_receive");
+        exit(EXIT_FAILURE);
+    }
+.P
+    printf("Read %ld bytes from message queue\en", (long) nr);
+    free(buf);
+    exit(EXIT_SUCCESS);         /* Terminate the process */
+}
+.P
+int
+main(int argc, char *argv[])
+{
+    mqd_t mqdes;
+    struct sigevent not;
+.P
+    assert(argc == 2);
+.P
+    mqdes = mq_open(argv[1], O_RDONLY);
+    if (mqdes == (mqd_t) -1) {
+        perror("mq_open");
+        exit(EXIT_FAILURE);
+    }
+.P
+    not.sigev_notify = SIGEV_THREAD;
+    not.sigev_notify_function = tfunc;
+    not.sigev_notify_attributes = NULL;
+    not.sigev_value.sival_ptr = &mqdes;   /* Arg. to thread func. */
+    if (mq_notify(mqdes, &not) == -1) {
+        perror("mq_notify");
+        exit(EXIT_FAILURE);
+    }
+.P
+    pause();    /* Process will be terminated by thread function */
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImq_open\fR\^(\|)",
+.IR "\fImq_send\fR\^(\|)",
+.IR "\fImq_receive\fR\^(\|)",
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fImsgget\fR\^(\|)",
+.IR "\fImsgrcv\fR\^(\|)",
+.IR "\fImsgsnd\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<mqueue.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

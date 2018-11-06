@@ -1,0 +1,80 @@
+# -*- mmm-classes: donuts-perl -*-
+# Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+#
+# This file checks aspects of parent/child relationships
+#
+
+
+name: DNS_MULTIPLE_NS
+level: 6
+minnsrecords: 2
+help: minnsrecords: minimum number of NS records that must be present for a delegation
+desc: Tests to see if at least two NS records exist for a delegated zone.
+ruletype: name
+class: Warning
+<test>
+ if (exists($records->{'NS'}) && 
+     $#{$records->{'NS'}}+1 < $rule->{'minnsrecords'}) {
+   donuts_error("Only " . ($#{$records->{'NS'}}+1) . 
+		" NS record(s) for $recordname found, but at least " .
+		$rule->{'minnsrecords'} . " are suggested/required");
+ }
+</test>
+
+name: DNSSEC_SUB_NOT_SECURE
+level: 3
+ruletype: name
+desc: Tests for the existence of a DS record in a zone for sub-domains.  If not present then the sub-domain is not being securely delegated to.
+<test>
+  if ($current_domain ne $recordname                         &&  # not the root
+      exists($records->{'NS'}) && $#{$records->{'NS'}} > -1  &&  # is a sub
+      exists($records->{'RRSIG'})                         &&  # DS||NSEC signed
+      !exists($records->{'DS'})                               # No DS
+     ) {
+      donuts_error("sub-domain $recordname is not securely delegated.  It is missing a DS record.");
+  }
+</test>
+
+name: DNSSEC_DNSKEY_PARENT_HAS_VALID_DS
+level: 4
+feature: live
+type: DNSKEY
+desc: tests for valid DS checksum and for RFC4034: section 5.2: The DNSKEY RR referred to in the DS RR MUST be a DNSSEC zone key.
+test:
+  $record->setkeytag();
+  return if ($record->flags & 0x100);  # key is not a zone signing key
+  my @DSs = live_query($record->name, "DS");
+  if ($#DSs == -1) {
+      donuts_error("Parent zone has no DS records for $record->{name} (keyid = $record->{keytag})");
+  }
+  map { if ($_->verify($record)) {
+          if ($_->keytag !=  $record->keytag) {  # tag ids match
+	     donuts_error("KEY with tag $record->{keytag} verifies DS record with non matching tag $_->{keytag}");
+          }
+          return;
+        } } @DSs;
+  donuts_error("DNSKEY record for $record->{name} (keytag = " .
+	       $record->keytag . 
+	       ") does not have a matching DS record in the live parent zone");
+
+name: DNSSEC_DS_CHILD_HAS_MATCHING_DNSKEY
+level: 4
+feature: live
+desc: tests for valid DS checksum and for RFC4034: section 5.2: The DNSKEY RR referred to in the DS RR MUST be a DNSSEC zone key.
+type: DS
+test:
+  my @KEYs = live_query($record->name, "DNSKEY");
+  if ($#KEYs == -1) {
+      return
+	donuts_error("Child zone has no DNSKEY records for $record->{name}");
+  }
+  map { if ($record->verify($_)) {
+          return if ($_->flags & 0x100);  # zone bit set properly
+	  if ($_->keytag != $record->keytag) {
+	      return donuts_error("Key tag $_->{keytag} in child for $_->{name} does not match key tag $record->{keytag}");
+	  }
+          return donuts_error("Key in child for $_->{keytag} referred to by DS for $record->{name} does not have the zone flag set");
+          return;
+        } } @KEYs;
+  donuts_error("DS record for $record->{name} does not have a matching DNSKEY record in the live child zone");

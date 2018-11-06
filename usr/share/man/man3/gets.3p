@@ -1,0 +1,135 @@
+'\" et
+.TH GETS "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+gets
+\(em get a string from a
+.IR stdin
+stream
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+char *gets(char *\fIs\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIgets\fR()
+function shall read bytes from the standard input stream,
+.IR stdin ,
+into the array pointed to by
+.IR s ,
+until a
+<newline>
+is read or an end-of-file condition is encountered. Any
+<newline>
+shall be discarded and a null byte shall be placed immediately
+after the last byte read into the array.
+.P
+The
+\fIgets\fR()
+function may mark the last data access timestamp of
+the file associated with
+.IR stream
+for update. The last data access timestamp shall be
+marked for update by the first successful execution of
+\fIfgetc\fR(),
+\fIfgets\fR(),
+\fIfread\fR(),
+\fIfscanf\fR(),
+\fIgetc\fR(),
+\fIgetchar\fR(),
+\fIgetdelim\fR(),
+\fIgetline\fR(),
+\fIgets\fR(),
+or
+\fIscanf\fR()
+using
+.IR stream
+that returns data not supplied by a prior call to
+\fIungetc\fR().
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIgets\fR()
+shall return
+.IR s .
+If the end-of-file indicator for the stream is set, or if the stream
+is at end-of-file, the end-of-file indicator for the
+stream shall be set and
+\fIgets\fR()
+shall return a null pointer. If a read error occurs, the error indicator
+for the stream shall be set,
+\fIgets\fR()
+shall return a null pointer,
+and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+Refer to
+.IR "\fIfgetc\fR\^(\|)".
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Reading a line that overflows the array pointed to by
+.IR s
+results in undefined behavior. The use of
+\fIfgets\fR()
+is recommended.
+.P
+Since the user cannot specify the length of the buffer passed to
+\fIgets\fR(),
+use of this function is discouraged. The length of the string read is
+unlimited. It is possible to overflow this buffer in such a way as to
+cause applications to fail, or possible system security violations.
+.P
+Applications should use the
+\fIfgets\fR()
+function instead of the obsolescent
+\fIgets\fR()
+function.
+.SH RATIONALE
+The standard developers decided to mark the
+\fIgets\fR()
+function as obsolescent even though it is in the ISO\ C standard due to the
+possibility of buffer overflow.
+.SH "FUTURE DIRECTIONS"
+The
+\fIgets\fR()
+function may be removed in a future version.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIfeof\fR\^(\|)",
+.IR "\fIferror\fR\^(\|)",
+.IR "\fIfgets\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

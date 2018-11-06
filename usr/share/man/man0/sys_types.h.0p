@@ -1,0 +1,241 @@
+'\" et
+.TH sys_types.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/types.h
+\(em data types
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/types.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/types.h> 
+header shall define at least the following types:
+.IP "\fBblkcnt_t\fP" 16
+Used for file block counts.
+.IP "\fBblksize_t\fP" 16
+Used for block sizes.
+.IP "\fBclock_t\fP" 16
+Used for system times in clock ticks or CLOCKS_PER_SEC; see
+.IR <time.h> .
+.IP "\fBclockid_t\fP" 16
+Used for clock ID type in the clock and timer functions.
+.IP "\fBdev_t\fP" 16
+Used for device IDs.
+.IP "\fBfsblkcnt_t\fP" 16
+Used for file system block counts.
+.IP "\fBfsfilcnt_t\fP" 16
+Used for file system file counts.
+.IP "\fBgid_t\fP" 16
+Used for group IDs.
+.IP "\fBid_t\fP" 16
+Used as a general identifier; can be used to contain at least a
+.BR pid_t ,
+.BR uid_t ,
+or
+.BR gid_t .
+.IP "\fBino_t\fP" 16
+Used for file serial numbers.
+.IP "\fBkey_t\fP" 16
+Used for XSI interprocess communication.
+.IP "\fBmode_t\fP" 16
+Used for some file attributes.
+.IP "\fBnlink_t\fP" 16
+Used for link counts.
+.IP "\fBoff_t\fP" 16
+Used for file sizes.
+.IP "\fBpid_t\fP" 16
+Used for process IDs and process group IDs.
+.IP "\fBpthread_attr_t\fP" 16
+Used to identify a thread attribute object.
+.IP "\fBpthread_barrier_t\fP" 16
+Used to identify a barrier.
+.IP "\fBpthread_barrierattr_t\fP" 16
+Used to define a barrier attributes object.
+.IP "\fBpthread_cond_t\fP" 16
+Used for condition variables.
+.IP "\fBpthread_condattr_t\fP" 16
+Used to identify a condition attribute object.
+.IP "\fBpthread_key_t\fP" 16
+Used for thread-specific data keys.
+.IP "\fBpthread_mutex_t\fP" 16
+Used for mutexes.
+.IP "\fBpthread_mutexattr_t\fP" 16
+Used to identify a mutex attribute object.
+.IP "\fBpthread_once_t\fP" 16
+Used for dynamic package initialization.
+.IP "\fBpthread_rwlock_t\fP" 16
+Used for read-write locks.
+.IP "\fBpthread_rwlockattr_t\fP" 16
+Used for read-write lock attributes.
+.IP "\fBpthread_spinlock_t\fP" 16
+Used to identify a spin lock.
+.IP "\fBpthread_t\fP" 16
+Used to identify a thread.
+.IP "\fBsize_t\fP" 16
+Used for sizes of objects.
+.IP "\fBssize_t\fP" 16
+Used for a count of bytes or an error indication.
+.IP "\fBsuseconds_t\fP" 16
+Used for time in microseconds.
+.IP "\fBtime_t\fP" 16
+Used for time in seconds.
+.IP "\fBtimer_t\fP" 16
+Used for timer ID returned by
+\fItimer_create\fR().
+.IP "\fBtrace_attr_t\fP" 16
+Used to identify a trace stream attributes object
+.IP "\fBtrace_event_id_t\fP" 16
+Used to identify a trace event type.
+.IP "\fBtrace_event_set_t\fP" 16
+Used to identify a trace event type set.
+.IP "\fBtrace_id_t\fP" 16
+Used to identify a trace stream.
+.IP "\fBuid_t\fP" 16
+Used for user IDs.
+.P
+All of the types shall be defined as arithmetic types of an appropriate
+length, with the following exceptions:
+.P
+.nf
+.BR pthread_attr_t
+.BR pthread_barrier_t
+.BR pthread_barrierattr_t
+.BR pthread_cond_t
+.BR pthread_condattr_t
+.BR pthread_key_t
+.BR pthread_mutex_t
+.BR pthread_mutexattr_t
+.BR pthread_once_t
+.BR pthread_rwlock_t
+.BR pthread_rwlockattr_t
+.BR pthread_spinlock_t
+.BR pthread_t
+.BR trace_attr_t
+.BR trace_event_id_t
+.BR trace_event_set_t
+.BR trace_id_t
+.fi
+.P
+Additionally:
+.IP " *" 4
+.BR mode_t
+shall be an integer type.
+.IP " *" 4
+.BR dev_t
+shall be an integer type.
+.IP " *" 4
+.BR nlink_t ,
+.BR uid_t ,
+.BR gid_t ,
+and
+.BR id_t
+shall be integer types.
+.IP " *" 4
+.BR blkcnt_t
+and
+.BR off_t
+shall be signed integer types.
+.IP " *" 4
+.BR fsblkcnt_t ,
+.BR fsfilcnt_t ,
+and
+.BR ino_t
+shall be defined as unsigned integer types.
+.IP " *" 4
+.BR size_t
+shall be an unsigned integer type.
+.IP " *" 4
+.BR blksize_t ,
+.BR pid_t ,
+and
+.BR ssize_t
+shall be signed integer types.
+.IP " *" 4
+.BR clock_t
+shall be an integer or real-floating type.
+.BR time_t
+shall be an integer type.
+.P
+The type
+.BR ssize_t
+shall be capable of storing values at least in the range
+[\(mi1,\ {SSIZE_MAX}].
+.P
+The type
+.BR suseconds_t
+shall be a signed integer type capable of storing values at least in
+the range [\(mi1,\ 1\|000\|000].
+.P
+The implementation shall support one or more programming environments
+in which the widths of
+.BR blksize_t ,
+.BR pid_t ,
+.BR size_t ,
+.BR ssize_t ,
+and
+.BR suseconds_t
+are no greater than the width of type
+.BR long .
+The names of these programming environments can be obtained using the
+\fIconfstr\fR()
+function or the
+.IR getconf
+utility.
+.P
+There are no defined comparison or assignment operators for the
+following types:
+.P
+.nf
+.BR pthread_attr_t
+.BR pthread_barrier_t
+.BR pthread_barrierattr_t
+.BR pthread_cond_t
+.BR pthread_condattr_t
+.BR pthread_mutex_t
+.BR pthread_mutexattr_t
+.BR pthread_rwlock_t
+.BR pthread_rwlockattr_t
+.BR pthread_spinlock_t
+.BR trace_attr_t
+.fi
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<time.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIconfstr\fR\^(\|)"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIgetconf\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

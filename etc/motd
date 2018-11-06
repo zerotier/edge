@@ -1,0 +1,16 @@
+--
+
+Welcome to the ZeroTier Edge
+
+The Edge runs on a Linux image based on Alpine Linux, but the
+"apk" package manager is not enabled. The base image is managed by
+our update process.
+
+A number of network diagnostic tools are available here including:
+
+  ip, ifconfig, traceroute, tcptraceroute, tcpdump, nmap,
+  ping, socat, nc, iptraf-ng, iperf3, iw, iwlist, arpwatch,
+  arp-fingerprint, arp-scan, hping3, dnstracer, masscan,
+  p0f, stunnel, drill, arping
+
+--

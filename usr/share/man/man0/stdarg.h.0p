@@ -1,0 +1,224 @@
+'\" et
+.TH stdarg.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+stdarg.h
+\(em handle variable argument list
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdarg.h>
+.P
+void va_start(va_list \fIap\fP, \fIargN\fP);
+void va_copy(va_list \fIdest\fP, va_list \fIsrc\fP);
+\fItype\fP va_arg(va_list \fIap\fP, \fItype\fP);
+void va_end(va_list \fIap\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+.IR <stdarg.h> 
+header shall contain a set of macros which allows portable functions
+that accept variable argument lists to be written. Functions that have
+variable argument lists (such as
+\fIprintf\fR())
+but do not use these macros are inherently non-portable, as different
+systems use different argument-passing conventions.
+.P
+The
+.IR <stdarg.h> 
+header shall define the
+.BR va_list
+type for variables used to traverse the list.
+.P
+The
+\fIva_start\fR()
+macro is invoked to initialize
+.IR ap
+to the beginning of the list before any calls to
+\fIva_arg\fR().
+.P
+The
+\fIva_copy\fR()
+macro initializes
+.IR dest
+as a copy of
+.IR src ,
+as if the
+\fIva_start\fR()
+macro had been applied to
+.IR dest
+followed by the same sequence of uses of the
+\fIva_arg\fR()
+macro as had previously been used to reach the present state of
+.IR src .
+Neither the
+\fIva_copy\fR()
+nor
+\fIva_start\fR()
+macro shall be invoked to reinitialize
+.IR dest
+without an intervening invocation of the
+\fIva_end\fR()
+macro for the same
+.IR dest .
+.P
+The object
+.IR ap
+may be passed as an argument to another function; if that function
+invokes the
+\fIva_arg\fR()
+macro with parameter
+.IR ap ,
+the value of
+.IR ap
+in the calling function is unspecified and shall be passed to the
+\fIva_end\fR()
+macro prior to any further reference to
+.IR ap .
+The parameter
+.IR argN
+is the identifier of the rightmost parameter in the variable parameter
+list in the function definition (the one just before the .\|.\|.). If
+the parameter
+.IR argN
+is declared with the
+.BR register
+storage class, with a function type or array type, or with a type that
+is not compatible with the type that results after application of the
+default argument promotions, the behavior is undefined.
+.P
+The
+\fIva_arg\fR()
+macro shall return the next argument in the list pointed to by
+.IR ap .
+Each invocation of
+\fIva_arg\fR()
+modifies
+.IR ap
+so that the values of successive arguments are returned in turn. The
+.IR type
+parameter shall be a type name specified such that the type of a
+pointer to an object that has the specified type can be obtained simply
+by postfixing a
+.BR '*' 
+to type. If there is no actual next argument, or if
+.IR type
+is not compatible with the type of the actual next argument (as
+promoted according to the default argument promotions), the behavior is
+undefined, except for the following cases:
+.IP " *" 4
+One type is a signed integer type, the other type is the corresponding
+unsigned integer type, and the value is representable in both types.
+.IP " *" 4
+One type is a pointer to
+.BR void
+and the other is a pointer to a character type.
+.IP " *" 4
+Both types are pointers.
+.P
+Different types can be mixed, but it is up to the routine to
+know what type of argument is expected.
+.P
+The
+\fIva_end\fR()
+macro is used to clean up; it invalidates
+.IR ap
+for use (unless
+\fIva_start\fR()
+or
+\fIva_copy\fR()
+is invoked again).
+.P
+Each invocation of the
+\fIva_start\fR()
+and
+\fIva_copy\fR()
+macros shall be matched by a corresponding invocation of the
+\fIva_end\fR()
+macro in the same function.
+.P
+Multiple traversals, each bracketed by
+\fIva_start\fR()
+\&.\|.\|.
+\fIva_end\fR(),
+are possible.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+This example is a possible implementation of
+\fIexecl\fR():
+.sp
+.RS 4
+.nf
+\fB
+#include <stdarg.h>
+.P
+#define  MAXARGS     31
+.P
+/*
+ * execl is called by
+ * execl(file, arg1, arg2, ..., (char *)(0));
+ */
+int execl(const char *file, const char *args, ...)
+{
+    va_list ap;
+    char *array[MAXARGS +1];
+    int argno = 0;
+.P
+    va_start(ap, args);
+    while (args != 0 && argno < MAXARGS)
+    {
+        array[argno++] = args;
+        args = va_arg(ap, const char *);
+    }
+    array[argno] = (char *) 0;
+    va_end(ap);
+    return execv(file, array);
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+It is up to the calling routine to communicate to the called routine
+how many arguments there are, since it is not always possible for the
+called routine to determine this in any other way. For example,
+\fIexecl\fR()
+is passed a null pointer to signal the end of the list. The
+\fIprintf\fR()
+function can tell how many arguments are there by the
+.IR format
+argument.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIexec\fR\^",
+.IR "\fIfprintf\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

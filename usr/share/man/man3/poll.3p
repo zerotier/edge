@@ -1,0 +1,388 @@
+'\" et
+.TH POLL "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+poll
+\(em input/output multiplexing
+.SH SYNOPSIS
+.LP
+.nf
+#include <poll.h>
+.P
+int poll(struct pollfd \fIfds\fP[], nfds_t \fInfds\fP, int \fItimeout\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpoll\fR()
+function provides applications with a mechanism for multiplexing
+input/output over a set of file descriptors. For each member of the
+array pointed to by
+.IR fds ,
+\fIpoll\fR()
+shall examine the given file descriptor for the event(s) specified in
+.IR events .
+The number of
+.BR pollfd
+structures in the
+.IR fds
+array is specified by
+.IR nfds .
+The
+\fIpoll\fR()
+function shall identify those file descriptors on which an application
+can read or write data, or on which certain events have occurred.
+.P
+The
+.IR fds
+argument specifies the file descriptors to be examined
+and the events of interest for each file descriptor. It is a pointer to
+an array with one member for each open file descriptor of interest. The
+array's members are
+.BR pollfd
+structures within which
+.IR fd
+specifies an open file descriptor and
+.IR events
+and
+.IR revents
+are bitmasks constructed by OR'ing a combination of the following event
+flags:
+.IP POLLIN 12
+Data other than high-priority data may be read without blocking.
+.RS 12 
+.P
+For STREAMS, this flag is set in
+.IR revents
+even if the message is of zero length. This flag shall be equivalent
+to POLLRDNORM | POLLRDBAND.
+.RE
+.IP POLLRDNORM 12
+Normal data may be read without blocking.
+.RS 12 
+.P
+For STREAMS, data on priority band 0 may be read without blocking. This
+flag is set in
+.IR revents
+even if the message is of zero length.
+.RE
+.IP POLLRDBAND 12
+Priority data may be read without blocking.
+.RS 12 
+.P
+For STREAMS, data on priority bands greater than 0 may be read without
+blocking. This flag is set in
+.IR revents
+even if the message is of zero length.
+.RE
+.IP POLLPRI 12
+High-priority data may be read without blocking.
+.RS 12 
+.P
+For STREAMS, this flag is set in
+.IR revents
+even if the message is of zero length.
+.RE
+.IP POLLOUT 12
+Normal data may be written without blocking.
+.RS 12 
+.P
+For STREAMS, data on priority band 0 may be written without blocking.
+.RE
+.IP POLLWRNORM 12
+Equivalent to POLLOUT.
+.IP POLLWRBAND 12
+Priority data may be written.
+.RS 12 
+.P
+For STREAMS, data on priority bands greater than 0 may be written
+without blocking. If any priority band has been written to on this
+STREAM, this event only examines bands that have been written
+to at least once.
+.RE
+.IP POLLERR 12
+An error has occurred on the device or stream. This flag is only valid
+in the
+.IR revents
+bitmask; it shall be ignored in the
+.IR events
+member.
+.IP POLLHUP 12
+A device has been disconnected, or a pipe or FIFO has been closed by the
+last process that had it open for writing. Once set, the hangup state of a
+FIFO shall persist until some process opens the FIFO for writing or until
+all read-only file descriptors for the FIFO are closed. This event and
+POLLOUT are mutually-exclusive; a stream can never be writable if a hangup
+has occurred. However, this event and POLLIN, POLLRDNORM, POLLRDBAND,
+or POLLPRI are not mutually-exclusive. This flag is only valid in the
+.IR revents
+bitmask; it shall be ignored in the
+.IR events
+member.
+.IP POLLNVAL 12
+The specified
+.IR fd
+value is invalid. This flag is only valid in the
+.IR revents
+member; it shall ignored in the
+.IR events
+member.
+.P
+The significance and semantics of normal, priority, and high-priority
+data are file and device-specific.
+.P
+If the value of
+.IR fd
+is less than 0,
+.IR events
+shall be ignored, and
+.IR revents
+shall be set to 0 in that entry on return from
+\fIpoll\fR().
+.P
+In each
+.BR pollfd
+structure,
+\fIpoll\fR()
+shall clear the
+.IR revents
+member, except that where the application requested a report on a
+condition by setting one of the bits of
+.IR events
+listed above,
+\fIpoll\fR()
+shall set the corresponding bit in
+.IR revents
+if the requested condition is true. In addition,
+\fIpoll\fR()
+shall set the POLLHUP, POLLERR, and POLLNVAL flag in
+.IR revents
+if the condition is true, even if the application did not set the
+corresponding bit in
+.IR events .
+.P
+If none of the defined events have occurred on any selected file
+descriptor,
+\fIpoll\fR()
+shall wait at least
+.IR timeout
+milliseconds for an event to occur on any of the selected file
+descriptors. If the value of
+.IR timeout
+is 0,
+\fIpoll\fR()
+shall return immediately. If the value of
+.IR timeout
+is \(mi1,
+\fIpoll\fR()
+shall block until a requested event occurs or until the call is
+interrupted.
+.P
+Implementations may place limitations on the granularity of timeout
+intervals. If the requested timeout interval requires a finer
+granularity than the implementation supports, the actual timeout
+interval shall be rounded up to the next supported value.
+.P
+The
+\fIpoll\fR()
+function shall not be affected by the O_NONBLOCK flag.
+.P
+The
+\fIpoll\fR()
+function shall support regular files, terminal and pseudo-terminal
+devices, FIFOs, pipes, sockets and
+STREAMS-based files.
+The behavior of
+\fIpoll\fR()
+on elements of
+.IR fds
+that refer to other types of file is unspecified.
+.P
+Regular files shall always poll TRUE for reading and writing.
+.P
+A file descriptor for a socket that is listening for connections shall
+indicate that it is ready for reading, once connections are available.
+A file descriptor for a socket that is connecting asynchronously shall
+indicate that it is ready for writing, once a connection has been
+established.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIpoll\fR()
+shall return a non-negative value. A positive value indicates the total
+number of file descriptors that have been selected (that is, file
+descriptors for which the
+.IR revents
+member is non-zero). A value of 0 indicates that the call timed out and
+no file descriptors have been selected. Upon failure,
+\fIpoll\fR()
+shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIpoll\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The allocation of internal data structures failed but a subsequent
+request may succeed.
+.TP
+.BR EINTR
+A signal was caught during
+\fIpoll\fR().
+.TP
+.BR EINVAL
+The
+.IR nfds
+argument is greater than
+{OPEN_MAX},
+or one of the
+.IR fd
+members refers to a STREAM or multiplexer that is linked (directly or
+indirectly) downstream from a multiplexer.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Checking for Events on a Stream"
+.P
+The following example opens a pair of STREAMS devices and then waits
+for either one to become writable. This example proceeds as follows:
+.IP " 1." 4
+Sets the
+.IR timeout
+parameter to 500 milliseconds.
+.IP " 2." 4
+Opens the STREAMS devices
+.BR /dev/dev0
+and
+.BR /dev/dev1 ,
+and then polls them, specifying POLLOUT and POLLWRBAND as the events of
+interest.
+.RS 4 
+.P
+The STREAMS device names
+.BR /dev/dev0
+and
+.BR /dev/dev1
+are only examples of how STREAMS devices can be named; STREAMS naming
+conventions may vary among systems conforming to the POSIX.1\(hy2008.
+.RE
+.IP " 3." 4
+Uses the
+.IR ret
+variable to determine whether an event has occurred on either of the
+two STREAMS. The
+\fIpoll\fR()
+function is given 500 milliseconds to wait for an event to occur (if it
+has not occurred prior to the
+\fIpoll\fR()
+call).
+.IP " 4." 4
+Checks the returned value of
+.IR ret .
+If a positive value is returned, one of the following can be done:
+.RS 4 
+.IP " a." 4
+Priority data can be written to the open STREAM on priority bands
+greater than 0, because the POLLWRBAND event occurred on the open
+STREAM (\c
+.IR fds [0]
+or
+.IR fds [1]).
+.IP " b." 4
+Data can be written to the open STREAM on priority-band 0, because the
+POLLOUT event occurred on the open STREAM (\c
+.IR fds [0]
+or
+.IR fds [1]).
+.RE
+.IP " 5." 4
+If the returned value is not a positive value, permission to write data
+to the open STREAM (on any priority band) is denied.
+.IP " 6." 4
+If the POLLHUP event occurs on the open STREAM (\c
+.IR fds [0]
+or
+.IR fds [1]),
+the device on the open STREAM has disconnected.
+.sp
+.RS 4
+.nf
+\fB
+#include <stropts.h>
+#include <poll.h>
+\&...
+struct pollfd fds[2];
+int timeout_msecs = 500;
+int ret;
+    int i;
+.P
+/* Open STREAMS device. */
+fds[0].fd = open("/dev/dev0", ...);
+fds[1].fd = open("/dev/dev1", ...);
+fds[0].events = POLLOUT | POLLWRBAND;
+fds[1].events = POLLOUT | POLLWRBAND;
+.P
+ret = poll(fds, 2, timeout_msecs);
+.P
+if (ret > 0) {
+    /* An event on one of the fds has occurred. */
+    for (i=0; i<2; i++) {
+        if (fds[i].revents & POLLWRBAND) {
+        /* Priority data may be written on device number i. */
+\&...
+        }
+        if (fds[i].revents & POLLOUT) {
+        /* Data may be written on device number i. */
+\&...
+        }
+        if (fds[i].revents & POLLHUP) {
+        /* A hangup has occurred on device number i. */
+\&...
+        }
+    }
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The POLLHUP event does not occur for FIFOs just because the FIFO is not
+open for writing. It only occurs when the FIFO is closed by the last
+writer and persists until some process opens the FIFO for writing or
+until all read-only file descriptors for the FIFO are closed.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.6" ", " "STREAMS",
+.IR "\fIgetmsg\fR\^(\|)",
+.IR "\fIpselect\fR\^(\|)",
+.IR "\fIputmsg\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<poll.h>\fP",
+.IR "\fB<stropts.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

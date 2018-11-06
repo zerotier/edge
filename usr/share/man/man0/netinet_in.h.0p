@@ -1,0 +1,391 @@
+'\" et
+.TH netinet_in.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+netinet/in.h
+\(em Internet address family
+.SH SYNOPSIS
+.LP
+.nf
+#include <netinet/in.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <netinet/in.h> 
+header shall define the following types:
+.IP "\fBin_port_t\fP" 10
+Equivalent to the type
+.BR uint16_t
+as described in
+.IR <inttypes.h> .
+.IP "\fBin_addr_t\fP" 10
+Equivalent to the type
+.BR uint32_t
+as described in
+.IR <inttypes.h> .
+.P
+The
+.IR <netinet_in.h> 
+header shall define the
+.BR sa_family_t
+type as described in
+.IR <sys/socket.h> .
+.P
+The
+.IR <netinet_in.h> 
+header shall define the
+.BR uint8_t
+and
+.BR uint32_t
+types as described in
+.IR <inttypes.h> .
+Inclusion of the
+.IR <netinet/in.h> 
+header may also make visible all symbols from
+.IR <inttypes.h> 
+and
+.IR <sys/socket.h> .
+.P
+The
+.IR <netinet/in.h> 
+header shall define the
+.BR in_addr
+structure, which shall include at least the following member:
+.sp
+.RS 4
+.nf
+\fB
+in_addr_t  s_addr
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netinet/in.h> 
+header shall define the
+.BR sockaddr_in
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+sa_family_t     sin_family   \fRAF_INET.\fR
+in_port_t       sin_port     \fRPort number.\fR
+struct in_addr  sin_addr     \fRIP address.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR sin_port
+and
+.IR sin_addr
+members shall be in network byte order.
+.P
+The
+.BR sockaddr_in
+structure is used to store addresses for the Internet address family.
+Pointers to this type shall be cast by applications to
+.BR "struct sockaddr *"
+for use with socket functions.
+.P
+The
+.IR <netinet/in.h> 
+header shall define the
+.BR in6_addr
+structure, which shall include at least the following member:
+.sp
+.RS 4
+.nf
+\fB
+uint8_t s6_addr[16]
+.fi \fR
+.P
+.RE
+.P
+This array is used to contain a 128-bit IPv6 address, stored in network
+byte order.
+.P
+The
+.IR <netinet/in.h> 
+header shall define the
+.BR sockaddr_in6
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+sa_family_t      sin6_family    \fRAF_INET6.\fR
+in_port_t        sin6_port      \fRPort number.\fR
+uint32_t         sin6_flowinfo  \fRIPv6 traffic class and flow information.\fR
+struct in6_addr  sin6_addr      \fRIPv6 address.\fR
+uint32_t         sin6_scope_id  \fRSet of interfaces for a scope.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR sin6_port
+and
+.IR sin6_addr
+members shall be in network byte order.
+.P
+The
+.BR sockaddr_in6
+structure shall be set to zero by an application prior to using it,
+since implementations are free to have additional,
+implementation-defined fields in
+.BR sockaddr_in6 .
+.P
+The
+.IR sin6_scope_id
+field is a 32-bit integer that identifies a set of interfaces as
+appropriate for the scope of the address carried in the
+.IR sin6_addr
+field. For a link scope
+.IR sin6_addr ,
+the application shall ensure that
+.IR sin6_scope_id
+is a link index. For a site scope
+.IR sin6_addr ,
+the application shall ensure that
+.IR sin6_scope_id
+is a site index. The mapping of
+.IR sin6_scope_id
+to an interface or set of interfaces is implementation-defined.
+.P
+The
+.IR <netinet/in.h> 
+header shall declare the following external variable:
+.sp
+.RS 4
+.nf
+\fB
+const struct in6_addr in6addr_any
+.fi \fR
+.P
+.RE
+.P
+This variable is initialized by the system to contain the wildcard IPv6
+address. The
+.IR <netinet/in.h> 
+header also defines the IN6ADDR_ANY_INIT macro. This macro must be
+constant at compile time and can be used to initialize a variable of
+type
+.BR "struct in6_addr"
+to the IPv6 wildcard address.
+.P
+The
+.IR <netinet/in.h> 
+header shall declare the following external variable:
+.sp
+.RS 4
+.nf
+\fB
+const struct in6_addr in6addr_loopback
+.fi \fR
+.P
+.RE
+.P
+This variable is initialized by the system to contain the loopback IPv6
+address. The
+.IR <netinet/in.h> 
+header also defines the IN6ADDR_LOOPBACK_INIT macro. This macro must be
+constant at compile time and can be used to initialize a variable of
+type
+.BR "struct in6_addr"
+to the IPv6 loopback address.
+.P
+The
+.IR <netinet/in.h> 
+header shall define the
+.BR ipv6_mreq
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+struct in6_addr  ipv6mr_multiaddr  \fRIPv6 multicast address.\fR
+unsigned         ipv6mr_interface  \fRInterface index.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <netinet/in.h> 
+header shall define the following symbolic constants for use as
+values of the
+.IR level
+argument of
+\fIgetsockopt\fR()
+and
+\fIsetsockopt\fR():
+.IP IPPROTO_IP 16
+Internet protocol.
+.IP IPPROTO_IPV6 16
+Internet Protocol Version 6.
+.IP IPPROTO_ICMP 16
+Control message protocol.
+.IP IPPROTO_RAW 16
+Raw IP Packets Protocol.
+.IP IPPROTO_TCP 16
+Transmission control protocol.
+.IP IPPROTO_UDP 16
+User datagram protocol.
+.P
+The
+.IR <netinet/in.h> 
+header shall define the following symbolic constants for use as
+destination addresses for
+\fIconnect\fR(),
+\fIsendmsg\fR(),
+and
+\fIsendto\fR():
+.IP INADDR_ANY 16
+IPv4 local host address.
+.IP INADDR_BROADCAST 16
+IPv4 broadcast address.
+.P
+The
+.IR <netinet/in.h> 
+header shall define the following symbolic constant, with the value
+specified, to help applications declare buffers of the proper size
+to store IPv4 addresses in string form:
+.IP INET_ADDRSTRLEN 16
+16. Length of the string form for IP.
+.P
+The
+\fIhtonl\fR(),
+\fIhtons\fR(),
+\fIntohl\fR(),
+and
+\fIntohs\fR()
+functions shall be available as described in
+.IR <arpa/inet.h> .
+Inclusion of the
+.IR <netinet/in.h> 
+header may also make visible all symbols from
+.IR <arpa/inet.h> .
+.P
+The
+.IR <netinet/in.h> 
+header shall define the following symbolic constant, with the value
+specified, to help applications declare buffers of the proper size
+to store IPv6 addresses in string form:
+.IP INET6_ADDRSTRLEN 16
+46. Length of the string form for IPv6.
+.br
+.P
+The
+.IR <netinet/in.h> 
+header shall define the following symbolic constants, with distinct
+integer values, for use in the
+.IR option_name
+argument in the
+\fIgetsockopt\fR()
+or
+\fIsetsockopt\fR()
+functions at protocol level IPPROTO_IPV6:
+.IP IPV6_JOIN_GROUP 16
+Join a multicast group.
+.IP IPV6_LEAVE_GROUP 16
+Quit a multicast group.
+.IP IPV6_MULTICAST_HOPS 16
+.br
+Multicast hop limit.
+.IP IPV6_MULTICAST_IF 16
+Interface to use for outgoing multicast packets.
+.IP IPV6_MULTICAST_LOOP 16
+.br
+Multicast packets are delivered back to the local application.
+.IP IPV6_UNICAST_HOPS 16
+Unicast hop limit.
+.IP IPV6_V6ONLY 16
+Restrict AF_INET6 socket to IPv6 communications only.
+.P
+The
+.IR <netinet/in.h> 
+header shall define the following macros that test for special IPv6
+addresses. Each macro is of type
+.BR int
+and takes a single argument of type
+.BR "const struct in6_addr *" :
+.IP IN6_IS_ADDR_UNSPECIFIED 6
+.br
+Unspecified address.
+.IP IN6_IS_ADDR_LOOPBACK 6
+.br
+Loopback address.
+.IP IN6_IS_ADDR_MULTICAST 6
+.br
+Multicast address.
+.IP IN6_IS_ADDR_LINKLOCAL 6
+.br
+Unicast link-local address.
+.IP IN6_IS_ADDR_SITELOCAL 6
+.br
+Unicast site-local address.
+.IP IN6_IS_ADDR_V4MAPPED 6
+.br
+IPv4 mapped address.
+.IP IN6_IS_ADDR_V4COMPAT 6
+.br
+IPv4-compatible address.
+.IP IN6_IS_ADDR_MC_NODELOCAL 6
+.br
+Multicast node-local address.
+.IP IN6_IS_ADDR_MC_LINKLOCAL 6
+.br
+Multicast link-local address.
+.IP IN6_IS_ADDR_MC_SITELOCAL 6
+.br
+Multicast site-local address.
+.IP IN6_IS_ADDR_MC_ORGLOCAL 6
+.br
+Multicast organization-local address.
+.IP IN6_IS_ADDR_MC_GLOBAL 6
+.br
+Multicast global address.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 4.9" ", " "Host and Network Byte Orders",
+.IR "\fB<arpa_inet.h>\fP",
+.IR "\fB<inttypes.h>\fP",
+.IR "\fB<sys_socket.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIconnect\fR\^(\|)",
+.IR "\fIgetsockopt\fR\^(\|)",
+.IR "\fIhtonl\fR\^(\|)",
+.IR "\fIsendmsg\fR\^(\|)",
+.IR "\fIsendto\fR\^(\|)",
+.IR "\fIsetsockopt\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

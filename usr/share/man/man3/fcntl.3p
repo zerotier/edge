@@ -1,0 +1,690 @@
+'\" et
+.TH FCNTL "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fcntl
+\(em file control
+.SH SYNOPSIS
+.LP
+.nf
+#include <fcntl.h>
+.P
+int fcntl(int \fIfildes\fP, int \fIcmd\fP, ...);
+.fi
+.SH DESCRIPTION
+The
+\fIfcntl\fR()
+function shall perform the operations described below on open files. The
+.IR fildes
+argument is a file descriptor.
+.P
+The available values for
+.IR cmd
+are defined in
+.IR <fcntl.h> 
+and are as follows:
+.IP F_DUPFD 14
+Return a new file descriptor which shall be the lowest numbered
+available (that is, not already open) file descriptor greater than or
+equal to the third argument,
+.IR arg ,
+taken as an integer of type
+.BR int .
+The new file descriptor shall refer to the same open file description as
+the original file descriptor, and shall share any locks. The FD_CLOEXEC
+flag associated with the new file descriptor shall be cleared to keep
+the file open across calls to one of the
+.IR exec
+functions.
+.IP F_DUPFD_CLOEXEC 14
+.br
+Like F_DUPFD, but the FD_CLOEXEC flag associated with the new file
+descriptor shall be set.
+.IP F_GETFD 14
+Get the file descriptor flags defined in
+.IR <fcntl.h> 
+that are associated with the file descriptor
+.IR fildes .
+File descriptor flags are associated with a single file descriptor and
+do not affect other file descriptors that refer to the same file.
+.IP F_SETFD 14
+Set the file descriptor flags defined in
+.IR <fcntl.h> ,
+that are associated with
+.IR fildes ,
+to the third argument,
+.IR arg ,
+taken as type
+.BR int .
+If the FD_CLOEXEC flag in the third argument
+is 0, the file descriptor shall remain open across the
+.IR exec
+functions; otherwise, the file descriptor shall be closed upon
+successful execution of one of the
+.IR exec
+functions.
+.IP F_GETFL 14
+Get the file status flags and file access modes, defined in
+.IR <fcntl.h> ,
+for the file description associated with
+.IR fildes .
+The file access modes can be extracted from the return value using the
+mask O_ACCMODE, which is defined in
+.IR <fcntl.h> .
+File status flags and file access modes are associated with the file
+description and do not affect other file descriptors that refer to the
+same file with different open file descriptions. The flags returned may
+include non-standard file status flags which the application did not
+set, provided that these additional flags do not alter the behavior of
+a conforming application.
+.IP F_SETFL 14
+Set the file status flags, defined in
+.IR <fcntl.h> ,
+for the file description associated with
+.IR fildes
+from the corresponding bits in the third argument,
+.IR arg ,
+taken as type
+.BR int .
+Bits corresponding to the file access mode and the file creation
+flags, as defined in
+.IR <fcntl.h> ,
+that are set in
+.IR arg
+shall be ignored. If any bits in
+.IR arg
+other than those mentioned here are changed by the application, the
+result is unspecified. If
+.IR fildes
+does not support non-blocking operations, it is unspecified whether the
+O_NONBLOCK flag will be ignored.
+.IP F_GETOWN 14
+If
+.IR fildes
+refers to a socket, get the process or process group ID specified to
+receive SIGURG signals when out-of-band data is available. Positive
+values indicate a process ID; negative values, other than \(mi1,
+indicate a process group ID. If
+.IR fildes
+does not refer to a socket, the results are unspecified.
+.IP F_SETOWN 14
+If
+.IR fildes
+refers to a socket, set the process or process group ID specified to
+receive SIGURG signals when out-of-band data is available, using the
+value of the third argument,
+.IR arg ,
+taken as type
+.BR int .
+Positive values indicate a process ID; negative values, other than
+\(mi1, indicate a process group ID. If
+.IR fildes
+does not refer to a socket, the results are unspecified.
+.P
+The following values for
+.IR cmd
+are available for advisory record locking. Record locking shall be
+supported for regular files, and may be supported for other files.
+.IP F_GETLK 14
+Get the first lock which blocks the lock description pointed to by the
+third argument,
+.IR arg ,
+taken as a pointer to type
+.BR "struct flock" ,
+defined in
+.IR <fcntl.h> .
+The information retrieved shall overwrite the information passed to
+\fIfcntl\fR()
+in the structure
+.BR flock .
+If no lock is found that would prevent this lock from being created,
+then the structure shall be left unchanged except for the lock type
+which shall be set to F_UNLCK.
+.IP F_SETLK 14
+Set or clear a file segment lock according to the lock description
+pointed to by the third argument,
+.IR arg ,
+taken as a pointer to type
+.BR "struct flock" ,
+defined in
+.IR <fcntl.h> .
+F_SETLK can establish shared (or read) locks (F_RDLCK) or
+exclusive (or write) locks (F_WRLCK), as well as to remove either type
+of lock (F_UNLCK). F_RDLCK, F_WRLCK, and F_UNLCK are defined in
+.IR <fcntl.h> .
+If a shared or exclusive lock cannot be set,
+\fIfcntl\fR()
+shall return immediately with a return value of \(mi1.
+.IP F_SETLKW 14
+This command shall be equivalent to F_SETLK except that if a shared or
+exclusive lock is blocked by other locks, the thread shall wait until
+the request can be satisfied. If a signal that is to be caught is
+received while
+\fIfcntl\fR()
+is waiting for a region,
+\fIfcntl\fR()
+shall be interrupted. Upon return from the signal handler,
+\fIfcntl\fR()
+shall return \(mi1 with
+.IR errno
+set to
+.BR [EINTR] ,
+and the lock operation shall not be done.
+.P
+Additional implementation-defined values for
+.IR cmd
+may be defined in
+.IR <fcntl.h> .
+Their names shall start with F_.
+.P
+When a shared lock is set on a segment of a file, other processes shall
+be able to set shared locks on that segment or a portion of it. A
+shared lock prevents any other process from setting an exclusive lock
+on any portion of the protected area. A request for a shared lock
+shall fail if the file descriptor was not opened with read access.
+.P
+An exclusive lock shall prevent any other process from setting a shared
+lock or an exclusive lock on any portion of the protected area. A
+request for an exclusive lock shall fail if the file descriptor was not
+opened with write access.
+.P
+The structure
+.BR flock
+describes the type (\c
+.IR l_type ),
+starting offset (\c
+.IR l_whence ),
+relative offset (\c
+.IR l_start ),
+size (\c
+.IR l_len ),
+and process ID (\c
+.IR l_pid )
+of the segment of the file to be affected.
+.P
+The value of
+.IR l_whence
+is SEEK_SET, SEEK_CUR, or SEEK_END,
+to indicate that the relative offset
+.IR l_start
+bytes shall be measured from the start of the file, current position,
+or end of the file, respectively. The value of
+.IR l_len
+is the number of consecutive bytes to be locked. The value of
+.IR l_len
+may be negative (where the definition of
+.BR off_t
+permits negative values of
+.IR l_len ).
+The
+.IR l_pid
+field is only used with F_GETLK to return the process ID of the process
+holding a blocking lock. After a successful F_GETLK request, when a
+blocking lock is found, the values returned in the
+.BR flock
+structure shall be as follows:
+.IP "\fIl_type\fP" 10
+Type of blocking lock found.
+.IP "\fIl_whence\fP" 10
+SEEK_SET.
+.IP "\fIl_start\fP" 10
+Start of the blocking lock.
+.IP "\fIl_len\fP" 10
+Length of the blocking lock.
+.IP "\fIl_pid\fP" 10
+Process ID of the process that holds the blocking lock.
+.P
+If the command is F_SETLKW and the process must wait for another
+process to release a lock, then the range of bytes to be locked shall
+be determined before the
+\fIfcntl\fR()
+function blocks. If the file size or file descriptor seek offset change
+while
+\fIfcntl\fR()
+is blocked, this shall not affect the range of bytes locked.
+.P
+If
+.IR l_len
+is positive, the area affected shall start at
+.IR l_start
+and end at
+.IR l_start +\c
+.IR l_len \(mi1.
+If
+.IR l_len
+is negative, the area affected shall start at
+.IR l_start +\c
+.IR l_len
+and end at
+.IR l_start \(mi1.
+Locks may start and extend beyond the current end of a file, but shall
+not extend before the beginning of the file. A lock shall be set to
+extend to the largest possible value of the file offset for that file
+by setting
+.IR l_len
+to 0. If such a lock also has
+.IR l_start
+set to 0 and
+.IR l_whence
+is set to SEEK_SET, the whole file shall be locked.
+.P
+There shall be at most one type of lock set for each byte in the file.
+Before a successful return from an F_SETLK or an F_SETLKW request when
+the calling process has previously existing locks on bytes in the
+region specified by the request, the previous lock type for each byte
+in the specified region shall be replaced by the new lock type. As
+specified above under the descriptions of shared locks and exclusive
+locks, an F_SETLK or an F_SETLKW request (respectively) shall fail or
+block when another process has existing locks on bytes in the specified
+region and the type of any of those locks conflicts with the type
+specified in the request.
+.P
+All locks associated with a file for a given process shall be removed
+when a file descriptor for that file is closed by that process or the
+process holding that file descriptor terminates. Locks are not
+inherited by a child process.
+.P
+A potential for deadlock occurs if a process controlling a locked
+region is put to sleep by attempting to lock the locked region of
+another process. If the system detects that sleeping until a locked
+region is unlocked would cause a deadlock,
+\fIfcntl\fR()
+shall fail with an
+.BR [EDEADLK] 
+error.
+.P
+An unlock (F_UNLCK) request in which
+.IR l_len
+is non-zero and the offset of the last byte of the requested segment is
+the maximum value for an object of type
+.BR off_t ,
+when the process has an existing lock in which
+.IR l_len
+is 0 and which includes the last byte of the requested segment, shall be
+treated as a request to unlock from the start of the requested segment
+with an
+.IR l_len
+equal to 0. Otherwise, an unlock (F_UNLCK) request shall attempt to
+unlock only the requested segment.
+.P
+When the file descriptor
+.IR fildes
+refers to a shared memory object, the behavior of
+\fIfcntl\fR()
+shall be the same as for a regular file except the effect of the
+following values for the argument
+.IR cmd
+shall be unspecified: F_SETFL, F_GETLK, F_SETLK, and F_SETLKW.
+.P
+If
+.IR fildes
+refers to a typed memory object, the result of the
+\fIfcntl\fR()
+function is unspecified.
+.SH "RETURN VALUE"
+Upon successful completion, the value returned shall depend on
+.IR cmd
+as follows:
+.IP F_DUPFD 12
+A new file descriptor.
+.IP F_DUPFD_CLOEXEC 12
+.br
+A new file descriptor.
+.IP F_GETFD 12
+Value of flags defined in
+.IR <fcntl.h> .
+The return value shall not be negative.
+.IP F_SETFD 12
+Value other than \(mi1.
+.IP F_GETFL 12
+Value of file status flags and access modes. The return value is not
+negative.
+.IP F_SETFL 12
+Value other than \(mi1.
+.IP F_GETLK 12
+Value other than \(mi1.
+.IP F_SETLK 12
+Value other than \(mi1.
+.IP F_SETLKW 12
+Value other than \(mi1.
+.IP F_GETOWN 12
+Value of the socket owner process or process group; this will not be
+\(mi1.
+.IP F_SETOWN 12
+Value other than \(mi1.
+.P
+Otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIfcntl\fR()
+function shall fail if:
+.TP
+.BR EACCES " or " EAGAIN
+.br
+The
+.IR cmd
+argument is F_SETLK; the type of lock (\c
+.IR l_type )
+is a shared (F_RDLCK) or exclusive (F_WRLCK) lock and the segment of a
+file to be locked is already exclusive-locked by another process, or the
+type is an exclusive lock and some portion of the segment of a file to
+be locked is already shared-locked or exclusive-locked by another process.
+.TP
+.BR EBADF
+The
+.IR fildes
+argument is not a valid open file descriptor, or the argument
+.IR cmd
+is F_SETLK or F_SETLKW, the type of lock,
+.IR l_type ,
+is a shared lock (F_RDLCK), and
+.IR fildes
+is not a valid file descriptor open for reading, or the type of lock,
+.IR l_type ,
+is an exclusive lock (F_WRLCK), and
+.IR fildes
+is not a valid file descriptor open for writing.
+.TP
+.BR EINTR
+The
+.IR cmd
+argument is F_SETLKW and the function was interrupted by a signal.
+.TP
+.BR EINVAL
+The
+.IR cmd
+argument is invalid, or the
+.IR cmd
+argument is F_DUPFD or F_DUPFD_CLOEXEC and
+.IR arg
+is negative or greater than or equal to
+{OPEN_MAX},
+or the
+.IR cmd
+argument is F_GETLK, F_SETLK, or F_SETLKW and the data pointed to by
+.IR arg
+is not valid, or
+.IR fildes
+refers to a file that does not support locking.
+.TP
+.BR EMFILE
+The argument
+.IR cmd
+is F_DUPFD or F_DUPFD_CLOEXEC and all file descriptors available to
+the process are currently open, or no file descriptors greater than or
+equal to
+.IR arg
+are available.
+.TP
+.BR ENOLCK
+The argument
+.IR cmd
+is F_SETLK or F_SETLKW and satisfying the lock or unlock request would
+result in the number of locked regions in the system exceeding a
+system-imposed limit.
+.TP
+.BR EOVERFLOW
+One of the values to be returned cannot be represented correctly.
+.TP
+.BR EOVERFLOW
+The
+.IR cmd
+argument is F_GETLK, F_SETLK, or F_SETLKW and the smallest or, if
+.IR l_len
+is non-zero, the largest offset of any byte in the requested segment
+cannot be represented correctly in an object of type
+.BR off_t .
+.br
+.P
+The
+\fIfcntl\fR()
+function may fail if:
+.TP
+.BR EDEADLK
+The
+.IR cmd
+argument is F_SETLKW, the lock is blocked by a lock from another
+process, and putting the calling process to sleep to wait for that lock
+to become free would cause a deadlock.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Locking and Unlocking a File"
+.P
+The following example demonstrates how to place a lock on bytes 100 to
+109 of a file and then later remove it. F_SETLK is used to perform a
+non-blocking lock request so that the process does not have to wait if
+an incompatible lock is held by another process; instead the process
+can take some other action.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
+.P
+int
+main(int argc, char *argv[])
+{
+    int fd;
+    struct flock fl;
+.P
+    fd = open("testfile", O_RDWR);
+    if (fd == -1)
+        /* Handle error */;
+.P
+    /* Make a non-blocking request to place a write lock
+       on bytes 100-109 of testfile */
+.P
+    fl.l_type = F_WRLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = 100;
+    fl.l_len = 10;
+.P
+    if (fcntl(fd, F_SETLK, &fl) == \(mi1) {
+        if (errno == EACCES || errno == EAGAIN) {
+            printf("Already locked by another process\en");
+.P
+            /* We can't get the lock at the moment */
+.P
+        } else {
+            /* Handle unexpected error */;
+        }
+    } else { /* Lock was granted... */
+.P
+        /* Perform I/O on bytes 100 to 109 of file */
+.P
+        /* Unlock the locked bytes */
+.P
+        fl.l_type = F_UNLCK;
+        fl.l_whence = SEEK_SET;
+        fl.l_start = 100;
+        fl.l_len = 10;
+        if (fcntl(fd, F_SETLK, &fl) == \(mi1)
+            /* Handle error */;
+    }
+    exit(EXIT_SUCCESS);
+} /* main */
+.fi \fR
+.P
+.RE
+.SS "Setting the Close-on-Exec Flag"
+.P
+The following example demonstrates how to set the close-on-exec flag
+for the file descriptor
+.IR fd .
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+#include <fcntl.h>
+\&...
+    int flags;
+.P
+    flags = fcntl(fd, F_GETFD);
+    if (flags == \(mi1)
+        /* Handle error */;
+    flags |= FD_CLOEXEC;
+    if (fcntl(fd, F_SETFD, flags) == \(mi1)
+        /* Handle error */;"
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+.IR arg
+values to F_GETFD, F_SETFD, F_GETFL, and F_SETFL all represent flag
+values to allow for future growth. Applications using these functions
+should do a read-modify-write operation on them, rather than assuming
+that only the values defined by this volume of POSIX.1\(hy2008 are valid. It is a common error to
+forget this, particularly in the case of F_SETFD. Some implementations
+set additional file status flags to advise the application of default
+behavior, even though the application did not request these flags.
+.SH RATIONALE
+The ellipsis in the SYNOPSIS is the syntax specified by the ISO\ C standard
+for a variable number of arguments. It is used because System V uses
+pointers for the implementation of file locking functions.
+.P
+This volume of POSIX.1\(hy2008 permits concurrent read and write access to file data using the
+\fIfcntl\fR()
+function; this is a change from the 1984 /usr/group standard and early proposals. Without
+concurrency controls, this feature may not be fully utilized without
+occasional loss of data.
+.P
+Data losses occur in several ways. One case occurs when several
+processes try to update the same record, without sequencing controls;
+several updates may occur in parallel and the last writer ``wins''.
+Another case is a bit-tree or other internal list-based database that
+is undergoing reorganization. Without exclusive use to the tree segment
+by the updating process, other reading processes chance getting lost in
+the database when the index blocks are split, condensed, inserted, or
+deleted. While
+\fIfcntl\fR()
+is useful for many applications, it is not intended to be overly
+general and does not handle the bit-tree example well.
+.P
+This facility is only required for regular files because it is not
+appropriate for many devices such as terminals and network
+connections.
+.P
+Since
+\fIfcntl\fR()
+works with ``any file descriptor associated with that file, however it
+is obtained'', the file descriptor may have been inherited through a
+\fIfork\fR()
+or
+.IR exec
+operation and thus may affect a file that another process also has
+open.
+.P
+The use of the open file description to identify what to lock requires
+extra calls and presents problems if several processes are sharing an
+open file description, but there are too many implementations of the
+existing mechanism for this volume of POSIX.1\(hy2008 to use different specifications.
+.P
+Another consequence of this model is that closing any file descriptor
+for a given file (whether or not it is the same open file description
+that created the lock) causes the locks on that file to be relinquished
+for that process. Equivalently, any close for any file/process pair
+relinquishes the locks owned on that file for that process. But note
+that while an open file description may be shared through
+\fIfork\fR(),
+locks are not inherited through
+\fIfork\fR().
+Yet locks may be inherited through one of the
+.IR exec
+functions.
+.P
+The identification of a machine in a network environment is outside
+the scope of this volume of POSIX.1\(hy2008. Thus, an
+.IR l_sysid
+member, such as found in System V, is not included in the locking
+structure.
+.P
+Changing of lock types can result in a previously locked region being
+split into smaller regions.
+.P
+Mandatory locking was a major feature of the 1984 /usr/group standard.
+.P
+For advisory file record locking to be effective, all processes that
+have access to a file must cooperate and use the advisory mechanism
+before doing I/O on the file. Enforcement-mode record locking is
+important when it cannot be assumed that all processes are cooperating.
+For example, if one user uses an editor to update a file at the same
+time that a second user executes another process that updates the same
+file and if only one of the two processes is using advisory locking,
+the processes are not cooperating. Enforcement-mode record locking
+would protect against accidental collisions.
+.P
+Secondly, advisory record locking requires a process using locking to
+bracket each I/O operation with lock (or test) and unlock operations.
+With enforcement-mode file and record locking, a process can lock the
+file once and unlock when all I/O operations have been completed.
+Enforcement-mode record locking provides a base that can be enhanced;
+for example, with sharable locks. That is, the mechanism could be
+enhanced to allow a process to lock a file so other processes could
+read it, but none of them could write it.
+.P
+Mandatory locks were omitted for several reasons:
+.IP " 1." 4
+Mandatory lock setting was done by multiplexing the set-group-ID
+bit in most implementations; this was confusing, at best.
+.IP " 2." 4
+The relationship to file truncation as supported in 4.2 BSD
+was not well specified.
+.IP " 3." 4
+Any publicly readable file could be locked by anyone. Many historical
+implementations keep the password database in a publicly readable
+file. A malicious user could thus prohibit logins. Another
+possibility would be to hold open a long-distance telephone line.
+.IP " 4." 4
+Some demand-paged historical implementations offer memory mapped files,
+and enforcement cannot be done on that type of file.
+.P
+Since sleeping on a region is interrupted with any signal,
+\fIalarm\fR()
+may be used to provide a timeout facility in applications requiring
+it. This is useful in deadlock detection. Since implementation of
+full deadlock detection is not always feasible, the
+.BR [EDEADLK] 
+error was made optional.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIalarm\fR\^(\|)",
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<signal.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

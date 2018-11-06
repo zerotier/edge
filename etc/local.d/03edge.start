@@ -1,0 +1,153 @@
+#!/bin/bash
+
+echo >>/dev/console
+echo '** Starting Edge core startup...' >>/dev/console
+
+# Set file permissions
+chown 0 /usr/bin/sudo
+chgrp 0 /usr/bin/sudo
+chmod u+s /usr/bin/sudo
+
+# Set up GPIO pin for LED
+echo '** Initializing LED GPIO' >>/dev/console
+echo 484 >/sys/class/gpio/export 2>&1
+sleep 0.1
+echo out >/sys/class/gpio/gpio484/direction 2>&1
+echo 1 >/sys/class/gpio/gpio484/value 2>&1
+sleep 0.1
+ln -sf /sys/class/gpio/gpio484/value /dev/shm/led-gpio-value >>/dev/null 2>&1
+
+# Create swap file if it doesn't already exist. Might as well since we have plenty of space.
+echo '** Checking swap' >>/dev/console
+if [ ! -f /swap ]; then
+	dd if=/dev/zero of=/swap bs=131072 count=8192
+	mkswap /swap
+	chmod 0600 /swap
+fi
+swapon /swap >>/dev/null 2>&1
+
+# Disable IPv6 on eth0 since we do not want it to send IPv6 probes, etc.
+sysctl -w net.ipv6.conf.eth0.disable_ipv6=1 >>/dev/null
+
+# eth0 seems to have non-unique MAC on some boards, so generate one on first boot/init.
+echo '** Setting Ethernet MAC addresses' >>/dev/console
+eth0mac=
+if [ -f /etc/edge/eth0mac ]; then
+	eth0mac=`cat /etc/edge/eth0mac`
+else
+	eth0mac=f0:ad:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`
+	echo -n $eth0mac >/etc/edge/eth0mac
+fi
+ip link set eth0 address $eth0mac promisc on up
+
+# Change default port names
+ip link set wan name eth0p0
+ip link set lan0 name eth0p1
+ip link set lan1 name eth0p2
+
+# Assign phy addresses unique MACs based on eth0 MAC and bring these interfaces up
+eth0last=`echo $eth0mac | cut -d : -f 6`
+eth0p0mac=`echo $eth0mac | cut -d : -f 1-5`:`printf '%.2x' $(( (0x$eth0last + 1) % 256 ))`
+eth0p1mac=`echo $eth0mac | cut -d : -f 1-5`:`printf '%.2x' $(( (0x$eth0last + 2) % 256 ))`
+eth0p2mac=`echo $eth0mac | cut -d : -f 1-5`:`printf '%.2x' $(( (0x$eth0last + 3) % 256 ))`
+ip link set eth0p0 address $eth0p0mac promisc on up
+ip link set eth0p1 address $eth0p1mac promisc on up
+ip link set eth0p2 address $eth0p2mac promisc on up
+
+# This detects a direct crossover cable connecting eth0p1
+# and eth0p2 by using a change in transciever speed to convey
+# a single bit of information. It is run once on boot to place
+# the Edge into recovery mode if a cable loops these two ports.
+echo '** Determining if ports 1-2 are looped (invoking factory reset)...' >>/dev/console
+resetdevice=0
+sleep 2
+if [ -n "`ethtool eth0p2 | grep -F Speed | grep -F 1000`" ]; then
+        ethtool -s eth0p1 speed 10 duplex half
+        sleep 5
+        if [ -z "`ethtool eth0p2 | grep -F Speed | grep -F 1000`" ]; then
+                ethtool -s eth0p1 speed 1000 duplex full
+                sleep 5
+                if [ -n "`ethtool eth0p2 | grep -F Speed | grep -F 1000`" ]; then
+                				resetdevice=1
+                fi
+        fi
+fi
+sleep 1
+ethtool -s eth0p1 speed 1000 duplex full
+ethtool -s eth0p1 advertise 0x03f
+sleep 1
+ip link set eth0p1 down
+ip link set eth0p2 down
+sleep 1
+ip link set eth0p1 up
+ip link set eth0p2 up
+sleep 2
+echo "** Port 1-2 loop status: $resetdevice" >>/dev/console
+if [ "$resetdevice" = "1" ]; then
+	echo '** Factory reset!' >>/dev/console
+	/opt/edge/factory-reset.sh
+	while /bin/true; do
+		sleep 1
+		/opt/edge/led-control reset
+	done
+fi
+
+# Create bridge devices to act on behalf of each port
+brctl addbr phy0
+brctl stp phy0 off
+brctl setageing phy0 0
+brctl addif phy0 eth0p0
+brctl addbr phy1
+brctl stp phy1 off
+brctl setageing phy1 0
+brctl addif phy1 eth0p1
+brctl addbr phy2
+brctl stp phy2 off
+brctl setageing phy2 0
+brctl addif phy2 eth0p2
+ip link set phy0 up
+ip link set phy1 up
+ip link set phy2 up
+
+# Set up various things on physical ports
+sysctl -w net.ipv6.conf.phy0.autoconf=0 >>/dev/null
+sysctl -w net.ipv6.conf.phy1.autoconf=0 >>/dev/null
+sysctl -w net.ipv6.conf.phy2.autoconf=0 >>/dev/null
+sysctl -w net.ipv6.conf.phy0.accept_ra=0 >>/dev/null
+sysctl -w net.ipv6.conf.phy1.accept_ra=0 >>/dev/null
+sysctl -w net.ipv6.conf.phy2.accept_ra=0 >>/dev/null
+
+# Create an IP address on phy2 (third port) that can be used to admin the Edge
+# if nothing else is reachable. Users can connect to phy2 and assume the IP
+# 100.64.99.94/30 (/255.255.255.252) to talk to the Edge. This is a non-routed
+# "carrier grade NAT" ip and is not used on the Internet.
+ip addr add 100.64.99.93/30 dev phy2
+
+# Default iptables policy allows forwarding between ZT and physical networks.
+# The Edge does not implement fine grained rules -- use ZT's rules for that.
+# It also locks down input except from the maintenance IP or over ZeroTier.
+iptables -F
+iptables -A FORWARD -i zt+ -o phy+ -j ACCEPT
+iptables -A FORWARD -i phy+ -o zt+ -j ACCEPT
+iptables -A FORWARD -i zt+ -o wlan+ -j ACCEPT
+iptables -A FORWARD -i wlan+ -o zt+ -j ACCEPT
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -p tcp --dport 9993 -j DROP
+iptables -A OUTPUT -d 204.80.128.1/32 -p tcp --dport 443 -j DROP
+iptables -P FORWARD DROP
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+
+# IPv6 is about the same except we also allow link-local access.
+ip6tables -F
+ip6tables -A FORWARD -i zt+ -o phy+ -j ACCEPT
+ip6tables -A FORWARD -i phy+ -o zt+ -j ACCEPT
+ip6tables -A FORWARD -i zt+ -o wlan+ -j ACCEPT
+ip6tables -A FORWARD -i wlan+ -o zt+ -j ACCEPT
+ip6tables -A INPUT -i lo -j ACCEPT
+ip6tables -A INPUT -p tcp --dport 9993 -j DROP
+ip6tables -P FORWARD DROP
+ip6tables -P INPUT ACCEPT
+ip6tables -P OUTPUT ACCEPT
+
+echo '** Edge core startup done!' >>/dev/console

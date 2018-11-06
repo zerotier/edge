@@ -1,0 +1,158 @@
+'\" et
+.TH MPROTECT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mprotect
+\(em set protection of memory mapping
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mman.h>
+.P
+int mprotect(void *\fIaddr\fP, size_t \fIlen\fP, int \fIprot\fP);
+.fi
+.SH DESCRIPTION
+The
+\fImprotect\fR()
+function shall change the access protections to be that specified by
+.IR prot
+for those whole pages containing any part of the address space of the
+process starting at address
+.IR addr
+and continuing for
+.IR len
+bytes. The parameter
+.IR prot
+determines whether read, write, execute, or some combination of
+accesses are permitted to the data being mapped. The
+.IR prot
+argument should be either PROT_NONE or the bitwise-inclusive OR of one
+or more of PROT_READ, PROT_WRITE, and PROT_EXEC.
+.P
+If an implementation cannot support the combination of access types
+specified by
+.IR prot ,
+the call to
+\fImprotect\fR()
+shall fail.
+.P
+An implementation may permit accesses other than those specified by
+.IR prot ;
+however, no implementation shall permit a write to succeed where
+PROT_WRITE has not been set or shall permit any access where PROT_NONE
+alone has been set. Implementations shall support at least the
+following values of
+.IR prot :
+PROT_NONE, PROT_READ, PROT_WRITE, and the bitwise-inclusive OR of
+PROT_READ and PROT_WRITE. If PROT_WRITE is specified, the application
+shall ensure that it has opened the mapped objects in the specified
+address range with write permission, unless MAP_PRIVATE
+was specified in the original mapping, regardless of whether the file
+descriptors used to map the objects have since been closed.
+.P
+The implementation may require that
+.IR addr
+be a multiple of the page size as returned by
+\fIsysconf\fR().
+.P
+The behavior of this function is unspecified if the mapping was not
+established by a call to
+\fImmap\fR().
+.P
+When
+\fImprotect\fR()
+fails for reasons other than
+.BR [EINVAL] ,
+the protections on some of the pages in the range
+[\fIaddr\fP,\fIaddr\fP+\fIlen\fR) may have been changed.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fImprotect\fR()
+shall return 0; otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fImprotect\fR()
+function shall fail if:
+.TP
+.BR EACCES
+The
+.IR prot
+argument specifies a protection that violates the access permission the
+process has to the underlying memory object.
+.TP
+.BR EAGAIN
+The
+.IR prot
+argument specifies PROT_WRITE over a MAP_PRIVATE mapping and there are
+insufficient memory resources to reserve for locking the private page.
+.TP
+.BR ENOMEM
+Addresses in the range [\fIaddr\fP,\fIaddr\fP+\fIlen\fR) are invalid
+for the address space of a process, or specify one or more pages which
+are not mapped.
+.TP
+.BR ENOMEM
+The
+.IR prot
+argument specifies PROT_WRITE on a MAP_PRIVATE mapping, and it would
+require more space than the system is able to supply for locking the
+private pages, if required.
+.TP
+.BR ENOTSUP
+The implementation does not support the combination of accesses
+requested in the
+.IR prot
+argument.
+.P
+The
+\fImprotect\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The
+.IR addr
+argument is not a multiple of the page size as returned by
+\fIsysconf\fR().
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Most implementations require that
+.IR addr
+is a multiple of the page size as returned by
+\fIsysconf\fR().
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImmap\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_mman.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

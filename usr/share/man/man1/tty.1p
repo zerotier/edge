@@ -1,0 +1,145 @@
+'\" et
+.TH TTY "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+tty
+\(em return user's terminal name
+.SH SYNOPSIS
+.LP
+.nf
+tty
+.fi
+.SH DESCRIPTION
+The
+.IR tty
+utility shall write to the standard output the name of the terminal
+that is open as standard input. The name that is used shall be
+equivalent to the string that would be returned by the
+\fIttyname\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008.
+.SH OPTIONS
+The
+.IR tty
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.SH OPERANDS
+None.
+.SH STDIN
+While no input is read from standard input, standard input shall be
+examined to determine whether or not it is a terminal, and, if so, to
+determine the name of the terminal.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR tty :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If standard input is a terminal device, a pathname of the terminal as
+specified by the
+\fIttyname\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008 shall be written in the following
+format:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIterminal name\fR>
+.fi \fR
+.P
+.RE
+.P
+Otherwise, a message shall be written indicating that standard input is
+not connected to a terminal. In the POSIX locale, the
+.IR tty
+utility shall use the format:
+.sp
+.RS 4
+.nf
+\fB
+"not a tty\en"
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Standard input is a terminal.
+.IP "\01" 6
+Standard input is not a terminal.
+.IP >1 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+This utility checks the status of the file open as standard input
+against that of an implementation-defined set of files. It is possible
+that no match can be found, or that the match found need not be the
+same file as that which was opened for standard input (although they
+are the same device).
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIisatty\fR\^(\|)",
+.IR "\fIttyname\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

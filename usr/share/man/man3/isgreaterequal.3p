@@ -1,0 +1,101 @@
+'\" et
+.TH ISGREATEREQUAL "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+isgreaterequal
+\(em test if x is greater than or equal to y
+.SH SYNOPSIS
+.LP
+.nf
+#include <math.h>
+.P
+int isgreaterequal(real-floating \fIx\fP, real-floating \fIy\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIisgreaterequal\fR()
+macro shall determine whether its first argument is greater than or
+equal to its second argument. The value of
+.IR isgreaterequal (\c
+.IR x ,
+.IR y )
+shall be equal to (\fIx\fR)\ \(>=\ (\fIy\fR); however, unlike
+(\fIx\fR)\ \(>=\ (\fIy\fR),
+.IR isgreaterequal (\c
+.IR x ,
+.IR y )
+shall not raise the invalid floating-point exception when
+.IR x
+and
+.IR y
+are unordered.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIisgreaterequal\fR()
+macro shall return the value of (\fIx\fR)\ \(>=\ (\fIy\fR).
+.P
+If
+.IR x
+or
+.IR y
+is NaN, 0 shall be returned.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The relational and equality operators support the usual mathematical
+relationships between numeric values. For any ordered pair of numeric
+values, exactly one of the relationships (less, greater, and equal) is
+true. Relational operators may raise the invalid floating-point
+exception when argument values are NaNs. For a NaN and a numeric value,
+or for two NaNs, just the unordered relationship is true. This macro
+is a quiet (non-floating-point exception raising) version of a
+relational operator. It facilitates writing efficient code that
+accounts for NaNs without suffering the invalid floating-point
+exception. In the SYNOPSIS section,
+.BR real-floating
+indicates that the argument shall be an expression of
+.BR real-floating
+type.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIisgreater\fR\^(\|)",
+.IR "\fIisless\fR\^(\|)",
+.IR "\fIislessequal\fR\^(\|)",
+.IR "\fIislessgreater\fR\^(\|)",
+.IR "\fIisunordered\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<math.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

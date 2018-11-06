@@ -1,0 +1,11 @@
+[edge]
+
+[[physical]]
+name = "phy0"
+autoconf = ["dhcp4", "dhcp6", "slaac"]
+
+[[physical]]
+name = "phy1"
+
+[[physical]]
+name = "phy2"

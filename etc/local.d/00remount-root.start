@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Ensure that / is mounted with discard and noatime
+/bin/mount /dev/root / -t ext4 -o remount,noatime,nodiratime,discard,delalloc,barrier,user_xattr,acl,block_validity
+
+exit 0

@@ -1,0 +1,457 @@
+'\" et
+.TH termios.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+termios.h
+\(em define values for termios
+.SH SYNOPSIS
+.LP
+.nf
+#include <termios.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <termios.h> 
+header shall contain the definitions used by the terminal I/O
+interfaces (see
+.IR "Chapter 11" ", " "General Terminal Interface"
+for the structures and names defined).
+.SS "The termios Structure"
+.P
+The
+.IR <termios.h> 
+header shall define the following data types through
+.BR typedef :
+.IP "\fBcc_t\fP" 12
+Used for terminal special characters.
+.IP "\fBspeed_t\fP" 12
+Used for terminal baud rates.
+.IP "\fBtcflag_t\fP" 12
+Used for terminal modes.
+.P
+The above types shall be all unsigned integer types.
+.P
+The implementation shall support one or more programming environments
+in which the widths of
+.BR cc_t ,
+.BR speed_t ,
+and
+.BR tcflag_t
+are no greater than the width of type
+.BR long .
+The names of these programming environments can be obtained using the
+\fIconfstr\fR()
+function or the
+.IR getconf
+utility.
+.P
+The
+.IR <termios.h> 
+header shall define the
+.BR termios
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+tcflag_t  c_iflag     \fRInput modes.\fR
+tcflag_t  c_oflag     \fROutput modes.\fR
+tcflag_t  c_cflag     \fRControl modes.\fR
+tcflag_t  c_lflag     \fRLocal modes.\fR
+cc_t      c_cc[NCCS]  \fRControl characters.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constant:
+.IP NCCS 12
+Size of the array
+.IR c_cc
+for control characters.
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use as
+subscripts for the array
+.IR c_cc :
+.TS
+box center tab(!);
+cb s | l
+cb cb | cb
+l | l | l.
+Subscript Usage
+Canonical Mode!Non-Canonical Mode!Description
+_
+VEOF!!EOF character.
+VEOL!!EOL character.
+VERASE!!ERASE character.
+VINTR!VINTR!INTR character.
+VKILL!!KILL character.
+\&!VMIN!MIN value.
+VQUIT!VQUIT!QUIT character.
+VSTART!VSTART!START character.
+VSTOP!VSTOP!STOP character.
+VSUSP!VSUSP!SUSP character.
+\&!VTIME!TIME value.
+.TE
+.P
+The subscript values shall be suitable for use in
+.BR #if
+preprocessing directives and shall be distinct, except that the VMIN
+and VTIME subscripts may have the same values as the VEOF and
+VEOL subscripts, respectively.
+.SS "Input Modes"
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use as flags
+in the
+.IR c_iflag
+field. The
+.IR c_iflag
+field describes the basic terminal input control.
+.IP BRKINT 12
+Signal interrupt on break.
+.IP ICRNL 12
+Map CR to NL on input.
+.IP IGNBRK 12
+Ignore break condition.
+.IP IGNCR 12
+Ignore CR.
+.IP IGNPAR 12
+Ignore characters with parity errors.
+.IP INLCR 12
+Map NL to CR on input.
+.IP INPCK 12
+Enable input parity check.
+.IP ISTRIP 12
+Strip character.
+.IP IXANY 12
+Enable any character to restart output.
+.IP IXOFF 12
+Enable start/stop input control.
+.IP IXON 12
+Enable start/stop output control.
+.IP PARMRK 12
+Mark parity errors.
+.SS "Output Modes"
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use as flags
+in the
+.IR c_oflag
+field. The
+.IR c_oflag
+field specifies the system treatment of output.
+.IP OPOST 12
+Post-process output.
+.IP ONLCR 12
+Map NL to CR-NL on output.
+.IP OCRNL 12
+Map CR to NL on output.
+.IP ONOCR 12
+No CR output at column 0.
+.IP ONLRET 12
+NL performs CR function.
+.IP OFDEL 12
+Fill is DEL.
+.IP OFILL 12
+Use fill characters for delay.
+.IP NLDLY 12
+Select newline delays:
+.RS 12 
+.IP NL0 8
+Newline type 0.
+.IP NL1 8
+Newline type 1.
+.RE
+.IP CRDLY 12
+Select carriage-return delays:
+.RS 12 
+.IP CR0 8
+Carriage-return delay type 0.
+.IP CR1 8
+Carriage-return delay type 1.
+.IP CR2 8
+Carriage-return delay type 2.
+.IP CR3 8
+Carriage-return delay type 3.
+.RE
+.IP TABDLY 12
+Select horizontal-tab delays:
+.RS 12 
+.IP TAB0 8
+Horizontal-tab delay type 0.
+.IP TAB1 8
+Horizontal-tab delay type 1.
+.IP TAB2 8
+Horizontal-tab delay type 2.
+.IP TAB3 8
+Expand tabs to spaces.
+.RE
+.IP BSDLY 12
+Select backspace delays:
+.RS 12 
+.IP BS0 8
+Backspace-delay type 0.
+.IP BS1 8
+Backspace-delay type 1.
+.RE
+.IP VTDLY 12
+Select vertical-tab delays:
+.RS 12 
+.IP VT0 8
+Vertical-tab delay type 0.
+.IP VT1 8
+Vertical-tab delay type 1.
+.RE
+.IP FFDLY 12
+Select form-feed delays:
+.RS 12 
+.IP FF0 8
+Form-feed delay type 0.
+.IP FF1 8
+Form-feed delay type 1.
+.RE
+.SS "Baud Rate Selection"
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use as values
+of objects of type
+.BR speed_t .
+.P
+The input and output baud rates are stored in the
+.BR termios
+structure. These are the valid values for objects of type
+.BR speed_t .
+Not all baud rates need be supported by the underlying hardware.
+.IP B0 12
+Hang up
+.IP B50 12
+50 baud
+.IP B75 12
+75 baud
+.IP B110 12
+110 baud
+.IP B134 12
+134.5 baud
+.IP B150 12
+150 baud
+.IP B200 12
+200 baud
+.IP B300 12
+300 baud
+.IP B600 12
+600 baud
+.IP B1200 12
+1\|200 baud
+.IP B1800 12
+1\|800 baud
+.IP B2400 12
+2\|400 baud
+.IP B4800 12
+4\|800 baud
+.IP B9600 12
+9\|600 baud
+.IP B19200 12
+19\|200 baud
+.IP B38400 12
+38\|400 baud
+.SS "Control Modes"
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use as flags
+in the
+.IR c_cflag
+field. The
+.IR c_cflag
+field describes the hardware control of the terminal; not all values
+specified are required to be supported by the underlying hardware.
+.IP CSIZE 12
+Character size:
+.RS 12 
+.IP CS5 8
+5 bits
+.IP CS6 8
+6 bits
+.IP CS7 8
+7 bits
+.IP CS8 8
+8 bits
+.RE
+.IP CSTOPB 12
+Send two stop bits, else one.
+.IP CREAD 12
+Enable receiver.
+.IP PARENB 12
+Parity enable.
+.IP PARODD 12
+Odd parity, else even.
+.IP HUPCL 12
+Hang up on last close.
+.IP CLOCAL 12
+Ignore modem status lines.
+.P
+The implementation shall support the functionality associated with the
+symbols CS7, CS8, CSTOPB, PARODD, and PARENB.
+.SS "Local Modes"
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use as flags
+in the
+.IR c_lflag
+field. The
+.IR c_lflag
+field of the argument structure is used to control various terminal
+functions.
+.IP ECHO 12
+Enable echo.
+.IP ECHOE 12
+Echo erase character as error-correcting backspace.
+.IP ECHOK 12
+Echo KILL.
+.IP ECHONL 12
+Echo NL.
+.IP ICANON 12
+Canonical input (erase and kill processing).
+.IP IEXTEN 12
+Enable extended input character processing.
+.IP ISIG 12
+Enable signals.
+.IP NOFLSH 12
+Disable flush after interrupt or quit.
+.IP TOSTOP 12
+Send SIGTTOU for background output.
+.SS "Attribute Selection"
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use with
+\fItcsetattr\fR():
+.IP TCSANOW 12
+Change attributes immediately.
+.IP TCSADRAIN 12
+Change attributes when output has drained.
+.IP TCSAFLUSH 12
+Change attributes when output has drained; also flush pending input.
+.SS "Line Control"
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use with
+\fItcflush\fR():
+.IP TCIFLUSH 12
+Flush pending input.
+.IP TCIOFLUSH 12
+Flush both pending input and untransmitted output.
+.IP TCOFLUSH 12
+Flush untransmitted output.
+.P
+The
+.IR <termios.h> 
+header shall define the following symbolic constants for use with
+\fItcflow\fR():
+.IP TCIOFF 12
+Transmit a STOP character, intended to suspend input data.
+.IP TCION 12
+Transmit a START character, intended to restart input data.
+.IP TCOOFF 12
+Suspend output.
+.IP TCOON 12
+Restart output.
+.P
+The
+.IR <termios.h> 
+header shall define the
+.BR pid_t
+type as described in
+.IR <sys/types.h> .
+.P
+The following shall be declared as functions and may also be defined
+as macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+speed_t cfgetispeed(const struct termios *);
+speed_t cfgetospeed(const struct termios *);
+int     cfsetispeed(struct termios *, speed_t);
+int     cfsetospeed(struct termios *, speed_t);
+int     tcdrain(int);
+int     tcflow(int, int);
+int     tcflush(int, int);
+int     tcgetattr(int, struct termios *);
+pid_t   tcgetsid(int);
+int     tcsendbreak(int, int);
+int     tcsetattr(int, int, const struct termios *);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The following names are reserved for XSI-conformant systems to use as
+an extension to the above; therefore strictly conforming applications
+shall not use them:
+.TS
+tab(@);
+le le le.
+CBAUD@EXTB@VDSUSP
+DEFECHO@FLUSHO@VLNEXT
+ECHOCTL@LOBLK@VREPRINT
+ECHOKE@PENDIN@VSTATUS
+ECHOPRT@SWTCH@VWERASE
+EXTA@VDISCARD
+.TE
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIcfgetispeed\fR\^(\|)",
+.IR "\fIcfgetospeed\fR\^(\|)",
+.IR "\fIcfsetispeed\fR\^(\|)",
+.IR "\fIcfsetospeed\fR\^(\|)",
+.IR "\fIconfstr\fR\^(\|)",
+.IR "\fItcdrain\fR\^(\|)",
+.IR "\fItcflow\fR\^(\|)",
+.IR "\fItcflush\fR\^(\|)",
+.IR "\fItcgetattr\fR\^(\|)",
+.IR "\fItcgetsid\fR\^(\|)",
+.IR "\fItcsendbreak\fR\^(\|)",
+.IR "\fItcsetattr\fR\^(\|)"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "\fIgetconf\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,290 @@
+'\" et
+.TH BIND "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+bind
+\(em bind a name to a socket
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+.P
+int bind(int \fIsocket\fP, const struct sockaddr *\fIaddress\fP,
+    socklen_t \fIaddress_len\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIbind\fR()
+function shall assign a local socket address
+.IR address
+to a socket identified by descriptor
+.IR socket
+that has no local socket address assigned. Sockets created with the
+\fIsocket\fR()
+function are initially unnamed; they are identified only by their
+address family.
+.P
+The
+\fIbind\fR()
+function takes the following arguments:
+.IP "\fIsocket\fR" 12
+Specifies the file descriptor of the socket to be bound.
+.IP "\fIaddress\fR" 12
+Points to a
+.BR sockaddr
+structure containing the address to be bound to the socket. The length
+and format of the address depend on the address family of the socket.
+.IP "\fIaddress_len\fR" 12
+Specifies the length of the
+.BR sockaddr
+structure pointed to by the
+.IR address
+argument.
+.P
+The socket specified by
+.IR socket
+may require the process to have appropriate privileges to use the
+\fIbind\fR()
+function.
+.P
+If the address family of the socket is AF_UNIX and the pathname in
+.IR address
+names a symbolic link,
+\fIbind\fR()
+shall fail and set
+.IR errno
+to
+.BR [EADDRINUSE] .
+.P
+If the socket address cannot be assigned immediately and O_NONBLOCK is
+set for the file descriptor for the socket,
+\fIbind\fR()
+shall fail and set
+.IR errno
+to
+.BR [EINPROGRESS] ,
+but the assignment request shall not be aborted, and the assignment
+shall be completed asynchronously. Subsequent calls to
+\fIbind\fR()
+for the same socket, before the assignment is completed, shall fail
+and set
+.IR errno
+to
+.BR [EALREADY] .
+.P
+When the assignment has been performed asynchronously,
+\fIpselect\fR(),
+\fIselect\fR(),
+and
+\fIpoll\fR()
+shall indicate that the file descriptor for the socket is ready for
+reading and writing.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIbind\fR()
+shall return 0; otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIbind\fR()
+function shall fail if:
+.TP
+.BR EADDRINUSE
+The specified address is already in use.
+.TP
+.BR EADDRNOTAVAIL
+.br
+The specified address is not available from the local machine.
+.TP
+.BR EAFNOSUPPORT
+.br
+The specified address is not a valid address for the address family of
+the specified socket.
+.TP
+.BR EALREADY
+An assignment request is already in progress for the specified socket.
+.TP
+.BR EBADF
+The
+.IR socket
+argument is not a valid file descriptor.
+.TP
+.BR EINPROGRESS
+O_NONBLOCK is set for the file descriptor for the socket and the
+assignment cannot be immediately performed; the assignment shall be
+performed asynchronously.
+.TP
+.BR EINVAL
+The socket is already bound to an address, and the protocol does not
+support binding to a new address; or the socket has been shut down.
+.TP
+.BR ENOBUFS
+Insufficient resources were available to complete the call.
+.TP
+.BR ENOTSOCK
+The
+.IR socket
+argument does not refer to a socket.
+.TP
+.BR EOPNOTSUPP
+The socket type of the specified socket does not support binding to an
+address.
+.P
+If the address family of the socket is AF_UNIX, then
+\fIbind\fR()
+shall fail if:
+.TP
+.BR EACCES
+A component of the path prefix denies search permission, or the
+requested name requires writing in a directory with a mode that denies
+write permission.
+.TP
+.BR EDESTADDRREQ " or " EISDIR
+.br
+The
+.IR address
+argument is a null pointer.
+.TP
+.BR EIO
+An I/O error occurred.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+pathname in
+.IR address .
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of the path prefix of the pathname in
+.IR address
+does not name an existing file or the pathname is an empty string.
+.TP
+.BR ENOENT " or " ENOTDIR
+.br
+The pathname in
+.IR address
+contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters. If the pathname names an existing file, an
+.BR [ENOENT] 
+error shall not occur.
+.TP
+.BR ENOTDIR
+A component of the path prefix of the pathname in
+.IR address
+names an existing file that is neither a directory nor a symbolic link
+to a directory, or the pathname in
+.IR address
+contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.TP
+.BR EROFS
+The name would reside on a read-only file system.
+.P
+The
+\fIbind\fR()
+function may fail if:
+.TP
+.BR EACCES
+The specified address is protected and the current user does not have
+permission to bind to it.
+.TP
+.BR EINVAL
+The
+.IR address_len
+argument is not a valid length for the address family.
+.TP
+.BR EISCONN
+The socket is already connected.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the pathname in
+.IR address .
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+The following code segment shows how to create a socket and
+bind it to a name in the AF_UNIX domain.
+.sp
+.RS 4
+.nf
+\fB
+#define MY_SOCK_PATH "/somepath"
+.P
+int sfd;
+struct sockaddr_un my_addr;
+.P
+sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+if (sfd == \(mi1)
+    /* Handle error */;
+.P
+memset(&my_addr, '\e0', sizeof(struct sockaddr_un));
+                     /* Clear structure */
+my_addr.sun_family = AF_UNIX;
+strncpy(my_addr.sun_path, MY_SOCK_PATH, sizeof(my_addr.sun_path) \(mi1);
+.P
+if (bind(sfd, (struct sockaddr *) &my_addr,
+    sizeof(struct sockaddr_un)) == \(mi1)
+    /* Handle error */;
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+An application program can retrieve the assigned socket name with the
+\fIgetsockname\fR()
+function.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIconnect\fR\^(\|)",
+.IR "\fIgetsockname\fR\^(\|)",
+.IR "\fIlisten\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_socket.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

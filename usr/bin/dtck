@@ -1,0 +1,698 @@
+#!/usr/bin/perl
+#
+# Copyright 2007-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+# DNSSEC-Tools:  dtck
+#
+#	This script centralizes all the DNSSEC-Tools data validation
+#	programs.  It runs dtconfchk, rollchk, and krfcheck.
+#
+#	The command is used in this way:
+#
+#		dtck
+#
+#	NOTES:
+#		- allow multiple config files
+#		- allow multiple rollrec files
+#		- allow multiple keyrec files
+#		- records all take an optional directory.  if given, the
+#		  check will be executed from that directory
+#		- checking program should exit with an error count
+#		- all checking programs should have a -count option
+#
+
+use strict;
+
+use Cwd;
+use Getopt::Long qw(:config no_ignore_case_always);
+
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::defaults;
+use Net::DNS::SEC::Tools::keyrec;
+use Net::DNS::SEC::Tools::rollrec;
+
+#
+# Version information.
+#
+my $NAME   = "dtck";
+my $VERS   = "$NAME version: 2.1.0";
+my $DTVERS = "DNSSEC-Tools Version: 2.1";
+
+#######################################################################
+#
+# Data required for command line options.
+#
+my @opts =
+(
+	"count",			# Give final error count.
+	"quiet",			# Don't give any output.
+	"verbose",			# Give lotsa output.
+
+	"defcon",			# Check the default config file.
+	"list",				# List files as they're being checked.
+	"pretty",			# Give some nice separating lines.
+
+	"Version",			# Display the version number.
+	"help",				# Give a usage message and exit.
+);
+
+my $count   = 0;			# Give count option flag.
+my $quiet   = 0;			# Quiet option flag.
+my $verbose = 0;			# Verbose option flag.
+
+my $list   = 0;				# List filenames option flag.
+my $pretty = 0;				# Give some separating output.
+
+my $errs = 0;				# Error count.
+my $probfiles = 0;			# Count of files with problems.
+my %probfiles = ();			# List of files with problems.
+
+
+my %cnfs = ();				# DNSSEC-Tools config files.
+my %rrfs = ();				# Rollrec files.
+my %krfs = ();				# Keyrec files.
+
+my $cnfchk;				# Config-verification program.
+my $krfchk;				# Keyrec-verification program.
+my $rrfchk;				# Rollrec-verification program.
+
+my $homedir;				# Initial directory.
+
+my $TYPEDASHES = 78;			# Dashes between type lines for -pretty.
+my $FILEDASHES = 55;			# Dashes between file lines for -pretty.
+
+main();
+exit($probfiles);
+
+#-----------------------------------------------------------------------------
+# Routine:	main()
+#
+# Purpose:	Staging area.
+#
+sub main()
+{
+	my $dconf;			# The config file to check.
+
+	#
+	# Get our options.
+	#
+	doopts();
+
+	#
+	# Get the dtck config filename to check.
+	#
+	if($ARGV[0] ne "")
+	{
+		$dconf = $ARGV[0];
+	}
+
+	#
+	# Get the current directory and some program paths.
+	#
+	$homedir = getcwd();
+	getpaths();
+
+	#
+	# Check a dtck config file if one was given.  If not, then we'll
+	# just look at the DNSSEC-Tools configuration file.
+	#
+	if($dconf ne "")
+	{
+
+		#
+		# Maybe print the name of the config file we're checking.
+		#
+		print "checking dtck config file \"$dconf\"\n" if($pretty);
+
+		#
+		# Read the given dtck config file.
+		#
+		readconf($dconf);
+	}
+	else
+	{
+		my $conf;			# DNSSEC-Tools config file.
+
+		#
+		# Get the DNSSEC-Tools config file and add it to the
+		# list of config files we'll check.
+		#
+		$conf = getconffile();
+		usage() if(!$conf);
+		$cnfs{$conf} = '';
+	}
+
+	#
+	# Check all our files.
+	#
+	checkfiles();
+
+	#
+	# Give an exit message that depends on the error count.
+	#
+	if(!$quiet)
+	{
+		my $plr = '';			# Plurality suffix.
+
+		#
+		# If we had no problems, say so and return.
+		#
+		if($probfiles == 0)
+		{
+			print "no problems found\n";
+			return;
+		}
+
+		#
+		# Give a separator line for pretty output.
+		#
+		if($pretty)
+		{
+			print "\n" . '-' x $TYPEDASHES . "\n\n";
+		}
+
+		#
+		# Set up the appropriate pluralization suffix.
+		#
+		$plr = 's' if($probfiles > 1);
+
+		#
+		# And give a summary of the problem files.
+		#
+		print STDERR "problems found in $probfiles file$plr:\n";
+		foreach my $fn (sort(keys(%probfiles)))
+		{
+			print "\t$fn\t($probfiles{$fn})\n";
+		}
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	doopts()
+#
+# Purpose:	This routine deals with the command's options.
+#
+sub doopts
+{
+	my %options = ();			# Filled option array.
+
+	#
+	# Check our options.
+	#
+	GetOptions(\%options,@opts) || usage();
+
+	#
+	# Handle some immediate options.
+	#
+	version() if(defined($options{'Version'}));
+	usage()   if(defined($options{'help'}));
+
+	#
+	# Save our other options.
+	#
+	$count	 = $options{'count'};
+	$quiet	 = $options{'quiet'};
+	$verbose = $options{'verbose'};
+
+	$list	 = $options{'list'};
+	$pretty	 = $options{'pretty'};
+
+	#
+	# If -defcon was specified, we'll add the default config file to our
+	# list of configuration files to be checked.
+	#
+	if(defined($options{'defcon'}))
+	{
+		my $cf;					# Default config file.
+		my $dir;				# Dummy value.
+
+		$cf = getconffile();
+		$cnfs{$cf} = $dir;
+	}
+
+	#
+	# Now some option validation...
+	#
+	if($quiet && $verbose)
+	{
+		print STDERR "-quiet and -verbose are mutually exclusive\n";
+		exit(1);
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	getpaths()
+#
+# Purpose:	This routine collects a bunch of paths we'll need.
+#
+sub getpaths
+{
+	$cnfchk	= dnssec_tools_default('dtconfchk');
+	$krfchk	= dnssec_tools_default('krfcheck');
+	$rrfchk	= dnssec_tools_default('rollchk');
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	readconf()
+#
+# Purpose:	
+#
+sub readconf
+{
+	my $cfile = shift;			# dtck configuration file.
+
+	my $line;				# Line of configuration data.
+	my $bkcnt = 0;				# Count of invalid entry keys.
+	my %badkeys = ();			# Invalid entry keys.
+
+	#
+	# Ensure our config file exists and is a regular file.
+	#
+	if(! -e $cfile)
+	{
+		print STDERR "dtck configuration file \"$cfile\" does not exist\n";
+		exit(1);
+	}
+	if(! -f $cfile)
+	{
+		print STDERR "dtck configuration file \"$cfile\" is not a regular file\n";
+		exit(1);
+	}
+
+	#
+	# Ensure our config file exists and is a regular file.
+	#
+	open(CFILE,"<$cfile") or die "unable to open dtck configuration file \"cfile\"";
+
+	#
+	# Deconstruct each entry and add it to the appropriate hash.
+	#
+	while(<CFILE>)
+	{
+		my $key;			# Entry's key.
+		my $file;			# Entry's file.
+		my $dir;			# Entry's directory.
+
+		#
+		# Get the entry and get rid of unwanted whitespace.
+		#
+		$line = $_;
+		chomp $line;
+		$line =~ s/^[ \t]*//;
+		$line =~ s/[ \t]*$//;
+
+		#
+		# Skip empty lines and comments.
+		#
+		next if($line =~ /^$/);
+		next if($line =~ /^#/);
+
+		#
+		# Pull out the pieces of the entry.
+		#
+		$line =~ /^(\S*)\s*(\S*)\s*(\S*)$/;
+		$key  = lc($1);
+		$file = $2;
+		$dir  = $3;
+
+		#
+		# Put each entry into the appropriate hash.
+		#
+		if($key eq 'config')
+		{
+			$cnfs{$file} = $dir;
+		}
+		elsif($key eq 'rollrec')
+		{
+			$rrfs{$file} = $dir;
+		}
+		elsif($key eq 'keyrec')
+		{
+			$krfs{$file} = $dir;
+		}
+		else
+		{
+			$bkcnt++;
+			$badkeys{$key}++;
+		}
+	}
+
+	close(CFILE);
+
+	#
+	# Make sure there weren't any invalid keys.
+	#
+	if($bkcnt)
+	{
+		print STDERR "the following invalid lines were given in the dtck config file:\n";
+		foreach my $key (sort(keys(%badkeys)))
+		{
+			print STDERR "\t$key\n";
+		}
+
+		exit(1);
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	checkfiles()
+#
+# Purpose:	Check each type of file in turn:  configuration files,
+#		rollrec	files, and keyrec files.
+#
+sub checkfiles
+{
+	my $cnt;			# Number of each type of config files.
+
+	if(%cnfs)
+	{
+		lprint("checking config files:\n");
+
+		$cnt = keys(%cnfs);
+		foreach my $fn (sort(keys(%cnfs)))
+		{
+			lprint("\t$fn\n");
+			runner('config',$cnfchk,$fn,$cnfs{$fn});
+
+			$cnt--;
+			if($pretty && $cnt)
+			{
+				print '-' x $FILEDASHES . "\n\n";
+			}
+		}
+		lprint("\n");
+	}
+
+	if(%rrfs)
+	{
+		print "\n" . '-' x $TYPEDASHES . "\n\n" if($pretty);
+		lprint("rollrec files:\n");
+
+		$cnt = keys(%rrfs);
+		foreach my $fn (sort(keys(%rrfs)))
+		{
+			lprint("\t$fn\t$rrfs{$fn}\n");
+			runner('rollrec',$rrfchk,$fn,$rrfs{$fn});
+
+			$cnt--;
+			if($pretty && $cnt)
+			{
+				print '-' x $FILEDASHES . "\n\n";
+			}
+		}
+		lprint("\n");
+	}
+
+	if(%krfs)
+	{
+		print "\n" . '-' x $TYPEDASHES . "\n\n" if($pretty);
+		lprint("keyrec files:\n");
+
+		$cnt = keys(%krfs);
+		foreach my $fn (sort(keys(%krfs)))
+		{
+			lprint("\t$fn\t$krfs{$fn}\n");
+			runner('keyrec',$krfchk,$fn,$krfs{$fn});
+
+			$cnt--;
+			if($pretty && $cnt)
+			{
+				print '-' x $FILEDASHES . "\n\n";
+			}
+		}
+		lprint("\n");
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	runner()
+#
+# Purpose:	
+#
+sub runner
+{
+	my $type = shift;			# Type of file to check.
+	my $cmd	 = shift;			# File-checking command.
+	my $file = shift;			# File to check.
+	my $dir	 = shift;			# Optional directory.
+
+	my $opt = '';				# Command options.
+	my $out;				# Command output.
+	my $ret;				# Command return code.
+
+	#
+	# If this file has an associated directory, we'll chdir into it.
+	#
+	chdir($dir) if($dir ne '');
+
+	#
+	# If this file exists, run a krfcheck on it.
+	#
+	if(-e $file)
+	{
+		#
+		# Set up some options.
+		#
+		$opt = "-count " if($count);
+		if($quiet)
+		{
+			$opt .= ' -quiet';
+		}
+		elsif($verbose)
+		{
+			$opt .= ' -verbose';
+		}
+
+		#
+		# Show the command's output if the user wants it.
+		#
+		print "$cmd $opt $file\n" if($pretty);
+
+		#
+		# Execute the command.
+		#
+		$out = `$cmd $opt $file`;
+		$ret = $?;
+		$ret = $ret >> 8;
+		chomp $out;
+
+		#
+		# Add the command's return code to our error count.
+		# (The retcode *should* be the command's error count.)
+		# If there were any problems, we'll bump our count of
+		# bad files.
+		#
+		$errs += $ret;
+		if($ret)
+		{
+			$probfiles++;
+			$probfiles{$file} = $type;
+		}
+
+		#
+		# Show the command's output if the user wants it.
+		#
+		if($verbose)
+		{
+			print "$out\n";
+		}
+		elsif($count)
+		{
+			$out =~ s/^(.*\n)*//;
+			print "$out\n";
+		}
+
+	}
+	else
+	{
+		$errs++;
+		print "$type \"$file\" does not exist\n" if(!$quiet);
+	}
+
+	#
+	# Return to our base directory.
+	#
+	chdir($homedir);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	lprint()
+#
+sub lprint
+{
+	my $str = shift;				# String to print.
+
+	print "$str" if($list);
+}
+
+#----------------------------------------------------------------------
+# Routine:	version()
+#
+sub version
+{
+	print STDERR "$VERS\n";
+	print STDERR "$DTVERS\n";
+
+	exit(0);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	usage()
+#
+sub usage
+{
+	print STDERR "usage:  dtck [options] [dtck-config-file]\n";
+	print STDERR "\twhere options are:\n";
+	print STDERR "\t\t-count	 Give final error count.\n";
+	print STDERR "\t\t-quiet	 Don't give any output.\n";
+	print STDERR "\t\t-verbose	 Give lotsa output.\n";
+
+	print STDERR "\t\t-defcon	 Check the default config file.\n";
+	print STDERR "\t\t-list		 List files as they're being checked.\n";
+	print STDERR "\t\t-pretty	 Give some nice separating lines.\n";
+
+	print STDERR "\t\t-Version	 Display the version number.\n";
+	print STDERR "\t\t-help		 Give a usage message and exit.\n";
+
+	exit(0);
+}
+
+##############################################################################
+#
+
+=pod
+
+=head1 NAME
+
+dtck - Check the DNSSEC-Tools data files for sanity.
+
+=head1 SYNOPSIS
+
+  dtck [options] [dtck_config_file]
+
+=head1 DESCRIPTION
+
+B<dtck> checks DNSSEC-Tools data files to determine if the entries are valid.
+B<dtck> checks the validity of DNSSEC-Tools configuration files, I<rollrec>
+files, and I<keyrec> files.  It does not perform the file checking itself,
+but runs checking programs specific to each type of data file.
+
+A B<dtck> configuration file is consulted to determine the files to check.
+This file lists the DNSSEC-Tools data files and their types.  If a B<dtck>
+configuration file is not given on the command line, B<dtck> will only check
+the DNSSEC-Tools configuration file.  This is equivalent to running
+B<dtconfchk> directly.
+
+=head1 DTCK CONFIGURATION FILE
+
+A B<dtck> configuration file contains a list of the files to be checked by
+B<dtck>.  Except for comments, each line has the following format:
+
+    keyword file directory
+
+I<keyword> is one of "config", "rollrec", or "keyrec".
+I<file> is the pathname of the file to be checked.
+I<directory> is the name of the directory that holds I<file> and is optional.
+
+The B<dtck> configuration file contains the following types of records:
+
+=over 4
+
+=item B<config>
+
+These lines define the DNSSEC-Tools configuration files that will be checked.
+The B<dtconfchk> program will be used to verify these files.
+
+=item B<rollrec>
+
+These lines define the I<rollrec> files that will be checked.
+The B<rollchk> program will be used to verify these files.
+
+=item B<keyrec>
+
+These lines define the I<keyrec> files that will be checked.
+The B<krfcheck> program will be used to verify these files.
+
+=item comments
+
+Any lines starting with an octothorpe (#) are comment lines and are ignored.
+
+=back
+
+=head1 OPTIONS
+
+B<dtck> takes two types of options.  Options of the first type are handled 
+directly by B<dtck>, controlling its output and processing.  Options of the
+second type are passed to the file-checking programs and are not further
+handled by B<dtck>.
+
+=head2 Options Handled by B<dtck>
+
+=over 4
+
+=item B<-defcon>
+
+This option directs B<dtck> to add the default DNSSEC-Tools configuration
+file to the list of configuration files to be checked.
+
+=item B<-list>
+
+The names of the files will be listed as they are checked.
+
+=item B<-pretty>
+
+Clarifying output is added to the output from B<dtck> and the
+file-checking programs.
+
+=item B<-help>
+
+Display a usage message.
+
+=back
+
+=head2 Options Not Handled by B<dtck>
+
+=over 4
+
+=item B<-count>
+
+The file-checking programs will display a final error count.
+
+=item B<-quiet>
+
+No output will be given by the file-checking program.
+
+=item B<-verbose>
+
+Verbose output will be given by the file-checking program.
+
+=item B<-Version>
+
+Displays the version information for B<dtck> and the DNSSEC-Tools package.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2007-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<dtconfchk(8)>,
+B<krfcheck(8)>,
+B<rollchk(8)>
+
+B<dnssec-tools.conf(5)>,
+B<keyrec(5)>,
+B<rollrec(5)>
+
+=cut
+

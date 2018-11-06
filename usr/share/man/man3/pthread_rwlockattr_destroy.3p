@@ -1,0 +1,115 @@
+'\" et
+.TH PTHREAD_RWLOCKATTR_DESTROY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_rwlockattr_destroy,
+pthread_rwlockattr_init
+\(em destroy and initialize the read-write lock attributes object
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t *\fIattr\fP);
+int pthread_rwlockattr_init(pthread_rwlockattr_t *\fIattr\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_rwlockattr_destroy\fR()
+function shall destroy a read-write lock attributes object. A destroyed
+.IR attr
+attributes object can be reinitialized using
+\fIpthread_rwlockattr_init\fR();
+the results of otherwise referencing the object after it
+has been destroyed are undefined. An implementation may cause
+\fIpthread_rwlockattr_destroy\fR()
+to set the object referenced by
+.IR attr
+to an invalid value.
+.P
+The
+\fIpthread_rwlockattr_init\fR()
+function shall initialize a read-write lock attributes object
+.IR attr
+with the default value for all of the attributes defined by the
+implementation.
+.P
+Results are undefined if
+\fIpthread_rwlockattr_init\fR()
+is called specifying an already initialized
+.IR attr
+attributes object.
+.P
+After a read-write lock attributes object has been used to initialize
+one or more read-write locks, any function affecting the attributes
+object (including destruction) shall not affect any previously
+initialized read-write locks.
+.P
+The behavior is undefined if the value specified by the
+.IR attr
+argument to
+\fIpthread_rwlockattr_destroy\fR()
+does not refer to an initialized read-write lock attributes object.
+.SH "RETURN VALUE"
+If successful, the
+\fIpthread_rwlockattr_destroy\fR()
+and
+\fIpthread_rwlockattr_init\fR()
+functions shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_rwlockattr_init\fR()
+function shall fail if:
+.TP
+.BR ENOMEM
+Insufficient memory exists to initialize the read-write lock attributes
+object.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+If an implementation detects that the value specified by the
+.IR attr
+argument to
+\fIpthread_rwlockattr_destroy\fR()
+does not refer to an initialized read-write lock attributes object,
+it is recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIpthread_rwlock_destroy\fR\^(\|)",
+.IR "\fIpthread_rwlockattr_getpshared\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

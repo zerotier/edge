@@ -1,0 +1,118 @@
+'\" et
+.TH UNGETC "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ungetc
+\(em push byte back into input stream
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+int ungetc(int \fIc\fP, FILE *\fIstream\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIungetc\fR()
+function shall push the byte specified by
+.IR c
+(converted to an
+.BR "unsigned char" )
+back onto the input stream pointed to by
+.IR stream .
+The pushed-back bytes shall be returned by subsequent reads on that
+stream in the reverse order of their pushing. A successful intervening
+call (with the stream pointed to by
+.IR stream )
+to a file-positioning function (\c
+\fIfseek\fR(),
+\c
+\fIfseeko\fR(),
+\fIfsetpos\fR(),
+or
+\fIrewind\fR())
+or
+\fIfflush\fR()
+shall discard any pushed-back bytes for the stream. The external
+storage corresponding to the stream shall be unchanged.
+.P
+One byte of push-back shall be provided. If
+\fIungetc\fR()
+is called too many times on the same stream without an intervening read
+or file-positioning operation on that stream, the operation may fail.
+.P
+If the value of
+.IR c
+equals that of the macro EOF, the operation shall fail and the input
+stream shall be left unchanged.
+.P
+A successful call to
+\fIungetc\fR()
+shall clear the end-of-file indicator for the stream. The value of the
+file-position indicator for the stream after all pushed-back bytes have
+been read, or discarded by calling
+\fIfseek\fR(),
+\fIfseeko\fR(),
+\fIfsetpos\fR(),
+or
+\fIrewind\fR()
+(but not
+\fIfflush\fR()),
+shall be the same as it was before the bytes were pushed back. The
+file-position indicator is decremented by each successful call to
+\fIungetc\fR();
+if its value was 0 before a call, its value is unspecified after the call.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIungetc\fR()
+shall return the byte pushed back after conversion. Otherwise, it
+shall return EOF.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIfseek\fR\^(\|)",
+.IR "\fIgetc\fR\^(\|)",
+.IR "\fIfsetpos\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIrewind\fR\^(\|)",
+.IR "\fIsetbuf\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

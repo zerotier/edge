@@ -1,0 +1,1621 @@
+'\" et
+.TH unistd.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+unistd.h
+\(em standard symbolic constants and types
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <unistd.h> 
+header defines miscellaneous symbolic constants and types, and declares
+miscellaneous functions. The actual values of the constants are
+unspecified except as shown. The contents of this header are shown
+below.
+.SS "Version Test Macros"
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constants. The values shall
+be suitable for use in
+.BR #if
+preprocessing directives.
+.IP _POSIX_VERSION 6
+.br
+Integer value indicating version of this standard (C-language
+binding) to which the implementation conforms. For implementations
+conforming to POSIX.1\(hy2008, the value shall be 200809L.
+.IP _POSIX2_VERSION 6
+.br
+Integer value indicating version of the Shell and Utilities volume of POSIX.1 to which the implementation
+conforms. For implementations conforming to POSIX.1\(hy2008, the value shall
+be 200809L. For profile implementations that define _POSIX_SUBPROFILE
+(see
+.IR "Section 2.1.5.1" ", " "Subprofiling Considerations")
+in
+.IR <unistd.h> ,
+POSIX2_VERSION may be left undefined or be defined with the value \(mi1
+to indicate that the Shell and Utilities volume of POSIX.1 is not supported. In this case, a call to
+.IR sysconf(_SC_2_VERSION)
+shall return either 200809L or \(mi1 indicating that the Shell and Utilities volume of POSIX.1 is or is
+not, respectively, supported at runtime.
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constant only if
+the implementation supports the XSI option; see
+.IR "Section 2.1.4" ", " "XSI Conformance".
+If defined, its value shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP _XOPEN_VERSION 6
+.br
+Integer value indicating version of the X/Open Portability Guide
+to which the implementation conforms. The value shall be 700.
+.SS "Constants for Options and Option Groups"
+.P
+The following symbolic constants, if defined in
+.IR <unistd.h> ,
+shall have a value of \(mi1, 0, or greater, unless otherwise specified
+below. For profile implementations that define _POSIX_SUBPROFILE (see
+.IR "Section 2.1.5.1" ", " "Subprofiling Considerations")
+in
+.IR <unistd.h> ,
+constants described below as always having a value greater than zero need
+not be defined and, if defined, may have a value of \(mi1, 0, or greater.
+The values shall be suitable for use in
+.BR #if
+preprocessing directives.
+.P
+If a symbolic constant is not defined or is defined with the value
+\(mi1, the option is not supported for compilation. If it is defined
+with a value greater than zero, the option shall always be supported
+when the application is executed. If it is defined with the value zero,
+the option shall be supported for compilation and might or might not be
+supported at runtime. See
+.IR "Section 2.1.6" ", " "Options"
+for further information about the conformance requirements of these
+three categories of support.
+.IP _POSIX_ADVISORY_INFO 6
+.br
+The implementation supports the Advisory Information option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_ASYNCHRONOUS_IO 6
+.br
+The implementation supports asynchronous input and output.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_BARRIERS 6
+.br
+The implementation supports barriers.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_CHOWN_RESTRICTED 6
+.br
+The use of
+\fIchown\fR()
+and
+\fIfchown\fR()
+is restricted to a process with appropriate privileges, and to changing
+the group ID of a file only to the effective group ID of the process or
+to one of its supplementary group IDs. This symbol shall be defined
+with a value other than \(mi1.
+.IP _POSIX_CLOCK_SELECTION 6
+.br
+The implementation supports clock selection.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_CPUTIME 6
+.br
+The implementation supports the Process CPU-Time Clocks option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_FSYNC 6
+.br
+The implementation supports the File Synchronization option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_IPV6 6
+.br
+The implementation supports the IPv6 option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_JOB_CONTROL 6
+.br
+The implementation supports job control. This symbol shall always be
+set to a value greater than zero.
+.IP _POSIX_MAPPED_FILES 6
+.br
+The implementation supports memory mapped Files.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_MEMLOCK 6
+.br
+The implementation supports the Process Memory Locking option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_MEMLOCK_RANGE 6
+.br
+The implementation supports the Range Memory Locking option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_MEMORY_PROTECTION 6
+.br
+The implementation supports memory protection.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_MESSAGE_PASSING 6
+.br
+The implementation supports the Message Passing option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_MONOTONIC_CLOCK 6
+.br
+The implementation supports the Monotonic Clock option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_NO_TRUNC 6
+.br
+Pathname components longer than
+{NAME_MAX}
+generate an error. This symbol shall be defined with a value
+other than \(mi1.
+.IP _POSIX_PRIORITIZED_IO 6
+.br
+The implementation supports the Prioritized Input and Output option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_PRIORITY_SCHEDULING 6
+.br
+The implementation supports the Process Scheduling option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_RAW_SOCKETS 6
+.br
+The implementation supports the Raw Sockets option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_READER_WRITER_LOCKS 6
+.br
+The implementation supports read-write locks.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_REALTIME_SIGNALS 6
+.br
+The implementation supports realtime signals.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_REGEXP 6
+.br
+The implementation supports the Regular Expression Handling option.
+This symbol shall always be set to a value greater than zero.
+.IP _POSIX_SAVED_IDS 6
+.br
+Each process has a saved set-user-ID and a saved set-group-ID.
+This symbol shall always be set to a value greater than zero.
+.IP _POSIX_SEMAPHORES 6
+.br
+The implementation supports semaphores.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_SHARED_MEMORY_OBJECTS 6
+.br
+The implementation supports the Shared Memory Objects option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_SHELL 6
+.br
+The implementation supports the POSIX shell. This symbol shall always
+be set to a value greater than zero.
+.IP _POSIX_SPAWN 6
+.br
+The implementation supports the Spawn option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_SPIN_LOCKS 6
+.br
+The implementation supports spin locks.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_SPORADIC_SERVER 6
+.br
+The implementation supports the Process Sporadic Server option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_SYNCHRONIZED_IO 6
+.br
+The implementation supports the Synchronized Input and Output option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_ATTR_STACKADDR 6
+.br
+The implementation supports the Thread Stack Address Attribute option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_ATTR_STACKSIZE 6
+.br
+The implementation supports the Thread Stack Size Attribute option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_CPUTIME 6
+.br
+The implementation supports the Thread CPU-Time Clocks option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_PRIO_INHERIT 6
+.br
+The implementation supports the Non-Robust Mutex Priority
+Inheritance option. If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_PRIO_PROTECT 6
+.br
+The implementation supports the Non-Robust Mutex Priority
+Protection option. If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_PRIORITY_SCHEDULING 6
+.br
+The implementation supports the Thread Execution Scheduling option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_PROCESS_SHARED 6
+.br
+The implementation supports the Thread Process-Shared Synchronization
+option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_ROBUST_PRIO_INHERIT 6
+.br
+The implementation supports the Robust Mutex Priority Inheritance
+option. If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_ROBUST_PRIO_PROTECT 6
+.br
+The implementation supports the Robust Mutex Priority Protection
+option. If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREAD_SAFE_FUNCTIONS 6
+.br
+The implementation supports thread-safe functions.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_THREAD_SPORADIC_SERVER 6
+.br
+The implementation supports the Thread Sporadic Server option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_THREADS 6
+.br
+The implementation supports threads.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_TIMEOUTS 6
+.br
+The implementation supports timeouts.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_TIMERS 6
+.br
+The implementation supports timers.
+This symbol shall always be set to the value 200809L.
+.IP _POSIX_TRACE 6
+.br
+The implementation supports the Trace option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_TRACE_EVENT_FILTER 6
+.br
+The implementation supports the Trace Event Filter option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_TRACE_INHERIT 6
+.br
+The implementation supports the Trace Inherit option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_TRACE_LOG 6
+.br
+The implementation supports the Trace Log option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_TYPED_MEMORY_OBJECTS 6
+.br
+The implementation supports the Typed Memory Objects option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX_V6_ILP32_OFF32 6
+.br
+The implementation provides a C-language compilation environment with
+32-bit
+.BR int ,
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _POSIX_V6_ILP32_OFFBIG 6
+.br
+The implementation provides a C-language compilation environment with
+32-bit
+.BR int ,
+.BR long ,
+and
+.BR pointer
+types and an
+.BR off_t
+type using at least 64 bits.
+.IP _POSIX_V6_LP64_OFF64 6
+.br
+The implementation provides a C-language compilation environment with
+32-bit
+.BR int
+and 64-bit
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _POSIX_V6_LPBIG_OFFBIG 6
+.br
+The implementation provides a C-language compilation environment with
+an
+.BR int
+type using at least 32 bits and
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types using at least 64 bits.
+.IP _POSIX_V7_ILP32_OFF32 6
+.br
+The implementation provides a C-language compilation environment with
+32-bit
+.BR int ,
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _POSIX_V7_ILP32_OFFBIG 6
+.br
+The implementation provides a C-language compilation environment with
+32-bit
+.BR int ,
+.BR long ,
+and
+.BR pointer
+types and an
+.BR off_t
+type using at least 64 bits.
+.IP _POSIX_V7_LP64_OFF64 6
+.br
+The implementation provides a C-language compilation environment with
+32-bit
+.BR int
+and 64-bit
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _POSIX_V7_LPBIG_OFFBIG 6
+.br
+The implementation provides a C-language compilation environment with
+an
+.BR int
+type using at least 32 bits and
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types using at least 64 bits.
+.IP _POSIX2_C_BIND 6
+.br
+The implementation supports the C-Language Binding option. This
+symbol shall always have the value 200809L.
+.IP _POSIX2_C_DEV 6
+.br
+The implementation supports the C-Language Development Utilities option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_CHAR_TERM 6
+.br
+The implementation supports the Terminal Characteristics option.
+The value of this symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or a value greater than zero.
+.IP _POSIX2_FORT_DEV 6
+.br
+The implementation supports the FORTRAN Development Utilities option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_FORT_RUN 6
+.br
+The implementation supports the FORTRAN Runtime Utilities option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_LOCALEDEF 6
+.br
+The implementation supports the creation of locales by the
+.IR localedef
+utility.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_PBS 6
+.br
+The implementation supports the Batch Environment Services and
+Utilities option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_PBS_ACCOUNTING 6
+.br
+The implementation supports the Batch Accounting option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_PBS_CHECKPOINT 6
+.br
+The implementation supports the Batch Checkpoint/Restart option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_PBS_LOCATE 6
+.br
+The implementation supports the Locate Batch Job Request option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_PBS_MESSAGE 6
+.br
+The implementation supports the Batch Job Message Request option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_PBS_TRACK 6
+.br
+The implementation supports the Track Batch Job Request option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_SW_DEV 6
+.br
+The implementation supports the Software Development Utilities option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _POSIX2_UPE 6
+.br
+The implementation supports the User Portability Utilities option.
+If this symbol is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this
+symbol reported by
+\fIsysconf\fR()
+shall either be \(mi1 or 200809L.
+.IP _XOPEN_CRYPT 6
+.br
+The implementation supports the X/Open Encryption Option Group.
+.IP _XOPEN_ENH_I18N 6
+.br
+The implementation supports the Issue 4, Version 2 Enhanced
+Internationalization Option Group. This symbol shall always be set
+to a value other than \(mi1.
+.IP _XOPEN_REALTIME 6
+.br
+The implementation supports the X/Open Realtime Option Group.
+.IP _XOPEN_REALTIME_THREADS 6
+.br
+The implementation supports the X/Open Realtime Threads Option Group.
+.IP _XOPEN_SHM 6
+.br
+The implementation supports the Issue 4, Version 2 Shared Memory Option
+Group. This symbol shall always be set to a value other than \(mi1.
+.IP _XOPEN_STREAMS 6
+.br
+The implementation supports the XSI STREAMS Option Group.
+.IP _XOPEN_UNIX 6
+.br
+The implementation supports the XSI option.
+.IP _XOPEN_UUCP 6
+.br
+The implementation supports the UUCP Utilities option. If this symbol
+is defined in
+.IR <unistd.h> ,
+it shall be defined to be \(mi1, 0, or 200809L. The value of this symbol
+reported by
+\fIsysconf\fR()
+shall be either \(mi1 or 200809L.
+.SS "Execution-Time Symbolic Constants"
+.P
+If any of the following symbolic constants are not defined in the
+.IR <unistd.h> 
+header, the value shall vary depending on the file to which it
+is applied. If defined, they shall have values suitable for use in
+.BR #if
+preprocessing directives.
+.P
+If any of the following symbolic constants are defined to have value
+\(mi1 in the
+.IR <unistd.h> 
+header, the implementation shall not provide the option on any file; if
+any are defined to have a value other than \(mi1 in the
+.IR <unistd.h> 
+header, the implementation shall provide the option on all applicable
+files.
+.P
+All of the following values, whether defined as symbolic constants in
+.IR <unistd.h> 
+or not, may be queried with respect to a specific file using the
+\fIpathconf\fR()
+or
+\fIfpathconf\fR()
+functions:
+.IP _POSIX_ASYNC_IO 6
+.br
+Asynchronous input or output operations may be performed for the
+associated file.
+.IP _POSIX_PRIO_IO 6
+.br
+Prioritized input or output operations may be performed for the
+associated file.
+.IP _POSIX_SYNC_IO 6
+.br
+Synchronized input or output operations may be performed for the
+associated file.
+.P
+If the following symbolic constants are defined in the
+.IR <unistd.h> 
+header, they apply to files and all paths in all file systems on
+the implementation:
+.IP _POSIX_TIMESTAMP_RESOLUTION 6
+.br
+The resolution in nanoseconds for all file timestamps.
+.IP _POSIX2_SYMLINKS 6
+.br
+Symbolic links can be created.
+.SS "Constants for Functions"
+.P
+The
+.IR <unistd.h> 
+header shall define NULL as described in
+.IR <stddef.h> .
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constants for use with the
+\fIaccess\fR()
+function. The values shall be suitable for use in
+.BR #if
+preprocessing directives.
+.IP F_OK 12
+Test for existence of file.
+.IP R_OK 12
+Test for read permission.
+.IP W_OK 12
+Test for write permission.
+.IP X_OK 12
+Test for execute (search) permission.
+.P
+The constants F_OK, R_OK, W_OK, and X_OK and the expressions
+\fIR_OK\fP|\fIW_OK\fP, \fIR_OK\fP|\fIX_OK\fP, and
+\fIR_OK\fP|\fIW_OK\fP|\fIX_OK\fP shall all have distinct values.
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constants for the
+\fIconfstr\fR()
+function:
+.IP _CS_PATH 6
+.br
+This is the value for the
+.IR PATH
+environment variable that finds all standard utilities.
+.IP _CS_POSIX_V7_ILP32_OFF32_CFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_ILP32_OFF32) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of initial
+options to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int ,
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _CS_POSIX_V7_ILP32_OFF32_LDFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_ILP32_OFF32) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of final
+options to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int ,
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _CS_POSIX_V7_ILP32_OFF32_LIBS 6
+.br
+If \fIsysconf\fP(_SC_V7_ILP32_OFF32) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of
+libraries to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int ,
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _CS_POSIX_V7_ILP32_OFFBIG_CFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_ILP32_OFFBIG) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of initial
+options to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int ,
+.BR long ,
+and
+.BR pointer
+types, and an
+.BR off_t
+type using at least 64 bits.
+.IP _CS_POSIX_V7_ILP32_OFFBIG_LDFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_ILP32_OFFBIG) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of final
+options to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int ,
+.BR long ,
+and
+.BR pointer
+types, and an
+.BR off_t
+type using at least 64 bits.
+.IP _CS_POSIX_V7_ILP32_OFFBIG_LIBS 6
+.br
+If \fIsysconf\fP(_SC_V7_ILP32_OFFBIG) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of
+libraries to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int ,
+.BR long ,
+and
+.BR pointer
+types, and an
+.BR off_t
+type using at least 64 bits.
+.IP _CS_POSIX_V7_LP64_OFF64_CFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_LP64_OFF64) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of initial
+options to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int
+and 64-bit
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _CS_POSIX_V7_LP64_OFF64_LDFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_LP64_OFF64) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of final
+options to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int
+and 64-bit
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _CS_POSIX_V7_LP64_OFF64_LIBS 6
+.br
+If \fIsysconf\fP(_SC_V7_LP64_OFF64) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of
+libraries to be given to the
+.IR c99
+utility to build an application using a programming model with 32-bit
+.BR int
+and 64-bit
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types.
+.IP _CS_POSIX_V7_LPBIG_OFFBIG_CFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_LPBIG_OFFBIG) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of initial
+options to be given to the
+.IR c99
+utility to build an application using a programming model with an
+.BR int
+type using at least 32 bits and
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types using at least 64 bits.
+.IP _CS_POSIX_V7_LPBIG_OFFBIG_LDFLAGS 6
+.br
+If \fIsysconf\fP(_SC_V7_LPBIG_OFFBIG) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of final
+options to be given to the
+.IR c99
+utility to build an application using a programming model with an
+.BR int
+type using at least 32 bits and
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types using at least 64 bits.
+.IP _CS_POSIX_V7_LPBIG_OFFBIG_LIBS 6
+.br
+If \fIsysconf\fP(_SC_V7_LPBIG_OFFBIG) returns \(mi1, the meaning of
+this value is unspecified. Otherwise, this value is the set of
+libraries to be given to the
+.IR c99
+utility to build an application using a programming model with an
+.BR int
+type using at least 32 bits and
+.BR long ,
+.BR pointer ,
+and
+.BR off_t
+types using at least 64 bits.
+.IP _CS_POSIX_V7_THREADS_CFLAGS 6
+.br
+If
+.IR sysconf (_SC_POSIX_THREADS)
+returns \(mi1, the meaning of this value is unspecified. Otherwise,
+this value is the set of initial options to be given to the
+.IR c99
+utility to build a multi-threaded application. These flags are in addition
+to those associated with any of the other _CS_POSIX_V7_*_CFLAGS values
+used to specify particular type size programing environments.
+.IP _CS_POSIX_V7_THREADS_LDFLAGS 6
+.br
+If
+.IR sysconf (_SC_POSIX_THREADS)
+returns \(mi1, the meaning of this value is unspecified. Otherwise,
+this value is the set of final options to be given to the
+.IR c99
+utility to build a multi-threaded application. These flags are in addition
+to those associated with any of the other _CS_POSIX_V7_*_LDFLAGS values
+used to specify particular type size programing environments.
+.IP _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS 6
+.br
+This value is a
+<newline>-separated
+list of names of programming environments supported by the
+implementation in which the widths of the
+.BR blksize_t ,
+.BR cc_t ,
+.BR mode_t ,
+.BR nfds_t ,
+.BR pid_t ,
+.BR ptrdiff_t ,
+.BR size_t ,
+.BR speed_t ,
+.BR ssize_t ,
+.BR suseconds_t ,
+.BR tcflag_t ,
+.BR wchar_t ,
+and
+.BR wint_t
+types are no greater than the width of type
+.BR long .
+The format of each name shall be suitable for use with the
+.IR getconf
+.BR \(miv
+option.
+.IP _CS_V7_ENV 6
+.br
+This is the value that provides the environment variable information
+(other than that provided by _CS_PATH) that is required by the
+implementation to create a conforming environment, as described in the
+implementation's conformance documentation.
+.br
+.P
+The following symbolic constants are reserved for compatibility
+with Issue 6:
+.P
+.nf
+_CS_POSIX_V6_ILP32_OFF32_CFLAGS
+_CS_POSIX_V6_ILP32_OFF32_LDFLAGS
+_CS_POSIX_V6_ILP32_OFF32_LIBS
+_CS_POSIX_V6_ILP32_OFFBIG_CFLAGS
+_CS_POSIX_V6_ILP32_OFFBIG_LDFLAGS
+_CS_POSIX_V6_ILP32_OFFBIG_LIBS
+_CS_POSIX_V6_LP64_OFF64_CFLAGS
+_CS_POSIX_V6_LP64_OFF64_LDFLAGS
+_CS_POSIX_V6_LP64_OFF64_LIBS
+_CS_POSIX_V6_LPBIG_OFFBIG_CFLAGS
+_CS_POSIX_V6_LPBIG_OFFBIG_LDFLAGS
+_CS_POSIX_V6_LPBIG_OFFBIG_LIBS
+_CS_POSIX_V6_WIDTH_RESTRICTED_ENVS
+_CS_V6_ENV
+.fi
+.P
+The
+.IR <unistd.h> 
+header shall define SEEK_CUR, SEEK_END, and SEEK_SET as described in
+.IR <stdio.h> .
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constants as possible
+values for the
+.IR function
+argument to the
+\fIlockf\fR()
+function:
+.IP F_LOCK 12
+Lock a section for exclusive use.
+.IP F_TEST 12
+Test section for locks by other processes.
+.IP F_TLOCK 12
+Test and lock a section for exclusive use.
+.IP F_ULOCK 12
+Unlock locked sections.
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constants for
+\fIpathconf\fR():
+.P
+.nf
+_PC_2_SYMLINKS
+_PC_ALLOC_SIZE_MIN
+_PC_ASYNC_IO
+_PC_CHOWN_RESTRICTED
+_PC_FILESIZEBITS
+_PC_LINK_MAX
+_PC_MAX_CANON
+_PC_MAX_INPUT
+_PC_NAME_MAX
+_PC_NO_TRUNC
+_PC_PATH_MAX
+_PC_PIPE_BUF
+_PC_PRIO_IO
+_PC_REC_INCR_XFER_SIZE
+_PC_REC_MAX_XFER_SIZE
+_PC_REC_MIN_XFER_SIZE
+_PC_REC_XFER_ALIGN
+_PC_SYMLINK_MAX
+_PC_SYNC_IO
+_PC_TIMESTAMP_RESOLUTION
+_PC_VDISABLE
+.fi
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constants for
+\fIsysconf\fR():
+.P
+.nf
+_SC_2_C_BIND
+_SC_2_C_DEV
+_SC_2_CHAR_TERM
+_SC_2_FORT_DEV
+_SC_2_FORT_RUN
+_SC_2_LOCALEDEF
+_SC_2_PBS
+_SC_2_PBS_ACCOUNTING
+_SC_2_PBS_CHECKPOINT
+_SC_2_PBS_LOCATE
+_SC_2_PBS_MESSAGE
+_SC_2_PBS_TRACK
+_SC_2_SW_DEV
+_SC_2_UPE
+_SC_2_VERSION
+_SC_ADVISORY_INFO
+_SC_AIO_LISTIO_MAX
+_SC_AIO_MAX
+_SC_AIO_PRIO_DELTA_MAX
+_SC_ARG_MAX
+_SC_ASYNCHRONOUS_IO
+_SC_ATEXIT_MAX
+_SC_BARRIERS
+_SC_BC_BASE_MAX
+_SC_BC_DIM_MAX
+_SC_BC_SCALE_MAX
+_SC_BC_STRING_MAX
+_SC_CHILD_MAX
+_SC_CLK_TCK
+_SC_CLOCK_SELECTION
+_SC_COLL_WEIGHTS_MAX
+_SC_CPUTIME
+_SC_DELAYTIMER_MAX
+_SC_EXPR_NEST_MAX
+_SC_FSYNC
+_SC_GETGR_R_SIZE_MAX
+_SC_GETPW_R_SIZE_MAX
+_SC_HOST_NAME_MAX
+_SC_IOV_MAX
+_SC_IPV6
+_SC_JOB_CONTROL
+_SC_LINE_MAX
+_SC_LOGIN_NAME_MAX
+_SC_MAPPED_FILES
+_SC_MEMLOCK
+_SC_MEMLOCK_RANGE
+_SC_MEMORY_PROTECTION
+_SC_MESSAGE_PASSING
+_SC_MONOTONIC_CLOCK
+_SC_MQ_OPEN_MAX
+_SC_MQ_PRIO_MAX
+_SC_NGROUPS_MAX
+_SC_OPEN_MAX
+_SC_PAGE_SIZE
+_SC_PAGESIZE
+_SC_PRIORITIZED_IO
+_SC_PRIORITY_SCHEDULING
+_SC_RAW_SOCKETS
+_SC_RE_DUP_MAX
+_SC_READER_WRITER_LOCKS
+_SC_REALTIME_SIGNALS
+_SC_REGEXP
+_SC_RTSIG_MAX
+_SC_SAVED_IDS
+_SC_SEM_NSEMS_MAX
+_SC_SEM_VALUE_MAX
+_SC_SEMAPHORES
+_SC_SHARED_MEMORY_OBJECTS
+_SC_SHELL
+_SC_SIGQUEUE_MAX
+_SC_SPAWN
+_SC_SPIN_LOCKS
+_SC_SPORADIC_SERVER
+_SC_SS_REPL_MAX
+_SC_STREAM_MAX
+_SC_SYMLOOP_MAX
+_SC_SYNCHRONIZED_IO
+_SC_THREAD_ATTR_STACKADDR
+_SC_THREAD_ATTR_STACKSIZE
+_SC_THREAD_CPUTIME
+_SC_THREAD_DESTRUCTOR_ITERATIONS
+_SC_THREAD_KEYS_MAX
+_SC_THREAD_PRIO_INHERIT
+_SC_THREAD_PRIO_PROTECT
+_SC_THREAD_PRIORITY_SCHEDULING
+_SC_THREAD_PROCESS_SHARED
+_SC_THREAD_ROBUST_PRIO_INHERIT
+_SC_THREAD_ROBUST_PRIO_PROTECT
+_SC_THREAD_SAFE_FUNCTIONS
+_SC_THREAD_SPORADIC_SERVER
+_SC_THREAD_STACK_MIN
+_SC_THREAD_THREADS_MAX
+_SC_THREADS
+_SC_TIMEOUTS
+_SC_TIMER_MAX
+_SC_TIMERS
+_SC_TRACE
+_SC_TRACE_EVENT_FILTER
+_SC_TRACE_EVENT_NAME_MAX
+_SC_TRACE_INHERIT
+_SC_TRACE_LOG
+_SC_TRACE_NAME_MAX
+_SC_TRACE_SYS_MAX
+_SC_TRACE_USER_EVENT_MAX
+_SC_TTY_NAME_MAX
+_SC_TYPED_MEMORY_OBJECTS
+_SC_TZNAME_MAX
+_SC_V7_ILP32_OFF32
+_SC_V7_ILP32_OFFBIG
+_SC_V7_LP64_OFF64
+_SC_V7_LPBIG_OFFBIG
+_SC_V6_ILP32_OFF32
+_SC_V6_ILP32_OFFBIG
+_SC_V6_LP64_OFF64
+_SC_V6_LPBIG_OFFBIG
+_SC_VERSION
+_SC_XOPEN_CRYPT
+_SC_XOPEN_ENH_I18N
+_SC_XOPEN_REALTIME
+_SC_XOPEN_REALTIME_THREADS
+_SC_XOPEN_SHM
+_SC_XOPEN_STREAMS
+_SC_XOPEN_UNIX
+_SC_XOPEN_UUCP
+_SC_XOPEN_VERSION
+.fi
+.P
+The two constants _SC_PAGESIZE and _SC_PAGE_SIZE may be defined to
+have the same value.
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constants for file streams:
+.IP STDERR_FILENO 14
+File number of
+.IR stderr ;
+2.
+.IP STDIN_FILENO 14
+File number of
+.IR stdin ;
+0.
+.IP STDOUT_FILENO 14
+File number of
+.IR stdout ;
+1.
+.P
+The
+.IR <unistd.h> 
+header shall define the following symbolic constant for terminal
+special character handling:
+.IP _POSIX_VDISABLE 14
+This symbol shall be defined to be the value of a character that shall
+disable terminal special character handling as described in
+.IR "Section 11.2.6" ", " "Special Control Characters".
+This symbol shall always be set to a value other than \(mi1.
+.SS "Type Definitions"
+.P
+The
+.IR <unistd.h> 
+header shall define the
+.BR size_t ,
+.BR ssize_t ,
+.BR uid_t ,
+.BR gid_t ,
+.BR off_t ,
+and
+.BR pid_t
+types as described in
+.IR <sys/types.h> .
+.P
+The
+.IR <unistd.h> 
+header shall define the
+.BR intptr_t
+type as described in
+.IR <inttypes.h> .
+.SS "Declarations"
+.P
+The following shall be declared as functions and may also be defined
+as macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int          access(const char *, int);
+unsigned     alarm(unsigned);
+int          chdir(const char *);
+int          chown(const char *, uid_t, gid_t);
+int          close(int);
+size_t       confstr(int, char *, size_t);
+char        *crypt(const char *, const char *);
+int          dup(int);
+.br
+int          dup2(int, int);
+void         _exit(int);
+void         encrypt(char [64], int);
+int          execl(const char *, const char *, ...);
+int          execle(const char *, const char *, ...);
+int          execlp(const char *, const char *, ...);
+int          execv(const char *, char *const []);
+int          execve(const char *, char *const [], char *const []);
+int          execvp(const char *, char *const []);
+int          faccessat(int, const char *, int, int);
+int          fchdir(int);
+int          fchown(int, uid_t, gid_t);
+int          fchownat(int, const char *, uid_t, gid_t, int);
+int          fdatasync(int);
+int          fexecve(int, char *const [], char *const []);
+pid_t        fork(void);
+long         fpathconf(int, int);
+int          fsync(int);
+int          ftruncate(int, off_t);
+char        *getcwd(char *, size_t);
+gid_t        getegid(void);
+uid_t        geteuid(void);
+gid_t        getgid(void);
+int          getgroups(int, gid_t []);
+long         gethostid(void);
+int          gethostname(char *, size_t);
+char        *getlogin(void);
+int          getlogin_r(char *, size_t);
+int          getopt(int, char * const [], const char *);
+pid_t        getpgid(pid_t);
+pid_t        getpgrp(void);
+pid_t        getpid(void);
+pid_t        getppid(void);
+pid_t        getsid(pid_t);
+uid_t        getuid(void);
+int          isatty(int);
+int          lchown(const char *, uid_t, gid_t);
+int          link(const char *, const char *);
+int          linkat(int, const char *, int, const char *, int);
+int          lockf(int, int, off_t);
+off_t        lseek(int, off_t, int);
+int          nice(int);
+long         pathconf(const char *, int);
+int          pause(void);
+int          pipe(int [2]);
+ssize_t      pread(int, void *, size_t, off_t);
+ssize_t      pwrite(int, const void *, size_t, off_t);
+ssize_t      read(int, void *, size_t);
+ssize_t      readlink(const char *restrict, char *restrict, size_t);
+ssize_t      readlinkat(int, const char *restrict, char *restrict, size_t);
+int          rmdir(const char *);
+int          setegid(gid_t);
+int          seteuid(uid_t);
+int          setgid(gid_t);
+.br
+int          setpgid(pid_t, pid_t);
+pid_t        setpgrp(void);
+int          setregid(gid_t, gid_t);
+int          setreuid(uid_t, uid_t);
+pid_t        setsid(void);
+int          setuid(uid_t);
+unsigned     sleep(unsigned);
+void         swab(const void *restrict, void *restrict, ssize_t);
+int          symlink(const char *, const char *);
+int          symlinkat(const char *, int, const char *);
+void         sync(void);
+long         sysconf(int);
+pid_t        tcgetpgrp(int);
+int          tcsetpgrp(int, pid_t);
+int          truncate(const char *, off_t);
+char        *ttyname(int);
+int          ttyname_r(int, char *, size_t);
+int          unlink(const char *);
+int          unlinkat(int, const char *, int);
+ssize_t      write(int, const void *, size_t);
+.fi \fR
+.P
+.RE
+.P
+Implementations may also include the
+\fIpthread_atfork\fR()
+prototype as defined in
+.IR <pthread.h> .
+Implementations may also include the
+\fIctermid\fR()
+prototype as defined in
+.IR <stdio.h> .
+.P
+The
+.IR <unistd.h> 
+header shall declare the following external variables:
+.sp
+.RS 4
+.nf
+\fB
+extern char  *optarg;
+extern int    opterr, optind, optopt;
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+POSIX.1\(hy2008 only describes the behavior of systems that claim conformance to
+it. However, application developers who want to write applications that
+adapt to other versions of this standard (or to systems that do not
+conform to any POSIX standard) may find it useful to code them so as to
+conditionally compile different code depending on the value of
+_POSIX_VERSION, for example:
+.sp
+.RS 4
+.nf
+\fB
+#if _POSIX_VERSION >= 200112L
+/* Use the newer function that copes with large files. */
+off_t pos=ftello(fp);
+#else
+/* Either this is an old version of POSIX, or _POSIX_VERSION is
+   not even defined, so use the traditional function. */
+long pos=ftell(fp);
+#endif
+.fi \fR
+.P
+.RE
+.P
+Earlier versions of POSIX.1\(hy2008 and of the Single UNIX Specification
+can be identified by the following macros:
+.IP "POSIX.1\(hy1988 standard" 6
+.br
+_POSIX_VERSION\|=\^=\|198808L
+.IP "POSIX.1\(hy1990 standard" 6
+.br
+_POSIX_VERSION\|=\^=\|199009L
+.IP "ISO\ POSIX\(hy1:\|1996 standard" 6
+.br
+_POSIX_VERSION\|=\^=\|199506L
+.IP "Single UNIX Specification, Version 1" 6
+.br
+_XOPEN_UNIX and _XOPEN_VERSION\|=\^=\|4
+.IP "Single UNIX Specification, Version 2" 6
+.br
+_XOPEN_UNIX and _XOPEN_VERSION\|=\^=\|500
+.IP "ISO POSIX\(hy1:\|2001 and Single UNIX Specification, Version 3" 6
+.br
+_POSIX_VERSION\|=\^=\|200112L, plus (if the XSI option is supported)
+_XOPEN_UNIX and _XOPEN_VERSION\|=\^=\|600
+.P
+POSIX.1\(hy2008 does not make any attempt to define application binary
+interaction with the underlying operating system. However, application
+developers may find it useful to query _SC_VERSION at runtime via
+\fIsysconf\fR()
+to determine whether the current version of the operating system
+supports the necessary functionality as in the following program
+fragment:
+.sp
+.RS 4
+.nf
+\fB
+if (sysconf(_SC_VERSION) < 200809L) {
+    fprintf(stderr, "POSIX.1-2008 system required, terminating \en");
+    exit(1);
+}
+.fi \fR
+.P
+.RE
+.P
+New applications should not use _XOPEN_SHM or _XOPEN_ENH_I18N.
+.SH RATIONALE
+As POSIX.1\(hy2008 evolved, certain options became sufficiently standardized that
+it was concluded that simply requiring one of the option choices was
+simpler than retaining the option. However, for backwards-compatibility,
+the option flags (with required constant values) are retained.
+.SS "Version Test Macros"
+.P
+The standard developers considered altering the definition of
+_POSIX_VERSION and removing _SC_VERSION from the specification of
+\fIsysconf\fR()
+since the utility to an application was deemed by some to be minimal,
+and since the implementation of the functionality is potentially
+problematic. However, they recognized that support for existing
+application binaries is a concern to manufacturers, application
+developers, and the users of implementations conforming to POSIX.1\(hy2008.
+.P
+While the example using _SC_VERSION in the APPLICATION USAGE section
+does not provide the greatest degree of imaginable utility to the
+application developer or user, it is arguably better than a
+.BR core
+file or some other equally obscure result. (It is also possible for
+implementations to encode and recognize application binaries compiled
+in various POSIX.1-conforming environments, and modify the semantics of
+the underlying system to conform to the expectations of the
+application.) For the reasons outlined in the preceding paragraphs and
+in the APPLICATION USAGE section, the standard developers elected to
+retain the _POSIX_VERSION and _SC_VERSION functionality.
+.SS "Compile-Time Symbolic Constants for System-Wide Options"
+.P
+POSIX.1\(hy2008 includes support in certain areas for the newly adopted
+policy governing options and stubs.
+.P
+This policy provides flexibility for implementations in how they
+support options. It also specifies how conforming applications can
+adapt to different implementations that support different sets of
+options. It allows the following:
+.IP " 1." 4
+If an implementation has no interest in supporting an option, it does
+not have to provide anything associated with that option beyond the
+announcement that it does not support it.
+.IP " 2." 4
+An implementation can support a partial or incompatible version of an
+option (as a non-standard extension) as long as it does not claim to
+support the option.
+.IP " 3." 4
+An application can determine whether the option is supported. A
+strictly conforming application must check this announcement mechanism
+before first using anything associated with the option.
+.P
+There is an important implication of this policy. POSIX.1\(hy2008 cannot
+dictate the behavior of interfaces associated with an option when the
+implementation does not claim to support the option. In particular, it
+cannot require that a function associated with an unsupported option
+will fail if it does not perform as specified. However, this policy
+does not prevent a standard from requiring certain functions to always
+be present, but that they shall always fail on some implementations.
+The
+\fIsetpgid\fR()
+function in the POSIX.1\(hy1990 standard, for example, is considered appropriate.
+.P
+The POSIX standards include various options, and the C-language
+binding support for an option implies that the implementation must
+supply data types and function interfaces. An application must be able
+to discover whether the implementation supports each option.
+.P
+Any application must consider the following three cases for each
+option:
+.IP " 1." 4
+Option never supported.
+.RS 4 
+.P
+The implementation advertises at compile time that the option will
+never be supported. In this case, it is not necessary for the
+implementation to supply any of the data types or function interfaces
+that are provided only as part of the option. The implementation might
+provide data types and functions that are similar to those defined by
+POSIX.1\(hy2008, but there is no guarantee for any particular behavior.
+.RE
+.IP " 2." 4
+Option always supported.
+.RS 4 
+.P
+The implementation advertises at compile time that the option will
+always be supported. In this case, all data types and function
+interfaces shall be available and shall operate as specified.
+.RE
+.IP " 3." 4
+Option might or might not be supported.
+.RS 4 
+.P
+Some implementations might not provide a mechanism to specify support
+of options at compile time. In addition, the implementation might be
+unable or unwilling to specify support or non-support at compile time.
+In either case, any application that might use the option at runtime
+must be able to compile and execute. The implementation must provide,
+at compile time, all data types and function interfaces that are
+necessary to allow this. In this situation, there must be a mechanism
+that allows the application to query, at runtime, whether the option is
+supported. If the application attempts to use the option when it is not
+supported, the result is unspecified unless explicitly specified
+otherwise in POSIX.1\(hy2008.
+.RE
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<inttypes.h>\fP",
+.IR "\fB<limits.h>\fP",
+.IR "\fB<stddef.h>\fP",
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<sys_socket.h>\fP",
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<termios.h>\fP",
+.IR "\fB<wctype.h>\fP"
+.P
+.ad l
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIaccess\fR\^(\|)",
+.IR "\fIalarm\fR\^(\|)",
+.IR "\fIchown\fR\^(\|)",
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIconfstr\fR\^(\|)",
+.IR "\fIcrypt\fR\^(\|)",
+.IR "\fIctermid\fR\^(\|)",
+.IR "\fIdup\fR\^(\|)",
+.IR "\fI_Exit\fR\^(\|)",
+.IR "\fIencrypt\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfchdir\fR\^(\|)",
+.IR "\fIfchown\fR\^(\|)",
+.IR "\fIfdatasync\fR\^(\|)",
+.IR "\fIfork\fR\^(\|)",
+.IR "\fIfpathconf\fR\^(\|)",
+.IR "\fIfsync\fR\^(\|)",
+.IR "\fIftruncate\fR\^(\|)",
+.IR "\fIgetcwd\fR\^(\|)",
+.IR "\fIgetegid\fR\^(\|)",
+.IR "\fIgeteuid\fR\^(\|)",
+.IR "\fIgetgid\fR\^(\|)",
+.IR "\fIgetgroups\fR\^(\|)",
+.IR "\fIgethostid\fR\^(\|)",
+.IR "\fIgethostname\fR\^(\|)",
+.IR "\fIgetlogin\fR\^(\|)",
+.IR "\fIgetopt\fR\^(\|)",
+.IR "\fIgetpgid\fR\^(\|)",
+.IR "\fIgetpgrp\fR\^(\|)",
+.IR "\fIgetpid\fR\^(\|)",
+.IR "\fIgetppid\fR\^(\|)",
+.IR "\fIgetsid\fR\^(\|)",
+.IR "\fIgetuid\fR\^(\|)",
+.IR "\fIisatty\fR\^(\|)",
+.IR "\fIlchown\fR\^(\|)",
+.IR "\fIlink\fR\^(\|)",
+.IR "\fIlockf\fR\^(\|)",
+.IR "\fIlseek\fR\^(\|)",
+.IR "\fInice\fR\^(\|)",
+.IR "\fIpause\fR\^(\|)",
+.IR "\fIpipe\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIreadlink\fR\^(\|)",
+.IR "\fIrmdir\fR\^(\|)",
+.IR "\fIsetegid\fR\^(\|)",
+.IR "\fIseteuid\fR\^(\|)",
+.IR "\fIsetgid\fR\^(\|)",
+.IR "\fIsetpgid\fR\^(\|)",
+.IR "\fIsetpgrp\fR\^(\|)",
+.IR "\fIsetregid\fR\^(\|)",
+.IR "\fIsetreuid\fR\^(\|)",
+.IR "\fIsetsid\fR\^(\|)",
+.IR "\fIsetuid\fR\^(\|)",
+.IR "\fIsleep\fR\^(\|)",
+.IR "\fIswab\fR\^(\|)",
+.IR "\fIsymlink\fR\^(\|)",
+.IR "\fIsync\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)",
+.IR "\fItcgetpgrp\fR\^(\|)",
+.IR "\fItcsetpgrp\fR\^(\|)",
+.IR "\fItruncate\fR\^(\|)",
+.IR "\fIttyname\fR\^(\|)",
+.IR "\fIunlink\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.ad b
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

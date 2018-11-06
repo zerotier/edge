@@ -1,0 +1,441 @@
+'\" et
+.TH SETLOCALE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+setlocale
+\(em set program locale
+.SH SYNOPSIS
+.LP
+.nf
+#include <locale.h>
+.P
+char *setlocale(int \fIcategory\fP, const char *\fIlocale\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIsetlocale\fR()
+function selects the appropriate piece of the global locale, as specified
+by the
+.IR category
+and
+.IR locale
+arguments, and can be used to change or query the entire global locale
+or portions thereof. The value LC_ALL for
+.IR category
+names the entire global locale; other values for
+.IR category
+name only a part of the global locale:
+.IP LC_COLLATE 12
+Affects the behavior of regular expressions and the collation
+functions.
+.IP LC_CTYPE 12
+Affects the behavior of regular expressions, character classification,
+character conversion functions, and wide-character functions.
+.IP LC_MESSAGES 12
+Affects the affirmative and negative response expressions returned by
+\fInl_langinfo\fR()
+and the way message catalogs are located. It may also affect the
+behavior of functions that return or write message strings.
+.IP LC_MONETARY 12
+Affects the behavior of functions that handle monetary values.
+.IP LC_NUMERIC 12
+Affects the behavior of functions that handle numeric values.
+.IP LC_TIME 12
+Affects the behavior of the time conversion functions.
+.P
+The
+.IR locale
+argument is a pointer to a character string containing the required
+setting of
+.IR category .
+The contents of this string are implementation-defined. In addition,
+the following preset values of
+.IR locale
+are defined for all settings of
+.IR category :
+.IP "\&\(dqPOSIX\(dq" 12
+Specifies the minimal environment for C-language translation called the
+POSIX locale. The POSIX locale is the default global locale at entry to
+\fImain\fR().
+.IP "\&\(dqC\(dq" 12
+Equivalent to
+.BR \(dqPOSIX\(dq .
+.IP "\&\(dq\|\(dq" 12
+Specifies an implementation-defined native environment.
+The determination of the name of the new locale for the specified
+category depends on the value of the associated environment
+variables,
+.IR LC_*
+and
+.IR LANG ;
+see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale"
+and
+.IR "Chapter 8" ", " "Environment Variables".
+.IP "A\ null\ pointer" 12
+Directs
+\fIsetlocale\fR()
+to query the current global locale setting and return the name
+of the locale if
+.IR category
+is not LC_ALL, or a string which encodes the locale name(s) for all of
+the individual categories if
+.IR category
+is LC_ALL.
+.P
+Setting all of the categories of the global locale is similar to
+successively setting each individual category of the global locale, except
+that all error checking is done before any actions are performed. To
+set all the categories of the global locale,
+\fIsetlocale\fR()
+can be invoked as:
+.sp
+.RS 4
+.nf
+\fB
+setlocale(LC_ALL, "");
+.fi \fR
+.P
+.RE
+.P
+In this case,
+\fIsetlocale\fR()
+shall first verify that the values of all the environment variables it
+needs according to the precedence rules (described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables")
+indicate supported locales. If the value of any of these environment
+variable searches yields a locale that is not supported (and non-null),
+\fIsetlocale\fR()
+shall return a null pointer and the global locale shall not be changed. If
+all environment variables name supported locales,
+\fIsetlocale\fR()
+shall proceed as if it had been called for each category, using the
+appropriate value from the associated environment variable or from the
+implementation-defined default if there is no such value.
+.P
+The global locale established using
+\fIsetlocale\fR()
+shall only be used in threads for which no current locale has been
+set using
+\fIuselocale\fR()
+or whose current locale has been set to the global locale using
+.IR uselocale (LC_GLOBAL_LOCALE) .
+.P
+The implementation shall behave as if no function defined in this volume of POSIX.1\(hy2008 calls
+\fIsetlocale\fR().
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsetlocale\fR()
+shall return the string associated with the specified category for the
+new locale. Otherwise,
+\fIsetlocale\fR()
+shall return a null pointer and the global locale shall not be changed.
+.P
+A null pointer for
+.IR locale
+shall cause
+\fIsetlocale\fR()
+to return a pointer to the string associated with the specified
+.IR category
+for the current global locale. The global locale shall not be changed.
+.P
+The string returned by
+\fIsetlocale\fR()
+is such that a subsequent call with that string and its associated
+.IR category
+shall restore that part of the global locale. The application shall
+not modify the string returned.
+The returned string pointer might be invalidated or
+the string content might be overwritten by a subsequent call to
+\fIsetlocale\fR().
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The following code illustrates how a program can initialize the
+international environment for one language, while selectively modifying
+the global locale such that regular expressions and string operations
+can be applied to text recorded in a different language:
+.sp
+.RS 4
+.nf
+\fB
+setlocale(LC_ALL, "De");
+setlocale(LC_COLLATE, "Fr@dict");
+.fi \fR
+.P
+.RE
+.P
+Internationalized programs can initiate language operation according
+to environment variable settings (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables")
+by calling
+\fIsetlocale\fR()
+as follows:
+.sp
+.RS 4
+.nf
+\fB
+setlocale(LC_ALL, "");
+.fi \fR
+.P
+.RE
+.P
+Changing the setting of
+.IR LC_MESSAGES
+has no effect on catalogs that have already been opened by calls to
+\fIcatopen\fR().
+.P
+In order to make use of different locale settings while multiple
+threads are running, applications should use
+\fIuselocale\fR()
+in preference to
+\fIsetlocale\fR().
+.SH RATIONALE
+References to the international environment or locale in the following
+text relate to the global locale for the process. This can be overridden
+for individual threads using
+\fIuselocale\fR().
+.P
+The ISO\ C standard
+defines a collection of functions to support internationalization.
+One of the most significant aspects of these functions is a facility
+to set and query the \fIinternational environment\fP.
+The international environment is a repository of information that
+affects the behavior of certain functionality, namely:
+.IP " 1." 4
+Character handling
+.IP " 2." 4
+Collating
+.IP " 3." 4
+Date/time formatting
+.IP " 4." 4
+Numeric editing
+.IP " 5." 4
+Monetary formatting
+.IP " 6." 4
+Messaging
+.P
+The
+\fIsetlocale\fR()
+function provides the application developer with the ability to set all
+or portions, called \fIcategories\fP, of the international environment.
+These categories correspond to the areas of functionality mentioned
+above. The syntax for
+\fIsetlocale\fR()
+is as follows:
+.sp
+.RS 4
+.nf
+\fB
+char *setlocale(int \fIcategory\fP, const char *\fIlocale\fP);
+.fi \fR
+.P
+.RE
+.P
+where
+.IR category
+is the name of one of following categories, namely:
+.sp
+.RS
+LC_COLLATE
+LC_CTYPE
+LC_MESSAGES
+LC_MONETARY
+LC_NUMERIC
+LC_TIME
+.RE
+.P
+In addition, a special value called LC_ALL
+directs
+\fIsetlocale\fR()
+to set all categories.
+.P
+There are two primary uses of
+\fIsetlocale\fR():
+.IP " 1." 4
+Querying the international environment to find out what it is set to
+.IP " 2." 4
+Setting the international environment, or
+.IR locale ,
+to a specific value
+.P
+The behavior of
+\fIsetlocale\fR()
+in these two areas is described below. Since it is difficult to
+describe the behavior in words, examples are used to illustrate the
+behavior of specific uses.
+.P
+To query the international environment,
+\fIsetlocale\fR()
+is invoked with a specific category and the null pointer as the
+locale. The null pointer is a special directive to
+\fIsetlocale\fR()
+that tells it to query rather than set the international environment.
+The following syntax is used to query the name of the international
+environment:
+.sp
+.RS 4
+.nf
+\fB
+setlocale({LC_ALL, LC_COLLATE, LC_CTYPE, LC_MESSAGES, LC_MONETARY, \e
+    LC_NUMERIC, LC_TIME},(char *) NULL);
+.fi \fR
+.P
+.RE
+.P
+The
+\fIsetlocale\fR()
+function shall return the string corresponding to the current
+international environment. This value may be used by a subsequent call to
+\fIsetlocale\fR()
+to reset the international environment to this value. However, it
+should be noted that the return value from
+\fIsetlocale\fR()
+may be a pointer to a static area within the function and is not
+guaranteed to remain unchanged (that is, it may be modified by a
+subsequent call to
+\fIsetlocale\fR()).
+Therefore, if the purpose of calling
+\fIsetlocale\fR()
+is to save the value of the current international environment so it can
+be changed and reset later, the return value should be copied to an
+array of
+.BR char
+in the calling program.
+.P
+There are three ways to set the international environment with
+\fIsetlocale\fR():
+.IP "\fIsetlocale\fP(\fIcategory\fP,\ \fIstring\fP)" 6
+.br
+This usage sets a specific
+.IR category
+in the international environment to a specific value corresponding to
+the value of the
+.IR string .
+A specific example is provided below:
+.RS 6 
+.sp
+.RS 4
+.nf
+\fB
+setlocale(LC_ALL, "fr_FR.ISO-8859-1");
+.fi \fR
+.P
+.RE
+.P
+In this example, all categories of the international environment are
+set to the locale corresponding to the string
+.BR \(dqfr_FR.ISO-8859-1\(dq ,
+or to the French language as spoken in France using the ISO/IEC\ 8859\(hy1:\|1998 standard codeset.
+.P
+If the string does not correspond to a valid locale,
+\fIsetlocale\fR()
+shall return a null pointer and the international environment is not
+changed. Otherwise,
+\fIsetlocale\fR()
+shall return the name of the locale just set.
+.RE
+.IP "\&\fIsetlocale\fP(\fIcategory\fP,\ \(dqC\(dq)" 6
+.br
+The ISO\ C standard states that one locale must exist on all conforming
+implementations. The name of the locale is C and corresponds to a
+minimal international environment needed to support the C programming
+language.
+.IP "\&\fIsetlocale\fP(\fIcategory\fP,\ \(dq\^\(dq)" 6
+.br
+This sets a specific category to an implementation-defined default.
+This corresponds to the value of the environment variables.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIcatopen\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfprintf\fR\^(\|)",
+.IR "\fIfscanf\fR\^(\|)",
+.IR "\fIisalnum\fR\^(\|)",
+.IR "\fIisalpha\fR\^(\|)",
+.IR "\fIisblank\fR\^(\|)",
+.IR "\fIiscntrl\fR\^(\|)",
+.IR "\fIisdigit\fR\^(\|)",
+.IR "\fIisgraph\fR\^(\|)",
+.IR "\fIislower\fR\^(\|)",
+.IR "\fIisprint\fR\^(\|)",
+.IR "\fIispunct\fR\^(\|)",
+.IR "\fIisspace\fR\^(\|)",
+.IR "\fIisupper\fR\^(\|)",
+.IR "\fIiswalnum\fR\^(\|)",
+.IR "\fIiswalpha\fR\^(\|)",
+.IR "\fIiswblank\fR\^(\|)",
+.IR "\fIiswcntrl\fR\^(\|)",
+.IR "\fIiswctype\fR\^(\|)",
+.IR "\fIiswdigit\fR\^(\|)",
+.IR "\fIiswgraph\fR\^(\|)",
+.IR "\fIiswlower\fR\^(\|)",
+.IR "\fIiswprint\fR\^(\|)",
+.IR "\fIiswpunct\fR\^(\|)",
+.IR "\fIiswspace\fR\^(\|)",
+.IR "\fIiswupper\fR\^(\|)",
+.IR "\fIiswxdigit\fR\^(\|)",
+.IR "\fIisxdigit\fR\^(\|)",
+.IR "\fIlocaleconv\fR\^(\|)",
+.IR "\fImblen\fR\^(\|)",
+.IR "\fImbstowcs\fR\^(\|)",
+.IR "\fImbtowc\fR\^(\|)",
+.IR "\fInl_langinfo\fR\^(\|)",
+.IR "\fIperror\fR\^(\|)",
+.IR "\fIpsiginfo\fR\^(\|)",
+.IR "\fIsetlocale\fR\^(\|)",
+.IR "\fIstrcoll\fR\^(\|)",
+.IR "\fIstrerror\fR\^(\|)",
+.IR "\fIstrfmon\fR\^(\|)",
+.IR "\fIstrsignal\fR\^(\|)",
+.IR "\fIstrtod\fR\^(\|)",
+.IR "\fIstrxfrm\fR\^(\|)",
+.IR "\fItolower\fR\^(\|)",
+.IR "\fItoupper\fR\^(\|)",
+.IR "\fItowlower\fR\^(\|)",
+.IR "\fItowupper\fR\^(\|)",
+.IR "\fIuselocale\fR\^(\|)",
+.IR "\fIwcscoll\fR\^(\|)",
+.IR "\fIwcstod\fR\^(\|)",
+.IR "\fIwcstombs\fR\^(\|)",
+.IR "\fIwcsxfrm\fR\^(\|)",
+.IR "\fIwctomb\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "\fB<langinfo.h>\fP",
+.IR "\fB<locale.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

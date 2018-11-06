@@ -1,0 +1,212 @@
+'\" et
+.TH WAITID "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+waitid
+\(em wait for a child process to change state
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/wait.h>
+.P
+int waitid(idtype_t \fIidtype\fP, id_t \fIid\fP, siginfo_t *\fIinfop\fP, int \fIoptions\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIwaitid\fR()
+function shall suspend the calling thread until one child of the
+process containing the calling thread changes state. It records the
+current state of a child in the structure pointed to by
+.IR infop .
+The fields of the structure pointed to by
+.IR infop
+are filled in as described for the SIGCHLD signal in
+.IR <signal.h> .
+If a child process changed state prior to the call to
+\fIwaitid\fR(),
+\fIwaitid\fR()
+shall return immediately. If more than one thread is suspended in
+\fIwait\fR(),
+\fIwaitid\fR(),
+or
+\fIwaitpid\fR()
+waiting for termination of the same process, exactly one thread shall
+return the process status at the time of the target process termination.
+.P
+The
+.IR idtype
+and
+.IR id
+arguments are used to specify which children
+\fIwaitid\fR()
+waits for.
+.P
+If
+.IR idtype
+is P_PID,
+\fIwaitid\fR()
+shall wait for the child with a process ID equal to
+(\fBpid_t\fP)\fIid\fR.
+.P
+If
+.IR idtype
+is P_PGID,
+\fIwaitid\fR()
+shall wait for any child with a process group ID equal to
+(\fBpid_t\fP)\fIid\fR.
+.P
+If
+.IR idtype
+is P_ALL,
+\fIwaitid\fR()
+shall wait for any children and
+.IR id
+is ignored.
+.P
+The
+.IR options
+argument is used to specify which state changes
+\fIwaitid\fR()
+shall wait for. It is formed by OR'ing together the following flags:
+.IP WCONTINUED 12
+Status shall be returned for any continued child process whose status
+either has not been reported since it continued from a job control stop
+or has been reported only by calls to
+\fIwaitid\fR()
+with the WNOWAIT flag set.
+.IP WEXITED 12
+Wait for processes that have exited.
+.IP WNOHANG 12
+Do not hang if no status is available; return immediately.
+.IP WNOWAIT 12
+Keep the process whose status is returned in
+.IR infop
+in a waitable state. This shall not affect the state of the process; the
+process may be waited for again after this call completes.
+.IP WSTOPPED 12
+Status shall be returned for any child that has stopped upon receipt of
+a signal, and whose status either has not been reported since it stopped
+or has been reported only by calls to
+\fIwaitid\fR()
+with the WNOWAIT flag set.
+.P
+Applications shall specify at least one of the flags WEXITED, WSTOPPED,
+or WCONTINUED to be OR'ed in with the
+.IR options
+argument.
+.P
+The application shall ensure that the
+.IR infop
+argument points to a
+.BR siginfo_t
+structure. If
+\fIwaitid\fR()
+returns because a child process was found that satisfied the conditions
+indicated by the arguments
+.IR idtype
+and
+.IR options ,
+then the structure pointed to by
+.IR infop
+shall be filled in by the system with the status of the process; the
+.IR si_signo
+member shall be set equal to SIGCHLD.
+If
+\fIwaitid\fR()
+returns because WNOHANG was specified and status is not available for
+any process specified by
+.IR idtype
+and
+.IR id ,
+then the
+.IR si_signo
+and
+.IR si_pid
+members of the structure pointed to by
+.IR infop
+shall be set to zero and the values of other members of the structure
+are unspecified.
+.SH "RETURN VALUE"
+If WNOHANG was specified and status is not available for any process
+specified by
+.IR idtype
+and
+.IR id ,
+0 shall be returned. If
+\fIwaitid\fR()
+returns due to the change of state of one of its children, 0 shall be
+returned. Otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIwaitid\fR()
+function shall fail if:
+.TP
+.BR ECHILD
+The calling process has no existing unwaited-for child processes.
+.TP
+.BR EINTR
+The
+\fIwaitid\fR()
+function was interrupted by a signal.
+.TP
+.BR EINVAL
+An invalid value was specified for
+.IR options ,
+or
+.IR idtype
+and
+.IR id
+specify an invalid set of processes.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Calls to
+\fIwaitid\fR()
+with
+.IR idtype
+equal to P_ALL will collect information about any child process. This
+may result in interactions with other interfaces that may be waiting
+for their own children (such as by use of
+\fIsystem\fR()).
+For this reason it is recommended that portable applications not use
+\fIwaitid\fR()
+with idtype of P_ALL. See also APPLICATION USAGE for
+\fIwait\fR().
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^",
+.IR "\fIexit\fR\^(\|)",
+.IR "\fIwait\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<signal.h>\fP",
+.IR "\fB<sys_wait.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

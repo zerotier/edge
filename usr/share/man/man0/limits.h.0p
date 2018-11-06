@@ -1,0 +1,1179 @@
+'\" et
+.TH limits.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+limits.h
+\(em implementation-defined constants
+.SH SYNOPSIS
+.LP
+.nf
+#include <limits.h>
+.fi
+.SH DESCRIPTION
+Some of the functionality described on this reference page extends the
+ISO\ C standard. Applications shall define the appropriate feature test macro
+(see the System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment")
+to enable the visibility of these symbols in this header.
+.P
+Many of the symbols listed here are not defined by the ISO/IEC\ 9899:\|1999 standard. Such symbols
+are not shown as CX shaded, except under the heading ``Numerical Limits''.
+.P
+The
+.IR <limits.h> 
+header shall define macros and symbolic constants for various limits.
+Different categories of limits are described below, representing various
+limits on resources that the implementation imposes on applications.
+All macros and symbolic constants defined in this header shall be
+suitable for use in
+.BR #if
+preprocessing directives.
+.P
+Implementations may choose any appropriate value for each limit,
+provided it is not more restrictive than the Minimum Acceptable Values
+listed below. Symbolic constant names beginning with _POSIX may be
+found in
+.IR <unistd.h> .
+.P
+Applications should not assume any particular value for a limit. To
+achieve maximum portability, an application should not require more
+resource than the Minimum Acceptable Value quantity. However, an
+application wishing to avail itself of the full amount of a resource
+available on an implementation may make use of the value given in
+.IR <limits.h> 
+on that particular implementation, by using the macros and symbolic
+constants listed below. It should be noted, however, that many of the
+listed limits are not invariant, and at runtime, the value of the limit
+may differ from those given in this header, for the following reasons:
+.IP " *" 4
+The limit is pathname-dependent.
+.IP " *" 4
+The limit differs between the compile and runtime machines.
+.P
+For these reasons, an application may use the
+\fIfpathconf\fR(),
+\fIpathconf\fR(),
+and
+\fIsysconf\fR()
+functions to determine the actual value of a limit at runtime.
+.P
+The items in the list ending in _MIN give the most negative values that
+the mathematical types are guaranteed to be capable of representing.
+Numbers of a more negative value may be supported on some
+implementations, as indicated by the
+.IR <limits.h> 
+header on the implementation, but applications requiring such numbers
+are not guaranteed to be portable to all implementations. For positive
+constants ending in _MIN, this indicates the minimum acceptable value.
+.SS "Runtime Invariant Values (Possibly Indeterminate)"
+.P
+A definition of one of the symbolic constants in the following list
+shall be omitted from
+.IR <limits.h> 
+on specific implementations where the corresponding value is equal to
+or greater than the stated minimum, but is unspecified.
+.P
+This indetermination might depend on the amount of available memory
+space on a specific instance of a specific implementation. The actual
+value supported by a specific instance shall be provided by the
+\fIsysconf\fR()
+function.
+.IP {AIO_LISTIO_MAX} 6
+.br
+Maximum number of I/O operations in a single list I/O call supported by
+the implementation.
+.br
+Minimum Acceptable Value:
+{_POSIX_AIO_LISTIO_MAX}
+.IP {AIO_MAX} 6
+.br
+Maximum number of outstanding asynchronous I/O operations supported by
+the implementation.
+.br
+Minimum Acceptable Value:
+{_POSIX_AIO_MAX}
+.IP {AIO_PRIO_DELTA_MAX} 6
+.br
+The maximum amount by which a process can decrease its asynchronous I/O
+priority level from its own scheduling priority.
+.br
+Minimum Acceptable Value: 0
+.IP {ARG_MAX} 6
+.br
+Maximum length of argument to the
+.IR exec
+functions including environment data.
+.br
+Minimum Acceptable Value:
+{_POSIX_ARG_MAX}
+.IP {ATEXIT_MAX} 6
+.br
+Maximum number of functions that may be registered with
+\fIatexit\fR().
+.br
+Minimum Acceptable Value: 32
+.IP {CHILD_MAX} 6
+.br
+Maximum number of simultaneous processes per real user ID.
+.br
+Minimum Acceptable Value:
+{_POSIX_CHILD_MAX}
+.IP {DELAYTIMER_MAX} 6
+.br
+Maximum number of timer expiration overruns.
+.br
+Minimum Acceptable Value:
+{_POSIX_DELAYTIMER_MAX}
+.IP {HOST_NAME_MAX} 6
+.br
+Maximum length of a host name (not including the terminating null)
+as returned from the
+\fIgethostname\fR()
+function.
+.br
+Minimum Acceptable Value:
+{_POSIX_HOST_NAME_MAX}
+.IP {IOV_MAX} 6
+.br
+Maximum number of
+.BR iovec
+structures that one process has available for use with
+\fIreadv\fR()
+or
+\fIwritev\fR().
+.br
+Minimum Acceptable Value:
+{_XOPEN_IOV_MAX}
+.IP {LOGIN_NAME_MAX} 6
+.br
+Maximum length of a login name.
+.br
+Minimum Acceptable Value:
+{_POSIX_LOGIN_NAME_MAX}
+.IP {MQ_OPEN_MAX} 6
+.br
+The maximum number of open message queue descriptors a process may
+hold.
+.br
+Minimum Acceptable Value:
+{_POSIX_MQ_OPEN_MAX}
+.IP {MQ_PRIO_MAX} 6
+.br
+The maximum number of message priorities supported by the implementation.
+.br
+Minimum Acceptable Value:
+{_POSIX_MQ_PRIO_MAX}
+.IP {OPEN_MAX} 6
+.br
+A value one greater than the maximum value that the system may
+assign to a newly-created file descriptor.
+.br
+Minimum Acceptable Value:
+{_POSIX_OPEN_MAX}
+.IP {PAGESIZE} 6
+.br
+Size in bytes of a page.
+.br
+Minimum Acceptable Value: 1
+.IP {PAGE_SIZE} 6
+.br
+Equivalent to
+{PAGESIZE}.
+If either
+{PAGESIZE}
+or
+{PAGE_SIZE}
+is defined, the other is defined with the same value.
+.IP {PTHREAD_DESTRUCTOR_ITERATIONS} 6
+.br
+Maximum number of attempts made to destroy a thread's thread-specific
+data values on thread exit.
+.br
+Minimum Acceptable Value:
+{_POSIX_THREAD_DESTRUCTOR_ITERATIONS}
+.IP {PTHREAD_KEYS_MAX} 6
+.br
+Maximum number of data keys that can be created by a process.
+.br
+Minimum Acceptable Value:
+{_POSIX_THREAD_KEYS_MAX}
+.IP {PTHREAD_STACK_MIN} 6
+.br
+Minimum size in bytes of thread stack storage.
+.br
+Minimum Acceptable Value: 0
+.IP {PTHREAD_THREADS_MAX} 6
+.br
+Maximum number of threads that can be created per process.
+.br
+Minimum Acceptable Value:
+{_POSIX_THREAD_THREADS_MAX}
+.IP {RE_DUP_MAX} 6
+.br
+Maximum number of repeated occurrences of a BRE or ERE interval
+expression; see
+.IR "Section 9.3.6" ", " "BREs Matching Multiple Characters"
+and
+.IR "Section 9.4.6" ", " "EREs Matching Multiple Characters".
+.br
+Minimum Acceptable Value:
+{_POSIX2_RE_DUP_MAX}
+.IP {RTSIG_MAX} 6
+.br
+Maximum number of realtime signals reserved for application use in this
+implementation.
+.br
+Minimum Acceptable Value:
+{_POSIX_RTSIG_MAX}
+.IP {SEM_NSEMS_MAX} 6
+.br
+Maximum number of semaphores that a process may have.
+.br
+Minimum Acceptable Value:
+{_POSIX_SEM_NSEMS_MAX}
+.IP {SEM_VALUE_MAX} 6
+.br
+The maximum value a semaphore may have.
+.br
+Minimum Acceptable Value:
+{_POSIX_SEM_VALUE_MAX}
+.IP {SIGQUEUE_MAX} 6
+.br
+Maximum number of queued signals that a process may send and have
+pending at the receiver(s) at any time.
+.br
+Minimum Acceptable Value:
+{_POSIX_SIGQUEUE_MAX}
+.IP {SS_REPL_MAX} 6
+.br
+The maximum number of replenishment operations that may be simultaneously
+pending for a particular sporadic server scheduler.
+.br
+Minimum Acceptable Value:
+{_POSIX_SS_REPL_MAX}
+.IP {STREAM_MAX} 6
+.br
+Maximum number of streams that one process can have open at one time.
+If defined, it has the same value as
+{FOPEN_MAX}
+(see
+.IR <stdio.h> ).
+.br
+Minimum Acceptable Value:
+{_POSIX_STREAM_MAX}
+.IP {SYMLOOP_MAX} 6
+.br
+Maximum number of symbolic links that can be reliably traversed in the
+resolution of a pathname in the absence of a loop.
+.br
+Minimum Acceptable Value:
+{_POSIX_SYMLOOP_MAX}
+.IP {TIMER_MAX} 6
+.br
+Maximum number of timers per process supported by the implementation.
+.br
+Minimum Acceptable Value:
+{_POSIX_TIMER_MAX}
+.IP {TRACE_EVENT_NAME_MAX} 6
+.br
+Maximum length of the trace event name (not including the terminating null).
+.br
+Minimum Acceptable Value:
+{_POSIX_TRACE_EVENT_NAME_MAX}
+.IP {TRACE_NAME_MAX} 6
+.br
+Maximum length of the trace generation version string or of the
+trace stream name (not including the terminating null).
+.br
+Minimum Acceptable Value:
+{_POSIX_TRACE_NAME_MAX}
+.IP {TRACE_SYS_MAX} 6
+.br
+Maximum number of trace streams that may simultaneously exist in
+the system.
+.br
+Minimum Acceptable Value:
+{_POSIX_TRACE_SYS_MAX}
+.IP {TRACE_USER_EVENT_MAX} 6
+.br
+Maximum number of user trace event type identifiers that may
+simultaneously exist in a traced process, including the predefined
+user trace event POSIX_TRACE_UNNAMED_USER_EVENT.
+.br
+Minimum Acceptable Value:
+{_POSIX_TRACE_USER_EVENT_MAX}
+.IP {TTY_NAME_MAX} 6
+.br
+Maximum length of terminal device name.
+.br
+Minimum Acceptable Value:
+{_POSIX_TTY_NAME_MAX}
+.IP {TZNAME_MAX} 6
+.br
+Maximum number of bytes supported for the name of a timezone (not of
+the
+.IR TZ
+variable).
+.br
+Minimum Acceptable Value:
+{_POSIX_TZNAME_MAX}
+.TP 10
+.BR Note:
+The length given by
+{TZNAME_MAX}
+does not include the quoting characters mentioned in
+.IR "Section 8.3" ", " "Other Environment Variables".
+.P
+.SS "Pathname Variable Values"
+.P
+The values in the following list may be constants within an
+implementation or may vary from one pathname to another. For example,
+file systems or directories may have different characteristics.
+.P
+A definition of one of the symbolic constants in the following list
+shall be omitted from the
+.IR <limits.h> 
+header on specific implementations where the corresponding value is
+equal to or greater than the stated minimum, but where the value can
+vary depending on the file to which it is applied. The actual value
+supported for a specific pathname shall be provided by the
+\fIpathconf\fR()
+function.
+.IP {FILESIZEBITS} 6
+.br
+Minimum number of bits needed to represent, as a signed integer value,
+the maximum size of a regular file allowed in the specified directory.
+.br
+Minimum Acceptable Value: 32
+.IP {LINK_MAX} 6
+.br
+Maximum number of links to a single file.
+.br
+Minimum Acceptable Value:
+{_POSIX_LINK_MAX}
+.IP {MAX_CANON} 6
+.br
+Maximum number of bytes in a terminal canonical input line.
+.br
+Minimum Acceptable Value:
+{_POSIX_MAX_CANON}
+.IP {MAX_INPUT} 6
+.br
+Minimum number of bytes for which space is available in a terminal
+input queue; therefore, the maximum number of bytes a conforming
+application may require to be typed as input before reading them.
+.br
+Minimum Acceptable Value:
+{_POSIX_MAX_INPUT}
+.IP {NAME_MAX} 6
+.br
+Maximum number of bytes in a filename (not including the terminating
+null of a filename string).
+.br
+Minimum Acceptable Value:
+{_POSIX_NAME_MAX}
+.br
+Minimum Acceptable Value:
+{_XOPEN_NAME_MAX}
+.IP {PATH_MAX} 6
+.br
+Maximum number of bytes the implementation will store as a pathname in
+a user-supplied buffer of unspecified size, including the terminating
+null character. Minimum number the implementation will accept as the
+maximum number of bytes in a pathname.
+.br
+Minimum Acceptable Value:
+{_POSIX_PATH_MAX}
+.br
+Minimum Acceptable Value:
+{_XOPEN_PATH_MAX}
+.IP {PIPE_BUF} 6
+.br
+Maximum number of bytes that is guaranteed to be atomic when writing to
+a pipe.
+.br
+Minimum Acceptable Value:
+{_POSIX_PIPE_BUF}
+.IP {POSIX_ALLOC_SIZE_MIN} 6
+.br
+Minimum number of bytes of storage actually allocated for any portion
+of a file.
+.br
+Minimum Acceptable Value: Not specified.
+.IP {POSIX_REC_INCR_XFER_SIZE} 6
+.br
+Recommended increment for file transfer sizes between the
+{POSIX_REC_MIN_XFER_SIZE}
+and
+{POSIX_REC_MAX_XFER_SIZE}
+values.
+.br
+Minimum Acceptable Value: Not specified.
+.IP {POSIX_REC_MAX_XFER_SIZE} 6
+.br
+Maximum recommended file transfer size.
+.br
+Minimum Acceptable Value: Not specified.
+.IP {POSIX_REC_MIN_XFER_SIZE} 6
+.br
+Minimum recommended file transfer size.
+.br
+Minimum Acceptable Value: Not specified.
+.IP {POSIX_REC_XFER_ALIGN} 6
+.br
+Recommended file transfer buffer alignment.
+.br
+Minimum Acceptable Value: Not specified.
+.IP {SYMLINK_MAX} 6
+.br
+Maximum number of bytes in a symbolic link.
+.br
+Minimum Acceptable Value:
+{_POSIX_SYMLINK_MAX}
+.SS "Runtime Increasable Values"
+.P
+The magnitude limitations in the following list shall be fixed by
+specific implementations. An application should assume that the value
+of the symbolic constant defined by
+.IR <limits.h> 
+in a specific implementation is the minimum that pertains whenever the
+application is run under that implementation. A specific instance of a
+specific implementation may increase the value relative to that
+supplied by
+.IR <limits.h> 
+for that implementation. The actual value supported by a specific
+instance shall be provided by the
+\fIsysconf\fR()
+function.
+.IP {BC_BASE_MAX} 6
+.br
+Maximum
+.IR obase
+values allowed by the
+.IR bc
+utility.
+.br
+Minimum Acceptable Value:
+{_POSIX2_BC_BASE_MAX}
+.IP {BC_DIM_MAX} 6
+.br
+Maximum number of elements permitted in an array by the
+.IR bc
+utility.
+.br
+Minimum Acceptable Value:
+{_POSIX2_BC_DIM_MAX}
+.IP {BC_SCALE_MAX} 6
+.br
+Maximum
+.IR scale
+value allowed by the
+.IR bc
+utility.
+.br
+Minimum Acceptable Value:
+{_POSIX2_BC_SCALE_MAX}
+.IP {BC_STRING_MAX} 6
+.br
+Maximum length of a string constant accepted by the
+.IR bc
+utility.
+.br
+Minimum Acceptable Value:
+{_POSIX2_BC_STRING_MAX}
+.IP {CHARCLASS_NAME_MAX} 6
+.br
+Maximum number of bytes in a character class name.
+.br
+Minimum Acceptable Value:
+{_POSIX2_CHARCLASS_NAME_MAX}
+.IP {COLL_WEIGHTS_MAX} 6
+.br
+Maximum number of weights that can be assigned to an entry of the
+.IR LC_COLLATE
+.BR order
+keyword in the locale definition file; see
+.IR "Chapter 7" ", " "Locale".
+.br
+Minimum Acceptable Value:
+{_POSIX2_COLL_WEIGHTS_MAX}
+.IP {EXPR_NEST_MAX} 6
+.br
+Maximum number of expressions that can be nested within parentheses by
+the
+.IR expr
+utility.
+.br
+Minimum Acceptable Value:
+{_POSIX2_EXPR_NEST_MAX}
+.IP {LINE_MAX} 6
+.br
+Unless otherwise noted, the maximum length, in bytes, of a utility's
+input line (either standard input or another file), when the utility is
+described as processing text files. The length includes room for the
+trailing
+<newline>.
+.br
+Minimum Acceptable Value:
+{_POSIX2_LINE_MAX}
+.IP {NGROUPS_MAX} 6
+.br
+Maximum number of simultaneous supplementary group IDs per process.
+.br
+Minimum Acceptable Value:
+{_POSIX_NGROUPS_MAX}
+.IP {RE_DUP_MAX} 6
+.br
+Maximum number of repeated occurrences of a regular expression
+permitted when using the interval notation \e{\fIm\fP,\fIn\fP\e}; see
+.IR "Chapter 9" ", " "Regular Expressions".
+.br
+Minimum Acceptable Value:
+{_POSIX2_RE_DUP_MAX}
+.SS "Maximum Values"
+.P
+The
+.IR <limits.h> 
+header shall define the following symbolic constants with the values
+shown. These are the most restrictive values for certain features on
+an implementation. A conforming implementation shall provide values no
+larger than these values. A conforming application must not require a
+smaller value for correct operation.
+.IP {_POSIX_CLOCKRES_MIN} 6
+.br
+The resolution of the CLOCK_REALTIME clock, in nanoseconds.
+.br
+Value: 20 000 000
+.RS 6 
+.P
+If the Monotonic Clock option is supported, the resolution of the
+CLOCK_MONOTONIC clock, in nanoseconds, is represented by
+{_POSIX_CLOCKRES_MIN}.
+.RE
+.SS "Minimum Values"
+.P
+The
+.IR <limits.h> 
+header shall define the following symbolic constants with the values
+shown. These are the most restrictive values for certain features on
+an implementation conforming to this volume of POSIX.1\(hy2008. Related symbolic constants are
+defined elsewhere in this volume of POSIX.1\(hy2008 which reflect the actual implementation and
+which need not be as restrictive. For each of these limits, a conforming
+implementation shall provide a value at least this large or shall have
+no limit. A strictly conforming application must not require a larger
+value for correct operation.
+.IP {_POSIX_AIO_LISTIO_MAX} 6
+.br
+The number of I/O operations that can be specified in a list I/O call.
+.br
+Value: 2
+.IP {_POSIX_AIO_MAX} 6
+.br
+The number of outstanding asynchronous I/O operations.
+.br
+Value: 1
+.IP {_POSIX_ARG_MAX} 6
+.br
+Maximum length of argument to the
+.IR exec
+functions including environment data.
+.br
+Value: 4 096
+.IP {_POSIX_CHILD_MAX} 6
+.br
+Maximum number of simultaneous processes per real user ID.
+.br
+Value: 25
+.IP {_POSIX_DELAYTIMER_MAX} 6
+.br
+The number of timer expiration overruns.
+.br
+Value: 32
+.IP {_POSIX_HOST_NAME_MAX} 6
+.br
+Maximum length of a host name (not including the terminating null)
+as returned from the
+\fIgethostname\fR()
+function.
+.br
+Value: 255
+.IP {_POSIX_LINK_MAX} 6
+.br
+Maximum number of links to a single file.
+.br
+Value: 8
+.IP {_POSIX_LOGIN_NAME_MAX} 6
+.br
+The size of the storage required for a login name, in bytes
+(including the terminating null).
+.br
+Value: 9
+.IP {_POSIX_MAX_CANON} 6
+.br
+Maximum number of bytes in a terminal canonical input queue.
+.br
+Value: 255
+.IP {_POSIX_MAX_INPUT} 6
+.br
+Maximum number of bytes allowed in a terminal input queue.
+.br
+Value: 255
+.IP {_POSIX_MQ_OPEN_MAX} 6
+.br
+The number of message queues that can be open for a single process.
+.br
+Value: 8
+.IP {_POSIX_MQ_PRIO_MAX} 6
+.br
+The maximum number of message priorities supported by the implementation.
+.br
+Value: 32
+.IP {_POSIX_NAME_MAX} 6
+.br
+Maximum number of bytes in a filename (not including the terminating
+null of a filename string).
+.br
+Value: 14
+.IP {_POSIX_NGROUPS_MAX} 6
+.br
+Maximum number of simultaneous supplementary group IDs per process.
+.br
+Value: 8
+.IP {_POSIX_OPEN_MAX} 6
+.br
+A value one greater than the maximum value that the system may assign
+to a newly-created file descriptor.
+.br
+Value: 20
+.IP {_POSIX_PATH_MAX} 6
+.br
+Minimum number the implementation will accept as the maximum number of
+bytes in a pathname.
+.br
+Value: 256
+.IP {_POSIX_PIPE_BUF} 6
+.br
+Maximum number of bytes that is guaranteed to be atomic when writing to
+a pipe.
+.br
+Value: 512
+.IP {_POSIX_RE_DUP_MAX} 6
+.br
+The number of repeated occurrences of a BRE permitted by the
+\fIregexec\fR()
+and
+\fIregcomp\fR()
+functions when using the interval notation {\e(\fIm\fR,\fIn\fR\e}; see
+.IR "Section 9.3.6" ", " "BREs Matching Multiple Characters".
+.br
+Value: 255
+.IP {_POSIX_RTSIG_MAX} 6
+.br
+The number of realtime signal numbers reserved for application use.
+.br
+Value: 8
+.IP {_POSIX_SEM_NSEMS_MAX} 6
+.br
+The number of semaphores that a process may have.
+.br
+Value: 256
+.IP {_POSIX_SEM_VALUE_MAX} 6
+.br
+The maximum value a semaphore may have.
+.br
+Value: 32 767
+.IP {_POSIX_SIGQUEUE_MAX} 6
+.br
+The number of queued signals that a process may send and have pending
+at the receiver(s) at any time.
+.br
+Value: 32
+.IP {_POSIX_SSIZE_MAX} 6
+.br
+The value that can be stored in an object of type
+.BR ssize_t .
+.br
+Value: 32 767
+.IP {_POSIX_SS_REPL_MAX} 6
+.br
+The number of replenishment operations that may be simultaneously
+pending for a particular sporadic server scheduler.
+.br
+Value: 4
+.IP {_POSIX_STREAM_MAX} 6
+.br
+The number of streams that one process can have open at one time.
+.br
+Value: 8
+.IP {_POSIX_SYMLINK_MAX} 6
+.br
+The number of bytes in a symbolic link.
+.br
+Value: 255
+.IP {_POSIX_SYMLOOP_MAX} 6
+.br
+The number of symbolic links that can be traversed in the resolution of
+a pathname in the absence of a loop.
+.br
+Value: 8
+.IP {_POSIX_THREAD_DESTRUCTOR_ITERATIONS} 6
+.br
+The number of attempts made to destroy a thread's thread-specific data
+values on thread exit.
+.br
+Value: 4
+.IP {_POSIX_THREAD_KEYS_MAX} 6
+.br
+The number of data keys per process.
+.br
+Value: 128
+.IP {_POSIX_THREAD_THREADS_MAX} 6
+.br
+The number of threads per process.
+.br
+Value: 64
+.IP {_POSIX_TIMER_MAX} 6
+.br
+The per-process number of timers.
+.br
+Value: 32
+.IP {_POSIX_TRACE_EVENT_NAME_MAX} 6
+.br
+The length in bytes of a trace event name (not including the terminating null).
+.br
+Value: 30
+.IP {_POSIX_TRACE_NAME_MAX} 6
+.br
+The length in bytes of a trace generation version string or a trace
+stream name (not including the terminating null).
+.br
+Value: 8
+.IP {_POSIX_TRACE_SYS_MAX} 6
+.br
+The number of trace streams that may simultaneously exist in the system.
+.br
+Value: 8
+.IP {_POSIX_TRACE_USER_EVENT_MAX} 6
+.br
+The number of user trace event type identifiers that may simultaneously
+exist in a traced process, including the predefined user trace event
+POSIX_TRACE_UNNAMED_USER_EVENT.
+.br
+Value: 32
+.IP {_POSIX_TTY_NAME_MAX} 6
+.br
+The size of the storage required for a terminal device name, in bytes
+(including the terminating null).
+.br
+Value: 9
+.IP {_POSIX_TZNAME_MAX} 6
+.br
+Maximum number of bytes supported for the name of a timezone (not of
+the
+.IR TZ
+variable).
+.br
+Value: 6
+.RS 6 
+.TP 10
+.BR Note:
+The length given by
+{_POSIX_TZNAME_MAX}
+does not include the quoting characters mentioned in
+.IR "Section 8.3" ", " "Other Environment Variables".
+.P
+.RE
+.IP {_POSIX2_BC_BASE_MAX} 6
+.br
+Maximum
+.IR obase
+values allowed by the
+.IR bc
+utility.
+.br
+Value: 99
+.IP {_POSIX2_BC_DIM_MAX} 6
+.br
+Maximum number of elements permitted in an array by the
+.IR bc
+utility.
+.br
+Value: 2 048
+.IP {_POSIX2_BC_SCALE_MAX} 6
+.br
+Maximum
+.IR scale
+value allowed by the
+.IR bc
+utility.
+.br
+Value: 99
+.IP {_POSIX2_BC_STRING_MAX} 6
+.br
+Maximum length of a string constant accepted by the
+.IR bc
+utility.
+.br
+Value: 1 000
+.IP {_POSIX2_CHARCLASS_NAME_MAX} 6
+.br
+Maximum number of bytes in a character class name.
+.br
+Value: 14
+.IP {_POSIX2_COLL_WEIGHTS_MAX} 6
+.br
+Maximum number of weights that can be assigned to an entry of the
+.IR LC_COLLATE
+.BR order
+keyword in the locale definition file; see
+.IR "Chapter 7" ", " "Locale".
+.br
+Value: 2
+.IP {_POSIX2_EXPR_NEST_MAX} 6
+.br
+Maximum number of expressions that can be nested within parentheses by
+the
+.IR expr
+utility.
+.br
+Value: 32
+.IP {_POSIX2_LINE_MAX} 6
+.br
+Unless otherwise noted, the maximum length, in bytes, of a utility's
+input line (either standard input or another file), when the utility is
+described as processing text files. The length includes room for the
+trailing
+<newline>.
+.br
+Value: 2 048
+.IP {_POSIX2_RE_DUP_MAX} 6
+.br
+Maximum number of repeated occurrences of a regular expression
+permitted when using the interval notation \e{\fIm\fP,\fIn\fP\e}; see
+.IR "Chapter 9" ", " "Regular Expressions".
+.br
+Value: 255
+.IP {_XOPEN_IOV_MAX} 6
+.br
+Maximum number of
+.BR iovec
+structures that one process has available for use with
+\fIreadv\fR()
+or
+\fIwritev\fR().
+.br
+Value: 16
+.IP {_XOPEN_NAME_MAX} 6
+.br
+Maximum number of bytes in a filename (not including the terminating
+null of a filename string).
+.br
+Value: 255
+.IP {_XOPEN_PATH_MAX} 6
+.br
+Minimum number the implementation will accept as the maximum number of
+bytes in a pathname.
+.br
+Value: 1\|024
+.SS "Numerical Limits"
+.P
+The
+.IR <limits.h> 
+header shall define the following macros and, except for
+{CHAR_BIT},
+{LONG_BIT},
+{MB_LEN_MAX},
+and
+{WORD_BIT},
+they shall be replaced by expressions that have the same type as
+would an expression that is an object of the corresponding type
+converted according to the integer promotions.
+.P
+If the value of an object of type
+.BR char
+is treated as a signed integer when used in an expression, the value of
+{CHAR_MIN}
+is the same as that of
+{SCHAR_MIN}
+and the value of
+{CHAR_MAX}
+is the same as that of
+{SCHAR_MAX}.
+Otherwise, the value of
+{CHAR_MIN}
+is 0 and the value of
+{CHAR_MAX}
+is the same as that of
+{UCHAR_MAX}.
+.IP {CHAR_BIT} 6
+.br
+Number of bits in a type
+.BR char .
+.br
+Value: 8
+.IP {CHAR_MAX} 6
+.br
+Maximum value for an object of type
+.BR char .
+.br
+Value:
+{UCHAR_MAX}
+or
+{SCHAR_MAX}
+.IP {CHAR_MIN} 6
+.br
+Minimum value for an object of type
+.BR char .
+.br
+Value:
+{SCHAR_MIN}
+or 0
+.IP {INT_MAX} 6
+.br
+Maximum value for an object of type
+.BR int .
+.br
+Minimum Acceptable Value: 2 147 483 647
+.IP {INT_MIN} 6
+.br
+Minimum value for an object of type
+.BR int .
+.br
+Maximum Acceptable Value: \(mi2 147 483 647
+.IP {LLONG_MAX} 6
+.br
+Maximum value for an object of type
+.BR "long long" .
+.br
+Minimum Acceptable Value: +9\|223\|372\|036\|854\|775\|807
+.IP {LLONG_MIN} 6
+.br
+Minimum value for an object of type
+.BR "long long" .
+.br
+Maximum Acceptable Value: \(mi9\|223\|372\|036\|854\|775\|807
+.IP {LONG_BIT} 6
+.br
+Number of bits in an object of type
+.BR long .
+.br
+Minimum Acceptable Value: 32
+.IP {LONG_MAX} 6
+.br
+Maximum value for an object of type
+.BR long .
+.br
+Minimum Acceptable Value: +2 147 483 647
+.IP {LONG_MIN} 6
+.br
+Minimum value for an object of type
+.BR long .
+.br
+Maximum Acceptable Value: \(mi2 147 483 647
+.IP {MB_LEN_MAX} 6
+.br
+Maximum number of bytes in a character, for any supported locale.
+.br
+Minimum Acceptable Value: 1
+.IP {SCHAR_MAX} 6
+.br
+Maximum value for an object of type
+.BR "signed char" .
+.br
+Value: +127
+.IP {SCHAR_MIN} 6
+.br
+Minimum value for an object of type
+.BR "signed char" .
+.br
+Value: \(mi128
+.IP {SHRT_MAX} 6
+.br
+Maximum value for an object of type
+.BR short .
+.br
+Minimum Acceptable Value: +32 767
+.IP {SHRT_MIN} 6
+.br
+Minimum value for an object of type
+.BR short .
+.br
+Maximum Acceptable Value: \(mi32 767
+.IP {SSIZE_MAX} 6
+.br
+Maximum value for an object of type
+.BR ssize_t .
+.br
+Minimum Acceptable Value:
+{_POSIX_SSIZE_MAX}
+.IP {UCHAR_MAX} 6
+.br
+Maximum value for an object of type
+.BR "unsigned char" .
+.br
+Value: 255
+.IP {UINT_MAX} 6
+.br
+Maximum value for an object of type
+.BR unsigned .
+.br
+Minimum Acceptable Value: 4 294 967 295
+.IP {ULLONG_MAX} 6
+.br
+Maximum value for an object of type
+.BR "unsigned long long" .
+.br
+Minimum Acceptable Value: 18\|446\|744\|073\|709\|551\|615
+.IP {ULONG_MAX} 6
+.br
+Maximum value for an object of type
+.BR "unsigned long" .
+.br
+Minimum Acceptable Value: 4 294 967 295
+.IP {USHRT_MAX} 6
+.br
+Maximum value for an object of type
+.BR "unsigned short" .
+.br
+Minimum Acceptable Value: 65 535
+.IP {WORD_BIT} 6
+.br
+Number of bits in an object of type
+.BR int .
+.br
+Minimum Acceptable Value: 32
+.SS "Other Invariant Values"
+.P
+The
+.IR <limits.h> 
+header shall define the following symbolic constants:
+.IP {NL_ARGMAX} 6
+.br
+Maximum value of
+.IR n
+in conversion specifications using the \fR"%\fIn\fR$"\fR
+sequence in calls to the
+\fIprintf\fR()
+and
+\fIscanf\fR()
+families of functions.
+.br
+Minimum Acceptable Value: 9
+.IP {NL_LANGMAX} 6
+.br
+Maximum number of bytes in a
+.IR LANG
+name.
+.br
+Minimum Acceptable Value: 14
+.IP {NL_MSGMAX} 6
+.br
+Maximum message number.
+.br
+Minimum Acceptable Value: 32 767
+.IP {NL_SETMAX} 6
+.br
+Maximum set number.
+.br
+Minimum Acceptable Value: 255
+.IP {NL_TEXTMAX} 6
+.br
+Maximum number of bytes in a message string.
+.br
+Minimum Acceptable Value:
+{_POSIX2_LINE_MAX}
+.IP {NZERO} 6
+.br
+Default process priority.
+.br
+Minimum Acceptable Value: 20
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+A request was made to reduce the value of
+{_POSIX_LINK_MAX}
+from the value of 8 specified for it in the POSIX.1\(hy1990 standard to 2. The
+standard developers decided to deny this request for several reasons:
+.IP " *" 4
+They wanted to avoid making any changes to the standard that could
+break conforming applications, and the requested change could have that
+effect.
+.IP " *" 4
+The use of multiple hard links to a file cannot always be replaced with
+use of symbolic links. Symbolic links are semantically different from
+hard links in that they associate a pathname with another pathname
+rather than a pathname with a file. This has implications for access
+control, file permanence, and transparency.
+.IP " *" 4
+The original standard developers had considered the issue of allowing
+for implementations that did not in general support hard links, and
+decided that this would reduce consensus on the standard.
+.P
+Systems that support historical versions of the development option of
+the ISO\ POSIX\(hy2 standard retain the name
+{_POSIX2_RE_DUP_MAX}
+as an alias for
+{_POSIX_RE_DUP_MAX}.
+.IP {PATH_MAX} 6
+.br
+IEEE PASC Interpretation 1003.1 #15 addressed the inconsistency in the
+standard with the definition of pathname and the description of
+{PATH_MAX},
+allowing application developers to allocate either
+{PATH_MAX}
+or
+{PATH_MAX}+1
+bytes. The inconsistency has been removed by correction to the
+{PATH_MAX}
+definition to include the null character. With this change,
+applications that previously allocated
+{PATH_MAX}
+bytes will continue to succeed.
+.IP {SYMLINK_MAX} 6
+.br
+This symbol refers to space for data that is stored in the file system,
+as opposed to
+{PATH_MAX}
+which is the length of a name that can be passed to a function. In some
+existing implementations, the pathnames pointed to by symbolic links
+are stored in the
+.IR inode s
+of the links, so it is important that
+{SYMLINK_MAX}
+not be constrained to be as large as
+{PATH_MAX}.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Chapter 7" ", " "Locale",
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment",
+.IR "\fIfpathconf\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

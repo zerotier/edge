@@ -1,0 +1,940 @@
+'\" et
+.TH OD "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+od
+\(em dump files in various formats
+.SH SYNOPSIS
+.LP
+.nf
+od \fB[\fR\(miv\fB] [\fR\(miA \fIaddress_base\fB] [\fR\(mij \fIskip\fB] [\fR\(miN \fIcount\fB] [\fR\(mit \fItype_string\fB]\fR...
+    \fB[\fIfile\fR...\fB]\fR
+.P
+od \fB[\fR\(mibcdosx\fB] [\fIfile\fB] [[\fR+\fB]\fIoffset\fB[\fR.\fB][\fRb\fB]]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR od
+utility shall write the contents of its input files to standard output
+in a user-specified format.
+.SH OPTIONS
+The
+.IR od
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that the order of presentation of the
+.BR \(mit
+options
+and the
+.BR \(mibcdosx
+options
+is significant.
+.P
+The following options shall be supported:
+.IP "\fB\(miA\ \fIaddress_base\fR" 10
+.br
+Specify the input offset base. See the EXTENDED DESCRIPTION section.
+The application shall ensure that the
+.IR address_base
+option-argument is a character. The characters
+.BR 'd' ,
+.BR 'o' ,
+and
+.BR 'x' 
+specify that the offset base shall be written in decimal, octal, or
+hexadecimal, respectively. The character
+.BR 'n' 
+specifies that the offset shall not be written.
+.IP "\fB\(mib\fP" 10
+Interpret bytes in octal. This shall be equivalent to
+.BR "\(mit\ o1" .
+.IP "\fB\(mic\fP" 10
+Interpret bytes as characters specified by the current setting of the
+.IR LC_CTYPE
+category. Certain non-graphic characters appear as C escapes:
+.BR \(dqNUL=\e0\(dq ,
+.BR \(dqBS=\eb\(dq ,
+.BR \(dqFF=\ef\(dq ,
+.BR \(dqNL=\en\(dq ,
+.BR \(dqCR=\er\(dq ,
+.BR \(dqHT=\et\(dq ;
+others appear as 3-digit octal numbers.
+.IP "\fB\(mid\fP" 10
+Interpret
+.IR word s
+(two-byte units) in unsigned decimal. This shall be equivalent to
+.BR "\(mit\ u2" .
+.IP "\fB\(mij\ \fIskip\fR" 10
+Jump over
+.IR skip
+bytes from the beginning of the input. The
+.IR od
+utility shall read or seek past the first
+.IR skip
+bytes in the concatenated input files. If the combined input is not at
+least
+.IR skip
+bytes long, the
+.IR od
+utility shall write a diagnostic message to standard error and exit
+with a non-zero exit status.
+.RS 10 
+.P
+By default, the
+.IR skip
+option-argument shall be interpreted as a decimal number. With a
+leading 0x or 0X, the offset shall be interpreted as a hexadecimal
+number; otherwise, with a leading
+.BR '0' ,
+the offset shall be interpreted as an octal number. Appending the
+character
+.BR 'b' ,
+.BR 'k' ,
+or
+.BR 'm' 
+to offset shall cause it to be interpreted as a multiple of 512,
+1\|024, or 1\|048\|576 bytes, respectively. If the
+.IR skip
+number is hexadecimal, any appended
+.BR 'b' 
+shall be considered to be the final hexadecimal digit.
+.RE
+.IP "\fB\(miN\ \fIcount\fR" 10
+Format no more than
+.IR count
+bytes of input. By default,
+.IR count
+shall be interpreted as a decimal number. With a leading 0x or 0X,
+.IR count
+shall be interpreted as a hexadecimal number; otherwise, with a leading
+.BR '0' ,
+it shall be interpreted as an octal number. If
+.IR count
+bytes of input (after successfully skipping, if
+.BR \(mij
+.IR skip
+is specified) are not available, it shall not be considered an error;
+the
+.IR od
+utility shall format the input that is available.
+.IP "\fB\(mio\fP" 10
+Interpret
+.IR word s
+(two-byte units) in octal. This shall be equivalent to
+.BR "\(mit\ o2" .
+.IP "\fB\(mis\fP" 10
+Interpret
+.IR word s
+(two-byte units) in signed decimal. This shall be equivalent to
+.BR "\(mit\ d2" .
+.IP "\fB\(mit\ \fItype_string\fR" 10
+.br
+Specify one or more output types. See the EXTENDED DESCRIPTION
+section. The application shall ensure that the
+.IR type_string
+option-argument is a string specifying the types to be used when
+writing the input data. The string shall consist of the type
+specification characters
+.BR a ,
+.BR c ,
+.BR d ,
+.BR f ,
+.BR o ,
+.BR u ,
+and
+.BR x ,
+specifying named character, character, signed decimal, floating point,
+octal, unsigned decimal, and hexadecimal, respectively. The type
+specification characters
+.BR d ,
+.BR f ,
+.BR o ,
+.BR u ,
+and
+.BR x
+can be followed by an optional unsigned decimal integer that specifies
+the number of bytes to be transformed by each instance of the output
+type. The type specification character
+.BR f
+can be followed by an optional
+.BR F ,
+.BR D ,
+or
+.BR L
+indicating that the conversion should be applied to an item of type
+.BR float ,
+.BR double ,
+or
+.BR "long double" ,
+respectively. The type specification characters
+.BR d ,
+.BR o ,
+.BR u ,
+and
+.BR x
+can be followed by an optional
+.BR C ,
+.BR S ,
+.BR I ,
+or
+.BR L
+indicating that the conversion should be applied to an item of type
+.BR char ,
+.BR short ,
+.BR int ,
+or
+.BR long ,
+respectively. Multiple types can be concatenated within the same
+.IR type_string
+and multiple
+.BR \(mit
+options can be specified. Output lines shall be written for each type
+specified in the order in which the type specification characters are
+specified.
+.IP "\fB\(miv\fP" 10
+Write all input data. Without the
+.BR \(miv
+option, any number of groups of output lines, which would be identical
+to the immediately preceding group of output lines (except for the byte
+offsets), shall be replaced with a line containing only an
+<asterisk>
+(\c
+.BR '*' ).
+.IP "\fB\(mix\fP" 10
+Interpret
+.IR word s
+(two-byte units) in hexadecimal. This shall be equivalent to
+.BR "\(mit\ x2" .
+.P
+Multiple types can be specified by using multiple
+.BR \(mibcdostx
+options. Output lines are written for each type specified in the order
+in which the types are specified.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a file to be read. If no
+.IR file
+operands are specified, the standard input shall be used.
+.RS 10 
+.P
+If there are no more than two operands, none of the
+.BR \(miA ,
+.BR \(mij ,
+.BR \(miN ,
+.BR \(mit ,
+or
+.BR \(miv
+options is specified, and either of the following is true: the first
+character of the last operand is a
+<plus-sign>
+(\c
+.BR '\(pl' ),
+or there are two operands and the first character of the last operand
+is numeric;
+the last operand shall be interpreted as an offset operand on
+XSI-conformant systems.
+Under these conditions, the results are unspecified on systems that are
+not XSI-conformant systems.
+.RE
+.IP "\fB[+]\fIoffset\fB[.][b]\fR" 10
+The
+.IR offset
+operand specifies the offset in the file where dumping is to commence.
+This operand is normally interpreted as octal bytes. If
+.BR '.' 
+is appended, the offset shall be interpreted in decimal. If
+.BR 'b' 
+is appended, the offset shall be interpreted in units of 512 bytes.
+.SH STDIN
+The standard input shall be used if no
+.IR file
+operands are specified, and shall be used if a
+.IR file
+operand is
+.BR '\(mi' 
+and the implementation treats the
+.BR '\(mi' 
+as meaning standard input.
+Otherwise, the standard input shall not be used.
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files can be any file type.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR od :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fILC_NUMERIC\fP" 10
+.br
+Determine the locale for selecting the radix character used when
+writing floating-point formatted output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+See the EXTENDED DESCRIPTION section.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+The
+.IR od
+utility shall copy sequentially each input file to standard output,
+transforming the input data according to the output types specified by
+the
+.BR \(mit
+option
+or the
+.BR \(mibcdosx
+options.
+If no output type is specified, the default output shall be as if
+.BR "\(mit\ oS"
+had been specified.
+.P
+The number of bytes transformed by the output type specifier
+.BR c
+may be variable depending on the
+.IR LC_CTYPE
+category.
+.P
+The default number of bytes transformed by output type specifiers
+.BR d ,
+.BR f ,
+.BR o ,
+.BR u ,
+and
+.BR x
+corresponds to the various C-language types as follows. If the
+.IR c99
+compiler is present on the system, these specifiers shall correspond to
+the sizes used by default in that compiler. Otherwise, these sizes
+may vary among systems that conform to POSIX.1\(hy2008.
+.IP " *" 4
+For the type specifier characters
+.BR d ,
+.BR o ,
+.BR u ,
+and
+.BR x ,
+the default number of bytes shall correspond to the size of the
+underlying implementation's basic integer type. For these specifier
+characters, the implementation shall support values of the optional
+number of bytes to be converted corresponding to the number of bytes in
+the C-language types
+.BR char ,
+.BR short ,
+.BR int ,
+and
+.BR long .
+These numbers can also be specified by an application as the characters
+.BR 'C' ,
+.BR 'S' ,
+.BR 'I' ,
+and
+.BR 'L' ,
+respectively. The implementation shall also support the values 1, 2, 4,
+and 8, even if it provides no C-Language types of those sizes. The
+implementation shall support the decimal value corresponding to the
+C-language type
+.BR "long long" .
+The byte order used when interpreting numeric values is
+implementation-defined, but shall correspond to the order in which a
+constant of the corresponding type is stored in memory on the system.
+.IP " *" 4
+For the type specifier character
+.BR f ,
+the default number of bytes shall correspond to the number of bytes in
+the underlying implementation's basic double precision floating-point
+data type. The implementation shall support values of the optional
+number of bytes to be converted corresponding to the number of bytes in
+the C-language types
+.BR float,
+.BR double ,
+and
+.BR "long double" .
+These numbers can also be specified by an application as the characters
+.BR 'F' ,
+.BR 'D' ,
+and
+.BR 'L' ,
+respectively.
+.P
+The type specifier character
+.BR a
+specifies that bytes shall be interpreted as named characters from the
+International Reference Version (IRV) of the ISO/IEC\ 646:\|1991 standard. Only the least
+significant seven bits of each byte shall be used for this type
+specification. Bytes with the values listed in the following table
+shall be written using the corresponding names for those characters.
+.br
+.sp
+.ce 1
+\fBTable: Named Characters in \fIod\fP\fR
+.TS
+center box tab(@);
+cB cB | cB cB | cB cB | cB cB
+l lb | l lb | l lb | l lb.
+Value@Name@Value@Name@Value@Name@Value@Name
+_
+\e000@nul@\e001@soh@\e002@stx@\e003@etx
+\e004@eot@\e005@enq@\e006@ack@\e007@bel
+\e010@bs@\e011@ht@\e012@lf \fRor\fP nl\u\s-3*\s+3\d@\e013@vt
+\e014@ff@\e015@cr@\e016@so@\e017@si
+\e020@dle@\e021@dc1@\e022@dc2@\e023@dc3
+\e024@dc4@\e025@nak@\e026@syn@\e027@etb
+\e030@can@\e031@em@\e032@sub@\e033@esc
+\e034@fs@\e035@gs@\e036@rs@\e037@us
+\e040@sp@\e177@del
+.TE
+.TP 10
+.BR Note:
+The
+.BR \(dq\e012\(dq 
+value may be written either as
+.BR lf
+or
+.BR nl .
+.P
+.P
+The type specifier character
+.BR c
+specifies that bytes shall be interpreted as characters specified by
+the current setting of the
+.IR LC_CTYPE
+locale category. Characters listed in the table in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 5" ", " "File Format Notation"
+(\c
+.BR '\e\e' ,
+.BR '\ea' ,
+.BR '\eb' ,
+.BR '\ef' ,
+.BR '\en' ,
+.BR '\er' ,
+.BR '\et' ,
+.BR '\ev' )
+shall be written as the corresponding escape sequences, except that
+<backslash>
+shall be written as a single
+<backslash>
+and a NUL shall be written as
+.BR '\e0' .
+Other non-printable characters shall be written as one three-digit
+octal number for each byte in the character. Printable multi-byte
+characters shall be written in the area corresponding to the first byte
+of the character; the two-character sequence
+.BR \(dq**\(dq 
+shall be written in the area corresponding to each remaining byte in
+the character, as an indication that the character is continued. When
+either the
+.BR \(mij
+.IR skip
+or
+.BR \(miN
+.IR count
+option is specified along with the
+.BR c
+type specifier, and this results in an attempt to start or finish in
+the middle of a multi-byte character, the result is
+implementation-defined.
+.P
+The input data shall be manipulated in blocks, where a block is defined
+as a multiple of the least common multiple of the number of bytes
+transformed by the specified output types. If the least common
+multiple is greater than 16, the results are unspecified. Each input
+block shall be written as transformed by each output type, one per
+written line, in the order that the output types were specified. If
+the input block size is larger than the number of bytes transformed by
+the output type, the output type shall sequentially transform the parts
+of the input block, and the output from each of the transformations
+shall be separated by one or more
+<blank>
+characters.
+.P
+If, as a result of the specification of the
+.BR \(miN
+option or end-of-file being reached on the last input file, input data
+only partially satisfies an output type, the input shall be extended
+sufficiently with null bytes to write the last byte of the input.
+.P
+Unless
+.BR "\(miA\ n"
+is specified, the first output line produced for each input block shall
+be preceded by the input offset, cumulative across input files, of the
+next byte to be written. The format of the input offset is unspecified;
+however, it shall not contain any
+<blank>
+characters, shall start at the first character of the output line,
+and shall be followed by one or more
+<blank>
+characters. In addition, the offset of the byte following the last byte
+written shall be written after all the input data has been processed,
+but shall not be followed by any
+<blank>
+characters.
+.P
+If no
+.BR \(miA
+option is specified, the input offset base is unspecified.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All input files were processed successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+XSI-conformant applications are warned not to use filenames starting
+with
+.BR '\(pl' 
+or a first operand starting with a numeric character so that the old
+functionality can be maintained by implementations, unless they specify
+one of the
+.BR \(miA ,
+.BR \(mij ,
+or
+.BR \(miN
+options. To guarantee that one of these filenames is always
+interpreted as a filename, an application could always specify the
+address base format with the
+.BR \(miA
+option.
+.SH EXAMPLES
+If a file containing 128 bytes with decimal values zero to 127, in
+increasing order, is supplied as standard input to the command:
+.sp
+.RS 4
+.nf
+\fB
+od \(miA d \(mit a
+.fi \fR
+.P
+.RE
+.P
+on an implementation using an input block size of 16 bytes, the
+standard output, independent of the current locale setting, would be
+similar to:
+.sp
+.RS 4
+.nf
+\fB
+0000000 nul soh stx etx eot enq ack bel  bs  ht  nl  vt  ff  cr  so  si
+0000016 dle dc1 dc2 dc3 dc4 nak syn etb can  em sub esc  fs  gs  rs  us
+0000032  sp   !   "   #   $   %   &   '   (   )   *   +   ,   \(mi   .  /
+0000048   0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?
+0000064   @   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O
+0000080   P   Q   R   S   T   U   V   W   X   Y   Z   [   \e   ]   ^   _
+0000096   `   a   b   c   d   e   f   g   h   i   j   k   l   m   n   o
+0000112   p   q   r   s   t   u   v   w   x   y   z   {   |   }   ~ del
+0000128
+.fi \fR
+.P
+.RE
+.P
+Note that this volume of POSIX.1\(hy2008 allows
+.BR nl
+or
+.BR lf
+to be used as the name for the ISO/IEC\ 646:\|1991 standard IRV character with decimal value
+10. The IRV names this character
+.BR lf
+(line feed), but traditional implementations have referred to this
+character as newline
+(\c
+.BR nl )
+and the POSIX locale character set symbolic name for the corresponding
+character is a
+<newline>.
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+od \(miA o \(mit o2x2x \(miN 18
+.fi \fR
+.P
+.RE
+.P
+on a system with 32-bit words and an implementation using an input
+block size of 16 bytes could write 18 bytes in approximately the
+following format:
+.sp
+.RS 4
+.nf
+\fB
+0000000 032056 031440 041123 042040 052516 044530 020043 031464
+          342e   3320   4253   4420   554e   4958   2023   3334
+             342e3320      42534420      554e4958      20233334
+0000020 032472
+          353a
+             353a0000
+0000022
+.fi \fR
+.P
+.RE
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+od \(miA d \(mit f \(mit o4 \(mit x4 \(miN 24 \(mij 0x15
+.fi \fR
+.P
+.RE
+.P
+on a system with 64-bit doubles (for example, IEEE\ Std\ 754\(hy1985 double
+precision floating-point format) would skip 21 bytes of input data and
+then write 24 bytes in approximately the following format:
+.sp
+.RS 4
+.nf
+\fB
+0000000    1.00000000000000e+00    1.57350000000000e+01
+        07774000000 00000000000 10013674121 35341217270
+           3ff00000    00000000    402f3851    eb851eb8
+0000016    1.40668230000000e+02
+        10030312542 04370303230
+           40619562    23e18698
+0000024
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The
+.IR od
+utility went through several names in early proposals, including
+.IR hd ,
+.IR xd ,
+and most recently
+.IR hexdump .
+There were several objections to all of these based on the following
+reasons:
+.IP " *" 4
+The
+.IR hd
+and
+.IR xd
+names conflicted with historical utilities that behaved differently.
+.IP " *" 4
+The
+.IR hexdump
+description was much more complex than needed for a simple dump
+utility.
+.IP " *" 4
+The
+.IR od
+utility has been available on all historical implementations and there
+was no need to create a new name for a utility so similar to the
+historical
+.IR od
+utility.
+.P
+The original reasons for not standardizing historical
+.IR od
+were also fairly widespread. Those reasons are given below along with
+rationale explaining why the standard developers believe that this
+version does not suffer from the indicated problem:
+.IP " *" 4
+The BSD and System V versions of
+.IR od
+have diverged, and the intersection of features provided by both does
+not meet the needs of the user community. In fact, the System V
+version only provides a mechanism for dumping octal bytes and
+.BR short s,
+signed and unsigned decimal
+.BR short s,
+hexadecimal
+.BR short s,
+and ASCII characters. BSD added the ability to dump
+.BR float s,
+.BR double s,
+named ASCII characters, and octal, signed decimal, unsigned decimal,
+and hexadecimal
+.BR long s.
+The version presented here provides more normalized forms for dumping
+bytes,
+.BR short s,
+.BR int s,
+and
+.BR long s
+in octal, signed decimal, unsigned decimal, and hexadecimal;
+.BR float ,
+.BR double ,
+and
+.BR "long double" ;
+and named ASCII as well as current locale characters.
+.IP " *" 4
+It would not be possible to come up with a compatible superset of the
+BSD and System V flags that met the requirements of the standard
+developers. The historical default
+.IR od
+output is the specified default output of this utility. None of the
+option letters chosen for this version of
+.IR od
+conflict with any of the options to historical versions of
+.IR od .
+.IP " *" 4
+On systems with different sizes for
+.BR short ,
+.BR int ,
+and
+.BR long ,
+there was no way to ask for dumps of
+.BR int s,
+even in the BSD version. Because of the way options are named, the
+name space could not be extended to solve these problems. This is why
+the
+.BR \(mit
+option was added (with type specifiers more closely matched to the
+\fIprintf\fR()
+formats used in the rest of this volume of POSIX.1\(hy2008) and the optional field sizes were
+added to the
+.BR d ,
+.BR f ,
+.BR o ,
+.BR u ,
+and
+.BR x
+type specifiers. It is also one of the reasons why the historical
+practice was not mandated as a required obsolescent form of
+.IR od .
+(Although the old versions of
+.IR od
+are not listed as an obsolescent form, implementations are urged to
+continue to recognize the older forms for several more years.) The
+.BR a ,
+.BR c ,
+.BR f ,
+.BR o ,
+and
+.BR x
+types match the meaning of the corresponding format characters in the
+historical implementations of
+.IR od
+except for the default sizes of the fields converted. The
+.BR d
+format is signed in this volume of POSIX.1\(hy2008 to match the
+\fIprintf\fR()
+notation. (Historical versions of
+.IR od
+used
+.BR d
+as a synonym for
+.BR u
+in this version. The System V implementation uses
+.BR s
+for signed decimal; BSD uses
+.BR i
+for signed decimal and
+.BR s
+for null-terminated strings.) Other than
+.BR d
+and
+.BR u ,
+all of the type specifiers match format characters in the historical
+BSD version of
+.BR od .
+.RS 4 
+.P
+The sizes of the C-language types
+.BR char ,
+.BR short ,
+.BR int ,
+.BR long ,
+.BR float ,
+.BR double ,
+and
+.BR "long double"
+are used even though it is recognized that there may be zero or more
+than one compiler for the C language on an implementation and that they
+may use different sizes for some of these types. (For example, one
+compiler might use 2 bytes
+.BR short s,
+2 bytes
+.BR int s,
+and 4 bytes
+.BR long s,
+while another compiler (or an option to the same compiler) uses 2 bytes
+.BR short s,
+4 bytes
+.BR int s,
+and 4 bytes
+.BR long s.)
+Nonetheless, there has to be a basic size known by the implementation
+for these types, corresponding to the values reported by invocations of
+the
+.IR getconf
+utility when called with
+.IR system_var
+operands
+{UCHAR_MAX},
+{USHORT_MAX},
+{UINT_MAX},
+and
+{ULONG_MAX}
+for the types
+.BR char ,
+.BR short ,
+.BR int ,
+and
+.BR long ,
+respectively. There are similar constants required by the ISO\ C standard, but
+not required by the System Interfaces volume of POSIX.1\(hy2008 or this volume of POSIX.1\(hy2008. They are
+{FLT_MANT_DIG},
+{DBL_MANT_DIG},
+and
+{LDBL_MANT_DIG}
+for the types
+.BR float ,
+.BR double ,
+and
+.BR "long double" ,
+respectively. If the optional
+.IR c99
+utility is provided by the implementation and used as specified by
+\&this volume of POSIX.1\(hy2008, these are the sizes that would be provided. If an option is used
+that specifies different sizes for these types, there is no guarantee
+that the
+.IR od
+utility is able to interpret binary data output by such a program
+correctly.
+.P
+This volume of POSIX.1\(hy2008 requires that the numeric values of these lengths be recognized
+by the
+.IR od
+utility and that symbolic forms also be recognized. Thus, a conforming
+application can always look at an array of
+.BR "unsigned long"
+data elements using
+.IR od
+.BR \(mit
+.IR uL .
+.RE
+.IP " *" 4
+The method of specifying the format for the address field based on
+specifying a starting offset in a file unnecessarily tied the two
+together. The
+.BR \(miA
+option now specifies the address base and the
+.BR \(miS
+option specifies a starting offset.
+.IP " *" 4
+It would be difficult to break the dependence on US ASCII to achieve
+an internationalized utility. It does not seem to be any harder for
+.IR od
+to dump characters in the current locale than it is for the
+.IR ed
+or
+.IR sed
+.BR l
+commands. The
+.BR c
+type specifier does this without difficulty and is completely
+compatible with the historical implementations of the
+.BR c
+format character when the current locale uses a superset of the ISO/IEC\ 646:\|1991 standard
+as a codeset. The
+.BR a
+type specifier (from the BSD
+.BR a
+format character) was left as a portable means to dump ASCII (or more
+correctly ISO/IEC\ 646:\|1991 standard (IRV)) so that headers produced by
+.IR pax
+could be deciphered even on systems that do not use the ISO/IEC\ 646:\|1991 standard as a
+subset of their base codeset.
+.P
+The use of
+.BR \(dq**\(dq 
+as an indication of continuation of a multi-byte character in
+.BR c
+specifier output was chosen based on seeing an implementation that uses
+this method. The continuation bytes have to be marked in a way that is
+not ambiguous with another single-byte or multi-byte character.
+.P
+An early proposal used
+.BR \(miS
+and
+.BR \(min ,
+respectively, for the
+.BR \(mij
+and
+.BR \(miN
+options eventually selected. These were changed to avoid conflicts with
+historical implementations.
+.P
+The original standard specified
+.BR "\(mit o2"
+as the default when no output type was given. This was changed to
+.BR "\(mit oS"
+(the length of a
+.BR short )
+to accommodate a supercomputer implementation that historically used 64
+bits as its default (and that defined shorts as 64 bits). This change
+should not affect conforming applications. The requirement to support
+lengths of 1, 2, and 4 was added at the same time to address an
+historical implementation that had no two-byte data types in its C
+compiler.
+.P
+The use of a basic integer data type is intended to allow the
+implementation to choose a word size commonly used by applications
+on that architecture.
+.P
+Earlier versions of this standard allowed for implementations with
+bytes other than eight bits, but this has been modified in this
+version.
+.SH "FUTURE DIRECTIONS"
+All option and operand interfaces marked XSI may be removed
+in a future version.
+.SH "SEE ALSO"
+.IR "\fIc99\fR\^",
+.IR "\fIsed\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 5" ", " "File Format Notation",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

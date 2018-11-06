@@ -1,0 +1,116 @@
+'\" et
+.TH DOT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+dot
+\(em execute commands in the current environment
+.SH SYNOPSIS
+.LP
+.nf
+\&. \fIfile\fR
+.fi
+.SH DESCRIPTION
+The shell shall execute commands from the
+.IR file
+in the current environment.
+.P
+If
+.IR file
+does not contain a
+<slash>,
+the shell shall use the search path specified by
+.IR PATH
+to find the directory containing
+.IR file .
+Unlike normal command search, however, the file searched for by the
+.IR dot
+utility need not be executable. If no readable file is found, a
+non-interactive shell shall abort; an interactive shell shall write a
+diagnostic message to standard error, but this condition shall not be
+considered a syntax error.
+.SH OPTIONS
+None.
+.SH OPERANDS
+See the DESCRIPTION.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+See the DESCRIPTION.
+.SH "ENVIRONMENT VARIABLES"
+See the DESCRIPTION.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+If no readable file was found or if the commands in the file could not
+be parsed, and the shell is interactive (and therefore does not abort; see
+.IR "Section 2.8.1" ", " "Consequences of Shell Errors"),
+the exit status shall be non-zero. Otherwise, return the value of the
+last command executed, or a zero exit status if no command is executed.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+.LP
+.nf
+cat foobar
+\fBfoo=hello bar=world\fR
+\&. ./foobar
+echo $foo $bar
+\fBhello world\fR
+.fi
+.SH "RATIONALE"
+Some older implementations searched the current directory for the
+.IR file ,
+even if the value of
+.IR PATH
+disallowed it. This behavior was omitted from this volume of POSIX.1\(hy2008 due to concerns
+about introducing the susceptibility to trojan horses that the user
+might be trying to avoid by leaving
+.BR dot
+out of
+.IR PATH .
+.P
+The KornShell version of
+.IR dot
+takes optional arguments that are set to the positional parameters.
+This is a valid extension that allows a
+.IR dot
+script to behave identically to a function.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.14" ", " "Special Built-In Utilities",
+.IR "\fIreturn\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

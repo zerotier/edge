@@ -1,0 +1,449 @@
+'\" et
+.TH UNLINK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+unlink, unlinkat
+\(em remove a directory entry relative to directory file descriptor
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int unlink(const char *\fIpath\fP);
+int unlinkat(int \fIfd\fP, const char *\fIpath\fP, int \fIflag\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIunlink\fR()
+function shall remove a link to a file. If
+.IR path
+names a symbolic link,
+\fIunlink\fR()
+shall remove the symbolic link named by
+.IR path
+and shall not affect any file or directory named by the contents of the
+symbolic link. Otherwise,
+\fIunlink\fR()
+shall remove the link named by the pathname pointed to by
+.IR path
+and shall decrement the link count of the file referenced by the link.
+.P
+When the file's link count becomes 0 and no process has the file open,
+the space occupied by the file shall be freed and the file shall no
+longer be accessible. If one or more processes have the file open when
+the last link is removed, the link shall be removed before
+\fIunlink\fR()
+returns, but the removal of the file contents shall be postponed until
+all references to the file are closed.
+.P
+The
+.IR path
+argument shall not name a directory unless the process has appropriate
+privileges and the implementation supports using
+\fIunlink\fR()
+on directories.
+.P
+Upon successful completion,
+\fIunlink\fR()
+shall mark for update the last data modification and last file status
+change timestamps of the parent directory. Also, if the file's link
+count is not 0, the last file status change timestamp of the file shall
+be marked for update.
+.P
+The
+\fIunlinkat\fR()
+function shall be equivalent to the
+\fIunlink\fR()
+or
+\fIrmdir\fR()
+function except in the case where
+.IR path
+specifies a relative path. In this case the directory entry to be
+removed is determined relative to the directory associated with the
+file descriptor
+.IR fd
+instead of the current working directory. If the file descriptor was
+opened without O_SEARCH, the function shall check whether directory
+searches are permitted using the current permissions of the directory
+underlying the file descriptor. If the file descriptor was opened with
+O_SEARCH, the function shall not perform the check.
+.P
+Values for
+.IR flag
+are constructed by a bitwise-inclusive OR of flags from the following
+list, defined in
+.IR <fcntl.h> :
+.IP AT_REMOVEDIR 6
+.br
+Remove the directory entry specified by
+.IR fd
+and
+.IR path
+as a directory, not a normal file.
+.P
+If
+\fIunlinkat\fR()
+is passed the special value AT_FDCWD in the
+.IR fd
+parameter, the current working directory shall be used and the behavior
+shall be identical to a call to
+\fIunlink\fR()
+or
+\fIrmdir\fR()
+respectively, depending on whether or not the AT_REMOVEDIR bit is set in
+.IR flag .
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return 0. Otherwise,
+these functions shall return \(mi1 and set
+.IR errno
+to indicate the error. If \(mi1 is returned, the named file shall not
+be changed.
+.SH ERRORS
+These functions shall fail and shall not unlink the file if:
+.TP
+.BR EACCES
+Search permission is denied for a component of the path prefix, or
+write permission is denied on the directory containing the directory
+entry to be removed.
+.TP
+.BR EBUSY
+The file named by the
+.IR path
+argument cannot be unlinked because it is being used by the system or
+another process and the implementation considers this an error.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.TP
+.BR EPERM
+The file named by
+.IR path
+is a directory, and either the calling process does not have
+appropriate privileges, or the implementation prohibits using
+\fIunlink\fR()
+on directories.
+.TP
+.BR EPERM " or " EACCES
+.br
+The S_ISVTX flag is set on the directory containing the file referred
+to by the
+.IR path
+argument and the process does not satisfy the criteria specified in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.2" ", " "Directory Protection".
+.TP
+.BR EROFS
+The directory entry to be unlinked is part of a read-only file system.
+.P
+The
+\fIunlinkat\fR()
+function shall fail if:
+.TP
+.BR EACCES
+.IR fd
+was not opened with O_SEARCH and the permissions of the directory
+underlying
+.IR fd
+do not permit directory searches.
+.TP
+.BR EBADF
+The
+.IR path
+argument does not specify an absolute path and the
+.IR fd
+argument is neither AT_FDCWD nor a valid file descriptor open for reading
+or searching.
+.TP
+.BR ENOTDIR
+The
+.IR path
+argument is not an absolute path and
+.IR fd
+is a file descriptor associated with a non-directory file.
+.TP
+.BR EEXIST " or " ENOTEMPTY
+.br
+The
+.IR flag
+parameter has the AT_REMOVEDIR bit set and the
+.IR path
+argument names a directory that is not an empty directory, or there are
+hard links to the directory other than dot or a single entry in dot-dot.
+.TP
+.BR ENOTDIR
+The
+.IR flag
+parameter has the AT_REMOVEDIR bit set and
+.IR path
+does not name a directory.
+.P
+These functions may fail and not unlink the file if:
+.TP
+.BR EBUSY
+The file named by
+.IR path
+is a named STREAM.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR ETXTBSY
+The entry to be unlinked is the last directory entry to a pure
+procedure (shared text) file that is being executed.
+.br
+.P
+The
+\fIunlinkat\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR flag
+argument is not valid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Removing a Link to a File"
+.P
+The following example shows how to remove a link to a file named
+.BR /home/cnd/mod1
+by removing the entry named
+.BR /modules/pass1 .
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+.P
+char *path = "/modules/pass1";
+int   status;
+\&...
+status = unlink(path);
+.fi \fR
+.P
+.RE
+.SS "Checking for an Error"
+.P
+The following example fragment creates a temporary password lock file
+named
+.BR LOCKFILE ,
+which is defined as
+.BR /etc/ptmp ,
+and gets a file descriptor for it. If the file cannot be opened for
+writing,
+\fIunlink\fR()
+is used to remove the link between the file descriptor and
+.BR LOCKFILE .
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/types.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+.P
+#define LOCKFILE "/etc/ptmp"
+.P
+int pfd;  /* Integer for file descriptor returned by open call. */
+FILE *fpfd;  /* File pointer for use in putpwent(). */
+\&...
+/* Open password Lock file. If it exists, this is an error. */
+if ((pfd = open(LOCKFILE, O_WRONLY| O_CREAT | O_EXCL, S_IRUSR
+    | S_IWUSR | S_IRGRP | S_IROTH)) == -1)  {
+    fprintf(stderr, "Cannot open /etc/ptmp. Try again later.\en");
+    exit(1);
+}
+.P
+/* Lock file created; proceed with fdopen of lock file so that
+   putpwent() can be used.
+ */
+if ((fpfd = fdopen(pfd, "w")) == NULL) {
+    close(pfd);
+    unlink(LOCKFILE);
+    exit(1);
+}
+.fi \fR
+.P
+.RE
+.SS "Replacing Files"
+.P
+The following example fragment uses
+\fIunlink\fR()
+to discard links to files, so that they can be replaced with new
+versions of the files. The first call removes the link to
+.BR LOCKFILE
+if an error occurs. Successive calls remove the links to
+.BR SAVEFILE
+and
+.BR PASSWDFILE
+so that new links can be created, then removes the link to
+.BR LOCKFILE
+when it is no longer needed.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/types.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+.P
+#define LOCKFILE "/etc/ptmp"
+#define PASSWDFILE "/etc/passwd"
+#define SAVEFILE "/etc/opasswd"
+\&...
+/* If no change was made, assume error and leave passwd unchanged. */
+if (!valid_change) {
+    fprintf(stderr, "Could not change password for user %s\en", user);
+    unlink(LOCKFILE);
+    exit(1);
+}
+.P
+/* Change permissions on new password file. */
+chmod(LOCKFILE, S_IRUSR | S_IRGRP | S_IROTH);
+.P
+/* Remove saved password file. */
+unlink(SAVEFILE);
+.P
+/* Save current password file. */
+link(PASSWDFILE, SAVEFILE);
+.P
+/* Remove current password file. */
+unlink(PASSWDFILE);
+.P
+/* Save new password file as current password file. */
+link(LOCKFILE,PASSWDFILE);
+.P
+/* Remove lock file. */
+unlink(LOCKFILE);
+.P
+exit(0);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Applications should use
+\fIrmdir\fR()
+to remove a directory.
+.SH RATIONALE
+Unlinking a directory is restricted to the superuser
+in many historical implementations for reasons given in
+\fIlink\fR()
+(see also
+\fIrename\fR()).
+.P
+The meaning of
+.BR [EBUSY] 
+in historical implementations is ``mount point busy''. Since this volume of POSIX.1\(hy2008 does
+not cover the system administration concepts of mounting and unmounting,
+the description of the error was changed to ``resource busy''. (This
+meaning is used by some device drivers when a second process tries to
+open an exclusive use device.) The wording is also intended to allow
+implementations to refuse to remove a directory if it is the root or
+current working directory of any process.
+.P
+The standard developers reviewed TR 24715\(hy2006 and noted that
+LSB-conforming implementations may return
+.BR [EISDIR] 
+instead of
+.BR [EPERM] 
+when unlinking a directory. A change to permit this behavior by
+changing the requirement for
+.BR [EPERM] 
+to
+.BR [EPERM] 
+or
+.BR [EISDIR] 
+was considered, but decided against since it would break existing
+strictly conforming and conforming applications. Applications written
+for portability to both POSIX.1\(hy2008 and the LSB should be prepared to
+handle either error code.
+.P
+The purpose of the
+\fIunlinkat\fR()
+function is to remove directory entries in directories other than the
+current working directory without exposure to race conditions. Any part
+of the path of a file could be changed in parallel to a call to
+\fIunlink\fR(),
+resulting in unspecified behavior. By opening a file descriptor for
+the target directory and using the
+\fIunlinkat\fR()
+function it can be guaranteed that the removed directory entry is
+located relative to the desired directory.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIlink\fR\^(\|)",
+.IR "\fIremove\fR\^(\|)",
+.IR "\fIrename\fR\^(\|)",
+.IR "\fIrmdir\fR\^(\|)",
+.IR "\fIsymlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.2" ", " "Directory Protection",
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

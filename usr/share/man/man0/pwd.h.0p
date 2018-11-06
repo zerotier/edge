@@ -1,0 +1,95 @@
+'\" et
+.TH pwd.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pwd.h
+\(em password structure
+.SH SYNOPSIS
+.LP
+.nf
+#include <pwd.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <pwd.h> 
+header shall define the
+.BR "struct passwd" ,
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+char    *pw_name   \fRUser's login name.\fP
+uid_t    pw_uid    \fRNumerical user ID.\fP
+gid_t    pw_gid    \fRNumerical group ID.\fP
+char    *pw_dir    \fRInitial working directory.\fP
+char    *pw_shell  \fRProgram to use as shell.\fP
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <pwd.h> 
+header shall define the
+.BR gid_t ,
+.BR uid_t ,
+and
+.BR size_t
+types as described in
+.IR <sys/types.h> .
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+void           endpwent(void);
+struct passwd *getpwent(void);
+struct passwd *getpwnam(const char *);
+int            getpwnam_r(const char *, struct passwd *, char *,
+                   size_t, struct passwd **);
+struct passwd *getpwuid(uid_t);
+int            getpwuid_r(uid_t, struct passwd *, char *,
+                   size_t, struct passwd **);
+void           setpwent(void);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIendpwent\fR\^(\|)",
+.IR "\fIgetpwnam\fR\^(\|)",
+.IR "\fIgetpwuid\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

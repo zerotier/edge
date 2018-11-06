@@ -1,0 +1,646 @@
+'\" et
+.TH TOUCH "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+touch
+\(em change file access and modification times
+.SH SYNOPSIS
+.LP
+.nf
+touch \fB[\fR\(miacm\fB] [\fR\(mir \fIref_file\fR|\(mit \fItime\fR|\(mid \fIdate_time\fB] \fIfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR touch
+utility shall change the last data modification timestamps, the
+last data access timestamps, or both.
+.P
+The time used can be specified by the
+.BR \(mit
+.IR time
+option-argument, the corresponding
+.IR time
+fields of the file referenced by the
+.BR \(mir
+.IR ref_file
+option-argument, or the
+.BR \(mid
+.IR date_time
+option-argument, as specified in the following sections. If none of
+these are specified,
+.IR touch
+shall use the current time.
+.P
+For each
+.IR file
+operand,
+.IR touch
+shall perform actions equivalent to the following functions defined in
+the System Interfaces volume of POSIX.1\(hy2008:
+.IP " 1." 4
+If
+.IR file
+does not exist:
+.RS 4 
+.IP " a." 4
+The
+\fIcreat\fR()
+function is called with the following arguments:
+.RS 4 
+.IP -- 4
+The
+.IR file
+operand is used as the
+.IR path
+argument.
+.IP -- 4
+The value of the bitwise-inclusive OR of S_IRUSR, S_IWUSR,
+S_IRGRP, S_IWGRP, S_IROTH, and S_IWOTH is used as the
+.IR mode
+argument.
+.RE
+.IP " b." 4
+The
+\fIfutimens\fR()
+function is called with the following arguments:
+.RS 4 
+.IP -- 4
+The file descriptor opened in step 1a.
+.IP -- 4
+The access time and the modification time, set as described in the
+OPTIONS section, are used as the first and second elements of the
+.IR times
+array argument, respectively.
+.RE
+.RE
+.IP " 2." 4
+If
+.IR file
+exists, the
+\fIutimensat\fR()
+function is called with the following arguments:
+.RS 4 
+.IP " a." 4
+The AT_FDCWD special value is used as the
+.IR fd
+argument.
+.IP " b." 4
+The
+.IR file
+operand is used as the
+.IR path
+argument.
+.IP " c." 4
+The access time and the modification time, set as described in the
+OPTIONS section, are used as the first and second elements of the
+.IR times
+array argument, respectively.
+.IP " d." 4
+The
+.IR flag
+argument is set to zero.
+.RE
+.SH OPTIONS
+The
+.IR touch
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\fP" 10
+Change the access time of
+.IR file .
+Do not change the modification time unless
+.BR \(mim
+is also specified.
+.IP "\fB\(mic\fP" 10
+Do not create a specified
+.IR file
+if it does not exist. Do not write any diagnostic messages concerning
+this condition.
+.IP "\fB\(mid\ \fIdate_time\fR" 10
+Use the specified
+.IR date_time
+instead of the current time. The option-argument shall be a string of
+the form:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fIYYYY\fR\(mi\fIMM\fR\(mi\fIDD\fRT\fIhh\fR:\fImm\fR:\fISS\fB[\fR.\fIfrac\fB][\fItz\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+or:
+.sp
+.RS 4
+.nf
+\fB
+\fIYYYY\fR\(mi\fIMM\fR\(mi\fIDD\fRT\fIhh\fR:\fImm\fR:\fISS\fB[\fR,\fIfrac\fB][\fItz\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+where:
+.IP " *" 4
+.IR YYYY
+are at least four decimal digits giving the year.
+.IP " *" 4
+.IR MM ,
+.IR DD ,
+.IR hh ,
+.IR mm ,
+and
+.IR SS
+are as with
+.BR \(mit
+.IR time .
+.IP " *" 4
+\fRT\fR is the time designator, and can be replaced by a single
+<space>.
+.IP " *" 4
+\fR[.\fIfrac\fR]\fR and \fR[,\fIfrac\fR]\fR are either empty, or a
+<period>
+(\c
+.BR '.' )
+or a
+<comma>
+(\c
+.BR ',' )
+respectively, followed by one or more decimal digits, specifying
+a fractional second.
+.IP " *" 4
+\fR[\fItz\fR]\fR is either empty, signifying local time, or the letter
+.BR 'Z' ,
+signifying UTC. If \fR[\fItz\fR]\fR is empty, the resulting time shall
+be affected by the value of the
+.IR TZ
+environment variable.
+.P
+If the resulting time precedes the Epoch, the behavior is
+implementation-defined. If the time cannot be represented as the file's
+timestamp,
+.IR touch
+shall exit immediately with an error status.
+.RE
+.IP "\fB\(mim\fP" 10
+Change the modification time of
+.IR file .
+Do not change the access time unless
+.BR \(mia
+is also specified.
+.IP "\fB\(mir\ \fIref_file\fR" 10
+Use the corresponding time of the file named by the pathname
+.IR ref_file
+instead of the current time.
+.IP "\fB\(mit\ \fItime\fR" 10
+Use the specified
+.IR time
+instead of the current time. The option-argument shall be a decimal
+number of the form:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[[\fICC\fB]\fIYY\fB]\fIMMDDhhmm\fB[\fR.\fISS\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+where each two digits represents the following:
+.IP "\fIMM\fR" 8
+The month of the year [01,12].
+.IP "\fIDD\fR" 8
+The day of the month [01,31].
+.IP "\fIhh\fR" 8
+The hour of the day [00,23].
+.IP "\fImm\fR" 8
+The minute of the hour [00,59].
+.IP "\fICC\fR" 8
+The first two digits of the year (the century).
+.IP "\fIYY\fR" 8
+The second two digits of the year.
+.IP "\fISS\fR" 8
+The second of the minute [00,60].
+.P
+Both
+.IR CC
+and
+.IR YY
+shall be optional. If neither is given, the current year shall be
+assumed. If
+.IR YY
+is specified, but
+.IR CC
+is not,
+.IR CC
+shall be derived as follows:
+.TS
+center tab(@) box;
+cB | cB
+c | n.
+If \fIYY\fP is:@\fICC\fP becomes:
+_
+[69,99]@19
+[00,68]@20
+.TE
+.TP 10
+.BR Note:
+It is expected that in a future version of this standard the default
+century inferred from a 2-digit year will change. (This would apply
+to all commands accepting a 2-digit year as input.)
+.P
+.P
+The resulting time shall be affected by the value of the
+.IR TZ
+environment variable. If the resulting time value precedes the Epoch,
+the behavior is implementation-defined. If the time is out of range for
+the file's timestamp,
+.IR touch
+shall exit immediately with an error status. The range of valid times
+past the Epoch is implementation-defined, but it shall extend to at
+least the time 0 hours, 0 minutes, 0 seconds, January 1, 2038,
+Coordinated Universal Time. Some implementations may not be able to
+represent dates beyond January 18, 2038, because they use
+.BR "signed int"
+as a time holder.
+.P
+The range for
+.IR SS
+is [00,60] rather than [00,59] because of leap seconds. If
+.IR SS
+is 60, and the resulting time, as affected by the
+.IR TZ
+environment variable, does not refer to a leap second, the resulting
+time shall be one second after a time where
+.IR SS
+is 59. If
+.IR SS
+is not given a value, it is assumed to be zero.
+.RE
+.P
+If neither the
+.BR \(mia
+nor
+.BR \(mim
+options were specified,
+.IR touch
+shall behave as if both the
+.BR \(mia
+and
+.BR \(mim
+options were specified.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a file whose times shall be modified.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR touch :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fITZ\fP" 10
+Determine the timezone to be used for interpreting the
+.IR time
+option-argument. If
+.IR TZ
+is unset or null, an unspecified default timezone shall be used.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The utility executed successfully and all requested changes were made.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The interpretation of time is taken to be
+.IR "seconds since the Epoch"
+(see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.15" ", " "Seconds Since the Epoch").
+It should be noted that implementations conforming to the System Interfaces volume of POSIX.1\(hy2008 do
+not take leap seconds into account when computing seconds since the
+Epoch. When
+.IR SS =60
+is used, the resulting time always refers to 1 plus
+.IR "seconds since the Epoch"
+for a time when
+.IR SS =59.
+.P
+Although the
+.BR \(mit
+.IR time
+option-argument specifies values in 1969, the access time and
+modification time fields are defined in terms of seconds since the
+Epoch (00:00:00 on 1 January 1970 UTC). Therefore, depending on the
+value of
+.IR TZ
+when
+.IR touch
+is run, there is never more than a few valid hours in 1969 and there
+need not be any valid times in 1969.
+.P
+One ambiguous situation occurs if
+.BR \(mit
+.IR time
+is not specified,
+.BR \(mir
+.IR ref_file
+is not specified, and the first operand is an eight or ten-digit
+decimal number. A portable script can avoid this problem by using:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mi\|\(mi file
+.fi \fR
+.P
+.RE
+.P
+or:
+.sp
+.RS 4
+.nf
+\fB
+touch ./file
+.fi \fR
+.P
+.RE
+.P
+in this case.
+.P
+If the
+.IR T
+time designator is replaced by a
+<space>
+for the
+.BR \(mid
+.IR date_time
+option-argument, the
+<space>
+must be quoted to prevent the shell from splitting the argument.
+.SH EXAMPLES
+Create or update a file called
+.BR dwc ;
+the resulting file has both the last data modification and last data
+access timestamps set to November 12, 2007 at 10:15:30 local time:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mid 2007-11-12T10:15:30 dwc
+.fi \fR
+.P
+.RE
+.P
+Create or update a file called
+.BR nick ;
+the resulting file has both the last data modification and last data
+access timestamps set to November 12, 2007 at 10:15:30 UTC:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mid 2007-11-12T10:15:30Z nick
+.fi \fR
+.P
+.RE
+.P
+Create or update a file called
+.BR gwc ;
+the resulting file has both the last data modification and last data
+access timestamps set to November 12, 2007 at 10:15:30 local time with
+a fractional second timestamp of .002 seconds:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mid 2007-11-12T10:15:30,002 gwc
+.fi \fR
+.P
+.RE
+.P
+Create or update a file called
+.BR ajosey ;
+the resulting file has both the last data modification and last data
+access timestamps set to November 12, 2007 at 10:15:30 UTC with a
+fractional second timestamp of .002 seconds:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mid "2007-11-12 10:15:30.002Z" ajosey
+.fi \fR
+.P
+.RE
+.P
+Create or update a file called
+.BR cathy ;
+the resulting file has both the last data modification and last data
+access timestamps set to November 12, 2007 at 10:15:00 local time:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mit 200711121015 cathy
+.fi \fR
+.P
+.RE
+.P
+Create or update a file called
+.BR drepper ;
+the resulting file has both the last data modification and last data
+access timestamps set to November 12, 2007 at 10:15:30 local time:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mit 200711121015.30 drepper
+.fi \fR
+.P
+.RE
+.P
+Create or update a file called
+.BR ebb9 ;
+the resulting file has both the last data modification and last data
+access timestamps set to November 12, 2007 at 10:15:30 local time:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mit 0711121015.30 ebb9
+.fi \fR
+.P
+.RE
+.P
+Create or update a file called
+.BR eggert ;
+the resulting file has the last data access timestamp set to the
+corresponding time of the file named
+.BR mark
+instead of the current time. If the file exists, the last data
+modification time is not changed:
+.sp
+.RS 4
+.nf
+\fB
+touch \(mia \(mir mark eggert
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The functionality of
+.IR touch
+is described almost entirely through references to functions in
+the System Interfaces volume of POSIX.1\(hy2008. In this way, there is no duplication of effort required for
+describing such side-effects as the relationship of user IDs to the
+user database, permissions, and so on.
+.P
+There are some significant differences between the
+.IR touch
+utility in this volume of POSIX.1\(hy2008 and those in System V and BSD systems. They are
+upwards-compatible for historical applications from both
+implementations:
+.IP " 1." 4
+In System V, an ambiguity exists when a pathname that is a decimal
+number leads the operands; it is treated as a time value. In BSD, no
+.IR time
+value is allowed; files may only be
+.IR touch ed
+to the current time. The
+.BR \(mit
+.IR time
+construct solves these problems for future conforming applications (note
+that the
+.BR \(mit
+option is not historical practice).
+.IP " 2." 4
+The inclusion of the century digits,
+.IR CC ,
+is also new. Note that a ten-digit
+.IR time
+value is treated as if
+.IR YY ,
+and not
+.IR CC ,
+were specified. The caveat about the range of dates following the
+Epoch was included as recognition that some implementations are not
+able to represent dates beyond 18 January 2038 because they use
+.BR "signed int"
+as a time holder.
+.P
+The
+.BR \(mir
+option was added because several comments requested this capability.
+This option was named
+.BR \(mif
+in an early proposal, but was changed because the
+.BR \(mif
+option is used in the BSD version of
+.IR touch
+with a different meaning.
+.P
+At least one historical implementation of
+.IR touch
+incremented the exit code if
+.BR \(mic
+was specified and the file did not exist. This volume of POSIX.1\(hy2008 requires exit status
+zero if no errors occur.
+.P
+In previous version of the standard, if at least two operands are
+specified, and the first operand is an eight or ten-digit decimal
+integer, the first operand was assumed to be a
+.IR date_time
+operand. This usage was removed in this version of the standard since
+it had been marked obsolescent previously.
+.P
+The
+.BR \(mid
+.IR date_time
+format is an ISO\ 8601:\|2004 standard complete representation of date and time extended
+format with an optional decimal point or
+<comma>
+followed by a string of digits following the seconds portion to specify
+fractions of a second. It is not necessary to recognize
+.BR \(dq[+/-]hh:mm\(dq 
+and
+.BR \(dq[+/-]hh\(dq 
+to specify timezones other than local time and UTC. The
+.IR T
+time designator in the ISO\ 8601:\|2004 standard extended format may be replaced by
+<space>.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIdate\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.15" ", " "Seconds Since the Epoch",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+.IR "\fB<sys_stat.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIcreat\fR\^(\|)",
+.IR "\fIfutimens\fR\^(\|)",
+.IR "\fItime\fR\^(\|)",
+.IR "\fIutime\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

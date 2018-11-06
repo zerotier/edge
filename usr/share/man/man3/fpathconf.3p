@@ -1,0 +1,509 @@
+'\" et
+.TH FPATHCONF "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fpathconf,
+pathconf
+\(em get configurable pathname variables
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+long fpathconf(int \fIfildes\fP, int \fIname\fP);
+long pathconf(const char *\fIpath\fP, int \fIname\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIfpathconf\fR()
+and
+\fIpathconf\fR()
+functions shall determine the current value of a configurable limit or
+option (\fIvariable\fP) that is associated with a file or directory.
+.P
+For
+\fIpathconf\fR(),
+the
+.IR path
+argument points to the pathname of a file or directory.
+.P
+For
+\fIfpathconf\fR(),
+the
+.IR fildes
+argument is an open file descriptor.
+.P
+The
+.IR name
+argument represents the variable to be queried relative to that file or
+directory. Implementations shall support all of the variables listed in
+the following table and may support others. The variables in the
+following table come from
+.IR <limits.h> 
+or
+.IR <unistd.h> 
+and the symbolic constants, defined in
+.IR <unistd.h> ,
+are the corresponding values used for
+.IR name .
+.TS
+center box tab(!);
+cB | cB | cB
+l | l | l.
+Variable!Value of \fIname\fP!Requirements
+_
+{FILESIZEBITS}!_PC_FILESIZEBITS!4,\|7
+{LINK_MAX}!_PC_LINK_MAX!1
+{MAX_CANON}!_PC_MAX_CANON!2
+{MAX_INPUT}!_PC_MAX_INPUT!2
+{NAME_MAX}!_PC_NAME_MAX!3,\|4
+{PATH_MAX}!_PC_PATH_MAX!4,\|5
+{PIPE_BUF}!_PC_PIPE_BUF!6
+{POSIX2_SYMLINKS}!_PC_2_SYMLINKS!4
+{POSIX_ALLOC_SIZE_MIN}!_PC_ALLOC_SIZE_MIN!10
+{POSIX_REC_INCR_XFER_SIZE}!_PC_REC_INCR_XFER_SIZE!10
+{POSIX_REC_MAX_XFER_SIZE}!_PC_REC_MAX_XFER_SIZE!10
+{POSIX_REC_MIN_XFER_SIZE}!_PC_REC_MIN_XFER_SIZE!10
+{POSIX_REC_XFER_ALIGN}!_PC_REC_XFER_ALIGN!10
+{SYMLINK_MAX}!_PC_SYMLINK_MAX!4,\|9
+_POSIX_CHOWN_RESTRICTED!_PC_CHOWN_RESTRICTED!7
+_POSIX_NO_TRUNC!_PC_NO_TRUNC!3,\|4
+_POSIX_VDISABLE!_PC_VDISABLE!2
+_POSIX_ASYNC_IO!_PC_ASYNC_IO!8
+_POSIX_PRIO_IO!_PC_PRIO_IO!8
+_POSIX_SYNC_IO!_PC_SYNC_IO!8
+_POSIX_TIMESTAMP_RESOLUTION!_PC_TIMESTAMP_RESOLUTION!1
+.TE
+.SS "Requirements"
+.IP " 1." 4
+If
+.IR path
+or
+.IR fildes
+refers to a directory, the value returned shall apply to the directory
+itself.
+.IP " 2." 4
+If
+.IR path
+or
+.IR fildes
+does not refer to a terminal file, it is unspecified whether an
+implementation supports an association of the variable name with the
+specified file.
+.IP " 3." 4
+If
+.IR path
+or
+.IR fildes
+refers to a directory, the value returned shall apply to filenames
+within the directory.
+.IP " 4." 4
+If
+.IR path
+or
+.IR fildes
+does not refer to a directory, it is unspecified whether an
+implementation supports an association of the variable name with the
+specified file.
+.IP " 5." 4
+If
+.IR path
+or
+.IR fildes
+refers to a directory, the value returned shall be the maximum length
+of a relative pathname that would not cross any mount points when the
+specified directory is the working directory.
+.IP " 6." 4
+If
+.IR path
+refers to a FIFO, or
+.IR fildes
+refers to a pipe or FIFO, the value returned shall apply to the
+referenced object. If
+.IR path
+or
+.IR fildes
+refers to a directory, the value returned shall apply to any FIFO that
+exists or can be created within the directory. If
+.IR path
+or
+.IR fildes
+refers to any other type of file, it is unspecified whether an
+implementation supports an association of the variable name with the
+specified file.
+.IP " 7." 4
+If
+.IR path
+or
+.IR fildes
+refers to a directory, the value returned shall apply to any files,
+other than directories, that exist or can be created within the
+directory.
+.IP " 8." 4
+If
+.IR path
+or
+.IR fildes
+refers to a directory, it is unspecified whether an implementation
+supports an association of the variable name with the specified file.
+.IP " 9." 4
+If
+.IR path
+or
+.IR fildes
+refers to a directory, the value returned shall be the maximum length
+of the string that a symbolic link in that directory can contain.
+.IP 10. 4
+If
+.IR path
+or
+.IR fildes
+des does not refer to a regular file, it is unspecified whether an
+implementation supports an association of the variable name with the
+specified file. If an implementation supports such an association for
+other than a regular file, the value returned is unspecified.
+.SH "RETURN VALUE"
+If
+.IR name
+is an invalid value, both
+\fIpathconf\fR()
+and
+\fIfpathconf\fR()
+shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.P
+If the variable corresponding to
+.IR name
+is described in
+.IR <limits.h> 
+as a maximum or minimum value and the variable has no limit for the
+path or file descriptor, both
+\fIpathconf\fR()
+and
+\fIfpathconf\fR()
+shall return \(mi1 without changing
+.IR errno .
+Note that indefinite limits do not imply infinite limits; see
+.IR <limits.h> .
+.P
+If the implementation needs to use
+.IR path
+to determine the value of
+.IR name
+and the implementation does not support the association of
+.IR name
+with the file specified by
+.IR path ,
+or if the process did not have appropriate privileges to query the
+file specified by
+.IR path ,
+or
+.IR path
+does not exist,
+\fIpathconf\fR()
+shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.P
+If the implementation needs to use
+.IR fildes
+to determine the value of
+.IR name
+and the implementation does not support the association of
+.IR name
+with the file specified by
+.IR fildes ,
+or if
+.IR fildes
+is an invalid file descriptor,
+\fIfpathconf\fR()
+shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.P
+Otherwise,
+\fIpathconf\fR()
+or
+\fIfpathconf\fR()
+shall return the current variable value for the file or directory
+without changing
+.IR errno .
+The value returned shall not be more restrictive than the corresponding
+value available to the application when it was compiled with the
+implementation's
+.IR <limits.h> 
+or
+.IR <unistd.h> .
+.P
+If the variable corresponding to
+.IR name
+is dependent on an unsupported option, the results are unspecified.
+.SH ERRORS
+The
+\fIpathconf\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value of
+.IR name
+is not valid.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR EOVERFLOW
+The value of
+.IR name
+is _PC_TIMESTAMP_RESOLUTION and the resolution is larger than
+{LONG_MAX}.
+.br
+.P
+The
+\fIpathconf\fR()
+function may fail if:
+.TP
+.BR EACCES
+Search permission is denied for a component of the path prefix.
+.TP
+.BR EINVAL
+The implementation does not support an association of the variable
+.IR name
+with the specified file.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.P
+The
+\fIfpathconf\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value of
+.IR name
+is not valid.
+.TP
+.BR EOVERFLOW
+The value of
+.IR name
+is _PC_TIMESTAMP_RESOLUTION and the resolution is larger than
+{LONG_MAX}.
+.P
+The
+\fIfpathconf\fR()
+function may fail if:
+.TP
+.BR EBADF
+The
+.IR fildes
+argument is not a valid file descriptor.
+.TP
+.BR EINVAL
+The implementation does not support an association of the variable
+.IR name
+with the specified file.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Application developers should check whether an option, such as
+_POSIX_ADVISORY_INFO, is supported prior to obtaining and using values
+for related variables such as
+{POSIX_ALLOC_SIZE_MIN}.
+.SH RATIONALE
+The
+\fIpathconf\fR()
+function was proposed immediately after the
+\fIsysconf\fR()
+function when it was realized that some configurable values may differ
+across file system, directory, or device boundaries.
+.P
+For example,
+{NAME_MAX}
+frequently changes between System V and
+BSD-based file systems; System V uses a maximum of 14, BSD 255. On an
+implementation that provides both types of file systems, an application
+would be forced to limit all pathname components to 14 bytes, as this
+would be the value specified in
+.IR <limits.h> 
+on such a system.
+.P
+Therefore, various useful values can be queried on any pathname or file
+descriptor, assuming that appropriate privileges
+are in place.
+.P
+The value returned for the variable
+{PATH_MAX}
+indicates the longest relative pathname that could be given if the
+specified directory is the current working directory of the process. A
+process may not always be able to generate a name that long and use it
+if a subdirectory in the pathname crosses into a more restrictive file
+system. Note that implementations are allowed to accept pathnames
+longer than
+{PATH_MAX}
+bytes long, but are not allowed to return pathnames longer than this
+unless the user specifies a larger buffer using a function that provides
+a buffer size argument.
+.P
+The value returned for the variable _POSIX_CHOWN_RESTRICTED
+also applies to directories that do not have file systems mounted on
+them. The value may change when crossing a mount point, so
+applications that need to know should check for each directory. (An
+even easier check is to try the
+\fIchown\fR()
+function and look for an error in case it happens.)
+.P
+Unlike the values returned by
+\fIsysconf\fR(),
+the pathname-oriented variables are potentially more volatile and are
+not guaranteed to remain constant throughout the lifetime of the process.
+For example, in between two calls to
+\fIpathconf\fR(),
+the file system in question may have been unmounted and remounted with
+different characteristics.
+.P
+Also note that most of the errors are optional. If one of the
+variables always has the same value on an implementation, the
+implementation need not look at
+.IR path
+or
+.IR fildes
+to return that value and is, therefore, not required to detect any of
+the errors except the meaning of
+.BR [EINVAL] 
+that indicates that the value of
+.IR name
+is not valid for that variable.
+.P
+If the value of any of the limits is unspecified (logically
+infinite), they will not be defined in
+.IR <limits.h> 
+and the
+\fIpathconf\fR()
+and
+\fIfpathconf\fR()
+functions return \(mi1 without changing
+.IR errno .
+This can be distinguished from the case of giving an unrecognized
+.IR name
+argument because
+.IR errno
+is set to
+.BR [EINVAL] 
+in this case.
+.P
+Since \(mi1 is a valid return value for the
+\fIpathconf\fR()
+and
+\fIfpathconf\fR()
+functions, applications should set
+.IR errno
+to zero before calling them and check
+.IR errno
+only if the return value is \(mi1.
+.P
+For the case of
+{SYMLINK_MAX},
+since both
+\fIpathconf\fR()
+and
+\fIopen\fR()
+follow symbolic links, there is no way that
+.IR path
+or
+.IR fildes
+could refer to a symbolic link.
+.P
+It was the intention of IEEE\ Std 1003.1d\(hy1999 that the following variables:
+.sp
+.RS
+{POSIX_ALLOC_SIZE_MIN}
+{POSIX_REC_INCR_XFER_SIZE}
+{POSIX_REC_MAX_XFER_SIZE}
+{POSIX_REC_MIN_XFER_SIZE}
+{POSIX_REC_XFER_ALIGN}
+.RE
+.P
+only applied to regular files, but Note 10 also permits implementation
+of the advisory semantics on other file types unique to an
+implementation (for example, a character special device).
+.P
+The
+.BR [EOVERFLOW] 
+error for _PC_TIMESTAMP_RESOLUTION cannot occur on POSIX-compliant
+file systems because POSIX requires a timestamp resolution no
+larger than one second. Even on 32-bit systems, this can be
+represented without overflow.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIchown\fR\^(\|)",
+.IR "\fIconfstr\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<limits.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIgetconf\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

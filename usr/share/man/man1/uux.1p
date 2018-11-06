@@ -1,0 +1,361 @@
+'\" et
+.TH UUX "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+uux
+\(em remote command execution
+.SH SYNOPSIS
+.LP
+.nf
+uux \fB[\fR\(mijnp\fB] \fIcommand\(mistring\fR
+.fi
+.SH DESCRIPTION
+The
+.IR uux
+utility shall gather zero or more files from various systems, execute a
+shell pipeline (see
+.IR "Section 2.9" ", " "Shell Commands")
+on a specified system, and then send the standard output of the command
+to a file on a specified system. Only the first command of a pipeline
+can have a
+.IR system-name !
+prefix. All other commands in the pipeline shall be executed on the
+system of the first command.
+.P
+The following restrictions are applicable to the shell pipeline
+processed by
+.IR uux :
+.IP " *" 4
+In gathering files from different systems, pathname expansion shall
+not be performed by
+.IR uux .
+Thus, a request such as:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+uux "c99 remsys!~/*.c"
+.fi \fR
+.P
+.RE
+.P
+would attempt to copy the file named literally
+.BR *.c
+to the local system.
+.RE
+.IP " *" 4
+The redirection operators
+.BR \(dq>>\(dq ,
+.BR \(dq<<\(dq ,
+.BR \(dq>|\(dq ,
+and
+.BR \(dq>&\(dq 
+shall not be accepted. Any use of these redirection operators shall
+cause this utility to write an error message describing the problem
+and exit with a non-zero exit status.
+.IP " *" 4
+The reserved word
+.BR !
+cannot be used at the head of the pipeline to modify the exit status.
+(See the
+.IR command-string
+operand description below.)
+.IP " *" 4
+Alias substitution shall not be performed.
+.P
+A filename can be specified as for
+.IR uucp ;
+it can be an absolute pathname, a pathname preceded by ~\c
+.IR name
+(which is replaced by the corresponding login directory), a pathname
+specified as ~/\^\c
+.IR dest
+(\c
+.IR dest
+is prefixed by the public directory called
+.IR PUBDIR ;
+the actual location of
+.IR PUBDIR
+is implementation-defined), or a simple filename (which is prefixed
+by
+.IR uux
+with the current directory). See
+.IR "\fIuucp\fR\^"
+for the details.
+.P
+The execution of commands on remote systems shall take place in an
+execution directory known to the
+.IR uucp
+system. All files required for the execution shall be put into this
+directory unless they already reside on that machine. Therefore, the
+application shall ensure that non-local filenames (without path or
+machine reference) are unique within the
+.IR uux
+request.
+.P
+The
+.IR uux
+utility shall attempt to get all files to the execution system. For
+files that are output files, the application shall ensure that the
+filename is escaped using parentheses.
+.P
+The remote system shall notify the user by mail if the requested
+command on the remote system was disallowed or the files were not
+accessible. This notification can be turned off by the
+.BR \(min
+option.
+.P
+Typical implementations of this utility require a communications line
+configured to use the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface",
+but other communications means may be used. On systems where there are
+no available communications means (either temporarily or permanently),
+this utility shall write an error message describing the problem and
+exit with a non-zero exit status.
+.P
+The
+.IR uux
+utility cannot guarantee support for all character encodings in all
+circumstances. For example, transmission data may be restricted to 7
+bits by the underlying network, 8-bit data and filenames need not be
+portable to non-internationalized systems, and so on. Under these
+circumstances, it is recommended that only characters defined in the
+ISO/IEC\ 646:\|1991 standard International Reference Version (equivalent to ASCII) 7-bit range
+of characters be used and that only characters defined in the portable
+filename character set be used for naming files.
+.SH OPTIONS
+The
+.IR uux
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mij\fP" 10
+Write the job identification string to standard output. This job
+identification can be used by
+.IR uustat
+to obtain the status or terminate a job.
+.IP "\fB\(min\fP" 10
+Do not notify the user if the command fails.
+.IP "\fB\(mip\fP" 10
+Make the standard input to
+.IR uux
+the standard input to the
+.IR command-string .
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIcommand-string\fR" 10
+.br
+A string made up of one or more arguments that are similar to normal
+command arguments, except that the command and any filenames can be
+prefixed by
+.IR system-name !.
+A null
+.IR system-name
+shall be interpreted as the local system.
+.SH STDIN
+The standard input shall not be used unless the
+.BR '\(mi' 
+or
+.BR \(mip
+option is specified; in those cases, the standard input shall be made
+the standard input of the
+.IR command-string .
+.SH "INPUT FILES"
+Input files shall be selected according to the contents of
+.IR command-string .
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR uux :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall not be used unless the
+.BR \(mij
+option is specified; in that case, the job identification string shall
+be written to standard output in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIjobid\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+Output files shall be created or written, or both, according to the
+contents of
+.IR command-string .
+.P
+If
+.BR \(min
+is not used, mail files shall be modified following any command or
+file-access failures on the remote system.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+This utility is part of the UUCP Utilities option and need not be
+supported by all implementations.
+.P
+Note that, for security reasons, many installations limit the list of
+commands executable on behalf of an incoming request from
+.IR uux .
+Many sites permit little more than the receipt of mail via
+.IR uux .
+.P
+Any characters special to the command interpreter should be quoted
+either by quoting the entire
+.IR command-string
+or quoting the special characters as individual arguments.
+.P
+As noted in
+.IR uucp ,
+shell pattern matching notation
+characters appearing in pathnames are expanded on the appropriate local
+system. This is done under the control of local settings of
+.IR LC_COLLATE
+and
+.IR LC_CTYPE .
+Thus, care should be taken when using bracketed filename patterns, as
+collation and typing rules may vary from one system to another. Also
+be aware that certain types of expression (that is, equivalence
+classes, character classes, and collating symbols) need not be
+supported on non-internationalized systems.
+.SH EXAMPLES
+.IP " 1." 4
+The following command gets
+.BR file1
+from system
+.BR a
+and
+.BR file2
+from system
+.BR b ,
+executes
+.IR diff
+on the local system, and puts the results in
+.BR file.diff
+in the local
+.IR PUBDIR
+directory. (\c
+.IR PUBDIR
+is the
+.IR uucp
+public directory on the local system.)
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+uux "!diff a!/usr/file1 b!/a4/file2 >!~/file.diff"
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+The following command fails because
+.IR uux
+places all files copied to a system in the same working directory.
+Although the files
+.BR xyz
+are from two different systems, their filenames are the same and
+conflict.
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+uux "!diff a!/usr1/xyz b!/usr2/xyz >!~/xyz.diff"
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+The following command succeeds (assuming
+.IR diff
+is permitted on system
+.BR a )
+because the file local to system
+.BR a
+is not copied to the working directory, and hence does not conflict with
+the file from system
+.BR c .
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+uux "a!diff a!/usr/xyz c!/usr/xyz >!~/xyz.diff"
+.fi \fR
+.P
+.RE
+.RE
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Chapter 2" ", " "Shell Command Language",
+.IR "\fIuucp\fR\^",
+.IR "\fIuuencode\fR\^",
+.IR "\fIuustat\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

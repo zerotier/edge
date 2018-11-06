@@ -1,0 +1,1305 @@
+#!/usr/bin/perl
+#
+# Copyright 2005-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+#
+# lsroll
+#
+#	This script lists the rollrecs in a rollrec file.
+#
+
+use strict;
+
+use Getopt::Long qw(:config no_ignore_case_always);
+
+use Net::DNS::SEC::Tools::rollrec;
+use Net::DNS::SEC::Tools::rolllog;
+use Net::DNS::SEC::Tools::tooloptions;
+
+#
+# Version information.
+#
+my $NAME   = "lsroll";
+my $VERS   = "$NAME version: 2.1.0";
+my $DTVERS = "DNSSEC-Tools Version: 2.1";
+
+#######################################################################
+
+#
+# Data required for command line options.
+#
+my %options = ();			# Filled option array.
+my @opts =
+(
+	# Records to select:
+		"roll",			# "Active" rollrecs.
+		"skip",			# Skipped rollrecs.
+		"info",			# The info rollrec.
+
+	# Data to display:
+		"type",			# Record type.
+		"zonename",		# Zone names.
+		"zonefile",		# Zone files.
+		"zonegroups",		# Just the zonegroup names.
+		"zg",			# Zonegroup names.
+		"keyrec",		# Keyrec files.
+		"kskphase",		# KSK rollover phases.
+		"zskphase",		# ZSK rollover phases.
+		"phases",		# KSK and ZSK rollover phases.
+		"admin",		# Zone administrator's email.
+		"loglevel",		# Zone administrator's email.
+		"directory",		# Directory holding zone's files.
+		"ttl",			# Maximum TTL.
+		"display",		# Display flag.
+		"phstart",		# Phase start.
+		"lastksk",		# Timestamp of last KSK rollover.
+		"lastzsk",		# Timestamp of last ZSK rollover.
+		"zsargs",		# User-specified zonesigner arguments.
+
+	# Output format:
+		"count",		# Only give count of matching keyrecs.
+		"headers",		# Give a column header.
+		"terse",		# Give terse output.
+		"long",			# Give long output.
+		"Version",		# Display the version number.
+
+	"help",				# Give a usage message and exit.
+);
+
+#
+# Flag values for the various options.  Variable/option connection should
+# be obvious.
+#
+my $rollflag;
+my $skipflag;
+my $infoflag;
+
+my $typeflag;
+my $nameflag;
+my $zonenameflag;
+my $zonefileflag;
+my $zgflag;
+my $zonegroupsflag;
+my $keyrecflag;
+my $kphaseflag;
+my $zphaseflag;
+my $phasesflag;
+my $adminflag;
+my $logflag;
+my $ttlflag;
+my $dirflag;
+my $dispflag;
+my $phstartflag;
+my $lastkskflag;
+my $lastzskflag;
+my $zsargsflag;
+
+my $cntflag;
+my $headerflag;
+my $terse;
+my $long;
+my $version = 0;			# Display the version number.
+
+my $count   = 0;			# Record-match count.
+
+#######################################################################
+
+my $HEADER_RRN = "<<<header>>>";	# Name for column header "rollrec".
+
+my @rrnames;				# List of rollrecs in the files.
+
+my %rollrecs = ();			# Rollrecs from the rollrec files.
+my %zonegroups = ();			# Zonegroups from the rollrecs.
+
+my %lengths  = ();			# Maximum lengths of each rollrec field.
+
+my $prevkey;				# Previous rollrec key added to output.
+
+my $ret;				# Return code from main().
+
+$ret = main();
+exit($ret);
+
+#-----------------------------------------------------------------------------
+# Routine:	main()
+#
+# Purpose:	Main controller routine for lsroll.
+#
+sub main()
+{
+	my $argc = @ARGV;		# Number of command line arguments.
+	my $errors = 0;			# Total error count.
+	my $cnt = 0;			# Total zones read.
+
+	#
+	# Check our options.
+	#
+	doopts($argc);
+
+	#
+	# Handle requests for info rollrecs.
+	#
+	if($infoflag)
+	{
+		my $rrcnt = @ARGV - 1;		# Count of rollrec files.
+
+		$rrcnt = @ARGV;
+		$rrcnt--;
+
+		while(@ARGV)
+		{
+			inforec($ARGV[0],$rrcnt);
+			shift @ARGV;
+		}
+
+		exit(0);
+	}
+
+	#
+	# Read the rollrec files.
+	#
+	while($argc > 0)
+	{
+		$cnt += getrollrecs($ARGV[0]);
+		shift @ARGV;
+		$argc = @ARGV;
+	}
+
+	#
+	# Exit if we didn't find any zones at all.
+	#
+	return(1) if($cnt == 0);
+
+	#
+	# Cook up the output:  build a header line and calculate the maximum
+	# length of each field.
+	#
+	makeheader();
+	maxlens();
+
+	#
+	# Display the data requested.
+	#
+	showrollrecs();
+
+	#
+	# If the matching-record count should be given, give the count in
+	# requested format.
+	#
+	if($cntflag)
+	{
+		if($terse)
+		{
+			print "$count\n";
+		}
+		else
+		{
+			my $plural = "s";
+			$plural = "" if($count == 1);
+
+			print "$count matching record$plural\n";
+		}
+	}
+	return(0);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	doopts()
+#
+# Purpose:	This routine shakes and bakes our command line options.
+#		A bunch of option variables are set according to the specified
+#		options.  Then a little massaging is done to make sure that
+#		the proper actions are taken.  A few options imply others, so
+#		the implied options are set if the implying options are given.
+#
+sub doopts
+{
+	my $argc = shift;			# Command line argument count.
+
+	#
+	# Parse the options.
+	#
+	GetOptions(\%options,@opts) || usage();
+
+	#
+	# Set our option variables based on the parsed options.
+	#
+	$rollflag	= $options{'roll'}	|| 0;
+	$skipflag	= $options{'skip'}	|| 0;
+	$infoflag	= $options{'info'}	|| 0;
+
+	$cntflag	= $options{'count'}	|| 0;
+	$headerflag	= $options{'headers'}	|| 0;
+	$terse		= $options{'terse'}	|| 0;
+	$long		= $options{'long'}	|| 0;
+
+	#
+	# Show the version number if requested
+	#
+	version() if(defined($options{'Version'}));
+
+	#
+	# Give a usage flag if asked.
+	#
+	usage() if(defined($options{'help'}));
+
+	#
+	# Check for conflicting options.
+	#
+	if($rollflag && $skipflag)
+	{
+		print STDERR "please select only one of -roll and -skip\n";
+		exit(0);
+	}
+
+	#
+	# Ensure we were given a rollrec file to check.
+	#
+	$argc = @ARGV;
+	usage() if($argc == 0);
+
+	#############################################################
+	#
+	# WARNING:  Code order beyond this point is critical.  Do *NOT* modify
+	#	    anything in the rest of this routine if you are an idiot.
+	#
+
+	#
+	# Make sure conflicting options weren't given.
+	#
+	usage() if($long && $terse);
+
+	#
+	# Set the default flag values.
+	#
+	$typeflag	= 0;
+	$nameflag	= 1;
+	$zonenameflag	= 0;
+	$zonefileflag	= 1;
+	$zgflag		= 0;
+	$keyrecflag	= 1;
+	$kphaseflag	= 1;
+	$zphaseflag	= 1;
+	$dirflag	= 0;
+	$adminflag	= 0;
+	$logflag	= 0;
+	$ttlflag	= 0;
+	$dispflag	= 0;
+	$phstartflag	= 0;
+	$lastkskflag	= 0;
+	$lastzskflag	= 0;
+	$zsargsflag	= 0;
+
+	#
+	# Set the output flags for -skip.
+	#
+	if($skipflag)
+	{
+		$typeflag	= 0;
+		$nameflag	= 1;
+		$zonenameflag	= 0;
+		$zonefileflag	= 1;
+		$zgflag		= 0;
+		$keyrecflag	= 1;
+		$kphaseflag	= 0;
+		$zphaseflag	= 0;
+		$adminflag	= 0;
+		$logflag	= 0;
+		$ttlflag	= 0;
+		$phstartflag	= 0;
+		$lastkskflag	= 0;
+		$lastzskflag	= 0;
+		$zsargsflag	= 0;
+	}
+
+	#
+	# Set the output flags for -long output.
+	#
+	if($long)
+	{
+		$typeflag	= 1;
+		$nameflag	= 1;
+		$zonenameflag	= 1;
+		$zonefileflag	= 1;
+		$zgflag		= 1;
+		$keyrecflag	= 1;
+		$kphaseflag	= 1;
+		$zphaseflag	= 1;
+		$dirflag	= 1;
+		$adminflag	= 1;
+		$logflag	= 1;
+		$ttlflag	= 1;
+		$dispflag	= 1;
+		$phstartflag	= 1;
+		$lastkskflag	= 1;
+		$lastzskflag	= 1;
+		$zsargsflag	= 1;
+	}
+	elsif($terse)
+	{
+		$typeflag	= 0;
+		$nameflag	= 1;
+		$zonenameflag	= 0;
+		$zonefileflag	= 0;
+		$zgflag		= 0;
+		$keyrecflag	= 0;
+		$kphaseflag	= 0;
+		$zphaseflag	= 0;
+		$dirflag	= 0;
+		$adminflag	= 0;
+		$logflag	= 0;
+		$ttlflag	= 0;
+		$dispflag	= 0;
+		$phstartflag	= 0;
+		$lastkskflag	= 0;
+		$lastzskflag	= 0;
+		$zsargsflag	= 0;
+	}
+
+	#
+	# Now fold in the option values...
+	#
+	$typeflag	= 1 if($options{'type'});
+	$zonefileflag	= 1 if($options{'zonefile'});
+	$zonenameflag	= 1 if($options{'zonename'});
+	$zgflag		= 1 if($options{'zg'});
+	$keyrecflag	= 1 if($options{'keyrec'});
+	$phasesflag	= 1 if($options{'phases'});
+	$dirflag	= 1 if($options{'directory'});
+	$adminflag	= 1 if($options{'admin'});
+	$logflag	= 1 if($options{'loglevel'});
+	$ttlflag	= 1 if($options{'ttl'});
+	$dispflag	= 1 if($options{'display'});
+	$phstartflag	= 1 if($options{'phstart'});
+	$lastkskflag	= 1 if($options{'lastksk'});
+	$lastzskflag	= 1 if($options{'lastzsk'});
+	$kphaseflag	= 1 if($options{'kskphase'});
+	$zphaseflag	= 1 if($options{'zskphase'});
+	$zsargsflag	= 1 if($options{'zsargs'});
+	$zonegroupsflag	= 1 if($options{'zonegroups'});
+
+	#
+	# Adjust the phase-related flags to ensure that The Right Thing
+	# is done.
+	#
+	if($options{'kskphase'} && !$options{'zskphase'})
+	{
+		$kphaseflag	= 1;
+		$zphaseflag	= 0;
+		$lastzskflag	= 0;
+	}
+	elsif($options{'zskphase'} && !$options{'kskphase'})
+	{
+		$kphaseflag	= 0;
+		$zphaseflag	= 1;
+		$lastkskflag	= 0;
+	}
+
+	if($phasesflag)
+	{
+		$kphaseflag = 0;
+		$zphaseflag = 0;
+	}
+	if($kphaseflag && $zphaseflag)
+	{
+		$kphaseflag = 0;
+		$zphaseflag = 0;
+		$phasesflag = 1;
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	inforec()
+#
+# Purpose:	This routine reads the specified rollrec file and prints data
+#		from the file's info rollrec.
+#
+sub inforec
+{
+	my $rrfile = shift;		# Rollrec file.
+	my $nameflag = shift;		# Flag for using rollrec name.
+
+	my $refinfo;			# Reference to info rollrec.
+	my %rrinfo;			# Hash of info rollrec.
+
+	my $maxlen = -1;		# Maximum length of rollrec keys.
+	my $reccnt = 0;			# Count of printed records.
+	my $outstr = '';		# Output string.
+
+	#
+	# Read the rollrec file.
+	#
+	rollrec_lock();
+	rollrec_read($rrfile);
+	rollrec_unlock();
+
+	#
+	# Get the file's info rollrec.
+	#
+	$refinfo = rollrec_info();
+	%rrinfo = %$refinfo;
+
+	#
+	# Find the longest key length.
+	#
+	foreach my $rrn (sort(keys(%rrinfo)))
+	{
+		my $len;				# Length of key name.
+
+		next if(($rrn eq 'rollrec_name') || ($rrn eq 'rollrec_type'));
+
+		$len = length($rrn);
+		$maxlen = $len if($len > $maxlen);
+	}
+
+	#
+	# Build the output string.
+	#
+	foreach my $rrn (sort(keys(%rrinfo)))
+	{
+		next if(($rrn eq 'rollrec_name') || ($rrn eq 'rollrec_type'));
+
+		$outstr .= "$rrfile:   " if($nameflag);
+		$outstr .= sprintf("%-*s\t\"%s\"\n",
+					$maxlen, $rrn, $rrinfo{$rrn});
+
+		$reccnt++;
+	}
+
+	#
+	# G'head and print any info records -- if we found any.
+	#
+	if($reccnt)
+	{
+		print "$outstr";
+	}
+
+	#
+	# Close up the rollrec file.
+	#
+	rollrec_close();
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	getrollrecs()
+#
+# Purpose:	This routine reads the specified rollrec file and puts each
+#		rollrec into the rollrec hash table.
+#		A little data-massage also takes place:
+#			- default admins are added to admin-less records
+#			- add quotes around timestamps
+#			- default loglevels are added to loglevel-less records
+#			- loglevels are converted to text format
+#			- roll-specific fields are zapped for skip rollrecs
+#
+sub getrollrecs
+{
+	my $rrfile = shift;			# Rollrec file.
+	my $zonecnt = 0;			# Count of zones found.
+
+	rollrec_lock();
+	rollrec_read($rrfile);
+	rollrec_unlock();
+
+	#
+	# Load the rollrecs from the rollrec file.
+	#
+	@rrnames = rollrec_names();
+	foreach my $rn (sort(@rrnames))
+	{
+		my $rr;				# Reference to rollrec.
+		my $type;			# Rollrec's type.
+
+		#
+		# Get a reference to the rollrec.
+		#
+		$rr = rollrec_fullrec($rn);
+
+		#
+		# If we're not displaying this type of record, don't
+		# include it in the length calculate.
+		#
+		$type = $rr->{'rollrec_type'};
+		if(($rollflag && ($type eq "skip"))	||
+		   ($skipflag && ($type eq "roll")))
+		{
+			next;
+		}
+
+		next if($rn eq '');
+
+		#
+		# Save the rollrec and bump our zone count.
+		#
+		$rollrecs{$rn} = $rr;
+		$zonecnt++;
+	}
+
+	#
+	# Give an error message if no zones were found.
+	#
+	if($zonecnt == 0)
+	{
+		print STDERR "no rollrec entries found in $rrfile\n";
+		return(0);
+	}
+
+	#
+	# Transmogrify a few fields in the rollrec as needed.
+	#
+	foreach my $rn (sort(keys(%rollrecs)))
+	{
+		#
+		# Go to the next if the name is empty.
+		#
+		next if($rn eq '');
+
+		#
+		# Add quotes to the rollrec and zonegroup names.  We'll
+		# also remove leading and trailing whitespace from the
+		# zonegroups string.
+		#
+		$rollrecs{$rn}{'rollrec_name'} = "\"$rollrecs{$rn}{'rollrec_name'}\""; 
+		$rollrecs{$rn}{'zonegroup'} =~ s/^\s*/"/;
+		$rollrecs{$rn}{'zonegroup'} =~ s/\s*$/"/;
+		$zonegroups{$rollrecs{$rn}{'zonegroup'}}++;
+
+		#
+		# Add quotes to the timestamps.
+		#
+		$rollrecs{$rn}{'phasestart'} = "\"$rollrecs{$rn}{'phasestart'}\""; 
+		$rollrecs{$rn}{'ksk_rolldate'} = "\"$rollrecs{$rn}{'ksk_rolldate'}\""; 
+		$rollrecs{$rn}{'zsk_rolldate'} = "\"$rollrecs{$rn}{'zsk_rolldate'}\""; 
+
+		#
+		# If the rollrec has no administrator, give it the default.
+		#
+		if(!defined($rollrecs{$rn}{'administrator'}))
+		{
+			$rollrecs{$rn}{'administrator'} = "(defadmin)";
+		}
+
+		#
+		# If the rollrec has no administrator, give it the default.
+		#
+		if(!defined($rollrecs{$rn}{'directory'}))
+		{
+			$rollrecs{$rn}{'directory'} = "(defdir)";
+		}
+
+		#
+		# Convert the loglevel into its textual form.
+		# If the rollrec has no loglevel, give it the default.
+		# If the rollrec has an invalid loglevel, give it the error
+		# default.
+		#
+		if(defined($rollrecs{$rn}{'loglevel'}))
+		{
+			my $lvl;			# Text logging level.
+
+			$lvl = rolllog_str($rollrecs{$rn}{'loglevel'});
+			if($lvl eq "")
+			{
+				$rollrecs{$rn}{'loglevel'} = "(unknownlog)";
+			}
+			else
+			{
+				$rollrecs{$rn}{'loglevel'} = $lvl;
+			}
+		}
+		else
+		{
+			$rollrecs{$rn}{'loglevel'} = "(deflog)";
+		}
+
+		#
+		# Add quotes to the zonesigner arguments.  If the rollrec
+		# has no zsargs specified, give it a default message.
+		#
+		if(defined($rollrecs{$rn}{'zsargs'}))
+		{
+			$rollrecs{$rn}{'zsargs'} = "\"$rollrecs{$rn}{'zsargs'}\"";
+		}
+		else
+		{
+			$rollrecs{$rn}{'zsargs'} = "(none)";
+		}
+
+		#
+		# If this is a skip rollrec, zap a few roll-specific fields.
+		#
+		if($rollrecs{$rn}{'rollrec_type'} eq "skip")
+		{
+			$rollrecs{$rn}{'kskphase'} = "-";
+			$rollrecs{$rn}{'zskphase'} = "-";
+			$rollrecs{$rn}{'phases'}   = "-/-";
+			$rollrecs{$rn}{'phstart'}  = "---";
+		}
+		else
+		{
+			my $kskphase = $rollrecs{$rn}{'kskphase'};
+			my $zskphase = $rollrecs{$rn}{'zskphase'};
+
+			#
+			# Make sure we've got a numeric phase.
+			#
+			$kskphase = 0 if($kskphase eq '');
+			$zskphase = 0 if($zskphase eq '');
+
+			$rollrecs{$rn}{'phases'} = "$kskphase/$zskphase";
+		}
+	}
+
+	#
+	# Return the number of zones we found in the rollrec file.
+	#
+	return($zonecnt);
+}
+
+#----------------------------------------------------------------------
+# Routine:	maxlens()
+#
+# Purpose:	Calculate the maximum length of each rollrec field.
+#		After finding the longest length for each field, we'll
+#		add a little buffer space.
+#
+sub maxlens
+{
+	#
+	# Loop through the zone list and give data on the desired zones.
+	#
+	foreach my $rrname (sort(keys(%rollrecs)))
+	{
+		my $recref  = $rollrecs{$rrname};
+		my %rollrec = %$recref;
+
+		foreach my $key (sort(keys(%rollrec)))
+		{
+			if(length($rollrec{$key}) > $lengths{$key})
+			{
+				$lengths{$key} = length($rollrec{$key});
+			}
+		}
+	}
+
+	#
+	# Build a dummy entry for the phases option.  This can be hardcoded
+	# since a -phases will only ever give output of the "M/N" form.
+	#
+	$lengths{'phases'} = 3 if(!defined($lengths{'phases'}));
+
+	#
+	# Add a little buffer space between fields.
+	#
+	foreach my $key (sort(keys(%lengths)))
+	{
+		$lengths{$key} += 4;
+	}
+}
+
+#----------------------------------------------------------------------
+# Routine:	makeheader()
+#
+# Purpose:	Build a header line as a fake rollrec.
+#
+sub makeheader
+{
+	my %rr;				# New, fake rollrec.
+
+	return if(!$headerflag);
+
+	$rr{'rollrec_type'}	= 'Type';
+	$rr{'administrator'}	= 'Administrator';
+	$rr{'directory'}	= 'Directory';
+	$rr{'display'}		= 'Display Flag';
+	$rr{'keyrec'}		= 'Keyrec File';
+	$rr{'ksk_rolldate'}	= 'Last KSK Rollover';
+	$rr{'kskphase'}		= 'KSK Phase';
+	$rr{'loglevel'}		= 'Log Level';
+	$rr{'maxttl'}		= 'Max-TTL';
+	$rr{'rollrec_name'}	= 'Rollrec Name';
+	$rr{'phasestart'}	= 'Phase Start';
+	$rr{'phases'}		= 'KSK/ZSK';
+	$rr{'zonefile'}		= 'Zonefile';
+	$rr{'zonegroup'}	= 'Zonegroup';
+	$rr{'zonename'}		= 'Zonename';
+	$rr{'zsk_rolldate'}	= 'Last ZSK Rollover';
+	$rr{'zskphase'}		= 'ZSK Phase';
+	$rr{'zsargs'}		= 'Zonesigner Arguments';
+
+	$rollrecs{$HEADER_RRN} = \%rr;
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	showrollrecs()
+#
+# Purpose:	This routine displays rollrec data.  There are three output
+#		formats: default, long, terse.  There are also skip records.
+#		See the pod for more info on the formats.
+#
+sub showrollrecs
+{
+	my $out;				# Output string.
+
+	my $admin;				# Zone administrator's email.
+	my $direct;				# Directory for zone's files.
+	my $disp;				# blinkenlights display flag.
+	my $keyrec;				# Keyrec file in rollrec.
+	my $kskphase;				# Current KSK phase in rollrec.
+	my $lastksk;				# Timestamp of last KSK roll.
+	my $lastzsk;				# Timestamp of last ZSK roll.
+	my $loglevel;				# Logging level.
+	my $name;				# Rollrec record name.
+	my $phases;				# Current KSK and ZSK phases.
+	my $phstart;				# Phase start in rollrec.
+	my $ttl;				# Maximum TTL in rollrec.
+	my $type;				# Rollrec's type.
+	my $zonefile;				# Zone file in rollrec.
+	my $zonegroup;				# Zonegroup name in rollrec.
+	my $zonename;				# Zone name in rollrec.
+	my $zsargs;				# Zonesigner arguments.
+	my $zskphase;				# Current ZSK phase in rollrec.
+
+	#
+	# Only show zone groups.
+	#
+	if($zonegroupsflag)
+	{
+		showzonegroups();
+		return;
+	}
+
+	#
+	# Loop through the zone list and give data on the desired zones.
+	#
+	foreach my $rrn (sort(keys(%rollrecs)))
+	{
+		my $rrr = $rollrecs{$rrn};	# The zone's loaded rollrec ref.
+		my %rr = %$rrr;			# The zone's loaded rollrec.
+
+		#
+		# Bump the matching-records count.
+		#
+		$count++ if($rrn ne $HEADER_RRN);
+
+		#
+		# Stay cloaked if only the count of matching records
+		# should be given.
+		#
+		next if($cntflag);
+
+		#
+		# Set fields from the rollrec.  If this is a skip record,
+		# we won't get the phases, ttl, or phase start.
+		#
+		$type	   = $rr{'rollrec_type'};
+		$name	   = $rr{'rollrec_name'};
+		$zonename  = $rr{'zonename'};
+		$zonefile  = $rr{'zonefile'};
+		$zonegroup = $rr{'zonegroup'};
+		$keyrec	   = $rr{'keyrec'};
+		$kskphase  = $rr{'kskphase'};
+		$zskphase  = $rr{'zskphase'};
+		$phases	   = $rr{'phases'};
+		$ttl	   = $rr{'maxttl'};
+		$disp	   = $rr{'display'};
+		$phstart   = $rr{'phasestart'};
+		$lastksk   = $rr{'ksk_rolldate'};
+		$lastzsk   = $rr{'zsk_rolldate'};
+		$admin	   = $rr{'administrator'};
+		$direct	   = $rr{'directory'};
+		$loglevel  = $rr{'loglevel'};
+		$zsargs	   = $rr{'zsargs'};
+
+		#
+		# Build the output string.
+		#
+		$prevkey = 'first-field';
+		$out  = outfld($rrn,'rollrec_name',$name,1);
+		$out .= outfld($rrn,'zonename',$zonename,$zonenameflag);
+		$out .= outfld($rrn,'zonegroup',$zonegroup,$zgflag);
+		$out .= outfld($rrn,'rollrec_type',$type,$typeflag);
+		$out .= outfld($rrn,'zonefile',$zonefile,$zonefileflag);
+		$out .= outfld($rrn,'keyrec',$keyrec,$keyrecflag);
+		if($phasesflag)
+		{
+			$out .= outfld($rrn,'phases',$phases,1);
+		}
+		else
+		{
+			$out .= outfld($rrn,'kskphase',$kskphase,$kphaseflag);
+			$out .= outfld($rrn,'zskphase',$zskphase,$zphaseflag);
+		}
+		$out .= outfld($rrn,'administrator',$admin,$adminflag);
+		$out .= outfld($rrn,'directory',$direct,$dirflag);
+		$out .= outfld($rrn,'loglevel',$loglevel,$logflag);
+		$out .= outfld($rrn,'maxttl',$ttl,$ttlflag);
+		$out .= outfld($rrn,'display',$disp,$dispflag);
+		$out .= outfld($rrn,'phasestart',$phstart,$phstartflag);
+		$out .= outfld($rrn,'ksk_rolldate',$lastksk,$lastkskflag);
+		$out .= outfld($rrn,'zsk_rolldate',$lastzsk,$lastzskflag);
+		$out .= outfld($rrn,'zsargs',$zsargs,$zsargsflag);
+
+		#
+		# Write the output.
+		#
+		print "$out\n";
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	showzonegroups()
+#
+# Purpose:	This routine displays a list of the zonegroups defined in
+#		the rollrec files.  There are three output formats: default,
+#		long, terse.  However, default and terse are the same.
+#
+sub showzonegroups
+{
+	my $out = '';				# Output string.
+	my $mlen = $lengths{'zonegroup'};	# Maximum zonegroup length.
+	my $zglen;				# Length of zonegroup name.
+	my $blen;				# Space buffer length.
+	my $spaces;				# Spaces to add.
+
+	if($headerflag)
+	{
+		$out = "Zonegroup    ";
+
+		if($long)
+		{
+			$zglen = length($out);
+			$mlen = ($mlen > $zglen) ? $mlen : $zglen;
+			$blen = $mlen - $zglen;
+			$spaces = ' ' x $blen if($blen > 0);
+			$out .= $spaces . "Members";
+		}
+
+		$out .= "\n";
+	}
+
+	if($long)
+	{
+
+		#
+		# Figure out the spacing for the zonegroup and member
+		# count, then add a line to the output buffer.
+		#
+		foreach my $zg (sort(keys(%zonegroups)))
+		{
+			next if($zg eq '""');
+
+			$zglen = length($zg);
+			$blen = $mlen - $zglen;
+			$spaces = ' ' x $blen if($blen > 0);
+			$out .= $zg . $spaces . $zonegroups{$zg} . "\n";
+		}
+
+	}
+	else
+	{
+		foreach my $zg (sort(keys(%zonegroups)))
+		{
+			next if($zg eq '""');
+			$out .= "$zg\n";
+		}
+	}
+
+	#
+	# Write the output.
+	#
+	print "$out";
+}
+
+#----------------------------------------------------------------------
+# Routine:	outfld()
+#
+# Purpose:	Build a field's piece of the output line.  It does the needed
+#		spacing and determination of whether that fields should be
+#		included in the line.
+#
+#		This routine only *builds* part of the output line.
+#		It does not write it to output.
+#
+sub outfld
+{
+	my $zone = shift;				# Zone name.
+	my $key  = shift;				# Hashkey.
+	my $val	 = shift;				# Value to print.
+	my $flag = shift;				# Output flag.
+
+	my $ret;					# Return string.
+	my $mlen;					# Maximum field length.
+	my $vlen;					# Length of value.
+	my $blen;					# Space buffer length.
+	my $spaces;					# Spaces to add.
+
+	#
+	# Return if the given flag isn't set and -long wasn't given.
+	#
+	return('') if(!$long && !$flag);
+
+	#
+	# Figure out spacing for this line.
+	#
+	$mlen = $lengths{$prevkey};
+	$vlen = length($rollrecs{$zone}{$prevkey});
+	$blen = $mlen - $vlen;
+	$spaces = ' ' x $blen if($blen > 0);
+
+	#
+	# Build the output line.
+	#
+	$ret = $spaces . $val;
+
+	#
+	# Save the hash key and return the output string to the caller.
+	#
+	$prevkey = $key;
+	return($ret);
+}
+
+#----------------------------------------------------------------------
+# Routine:	version()
+#
+# Purpose:	Print the version number(s) and exit.
+#
+sub version
+{
+	print STDERR "$VERS\n";
+	print STDERR "$DTVERS\n";
+
+	exit(0);
+}
+
+
+#-----------------------------------------------------------------------------
+# Routine:	usage()
+#
+sub usage
+{
+	print STDERR "usage:  lsroll [options] <rollrec-file>\n";
+	print STDERR "\trecord-selection options:\n";
+	print STDERR "\t\t-roll		roll records\n";
+	print STDERR "\t\t-skip		skip records\n";
+	print STDERR "\t\t-info		info record\n";
+	print STDERR "\tattribute-selection options:\n";
+	print STDERR "\t\t-type          	record type\n";
+	print STDERR "\t\t-zonename  	zone name\n";
+	print STDERR "\t\t-zonefile  	zonefile\n";
+	print STDERR "\t\t-keyrec\t	keyrec file\n";
+	print STDERR "\t\t-zg	  	zonegroup name\n";
+	print STDERR "\t\t-kskphase	KSK rollover phase\n";
+	print STDERR "\t\t-zskphase	ZSK rollover phase\n";
+	print STDERR "\t\t-phases\t	KSK and ZSK rollover phases\n";
+	print STDERR "\t\t-admin\t	zone adminstrator's email\n";
+	print STDERR "\t\t-directory	directory of zone's files\n";
+	print STDERR "\t\t-loglevel	rollover logging level\n";
+	print STDERR "\t\t-ttl		zone TTL\n";
+	print STDERR "\t\t-display	display flag\n";
+	print STDERR "\t\t-phstart	start of rollover phase\n";
+	print STDERR "\t\t-lastksk	time last KSK rollover ended\n";
+	print STDERR "\t\t-lastzsk	time last ZSK rollover ended\n";
+	print STDERR "\t\t-zsargs		zonesigner arguments\n";
+	print STDERR "\t\t-zonegroups  	just give zonegroup names\n";
+	print STDERR "\toutput-format options:\n";
+	print STDERR "\t\t-count		only give count of matching keyrecs\n";
+	print STDERR "\t\t-headers	give explanatory column headers\n";
+	print STDERR "\t\t-terse\t	terse output\n";
+	print STDERR "\t\t-long		long output\n";
+	print STDERR "\t\t-Version	display version number\n";
+	print STDERR "\t\t-help		help message \n";
+
+	exit(1);
+}
+
+1;
+
+##############################################################################
+#
+
+=pod
+
+=head1 NAME
+
+lsroll - List the I<rollrec>s in a DNSSEC-Tools I<rollrec> file
+
+=head1 SYNOPSIS
+
+  lsroll [options] <rollrec-files>
+
+=head1 DESCRIPTION
+
+This script lists the contents of the specified I<rollrec> files.  All
+I<rollrec> files are loaded before the output is displayed.  If any
+I<rollrec>s have duplicated names, whether within one file or across
+multiple files, the later I<rollrec> will be the one whose data are
+displayed.
+
+=head1 OUTPUT FORMATS
+
+The output displayed for each zone in a I<rollrec> file depends on the
+selected records, the selected attributes, and the selected output format.
+Each option in these option groups is described in detail in the next section.
+The three base output formats, along with the default B<-skip> format, are
+described here.
+
+The B<-terse> option indicates that a minimal amount of output is desired;
+the B<-long> option indicates that a great deal of output is desired.  The
+record-selection and attribute-selection options may be used in conjunction
+with B<-terse> to display exactly the set of I<rollrec> fields needed.
+
+The default output format is that used when neither B<-terse> nor B<-long>
+is given, and is a middle ground between terse and long output.
+
+If the B<-skip> option is given, then the default output format is a little
+more restricted than the normal default.  Some I<rollrec> fields don't make
+sense in the context of a skip records, and so are given as "---".  These
+fields are the KSK rollover phase, the ZSK rollover phase, the TTL value, and
+the phase start.
+
+The table below shows the fields displayed for each output format.
+
+    rollrec field        default        terse        long       skip
+    -------------        -------        -----        ----       ----
+    rollrec name           yes           yes         yes        yes
+    rollrec type           no            no          yes        no
+    zonename               no            no          yes        yes
+    zone file              yes           no          yes        yes
+    zonegroup              no            no          yes        no
+    keyrec file            yes           no          yes        yes
+    KSK phase              yes           no          yes        no
+    ZSK phase              yes           no          yes        no
+    administrator          no            no          yes        no
+    directory              no            no          yes        no
+    logging level          no            no          yes        no
+    TTL value              no            no          yes        no
+    display flag           no            no          yes        no
+    phase start            no            no          yes        no
+    last KSK rollover      no            no          yes        no
+    last ZSK rollover      no            no          yes        no
+    zonesigner arguments   no            no          yes        no
+
+The I<rollrec> name field is often the same as its zonename, but this is not
+necessarily the case.  The I<rollrec> name can contain spaces, while the
+zonename can't.  For this reason, B<lsroll> displays the I<rollrec> name in
+quotes, even if the name contains no spaces.  This is intended to allow for
+easier parsing by other programs.
+
+If the B<-info> option is given, then the special I<info rollrec> record will
+be displayed.  If the I<rollrec> file has this informational record, notated
+by having the name I<info rollrec>, then the contents of the <info rollrec>
+record will be printed.  If multiple I<rollrec> files are given on the command
+line, then the I<info rollrec> records for each file will be prefixed with the
+I<rollrec> file's name.
+
+=head1 OPTIONS
+
+There are three types of options recognized by B<lsroll>:  record-selection
+options, attribute-selection options, and output-format options.  Each type
+is described in the subsections below.
+
+=head2 Record-selection Options
+
+These options select the records that will be displayed by B<lsroll>.
+By default, all records will be displayed; selecting one or the other of
+these options will restrict the records shown.
+
+In order to simplify the B<lsroll> code and keep it easily understandable,
+these options are mutually exclusive.
+
+=over 4
+
+=item B<-roll>
+
+List all "roll" records in the I<rollrec> file.
+
+=item B<-skip>
+
+List all "skip" records in the I<rollrec> file.
+
+=item B<-info>
+
+List all the fields in the I<rollrec> file's "info" record.
+
+=back
+
+=head2 Attribute-selection Options
+
+These options select the attributes of the records that will be displayed
+by B<lsroll>.
+
+=over 4
+
+=item B<-type>
+
+Include each I<rollrec> record's type in the output.  The type will be either
+"roll" or "skip".
+
+=item B<-zonename>
+
+The record's zonename is included in the output.  The zonename is distinct
+from the record's I<rollrec> name, which is always included in the output.
+While these two fields are often the same, they need not be.  In split-zone
+zones, the I<rollrec> names must be different, while the I<zonename> field
+is the same. 
+
+=item B<-zonefile>
+
+The record's zonefile is included in the output.  This field is part
+of the default output.
+
+=item B<-zg>
+
+The record's zonegroup is included in the output, enclosed in double quotes.
+If a I<rollrec> entry does not contain a zonegroup, then the value "" is given.
+If a record's zonegroup contains leading or trailing whitespace, it will be
+deleted from the output.
+
+=item B<-keyrec>
+
+The record's I<keyrec> file is included in the output.
+This field is part of the default output.
+
+=item B<-kskphase>
+
+The record's KSK rollover phase are included in the output.
+If this option is given with the B<-zskphase> option, then the output will
+follow the format described for the B<-phases> option.
+This field is part of the default output.
+
+=item B<-zskphase>
+
+The record's ZSK rollover phase are included in the output.
+If this option is given with the B<-kskphase> option, then the output will
+follow the format described for the B<-phases> option.
+This field is part of the default output.
+
+=item B<-phases>
+
+The record's KSK and ZSK rollover phases are included in the output.
+The listing is given with the KSK phase first, followed by the ZSK phase.
+
+Examples of output from this option are:
+
+    KSK phase	ZSK phase	output
+        0           0            0/0
+        3           0            3/0
+        0           5            0/5
+
+=item B<-admin>
+
+The record's administrator value is included in the output.
+If an administrator value is not included in a I<rollrec>, then the value
+"(defadmin)" will be given.
+
+=item B<-directory>
+
+The name of the directory that holds the zone's files is included in the
+output.  If a zone directory is not included in a I<rollrec>, then the value
+"(defdir)" will be given.
+
+=item B<-loglevel>
+
+The B<rollerd> logging level for this zone.  This value may be given in
+the I<rollrec> file in either the textual or numeric form.  The textual form
+of the logging level will be displayed, not the numeric.
+If a logging level value is not included in a I<rollrec>, then the value
+"(deflog)" will be given.
+If an undefined logging level value is included in a I<rollrec>, then the
+value "(unknownlog)" will be given.
+
+=item B<-ttl>
+
+The record's TTL value is included in the output.
+
+=item B<-display>
+
+The record's display flag, used by B<blinkenlights>, is included in the output.
+
+=item B<-phstart>
+
+The record's rollover phase is included in the output.
+If no rollover has yet been performed for this zone, an empty date is given.
+
+=item B<-lastksk>
+
+The record's last KSK rollover date is included in the output.
+If no KSK rollover has yet been performed for this zone, an empty date is given.
+
+=item B<-lastzsk>
+
+The record's last ZSK rollover date is included in the output.
+If no ZSK rollover has yet been performed for this zone, an empty date is given.
+
+=item B<-zsargs>
+
+The record's user-defined B<zonesigner> arguments are included in the output.
+If no arguments have been set for this zone, then the value "(none)" is given.
+
+=item B<-zonegroup>
+
+The zonegroups defined in the I<rollrec> are listed, enclosed in double
+quotes.  All other I<rollrec> fields are ignored.  If the I<-long> option
+is specified, then each zonegroup name will be accompanied by the number
+of I<rollrec> entries in that zonegroup.
+
+=back
+
+=head2 Output-format Options
+
+These options select the type of output that will be given by I<lsroll>.
+
+=over 4
+
+=item B<-count>
+
+Only a count of matching keyrecs in the I<rollrec> file is given.
+
+=item B<-headers>
+
+Display explanatory column headers.
+
+=item B<-terse>
+
+Terse output is given.  Only the record name and any other fields specifically
+selected are included in the output.
+
+=item B<-long>
+
+Long output is given.  All record fields are included.
+
+=item B<-help>
+
+Display a usage message.
+
+=item B<-Version>
+
+Displays the version information for B<lsroll> and the DNSSEC-Tools package.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2005-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<blinkenlights(8)>,
+B<rollchk(8)>,
+B<rollinit(8)>,
+B<rollerd(8)>
+
+B<Net::DNS::SEC::Tools::rollrec.pm(3)>
+
+B<file-rollrec(5)>
+
+=cut
+

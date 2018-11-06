@@ -1,0 +1,40 @@
+# -*- mmm-classes: donuts-perl -*-
+# Copyright 2006-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+#
+# This file implements rules to check live nameservers for served data
+#
+
+name: DNS_SERVERS_MATCH_DATA
+ruletype: name
+level: 5
+noindent: 1
+feature: check_data
+desc: Checks to see if each of the zone's name servers are properly serving the zone's data.
+<test>
+  my @results;
+
+  # check each resolver from the NS records for matching data
+  foreach my $nsrr (@{donuts_records_by_name($current_domain)->{'NS'}}) {
+      my $ns = $nsrr->nsdname();
+      # create a resolver directly to this NS server
+      my $resolver = Net::DNS::Resolver->new(nameservers => [$ns],
+					     recurse => 0);
+
+      # query the NS server for each record type and compare the results
+      foreach my $recordtype (keys(%$records)) {
+	  my @answers = live_query($recordname, $recordtype, $resolver);
+	  my $cmpresult = compare_arrays($records->{$recordtype}, \@answers,
+	  			         sub { $a->string cmp $b->string });
+	  if ($cmpresult != 0) {
+	      my $err = 
+		"query to $ns for $recordtype of $recordname doesn't match ($cmpresult):\n";
+	      $err .= "    live records:\n";
+	      map { $err .= "      ".$_->string()."\n"; } @answers;
+ 	      $err .= "    loaded records: \n";
+	      map { $err .= "      ".$_->string()."\n"; } @{$records->{$recordtype}};
+	      donuts_error($err);
+	  }
+      }
+  }
+</test>

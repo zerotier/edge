@@ -1,0 +1,165 @@
+'\" et
+.TH SETSOCKOPT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+setsockopt
+\(em set the socket options
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+.P
+int setsockopt(int \fIsocket\fP, int \fIlevel\fP, int \fIoption_name\fP,
+    const void *\fIoption_value\fP, socklen_t \fIoption_len\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsetsockopt\fR()
+function shall set the option specified by the
+.IR option_name
+argument, at the protocol level specified by the
+.IR level
+argument, to the value pointed to by the
+.IR option_value
+argument for the socket associated with the file descriptor specified
+by the
+.IR socket
+argument.
+.P
+The
+.IR level
+argument specifies the protocol level at which the option resides. To
+set options at the socket level, specify the
+.IR level
+argument as SOL_SOCKET. To set options at other levels, supply the
+appropriate
+.IR level
+identifier for the protocol controlling the option. For example, to
+indicate that an option is interpreted by the TCP (Transport Control
+Protocol), set
+.IR level
+to IPPROTO_TCP as defined in the
+.IR <netinet/in.h> 
+header.
+.P
+The
+.IR option_name
+argument specifies a single option to set. It can be one of the
+socket-level options defined in
+.IR "\fB<sys_socket.h>\fP"
+and described in
+.IR "Section 2.10.16" ", " "Use of Options".
+If
+.IR option_name
+is equal to SO_RCVTIMEO or SO_SNDTIMEO and the implementation supports
+setting the option, it is unspecified whether the
+.BR "struct timeval"
+pointed to by
+.IR option_value
+is stored as provided by this function or is rounded up to align with
+the resolution of the clock being used. If
+\fIsetsockopt\fR()
+is called with
+.IR option_name
+equal to SO_ACCEPTCONN, SO_ERROR, or SO_TYPE, the behavior is unspecified.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsetsockopt\fR()
+shall return 0. Otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIsetsockopt\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The
+.IR socket
+argument is not a valid file descriptor.
+.TP
+.BR EDOM
+The send and receive timeout values are too big to fit into the timeout
+fields in the socket structure.
+.TP
+.BR EINVAL
+The specified option is invalid at the specified socket level or the
+socket has been shut down.
+.TP
+.BR EISCONN
+The socket is already connected, and a specified option cannot be set
+while the socket is connected.
+.TP
+.BR ENOPROTOOPT
+.br
+The option is not supported by the protocol.
+.TP
+.BR ENOTSOCK
+The
+.IR socket
+argument does not refer to a socket.
+.P
+The
+\fIsetsockopt\fR()
+function may fail if:
+.TP
+.BR ENOMEM
+There was insufficient memory available for the operation to complete.
+.TP
+.BR ENOBUFS
+Insufficient resources are available in the system to complete the
+call.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+None.
+.SH "APPLICATION USAGE"
+The
+\fIsetsockopt\fR()
+function provides an application program with the means to control
+socket behavior. An application program can use
+\fIsetsockopt\fR()
+to allocate buffer space, control timeouts, or permit socket data
+broadcasts. The
+.IR <sys/socket.h> 
+header defines the socket-level options available to
+\fIsetsockopt\fR().
+.P
+Options may exist at multiple protocol levels. The SO_ options are
+always present at the uppermost socket level.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.10" ", " "Sockets",
+.IR "\fIbind\fR\^(\|)",
+.IR "\fIendprotoent\fR\^(\|)",
+.IR "\fIgetsockopt\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<netinet_in.h>\fP",
+.IR "\fB<sys_socket.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

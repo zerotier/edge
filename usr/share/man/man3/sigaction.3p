@@ -1,0 +1,676 @@
+'\" et
+.TH SIGACTION "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sigaction
+\(em examine and change a signal action
+.SH SYNOPSIS
+.LP
+.nf
+#include <signal.h>
+.P
+int sigaction(int \fIsig\fP, const struct sigaction *restrict \fIact\fP,
+    struct sigaction *restrict \fIoact\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsigaction\fR()
+function allows the calling process to examine and/or specify the
+action to be associated with a specific signal. The argument
+.IR sig
+specifies the signal; acceptable values are defined in
+.IR <signal.h> .
+.P
+The structure
+.BR sigaction ,
+used to describe an action to be taken, is defined in the
+.IR <signal.h> 
+header to include at least the following members:
+.ad l
+.TS
+center box tab(!);
+cB | cB | cB
+lw(1.5i)B | lw(1.25i)I | lw(2.5i).
+Member Type!Member Name!Description
+_
+void(*) (int)!sa_handler!T{
+Pointer to a signal-catching function or one of the macros
+SIG_IGN or SIG_DFL.
+T}
+sigset_t!sa_mask!T{
+Additional set of signals to be blocked during execution of
+signal-catching function.
+T}
+int!sa_flags!T{
+Special flags to affect behavior of signal.
+T}
+T{
+void(*) (int,
+.br
+\0\0siginfo_t *, void *)
+T}!sa_sigaction!Pointer to a signal-catching function.
+.TE
+.ad b
+.P
+The storage occupied by
+.IR sa_handler
+and
+.IR sa_sigaction
+may overlap, and a conforming application shall not use both
+simultaneously.
+.P
+If the argument
+.IR act
+is not a null pointer, it points to a structure specifying the action
+to be associated with the specified signal. If the argument
+.IR oact
+is not a null pointer, the action previously associated with the signal
+is stored in the location pointed to by the argument
+.IR oact .
+If the argument
+.IR act
+is a null pointer, signal handling is unchanged; thus, the call can be
+used to enquire about the current handling of a given signal. The
+SIGKILL and SIGSTOP signals shall not be added to the signal
+mask using this mechanism; this restriction shall be enforced by the
+system without causing an error to be indicated.
+.P
+If the SA_SIGINFO flag (see below) is cleared in the
+.IR sa_flags
+field of the
+.BR sigaction
+structure, the
+.IR sa_handler
+field identifies the action to be associated with the specified signal.
+If the SA_SIGINFO flag is set in the
+.IR sa_flags
+field, the
+.IR sa_sigaction
+field specifies a signal-catching function.
+.P
+The
+.IR sa_flags
+field can be used to modify the behavior of the specified signal.
+.P
+The following flags, defined in the
+.IR <signal.h> 
+header, can be set in
+.IR sa_flags :
+.IP SA_NOCLDSTOP 14
+Do not generate SIGCHLD when children stop
+or stopped children continue.
+.RS 14 
+.P
+If
+.IR sig
+is SIGCHLD and the SA_NOCLDSTOP flag is not set in
+.IR sa_flags ,
+and the implementation supports the SIGCHLD signal, then a SIGCHLD
+signal shall be generated for the calling process whenever any of its
+child processes stop
+and a SIGCHLD signal may be generated for the calling
+process whenever any of its stopped child processes are continued.
+If
+.IR sig
+is SIGCHLD and the SA_NOCLDSTOP flag is set in
+.IR sa_flags ,
+then the implementation shall not generate a SIGCHLD signal in this
+way.
+.RE
+.IP SA_ONSTACK 14
+If set and an alternate signal stack has been declared with
+\fIsigaltstack\fR(),
+the signal shall be delivered to the calling process on that stack.
+Otherwise, the signal shall be delivered on the current stack.
+.IP SA_RESETHAND 14
+If set, the disposition of the signal shall be reset to SIG_DFL and the
+SA_SIGINFO flag shall be cleared on entry to the signal handler.
+.RS 14 
+.TP 10
+.BR Note:
+SIGILL and SIGTRAP cannot be automatically reset when delivered; the
+system silently enforces this restriction.
+.P
+Otherwise, the disposition of the signal shall not be modified on entry
+to the signal handler.
+.P
+In addition, if this flag is set,
+\fIsigaction\fR()
+may behave as if the SA_NODEFER flag were also set.
+.RE
+.IP SA_RESTART 14
+This flag affects the behavior of interruptible functions; that is,
+those specified to fail with
+.IR errno
+set to
+.BR [EINTR] .
+If set, and a function specified as interruptible is interrupted by
+this signal, the function shall restart and shall not fail with
+.BR [EINTR] 
+unless otherwise specified. If an interruptible function which uses a
+timeout is restarted, the duration of the timeout following the restart
+is set to an unspecified value that does not exceed the original
+timeout value. If the flag is not set, interruptible functions
+interrupted by this signal shall fail with
+.IR errno
+set to
+.BR [EINTR] .
+.IP SA_SIGINFO 14
+If cleared and the signal is caught, the signal-catching function
+shall be entered as:
+.RS 14 
+.sp
+.RS 4
+.nf
+\fB
+void func(int \fIsigno\fP);
+.fi \fR
+.P
+.RE
+.P
+where
+.IR signo
+is the only argument to the signal-catching function. In this case, the
+application shall use the
+.IR sa_handler
+member to describe the signal-catching function and the application
+shall not modify the
+.IR sa_sigaction
+member.
+.P
+If SA_SIGINFO is set and the signal is caught, the signal-catching
+function shall be entered as:
+.sp
+.RS 4
+.nf
+\fB
+void func(int \fIsigno\fP, siginfo_t *\fIinfo\fP, void *\fIcontext\fP);
+.fi \fR
+.P
+.RE
+.P
+where two additional arguments are passed to the signal-catching
+function. The second argument shall point to an object of type
+.BR siginfo_t
+explaining the reason why the signal was generated; the third argument
+can be cast to a pointer to an object of type
+.BR ucontext_t
+to refer to the receiving thread's context that was interrupted when
+the signal was delivered. In this case, the application shall use the
+.IR sa_sigaction
+member to describe the signal-catching function and the application
+shall not modify the
+.IR sa_handler
+member.
+.P
+The
+.IR si_signo
+member contains the system-generated signal number.
+.P
+The
+.IR si_errno
+member may contain implementation-defined additional error
+information; if non-zero, it contains an error number identifying the
+condition that caused the signal to be generated.
+.P
+The
+.IR si_code
+member contains a code identifying the cause of the signal, as
+described in
+.IR "Section 2.4.3" ", " "Signal Actions".
+.RE
+.IP SA_NOCLDWAIT 14
+If set, and
+.IR sig
+equals SIGCHLD, child processes of the calling processes shall not
+be transformed into zombie processes when they terminate. If the calling
+process subsequently waits for its children, and the process has no
+unwaited-for children that were transformed into zombie processes, it
+shall block until all of its children terminate, and
+\fIwait\fR(),
+\fIwaitid\fR(),
+and
+\fIwaitpid\fR()
+shall fail and set
+.IR errno
+to
+.BR [ECHILD] .
+Otherwise, terminating child processes shall be transformed into zombie
+processes, unless SIGCHLD is set to SIG_IGN.
+.IP SA_NODEFER 14
+If set and
+.IR sig
+is caught,
+.IR sig
+shall not be added to the thread's signal mask on entry to the signal
+handler unless it is included in
+.IR sa_mask .
+Otherwise,
+.IR sig
+shall always be added to the thread's signal mask on entry to the
+signal handler.
+.P
+When a signal is caught by a signal-catching function installed by
+\fIsigaction\fR(),
+a new signal mask is calculated and installed for the duration of the
+signal-catching function (or until a call to either
+\fIsigprocmask\fR()
+or
+\fIsigsuspend\fR()
+is made). This mask is formed by taking the union of the current
+signal mask and the value of the
+.IR sa_mask
+for the signal being delivered, and unless SA_NODEFER or
+SA_RESETHAND is set,
+then including the signal being delivered. If and when the user's
+signal handler returns normally, the original signal mask is restored.
+.P
+Once an action is installed for a specific signal, it shall remain
+installed until another action is explicitly requested (by another
+call to
+\fIsigaction\fR()),
+until the SA_RESETHAND flag causes resetting of the handler,
+or until one of the
+.IR exec
+functions is called.
+.P
+If the previous action for
+.IR sig
+had been established by
+\fIsignal\fR(),
+the values of the fields returned in the structure pointed to by
+.IR oact
+are unspecified, and in particular
+.IR oact ->\c
+.IR sa_handler
+is not necessarily the same value passed to
+\fIsignal\fR().
+However, if a pointer to the same structure or a copy thereof is passed
+to a subsequent call to
+\fIsigaction\fR()
+via the
+.IR act
+argument, handling of the signal shall be as if the original call to
+\fIsignal\fR()
+were repeated.
+.P
+If
+\fIsigaction\fR()
+fails, no new signal handler is installed.
+.P
+It is unspecified whether an attempt to set the action for a signal
+that cannot be caught or ignored to SIG_DFL is ignored or causes an
+error to be returned with
+.IR errno
+set to
+.BR [EINVAL] .
+.P
+If SA_SIGINFO is not set in
+.IR sa_flags ,
+then the disposition of subsequent occurrences of
+.IR sig
+when it is already pending is implementation-defined; the
+signal-catching function shall be invoked with a single argument.
+If SA_SIGINFO is set in
+.IR sa_flags ,
+then subsequent occurrences of
+.IR sig
+generated by
+\fIsigqueue\fR()
+or as a result of any signal-generating function that supports the
+specification of an application-defined value (when
+.IR sig
+is already pending) shall be queued in FIFO order until delivered or
+accepted; the signal-catching function shall be invoked with three
+arguments. The application specified value is passed to the
+signal-catching function as the
+.IR si_value
+member of the
+.BR siginfo_t
+structure.
+.P
+The result of the use of
+\fIsigaction\fR()
+and a
+\fIsigwait\fR()
+function concurrently within a process on the same signal is
+unspecified.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsigaction\fR()
+shall return 0; otherwise, \(mi1 shall be returned,
+.IR errno
+shall be set to indicate the error, and no new signal-catching function
+shall be installed.
+.br
+.SH ERRORS
+The
+\fIsigaction\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The
+.IR sig
+argument is not a valid signal number or an attempt is made to catch a
+signal that cannot be caught or ignore a signal that cannot be ignored.
+.TP
+.BR ENOTSUP
+The SA_SIGINFO bit flag is set in the
+.IR sa_flags
+field of the
+.BR sigaction
+structure.
+.P
+The
+\fIsigaction\fR()
+function may fail if:
+.TP
+.BR EINVAL
+An attempt was made to set the action to SIG_DFL for a signal that
+cannot be caught or ignored (or both).
+.P
+In addition, the
+\fIsigaction\fR()
+function may fail if the SA_SIGINFO flag is set in the
+.IR sa_flags
+field of the
+.BR sigaction
+structure for a signal not in the range SIGRTMIN to SIGRTMAX.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Establishing a Signal Handler"
+.P
+The following example demonstrates the use of
+\fIsigaction\fR()
+to establish a handler for the SIGINT signal.
+.sp
+.RS 4
+.nf
+\fB
+#include <signal.h>
+.P
+static void handler(int signum)
+{
+    /* Take appropriate actions for signal delivery */
+}
+.P
+int main()
+{
+    struct sigaction sa;
+.P
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART; /* Restart functions if
+                                 interrupted by handler */
+    if (sigaction(SIGINT, &sa, NULL) == \(mi1)
+        /* Handle error */;
+.P
+    /* Further code */
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIsigaction\fR()
+function supersedes the
+\fIsignal\fR()
+function, and should be used in preference. In particular,
+\fIsigaction\fR()
+and
+\fIsignal\fR()
+should not be used in the same process to control the same signal.
+The behavior of async-signal-safe functions, as defined in their
+respective DESCRIPTION sections, is as specified by this volume of POSIX.1\(hy2008, regardless
+of invocation from a signal-catching function. This is the only intended
+meaning of the statement that async-signal-safe functions may be used in
+signal-catching functions without restrictions. Applications must still
+consider all effects of such functions on such things as data structures,
+files, and process state. In particular, application developers need
+to consider the restrictions on interactions when interrupting
+\fIsleep\fR()
+and interactions among multiple handles for a file description. The
+fact that any specific function is listed as async-signal-safe does not
+necessarily mean that invocation of that function from a
+signal-catching function is recommended.
+.P
+In order to prevent errors arising from interrupting non-async-signal-safe
+function calls, applications should protect calls to these functions
+either by blocking the appropriate signals or through the use of some
+programmatic semaphore (see
+.IR "\fIsemget\fR\^(\|)",
+.IR "\fIsem_init\fR\^(\|)",
+.IR "\fIsem_open\fR\^(\|)",
+and so on). Note in particular that even the ``safe'' functions may
+modify
+.IR errno ;
+the signal-catching function, if not executing as an independent
+thread, should save and restore its value in order to avoid the
+possibility that delivery of a signal in between an error return
+from a function that sets
+.IR errno
+and the subsequent examination of
+.IR errno
+could result in the signal-catching function changing the value of
+.IR errno .
+Naturally, the same principles apply to the async-signal-safety of
+application routines and asynchronous data access. Note that
+\fIlongjmp\fR()
+and
+\fIsiglongjmp\fR()
+are not in the list of async-signal-safe functions. This is because
+the code executing after
+\fIlongjmp\fR()
+and
+\fIsiglongjmp\fR()
+can call any unsafe functions with the same danger as calling those
+unsafe functions directly from the signal handler. Applications that
+use
+\fIlongjmp\fR()
+and
+\fIsiglongjmp\fR()
+from within signal handlers require rigorous protection in order to be
+portable. Many of the other functions that are excluded from the list
+are traditionally implemented using either
+\fImalloc\fR()
+or
+\fIfree\fR()
+functions or the standard I/O library, both of which traditionally
+use data structures in a non-async-signal-safe manner. Since any
+combination of different functions using a common data structure can
+cause async-signal-safety problems, this volume of POSIX.1\(hy2008 does not define the behavior
+when any unsafe function is called in a signal handler that interrupts
+an unsafe function.
+.P
+Usually, the signal is executed on the stack that was in effect before
+the signal was delivered. An alternate stack may be specified to
+receive a subset of the signals being caught.
+.P
+When the signal handler returns, the receiving thread resumes
+execution at the point it was interrupted unless the signal handler
+makes other arrangements. If
+\fIlongjmp\fR()
+or
+\fI_longjmp\fR()
+is used to leave the signal handler, then the signal mask must be
+explicitly restored.
+.P
+This volume of POSIX.1\(hy2008 defines the third argument of a signal handling function when
+SA_SIGINFO is set as a
+.BR "void *"
+instead of a
+.BR "ucontext_t *" ,
+but without requiring type checking. New applications should
+explicitly cast the third argument of the signal handling function to
+.BR "ucontext_t *" .
+.P
+The BSD optional four argument signal handling function is not
+supported by this volume of POSIX.1\(hy2008. The BSD declaration would be:
+.sp
+.RS 4
+.nf
+\fB
+void handler(int \fIsig\fP, int \fIcode\fP, struct sigcontext *\fIscp\fP,
+    char *\fIaddr\fP);
+.fi \fR
+.P
+.RE
+.P
+where
+.IR sig
+is the signal number,
+.IR code
+is additional information on certain signals,
+.IR scp
+is a pointer to the
+.BR sigcontext
+structure, and
+.IR addr
+is additional address information. Much the same information is
+available in the objects pointed to by the second argument of the
+signal handler specified when SA_SIGINFO is set.
+.P
+Since the
+\fIsigaction\fR()
+function is allowed but not required to set SA_NODEFER when the
+application sets the SA_RESETHAND flag, applications which depend on the
+SA_RESETHAND functionality for the newly installed signal handler must
+always explicitly set SA_NODEFER when they set SA_RESETHAND in order to
+be portable.
+.P
+See also the rationale for Realtime Signal Generation and Delivery in
+the Rationale (Informative) volume of POSIX.1\(hy2008,
+.IR "Section B.2.4.2" ", " "Signal Generation and Delivery".
+.SH RATIONALE
+Although this volume of POSIX.1\(hy2008 requires that signals that cannot be ignored
+shall not be added to the signal mask when a signal-catching function
+is entered, there is no explicit requirement that subsequent calls to
+\fIsigaction\fR()
+reflect this in the information returned in the
+.IR oact
+argument. In other words, if SIGKILL
+is included in the
+.IR sa_mask
+field of
+.IR act ,
+it is unspecified whether or not a subsequent call to
+\fIsigaction\fR()
+returns with SIGKILL included in the
+.IR sa_mask
+field of
+.IR oact .
+.P
+The SA_NOCLDSTOP
+flag, when supplied in the
+.IR act ->\c
+.IR sa_flags
+parameter, allows overloading SIGCHLD with the System V
+semantics that each SIGCLD
+signal indicates a single terminated child. Most conforming applications
+that catch SIGCHLD are expected to install signal-catching functions
+that repeatedly call the
+\fIwaitpid\fR()
+function with the WNOHANG
+flag set, acting on each child for which status is returned, until
+\fIwaitpid\fR()
+returns zero. If stopped children are not of interest, the use of the
+SA_NOCLDSTOP
+flag can prevent the overhead from invoking the signal-catching routine
+when they stop.
+.P
+Some historical implementations also define other mechanisms for
+stopping processes, such as the
+\fIptrace\fR()
+function. These implementations usually do not generate a SIGCHLD
+signal when processes stop due to this mechanism; however, that is
+beyond the scope of this volume of POSIX.1\(hy2008.
+.P
+This volume of POSIX.1\(hy2008 requires that calls to
+\fIsigaction\fR()
+that supply a NULL
+.IR act
+argument succeed, even in the case of signals that cannot be caught or
+ignored (that is, SIGKILL
+or SIGSTOP).
+The System V
+\fIsignal\fR()
+and BSD
+\fIsigvec\fR()
+functions return
+.BR [EINVAL] 
+in these cases and, in this respect, their behavior varies from
+\fIsigaction\fR().
+.P
+This volume of POSIX.1\(hy2008 requires that
+\fIsigaction\fR()
+properly save and restore a signal action set up by the ISO\ C standard
+\fIsignal\fR()
+function. However, there is no guarantee that the reverse is true, nor
+could there be given the greater amount of information conveyed by the
+.BR sigaction
+structure. Because of this, applications should avoid using both
+functions for the same signal in the same process. Since this cannot
+always be avoided in case of general-purpose library routines, they
+should always be implemented with
+\fIsigaction\fR().
+.P
+It was intended that the
+\fIsignal\fR()
+function should be implementable as a library routine using
+\fIsigaction\fR().
+.P
+The POSIX Realtime Extension extends the
+\fIsigaction\fR()
+function as specified by the POSIX.1\(hy1990 standard to allow the application to request
+on a per-signal basis via an additional signal action flag that the
+extra parameters, including the application-defined signal value, if
+any, be passed to the signal-catching function.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.4" ", " "Signal Concepts",
+.IR "\fIexec\fR\^",
+.IR "\fIkill\fR\^(\|)",
+.IR "\fI_longjmp\fR\^(\|)",
+.IR "\fIlongjmp\fR\^(\|)",
+.IR "\fIpthread_sigmask\fR\^(\|)",
+.IR "\fIraise\fR\^(\|)",
+.IR "\fIsemget\fR\^(\|)",
+.IR "\fIsem_init\fR\^(\|)",
+.IR "\fIsem_open\fR\^(\|)",
+.IR "\fIsigaddset\fR\^(\|)",
+.IR "\fIsigaltstack\fR\^(\|)",
+.IR "\fIsigdelset\fR\^(\|)",
+.IR "\fIsigemptyset\fR\^(\|)",
+.IR "\fIsigfillset\fR\^(\|)",
+.IR "\fIsigismember\fR\^(\|)",
+.IR "\fIsignal\fR\^(\|)",
+.IR "\fIsigsuspend\fR\^(\|)",
+.IR "\fIwait\fR\^(\|)",
+.IR "\fIwaitid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<signal.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

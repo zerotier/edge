@@ -1,0 +1,263 @@
+#!/usr/bin/perl
+#
+# Copyright 2008-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+#
+# getds
+#
+
+use Net::DNS;
+use Net::DNS::RR;
+use Net::DNS::SEC;
+use Data::Dumper;
+use Net::DNS::SEC::Tools::QWPrimitives;
+use strict;
+
+my %opts =
+  ( 'a' => 'SHA256,SHA1'
+  );
+
+DTGetOptions(\%opts,
+             ['GUI:VERSION',"DNSSEC-Tools Version: 2.1"],
+
+             ['a|hash-algorithm=s',
+              'Comma separated hash algorithm to use (eg, SHA256,SHA1)'],
+             ['z|print-zsks',       'Print ZSK DS records as well as KSKs'],
+             ['f|read-key-file=s',  'Print a DS record for a DNSKEY in a .key file'],
+
+             ['p|dont-check-parent', 'Don\'t check for the parent\'s published DS record'],
+             ['q|quiet',             'Just display minimal results'],
+             ['GUI:otherargs_text',"DOMAIN_NAME"],
+            ) || exit;
+
+# Generate a list of all the algorithms to use:
+my @algorithms = split(/,\s*/, uc($opts{'a'}));
+Exit("no algorithms specified with the -a switch") if ($#algorithms == -1);
+
+######################################################################
+# (optionally) read keys from a file
+my @fileds;
+my %fileds;
+if ($opts{'f'}) {
+	print "--- DS records generated from the '$opts{f}' file:\n"
+	  if (!$opts{'q'});
+
+	# read in the key file
+	open(my $keyh, "<", $opts{'f'}) || die "can't read $opts{'f'}";
+	my $data;
+	while (<$keyh>) {
+		next if (/^\s*;/); # skip comments
+		$data .= $_;
+	}
+	close($keyh);
+
+	# process it into a RR record
+	my $dnskeyrr = new Net::DNS::RR($data);
+
+	foreach my $algorithm (@algorithms) {
+		my $ds = create Net::DNS::RR::DS($dnskeyrr, digtype => $algorithm);
+		push @fileds, $ds;
+		print make_printing_ds($ds);
+		$fileds{make_matching_ds($ds)} = make_printing_ds($ds);
+	}
+}
+
+
+
+######################################################################
+# query the DNSKEY from the net
+my $res  = Net::DNS::Resolver->new;
+Exit("Failed to create a Net::DNS::Resolver") if (!$res);
+
+my $q = $res->query($ARGV[0], "DNSKEY");
+Exit("Failed to query '$ARGV[0]' for its DNSKEY records") if (!$q);
+
+my @keys = $q->answer;
+
+#
+# for each of the keys found, print out the DS record
+#
+my @childds;
+my %childds;
+print "--- DS records generated from queried keys of $ARGV[0]:\n"
+  if (!$opts{'q'});
+foreach my $key (@keys) {
+    next if (!$opts{'z'} && ($key->flags & 0x1) == 0);  # KSKs only
+
+    foreach my $algorithm (@algorithms) {
+	my $ds = create Net::DNS::RR::DS($key,
+					 digtype => $algorithm,
+					);
+	push @childds, $ds;
+	print make_printing_ds($ds);
+	$childds{make_matching_ds($ds)} = make_printing_ds($ds);
+    }
+}
+
+exit if ($opts{'p'} || $opts{'q'});  # exit if we either EITHER Ps or Qs!
+
+######################################################################
+# query the DNSKEYs for the child from the net
+$q = $res->query($ARGV[0], "DS");
+
+my @dses;
+if ($q) {
+    @dses = $q->answer;
+}
+
+######################################################################
+# Do comparisons
+
+my @errors;
+print "\n--- DS records pulled from the parent of $ARGV[0]:\n";
+foreach my $ds (@dses) {
+	print make_printing_ds($ds);
+	my $parentds = make_matching_ds($ds);
+	if (exists($childds{$parentds})) {
+		delete $childds{$parentds};
+	} elsif (exists($fileds{$parentds})) {
+		delete $fileds{$parentds};
+	} else {
+		push @errors, "The following DS record exists in the parent, but no child key matches it:  \n" . make_printing_ds($ds) . "\n";
+	}
+
+	# delete the fileds in case it existed in parallel with the childds
+	if (exists($fileds{$parentds})) {
+		delete $fileds{$parentds};
+	}
+}
+
+foreach my $ds (keys(%childds)) {
+    push @errors, "The following DS record for a child key is not published by the parent:\n" . "$childds{$ds}\n";
+}
+
+foreach my $ds (keys(%fileds)) {
+    push @errors, "The following DS record from $opts{f} is not published by the parent:\n" . "$fileds{$ds}\n";
+}
+
+if ($#errors == -1) {
+    print "\nErrors Found:  NONE (everything matches)\n";
+    exit 0;
+}
+
+print "\nERRORS (" . ($#errors+1) . "):\n";
+my $errorcount = 1;
+foreach my $error (@errors) {
+    print $errorcount++, ") ", $error,"\n";
+}
+
+sub make_matching_ds {
+    my $changethis = $_[0];
+    $changethis = $changethis->string;
+    $changethis = lc($changethis);
+    $changethis =~ s/.*\sds\s+//;
+    $changethis =~ s/\;.*//;
+    return $changethis;
+}
+
+sub make_printing_ds {
+    my $changethis = $_[0];
+    $changethis = $changethis->string;
+    $changethis = uc($changethis);
+    $changethis =~ s/\;.*//;
+    $changethis = "  " . $changethis . "\n";
+    return $changethis;
+}
+
+sub Exit {
+    if ($#_ > -1) {
+	print STDERR @_, "\n";
+    }
+    exit 1;
+}
+
+exit 1;
+
+=head1 NAME
+
+getds - Create a DS record from DNSKEYing information
+
+=head1 SYNOPSIS
+
+  getds <domain>
+
+=head1 DESCRIPTION
+
+B<getds> will create a DS record from DNSKEYs for the specified DNS
+domain.  It does this by converting DNSKEYs to DS records using the
+specified hashing algorithm.  The results can then be passed to
+upstream DNSSEC-supporting parents or to DLV registries.
+
+B<getds> will also pull the parent's published DS records and compare
+them against the existing keys.  It will then list any DS records not
+published in the parent, as well as any DS records that are published
+in the parent but which don't match an existing key.
+
+=head1 OPTIONS
+
+B<getds> takes the following options:
+
+=over 4
+
+=item B<-a ALGORITHMS>
+
+=item B<--hash-algorithm algorithm ALGORITHMS>
+
+This option specifies the hash algorithm to use when converting
+DNSKEYs to DS records.  It may be a comma-separated list if multiple
+algorithms are desired.  The algorithms to choose from may be either
+SHA256 or SHA1.
+
+The default is SHA256,SHA1
+
+=item B<-f KEYFILE>
+
+=item B<--read-key-file KEYFILE>
+
+This option specifies a file with a DNSKEY stored in it (such as
+created by bind's dnssec-keygen program).  This is helpful for
+comparing a known good key file against something that is actually
+published.
+
+=item B<-z>
+
+=item B<--print-zsks>
+
+This option causes B<getds> to print ZSK DS records, as well as KSK records.
+
+=item B<-p>
+
+=item B<--dont-check-parent>
+
+Instructs B<getds> to not check the records in the parent for their
+published DS records.
+
+=item B<-q>
+
+=item B<--quiet>
+
+Produces quiet output with no explanatory headers.  In other words, it only
+prints the DS records generated from the DNSKEYs.
+
+Note: Running with -q implies -p.
+
+=back
+
+=head1 SECURITY CONSIDERATIONS
+
+By default, B<getds> pulls data from the live DNS.  If your DNS resolver
+isn't configured so that this is pulled securely, then the results
+can't be trusted.
+
+=head1 COPYRIGHT
+
+Copyright 2008-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wes Hardaker, hardaker AT AT AT users.sourceforge.net
+
+=cut
+

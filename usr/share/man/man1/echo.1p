@@ -1,0 +1,266 @@
+'\" et
+.TH ECHO "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+echo
+\(em write arguments to standard output
+.SH SYNOPSIS
+.LP
+.nf
+echo \fB[\fIstring\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR echo
+utility writes its arguments to standard output, followed by a
+<newline>.
+If there are no arguments, only the
+<newline>
+is written.
+.SH OPTIONS
+The
+.IR echo
+utility shall not recognize the
+.BR \(dq\(mi\|\(mi\(dq 
+argument in the manner specified by Guideline 10 of the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines";
+.BR \(dq\(mi\|\(mi\(dq 
+shall be recognized as a string operand.
+.P
+Implementations shall not support any options.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIstring\fR" 10
+A string to be written to standard output. If the first operand is
+.BR \(min ,
+or if any of the operands contain a
+<backslash>
+character, the results are implementation-defined.
+.RS 10 
+.P
+On XSI-conformant systems, if the first operand is
+.BR \(min ,
+it shall be treated as a string, not an option. The following character
+sequences shall be recognized on XSI-conformant systems within any of
+the arguments:
+.IP "\fR\ea\fR" 8
+Write an
+<alert>.
+.IP "\fR\eb\fR" 8
+Write a
+<backspace>.
+.IP "\fR\ec\fR" 8
+Suppress the
+<newline>
+that otherwise follows the final argument in the output. All
+characters following the
+.BR '\ec' 
+in the arguments shall be ignored.
+.IP "\fR\ef\fR" 8
+Write a
+<form-feed>.
+.IP "\fR\en\fR" 8
+Write a
+<newline>.
+.IP "\fR\er\fR" 8
+Write a
+<carriage-return>.
+.IP "\fR\et\fR" 8
+Write a
+<tab>.
+.IP "\fR\ev\fR" 8
+Write a
+<vertical-tab>.
+.IP "\fR\e\e\fR" 8
+Write a
+<backslash>
+character.
+.IP "\fR\e0\fInum\fR" 8
+Write an 8-bit value that is the zero, one, two, or three-digit octal
+number
+.IR num .
+.RE
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR echo :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR echo
+utility arguments shall be separated by single
+<space>
+characters and a
+<newline>
+character shall follow the last argument.
+Output transformations shall occur based on the escape sequences in
+the input. See the OPERANDS section.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+It is not possible to use
+.IR echo
+portably across all POSIX systems unless both
+.BR \(min
+(as the first argument) and escape sequences are omitted.
+.P
+The
+.IR printf
+utility can be used portably to emulate any of the traditional
+behaviors of the
+.IR echo
+utility as follows (assuming that
+.IR IFS
+has its standard value or is unset):
+.IP " *" 4
+The historic System V
+.IR echo
+and the requirements on XSI implementations in this volume of POSIX.1\(hy2008 are equivalent to:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+printf "%b\en$*"
+.fi \fR
+.P
+.RE
+.RE
+.IP " *" 4
+The BSD
+.IR echo
+is equivalent to:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+if [ "X$1" = "X\(min" ]
+then
+    shift
+    printf "%s$*"
+else
+    printf "%s\en$*"
+fi
+.fi \fR
+.P
+.RE
+.RE
+.P
+New applications are encouraged to use
+.IR printf
+instead of
+.IR echo .
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The
+.IR echo
+utility has not been made obsolescent because of its extremely
+widespread use in historical applications. Conforming applications that
+wish to do prompting without
+<newline>
+characters or that could possibly be expecting to echo a
+.BR \(min ,
+should use the
+.IR printf
+utility derived from the Ninth Edition system.
+.P
+As specified,
+.IR echo
+writes its arguments in the simplest of ways. The two different
+historical versions of
+.IR echo
+vary in fatally incompatible ways.
+.P
+The BSD
+.IR echo
+checks the first argument for the string
+.BR \(min
+which causes it to suppress the
+<newline>
+that would otherwise follow the final argument in the output.
+.P
+The System V
+.IR echo
+does not support any options, but allows escape sequences within its
+operands, as described for XSI implementations in the OPERANDS section.
+.P
+The
+.IR echo
+utility does not support Utility Syntax Guideline 10 because historical
+applications depend on
+.IR echo
+to echo
+.IR all
+of its arguments, except for the
+.BR \(min
+option in the BSD version.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIprintf\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

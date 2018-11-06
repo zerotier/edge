@@ -1,0 +1,1152 @@
+'\" et
+.TH C99 "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+c99
+\(em compile standard C programs
+.SH SYNOPSIS
+.LP
+.nf
+c99 \fB[\fIoptions\fR...\fB] \fIpathname \fB[[\fIpathname\fB] [\fR\(miI \fIdirectory\fB]
+    \fB[\fR\(miL \fIdirectory\fB] [\fR\(mil \fIlibrary\fB]]\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR c99
+utility is an interface to the standard C compilation system; it shall
+accept source code conforming to the ISO\ C standard. The system conceptually
+consists of a compiler and link editor. The input files referenced by
+.IR pathname
+operands and
+.BR \(mil
+option-arguments shall be compiled and linked to produce an executable
+file. (It is unspecified whether the linking occurs entirely within the
+operation of
+.IR c99 ;
+some implementations may produce objects that are not fully resolved
+until the file is executed.)
+.P
+If the
+.BR \(mic
+option is specified, for all pathname operands of the form
+.IR file \c
+.BR .c ,
+the files:
+.sp
+.RS 4
+.nf
+\fB
+$(basename \fIpathname\fR .c).o
+.fi \fR
+.P
+.RE
+.P
+shall be created as the result of successful compilation. If the
+.BR \(mic
+option is not specified, it is unspecified whether such
+.BR .o
+files are created or deleted for the
+.IR file \c
+.BR .c
+operands.
+.P
+If there are no options that prevent link editing (such as
+.BR \(mic
+or
+.BR \(miE ),
+and all input files compile and link without error, the resulting
+executable file shall be written according to the
+.BR \(mio
+.IR outfile
+option (if present) or to the file
+.BR a.out .
+.P
+The executable file shall be created as specified in
+.IR "Section 1.1.1.4" ", " "File Read" ", " "Write" ", " "and Creation",
+except that the file permission bits shall be set to:
+S_IRWXO | S_IRWXG | S_IRWXU
+.P
+and the bits specified by the
+.IR umask
+of the process shall be cleared.
+.SH OPTIONS
+The
+.IR c99
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that:
+.IP " *" 4
+Options can be interspersed with operands.
+.IP " *" 4
+The order of specifying the
+.BR \(miL
+and
+.BR \(mil
+options, and the order of specifying
+.BR \(mil
+options with respect to
+.IR pathname
+operands is significant.
+.IP " *" 4
+Conforming applications shall specify each option separately; that is,
+grouping option letters (for example,
+.BR \(micO )
+need not be recognized by all implementations.
+.P
+The following options shall be supported:
+.IP "\fB\(mic\fP" 10
+Suppress the link-edit phase of the compilation, and do not remove any
+object files that are produced.
+.IP "\fB\(miD\ \fIname\fB[=\fIvalue\fB]\fR" 10
+.br
+Define
+.IR name
+as if by a C-language
+.BR #define
+directive. If no =\c
+.IR value
+is given, a value of 1 shall be used. The
+.BR \(miD
+option has lower precedence than the
+.BR \(miU
+option. That is, if
+.IR name
+is used in both a
+.BR \(miU
+and a
+.BR \(miD
+option,
+.IR name
+shall be undefined regardless of the order of the options. Additional
+implementation-defined
+.IR name s
+may be provided by the compiler. Implementations shall support at least
+2\|048 bytes of
+.BR \(miD
+definitions and 256
+.IR names .
+.IP "\fB\(miE\fP" 10
+Copy C-language source files to standard output, expanding all
+preprocessor directives; no compilation shall be performed. If any
+operand is not a text file, the effects are unspecified.
+.IP "\fB\(mig\fP" 10
+Produce symbolic information in the object or executable files; the
+nature of this information is unspecified, and may be modified by
+implementation-defined interactions with other options.
+.IP "\fB\(miI\ \fIdirectory\fR" 10
+Change the algorithm for searching for headers whose names are not
+absolute pathnames to look in the directory named by the
+.IR directory
+pathname before looking in the usual places. Thus, headers whose names
+are enclosed in double-quotes (\c
+.BR \(dq\^\(dq )
+shall be searched for first in the directory of the file with the
+.BR #include
+line, then in directories named in
+.BR \(miI
+options, and last in the usual places. For headers whose names are
+enclosed in angle brackets (\c
+.BR \(dq<\|>\(dq ),
+the header shall be searched for only in directories named in
+.BR \(miI
+options and then in the usual places. Directories named in
+.BR \(miI
+options shall be searched in the order specified. If the
+.BR \(miI
+option is used to specify a directory that is one of the usual places
+searched by default, the results are unspecified. Implementations shall
+support at least ten instances of this option in a single
+.IR c99
+command invocation.
+.IP "\fB\(miL\ \fIdirectory\fR" 10
+Change the algorithm of searching for the libraries named in the
+.BR \(mil
+objects to look in the directory named by the
+.IR directory
+pathname before looking in the usual places. Directories named in
+.BR \(miL
+options shall be searched in the order specified. If the
+.BR \(miL
+option is used to specify a directory that is one of the usual places
+searched by default, the results are unspecified. Implementations shall
+support at least ten instances of this option in a single
+.IR c99
+command invocation. If a directory specified by a
+.BR \(miL
+option contains files with names starting with any of the strings
+.BR \(dqlibc.\(dq ,
+.BR \(dqlibl.\(dq ,
+.BR \(dqlibpthread.\(dq ,
+.BR \(dqlibm.\(dq ,
+.BR \(dqlibrt.\(dq ,
+.BR \(dqlibtrace.\(dq ,
+.BR \(dqlibxnet.\(dq ,
+or
+.BR \(dqliby.\(dq ,
+the results are unspecified.
+.IP "\fB\(mil\ \fIlibrary\fR" 10
+Search the library named
+.BR liblibrary.a .
+A library shall be searched when its name is encountered, so the
+placement of a
+.BR \(mil
+option is significant. Several standard libraries can be
+specified in this manner, as described in the EXTENDED DESCRIPTION
+section. Implementations may recognize implementation-defined
+suffixes other than
+.BR .a
+as denoting libraries.
+.IP "\fB\(miO\ \fIoptlevel\fR" 10
+Specify the level of code optimization. If the
+.IR optlevel
+option-argument is the digit
+.BR '0' ,
+all special code optimizations shall be disabled. If it is the digit
+.BR '1' ,
+the nature of the optimization is unspecified. If the
+.BR \(miO
+option is omitted, the nature of the system's default optimization is
+unspecified. It is unspecified whether code generated in the presence
+of the
+.BR \(miO
+0 option is the same as that generated when
+.BR \(miO
+is omitted. Other
+.IR optlevel
+values may be supported.
+.IP "\fB\(mio\ \fIoutfile\fR" 10
+Use the pathname
+.IR outfile ,
+instead of the default
+.BR a.out ,
+for the executable file produced. If the
+.BR \(mio
+option is present with
+.BR \(mic
+or
+.BR \(miE ,
+the result is unspecified.
+.IP "\fB\(mis\fP" 10
+Produce object or executable files, or both, from which symbolic and
+other information not required for proper execution using the
+.IR exec
+family defined in the System Interfaces volume of POSIX.1\(hy2008 has been removed (stripped). If both
+.BR \(mig
+and
+.BR \(mis
+options are present, the action taken is unspecified.
+.IP "\fB\(miU\ \fIname\fR" 10
+Remove any initial definition of
+.IR name .
+.P
+Multiple instances of the
+.BR \(miD ,
+.BR \(miI ,
+.BR \(miL ,
+.BR \(mil ,
+and
+.BR \(miU
+options can be specified.
+.SH OPERANDS
+The application shall ensure that at least one
+.IR pathname
+operand is specified. The following forms for
+.IR pathname
+operands shall be supported:
+.IP "\fIfile.\fBc\fR" 10
+A C-language source file to be compiled and optionally linked. The
+application shall ensure that the operand is of this form if the
+.BR \(mic
+option is used.
+.IP "\fIfile.\fBa\fR" 10
+A library of object files typically produced by the
+.IR ar
+utility, and passed directly to the link editor. Implementations may
+recognize implementation-defined suffixes other than
+.BR .a
+as denoting object file libraries.
+.IP "\fIfile.\fBo\fR" 10
+An object file produced by
+.IR c99
+.BR \(mic
+and passed directly to the link editor. Implementations may recognize
+implementation-defined suffixes other than
+.BR .o
+as denoting object files.
+.P
+The processing of other files is implementation-defined.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+Each input file shall be one of the following: a text file containing a
+C-language source program, an object file in the format produced by
+.IR c99
+.BR \(mic ,
+or a library of object files, in the format produced by archiving zero
+or more object files, using
+.IR ar .
+Implementations may supply additional utilities that produce files in
+these formats. Additional input file formats are
+implementation-defined.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR c99 :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fITMPDIR\fP" 10
+Provide a pathname that should override the default directory for
+temporary files, if any.
+On XSI-conforming systems, provide a pathname that shall override the
+default directory for temporary files, if any.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If more than one
+.IR pathname
+operand ending in
+.BR .c
+(or possibly other unspecified suffixes) is given, for each such file:
+.sp
+.RS 4
+.nf
+\fB
+"%s:\en", <\fIpathname\fR>
+.fi \fR
+.P
+.RE
+.P
+may be written. These messages, if written, shall precede the
+processing of each input file; they shall not be written to the
+standard output if they are written to the standard error, as described
+in the STDERR section.
+.P
+If the
+.BR \(miE
+option is specified, the standard output shall be a text file that
+represents the results of the preprocessing stage of the language; it
+may contain extra information appropriate for subsequent compilation
+passes.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+If more than one
+.IR pathname
+operand ending in
+.BR .c
+(or possibly other unspecified suffixes) is given, for each such file:
+.sp
+.RS 4
+.nf
+\fB
+"%s:\en", <\fIpathname\fR>
+.fi \fR
+.P
+.RE
+.P
+may be written to allow identification of the diagnostic and warning
+messages with the appropriate input file. These messages, if written,
+shall precede the processing of each input file; they shall not be
+written to the standard error if they are written to the standard
+output, as described in the STDOUT section.
+.P
+This utility may produce warning messages about certain conditions that
+do not warrant returning an error (non-zero) exit value.
+.SH "OUTPUT FILES"
+Object files or executable files or both are produced in unspecified
+formats. If the pathname of an object file or executable file to be
+created by
+.IR c99
+resolves to an existing directory entry for a file that is not a regular
+file, it is unspecified whether
+.IR c99
+shall attempt to create the file or shall issue a diagnostic and exit
+with a non-zero exit status.
+.SH "EXTENDED DESCRIPTION"
+.SS "Standard Libraries"
+.P
+The
+.IR c99
+utility shall recognize the following
+.BR \(mil
+options for standard libraries:
+.IP "\fB\(mil\ c\fR" 10
+This option shall make available all interfaces referenced in the System Interfaces volume of POSIX.1\(hy2008,
+with the possible exception of those interfaces listed as residing in
+.IR <aio.h> ,
+.IR <arpa/inet.h> ,
+.IR <complex.h> ,
+.IR <fenv.h> ,
+.IR <math.h> ,
+.IR <mqueue.h> ,
+.IR <netdb.h> ,
+.IR <net/if.h> ,
+.IR <netinet/in.h> ,
+.IR <pthread.h> ,
+.IR <sched.h> ,
+.IR <semaphore.h> ,
+.IR <spawn.h> ,
+.IR <sys/socket.h> ,
+\fIpthread_kill\fR(),
+and
+\fIpthread_sigmask\fR()
+in
+.IR <signal.h> ,
+.IR <trace.h> ,
+interfaces marked as optional in
+.IR <sys/mman.h> ,
+interfaces marked as ADV (Advisory Information) in
+.IR <fcntl.h> ,
+and interfaces beginning with the prefix clock_ or time_ in
+.IR <time.h> .
+This option shall not be required to be present to cause a search of
+this library.
+.IP "\fB\(mil\ l\fR" 10
+This option shall make available all interfaces required by the
+C-language output of
+.IR lex
+that are not made available through the
+.BR "\(mil\ c"
+option.
+.IP "\fB\(mil\ pthread\fR" 10
+This option shall make available all interfaces referenced in
+.IR <pthread.h> 
+and
+\fIpthread_kill\fR()
+and
+\fIpthread_sigmask\fR()
+referenced in
+.IR <signal.h> .
+An implementation may search this library in the absence of this
+option.
+.IP "\fB\(mil\ m\fR" 10
+This option shall make available all interfaces referenced in
+.IR <math.h> ,
+.IR <complex.h> ,
+and
+.IR <fenv.h> .
+An implementation may search this library in the absence of this
+option.
+.IP "\fB\(mil\ rt\fR" 10
+This option shall make available all interfaces referenced in
+.IR <aio.h> ,
+.IR <mqueue.h> ,
+.IR <sched.h> ,
+.IR <semaphore.h> ,
+and
+.IR <spawn.h> ,
+interfaces marked as optional in
+.IR <sys/mman.h> ,
+interfaces marked as ADV (Advisory Information) in
+.IR <fcntl.h> ,
+and interfaces beginning with the prefix clock_ and time_ in
+.IR <time.h> .
+An implementation may search this library in the absence of this
+option.
+.IP "\fB\(mil\ trace\fR" 10
+This option shall make available all interfaces referenced in
+.IR <trace.h> .
+An implementation may search this library in the absence of this
+option.
+.IP "\fB\(mil\ xnet\fR" 10
+This option shall make available all interfaces referenced in
+.IR <arpa/inet.h> ,
+.IR <netdb.h> ,
+.IR <net/if.h> ,
+.IR <netinet/in.h> ,
+and
+.IR <sys/socket.h> .
+An implementation may search this library in the absence of this
+option.
+.IP "\fB\(mil\ y\fR" 10
+This option shall make available all interfaces required by the
+C-language output of
+.IR yacc
+that are not made available through the
+.BR "\(mil\ c"
+option.
+.P
+In the absence of options that inhibit invocation of the link editor,
+such as
+.BR \(mic
+or
+.BR \(miE ,
+the
+.IR c99
+utility shall cause the equivalent of a
+.BR "\(mil\ c"
+option to be passed to the link editor after the last
+.IR pathname
+operand or
+.BR \(mil
+option, causing it to be searched after all other object files and
+libraries are loaded.
+.P
+It is unspecified whether the libraries
+.BR libc.a ,
+.BR libl.a ,
+.BR libm.a ,
+.BR libpthread.a ,
+.BR librt.a ,
+.BR libtrace.a ,
+.BR libxnet.a ,
+or
+.BR liby.a
+exist as regular files. The implementation may accept as
+.BR \(mil
+option-arguments names of objects that do not exist as regular files.
+.SS "External Symbols"
+.P
+The C compiler and link editor shall support the significance of
+external symbols up to a length of at least 31 bytes; the action taken
+upon encountering symbols exceeding the implementation-defined
+maximum symbol length is unspecified.
+.P
+The compiler and link editor shall support a minimum of 511 external
+symbols per source or object file, and a minimum of 4\|095 external
+symbols in total. A diagnostic message shall be written to the standard
+output if the implementation-defined limit is exceeded; other actions
+are unspecified.
+.SS "Header Search"
+.P
+If a file with the same name as one of the standard headers defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 13" ", " "Headers",
+not provided as part of the implementation, is placed in any of the
+usual places that are searched by default for headers, the results are
+unspecified.
+.SS "Programming Environments"
+.P
+All implementations shall support one of the following programming
+environments as a default. Implementations may support more than one
+of the following programming environments. Applications can use
+\fIsysconf\fR()
+or
+.IR getconf
+to determine which programming environments are supported.
+.br
+.sp
+.ce 1
+\fBTable 4-4: Programming Environments: Type Sizes\fR
+.TS
+center box tab(!);
+cB | cB | cB | cB | cB
+cB | cB | cB | cB | cB
+l | n | n | n | n.
+Programming Environment!Bits in!Bits in!Bits in!Bits in
+\fIgetconf\fP Name!int!long!pointer!off_t
+_
+_POSIX_V7_ILP32_OFF32!32!32!32!32
+_POSIX_V7_ILP32_OFFBIG!32!32!32!\(>=64
+_POSIX_V7_LP64_OFF64!32!64!64!64
+_POSIX_V7_LPBIG_OFFBIG!\(>=32!\(>=64!\(>=64!\(>=64
+.TE
+.P
+All implementations shall support one or more environments where the
+widths of the following types are no greater than the width of type
+.BR long :
+.TS
+tab(!) center;
+lB lB lB.
+T{
+.nf
+blksize_t
+cc_t
+mode_t
+nfds_t
+pid_t
+T}!T{
+.nf
+ptrdiff_t
+size_t
+speed_t
+ssize_t
+suseconds_t
+T}!T{
+.nf
+tcflag_t
+wchar_t
+wint_t
+.fi
+T}
+.TE
+.P
+The executable files created when these environments are selected shall
+be in a proper format for execution by the
+.IR exec
+family of functions. Each environment may be one of the ones in
+.IR "Table 4-4, Programming Environments: Type Sizes",
+or it may be another environment. The names for the environments that
+meet this requirement shall be output by a
+.IR getconf
+command using the POSIX_V7_WIDTH_RESTRICTED_ENVS argument, as a
+<newline>-separated
+list of names suitable for use with the
+.IR getconf
+.BR \(miv
+option. If more than one environment meets the requirement, the names
+of all such environments shall be output on separate lines. Any of
+these names can then be used in a subsequent
+.IR getconf
+command to obtain the flags specific to that environment with the
+following suffixes added as appropriate:
+.IP _CFLAGS 10
+To get the C compiler flags.
+.IP _LDFLAGS 10
+To get the linker/loader flags.
+.IP _LIBS 10
+To get the libraries.
+.P
+This requirement may be removed in a future version.
+.P
+When this utility processes a file containing a function called
+\fImain\fR(),
+it shall be defined with a return type equivalent to
+.BR int .
+Using return from the initial call to
+\fImain\fR()
+shall be equivalent (other than with respect to language scope issues)
+to calling
+\fIexit\fR()
+with the returned value. Reaching the end of the initial call to
+\fImain\fR()
+shall be equivalent to calling
+.IR exit (0).
+The implementation shall not declare a prototype for this function.
+.P
+Implementations provide configuration strings for C compiler flags,
+linker/loader flags, and libraries for each supported environment.
+When an application needs to use a specific programming environment
+rather than the implementation default programming environment while
+compiling, the application shall first verify that the implementation
+supports the desired environment. If the desired programming
+environment is supported, the application shall then invoke
+.IR c99
+with the appropriate C compiler flags as the first options for the
+compile, the appropriate linker/loader flags after any other options
+except
+.BR \(mil
+but before any operands or
+.BR \(mil
+options, and the appropriate libraries at the end of the operands
+and
+.BR \(mil
+options.
+.P
+Conforming applications shall not attempt to link together object files
+compiled for different programming models. Applications shall also be
+aware that binary data placed in shared memory or in files might not be
+recognized by applications built for other programming models.
+.br
+.sp
+.ce 1
+\fBTable 4-5: Programming Environments: \fIc99\fP Arguments\fR
+.TS
+center box tab(!);
+cB | cB | cB
+cB | cB | cB
+l | l | l.
+Programming Environment!!\fIc99\fP Arguments
+\fIgetconf\fP Name!Use!\fIgetconf\fP Name
+_
+_POSIX_V7_ILP32_OFF32!C Compiler Flags!POSIX_V7_ILP32_OFF32_CFLAGS
+!Linker/Loader Flags!POSIX_V7_ILP32_OFF32_LDFLAGS
+!Libraries!POSIX_V7_ILP32_OFF32_LIBS
+_
+_POSIX_V7_ILP32_OFFBIG!C Compiler Flags!POSIX_V7_ILP32_OFFBIG_CFLAGS
+!Linker/Loader Flags!POSIX_V7_ILP32_OFFBIG_LDFLAGS
+!Libraries!POSIX_V7_ILP32_OFFBIG_LIBS
+_
+_POSIX_V7_LP64_OFF64!C Compiler Flags!POSIX_V7_LP64_OFF64_CFLAGS
+!Linker/Loader Flags!POSIX_V7_LP64_OFF64_LDFLAGS
+!Libraries!POSIX_V7_LP64_OFF64_LIBS
+_
+_POSIX_V7_LPBIG_OFFBIG!C Compiler Flags!POSIX_V7_LPBIG_OFFBIG_CFLAGS
+!Linker/Loader Flags!POSIX_V7_LPBIG_OFFBIG_LDFLAGS
+!Libraries!POSIX_V7_LPBIG_OFFBIG_LIBS
+.TE
+.P
+In addition to the type size programming environments above, all
+implementations also support a multi-threaded programming environment
+that is orthogonal to all of the programming environments listed above.
+The
+.IR getconf
+utility can be used to get flags for the threaded programming environment,
+as indicated in
+.IR "Table 4-6, Threaded Programming Environment: \fIc99\fP Arguments".
+.sp
+.ce 1
+\fBTable 4-6: Threaded Programming Environment: \fIc99\fP Arguments\fR
+.TS
+center box tab(!);
+cB | cB | cB
+cB | cB | cB
+l | l | l.
+Programming Environment!!\fIc99\fP Arguments
+\fIgetconf\fP Name!Use!\fIgetconf\fP Name
+_
+_POSIX_THREADS!C Compiler Flags!POSIX_V7_THREADS_CFLAGS
+!Linker/Loader Flags!POSIX_V7_THREADS_LDFLAGS
+.TE
+.P
+These programming environment flags may be used in conjunction with any
+of the type size programming environments supported by the implementation.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful compilation or link edit.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+When
+.IR c99
+encounters a compilation error that causes an object file not to be
+created, it shall write a diagnostic to standard error and continue to
+compile other source code operands, but it shall not perform the link
+phase and return a non-zero exit status. If the link edit is
+unsuccessful, a diagnostic message shall be written to standard error
+and
+.IR c99
+exits with a non-zero status. A conforming application shall rely on the
+exit status of
+.IR c99 ,
+rather than on the existence or mode of the executable file.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Since the
+.IR c99
+utility usually creates files in the current directory during the
+compilation process, it is typically necessary to run the
+.IR c99
+utility in a directory in which a file can be created.
+.P
+On systems providing POSIX Conformance (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 2" ", " "Conformance"),
+.IR c99
+is required only with the C-Language Development option;
+XSI-conformant systems always provide
+.IR c99 .
+.P
+Some historical implementations have created
+.BR .o
+files when
+.BR \(mic
+is not specified and more than one source file is given. Since this
+area is left unspecified, the application cannot rely on
+.BR .o
+files being created, but it also must be prepared for any related
+.BR .o
+files that already exist being deleted at the completion of the link
+edit.
+.P
+There is the possible implication that if a user supplies versions of
+the standard functions (before they would be encountered by an implicit
+.BR "\(mil\ c"
+or explicit
+.BR "\(mil\ m" ),
+that those versions would be used in place of the standard versions.
+There are various reasons this might not be true (functions defined as
+macros, manipulations for clean name space, and so on), so the
+existence of files named in the same manner as the standard libraries
+within the
+.BR \(miL
+directories is explicitly stated to produce unspecified behavior.
+.P
+All of the functions specified in the System Interfaces volume of POSIX.1\(hy2008 may be made visible by
+implementations when the Standard C Library is searched. Conforming
+applications must explicitly request searching the other standard
+libraries when functions made visible by those libraries are used.
+.P
+In the ISO\ C standard the mapping from physical source characters to the C
+source character set is implementation-defined. Implementations may
+strip white-space characters before the terminating
+<newline>
+of a (physical) line as part of this mapping and, as a consequence
+of this, one or more white-space characters (and no other characters)
+between a
+<backslash>
+character and the
+<newline>
+character that terminates the line produces implementation-defined
+results. Portable applications should not use such constructs.
+.P
+Some
+.IR c99
+compilers not conforming to POSIX.1\(hy2008 do not support trigraphs by default.
+.SH EXAMPLES
+.IP " 1." 4
+The following usage example compiles
+.BR foo.c
+and creates the executable file
+.BR foo :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+c99 \(mio foo foo.c
+.fi \fR
+.P
+.RE
+.P
+The following usage example compiles
+.BR foo.c
+and creates the object file
+.BR foo.o :
+.sp
+.RS 4
+.nf
+\fB
+c99 \(mic foo.c
+.fi \fR
+.P
+.RE
+.P
+The following usage example compiles
+.BR foo.c
+and creates the executable file
+.BR a.out :
+.sp
+.RS 4
+.nf
+\fB
+c99 foo.c
+.fi \fR
+.P
+.RE
+.P
+The following usage example compiles
+.BR foo.c ,
+links it with
+.BR bar.o ,
+and creates the executable file
+.BR a.out .
+It may also create and leave
+.BR foo.o :
+.sp
+.RS 4
+.nf
+\fB
+c99 foo.c bar.o
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+The following example shows how an application using threads interfaces
+can test for support of and use a programming environment supporting
+32-bit
+.BR int ,
+.BR long ,
+and
+.BR pointer
+types and an
+.BR off_t
+type using at least 64 bits:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+offbig_env=$(getconf _POSIX_V7_ILP32_OFFBIG)
+if [ $offbig_env != "-1" ] && [ $offbig_env != "undefined" ]
+then
+    c99 $(getconf POSIX_V7_ILP32_OFFBIG_CFLAGS) \e
+    $(getconf POSIX_V7_THREADS_CFLAGS) -D_XOPEN_SOURCE=700 \e
+    $(getconf POSIX_V7_ILP32_OFFBIG_LDFLAGS) \e
+    $(getconf POSIX_V7_THREADS_LDFLAGS) foo.c -o foo \e
+    $(getconf POSIX_V7_ILP32_OFFBIG_LIBS) \e
+    -l pthread
+else
+    echo ILP32_OFFBIG programming environment not supported
+    exit 1
+fi
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+The following examples clarify the use and interactions of
+.BR \(miL
+and
+.BR \(mil
+options.
+.RS 4 
+.P
+Consider the case in which module
+.BR a.c
+calls function
+\fIf\fR()
+in library
+.BR libQ.a ,
+and module
+.BR b.c
+calls function
+\fIg\fR()
+in library
+.BR libp.a .
+Assume that both libraries reside in
+.BR /a/b/c .
+The command line to compile and link in the desired way is:
+.sp
+.RS 4
+.nf
+\fB
+c99 \(miL /a/b/c main.o a.c \(mil Q b.c \(mil p
+.fi \fR
+.P
+.RE
+.P
+In this case the
+.BR \(miL
+option need only precede the first
+.BR \(mil
+option, since both
+.BR libQ.a
+and
+.BR libp.a
+reside in the same directory.
+.P
+Multiple
+.BR \(miL
+options can be used when library name collisions occur. Building on
+the previous example, suppose that the user wants to use a new
+.BR libp.a ,
+in
+.BR /a/a/a ,
+but still wants
+\fIf\fR()
+from
+.BR /a/b/c/libQ.a :
+.sp
+.RS 4
+.nf
+\fB
+c99 \(miL /a/a/a \(miL /a/b/c main.o a.c \(mil Q b.c \(mil p
+.fi \fR
+.P
+.RE
+.P
+In this example, the linker searches the
+.BR \(miL
+options in the order specified, and finds
+.BR /a/a/a/libp.a
+before
+.BR /a/b/c/libp.a
+when resolving references for
+.BR b.c .
+The order of the
+.BR \(mil
+options is still important, however.
+.RE
+.IP " 4." 4
+The following example shows how an application can use a programming
+environment where the widths of the following types:
+.BR blksize_t ,
+.BR cc_t ,
+.BR mode_t ,
+.BR nfds_t ,
+.BR pid_t ,
+.BR ptrdiff_t ,
+.BR size_t ,
+.BR speed_t ,
+.BR ssize_t ,
+.BR suseconds_t ,
+.BR tcflag_t ,
+.BR wchar_t ,
+.BR wint_t
+.RS 4 
+.P
+are no greater than the width of type
+.BR long :
+.sp
+.RS 4
+.nf
+\fB
+# First choose one of the listed environments ...
+.P
+# ... if there are no additional constraints, the first one will do:
+CENV=$(getconf POSIX_V7_WIDTH_RESTRICTED_ENVS | head -n l)
+.P
+# ... or, if an environment that supports large files is preferred,
+# look for names that contain "OFF64" or "OFFBIG". (This chooses
+# the last one in the list if none match.)
+for CENV in $(getconf POSIX_V7_WIDTH_RESTRICTED_ENVS)
+do
+    case $CENV in
+    *OFF64*|*OFFBIG*) break ;;
+    esac
+done
+.P
+# The chosen environment name can now be used like this:
+.P
+c99 $(getconf ${CENV}_CFLAGS) -D _POSIX_C_SOURCE=200809L \e
+$(getconf ${CENV}_LDFLAGS) foo.c -o foo \e
+$(getconf ${CENV}_LIBS)
+.fi \fR
+.P
+.RE
+.RE
+.SH RATIONALE
+The
+.IR c99
+utility is based on the
+.IR c89
+utility originally introduced in the ISO\ POSIX\(hy2:\|1993 standard.
+.P
+Some of the changes from
+.IR c89
+include the ability to intersperse options and operands (which many
+.IR c89
+implementations allowed despite it not being specified),
+the description of
+.BR \(mil
+as an option instead of an operand, and the modification to the contents
+of the Standard Libraries section to account for new headers and options;
+for example,
+.IR <spawn.h> 
+added to the description of
+.BR "\(mil\ rt" ,
+and
+.BR "\(mil\ trace"
+added for the Tracing option.
+.P
+POSIX.1\(hy2008 specifies that the
+.IR c99
+utility must be able to use regular files for
+.BR *.o
+files and for
+.BR a.out
+files. Implementations are free to overwrite existing files of other
+types when attempting to create object files and executable files, but
+are not required to do so. If something other than a regular file is
+specified and using it fails for any reason,
+.IR c99
+is required to issue a diagnostic message and exit with a non-zero exit
+status. But for some file types, the problem may not be noticed for a
+long time. For example, if a FIFO named
+.BR a.out
+exists in the current directory,
+.IR c99
+may attempt to open
+.BR a.out
+and will hang in the
+\fIopen\fR()
+call until another process opens the FIFO for reading. Then
+.IR c99
+may write most of the
+.BR a.out
+to the FIFO and fail when it tries to seek back close to the start of
+the file to insert a timestamp (FIFOs are not seekable files). The
+.IR c99
+utility is also allowed to issue a diagnostic immediately if it
+encounters an
+.BR a.out
+or
+.BR *.o
+file that is not a regular file. For portable use, applications should
+ensure that any
+.BR a.out ,
+.BR \(mio
+option-argument, or
+.BR *.o
+files corresponding to any
+.BR *.c
+files do not conflict with names already in use that are not regular
+files or symbolic links that point to regular files.
+.P
+On many systems, multi-threaded applications run in a programming
+environment that is distinct from that used by single-threaded
+applications. This multi-threaded programming environment (in addition
+to needing to specify
+.BR "\(mil pthread"
+at link time) may require additional flags to be set when headers are
+processed at compile time (\c
+.BR \(miD_REENTRANT
+being common). This programming environment is orthogonal to the type
+size programming environments discussed above and listed in
+.IR "Table 4-4, Programming Environments: Type Sizes".
+This version of the standard adds
+.IR getconf
+utility calls to provide the C compiler flags and linker/loader flags
+needed to support multi-threaded applications. Note that on a system
+where single-threaded applications are a special case of a multi-threaded
+application, both of these
+.IR getconf
+calls may return NULL strings; on other implementations both of
+these strings may be non-NULL strings.
+.P
+The C standardization committee invented trigraphs (e.g.,
+.BR \(dq??!\(dq 
+to represent
+.BR '|' )
+to address character portability problems in development environments
+based on national variants of the 7-bit ISO/IEC\ 646:\|1991 standard character set. However,
+these environments were already obsolete by the time the first ISO\ C standard was
+published, and in practice trigraphs have not been used for their intended
+purpose, and usually are intended to have their original meaning in K&R C.
+For example, in practice a C-language source string like
+.BR \(dqWhat??!\(dq 
+is usually intended to end in two
+<question-mark>
+characters and an
+<exclamation-mark>,
+not in
+.BR '|' .
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 1.1.1.4" ", " "File Read" ", " "Write" ", " "and Creation",
+.IR "\fIar\fR\^",
+.IR "\fIgetconf\fR\^",
+.IR "\fImake\fR\^",
+.IR "\fInm\fR\^",
+.IR "\fIstrip\fR\^",
+.IR "\fIumask\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+.IR "Chapter 13" ", " "Headers"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIexec\fR\^",
+.IR "\fIsysconf\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

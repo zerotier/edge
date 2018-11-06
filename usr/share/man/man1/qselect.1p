@@ -1,0 +1,918 @@
+'\" et
+.TH QSELECT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+qselect
+\(em select batch jobs
+.SH SYNOPSIS
+.LP
+.nf
+qselect \fB[\fR\(mia \fB[\fIop\fB]\fIdate_time\fB] [\fR\(miA \fIaccount_string\fB] [\fR\(mic \fB[\fIop\fB]\fIinterval\fB]
+    [\fR\(mih \fIhold_list\fB] [\fR\(mil \fIresource_list\fB] [\fR\(miN \fIname\fB] [\fR\(mip \fB[\fIop\fB]\fIpriority\fB]
+    [\fR\(miq \fIdestination\fB] [\fR\(mir \fIy\fR|\fIn\fB] [\fR\(mis \fIstates\fB] [\fR\(miu \fIuser_list\fB]\fR
+.fi
+.SH DESCRIPTION
+To select a set of batch jobs is to return the batch
+.IR job_identifier s
+for each batch job that meets a list of selection criteria. A set of
+batch jobs is selected by a request to a batch server. The
+.IR qselect
+utility is a user-accessible batch client that requests the selection
+of batch jobs.
+.P
+Upon successful completion, the
+.IR qselect
+utility shall have returned a list of zero or more batch
+.IR job_identifier s
+that meet the criteria specified by the options and option-arguments
+presented to the utility.
+.P
+The
+.IR qselect
+utility shall select batch jobs by sending a
+.IR "Select Jobs Request"
+to a batch server. The
+.IR qselect
+utility shall not exit until the server replies to each request
+generated.
+.P
+For each option presented to the
+.IR qselect
+utility, the utility shall restrict the set of selected batch jobs as
+described in the OPTIONS section.
+.P
+The
+.IR qselect
+utility shall not restrict selection of batch jobs except by
+authorization and as required by the options presented to the utility.
+.P
+When an option is specified with a mandatory or optional
+.IR op
+component to the option-argument, then
+.IR op
+shall specify a relation between the value of a certain batch job
+attribute and the
+.IR value
+component of the option-argument. If an
+.IR op
+is allowable on an option, then the description of the option letter
+indicates the
+.IR op
+as either mandatory or optional. Acceptable strings for the
+.IR op
+component, and the relation the string indicates, are shown in the
+following list:
+.IP "\fR.eq.\fR" 8
+The value represented by the attribute of the batch job is equal to the
+value represented by the option-argument.
+.IP "\fR.ge.\fR" 8
+The value represented by the attribute of the batch job is greater than
+or equal to the value represented by the option-argument.
+.IP "\fR.gt.\fR" 8
+The value represented by the attribute of the batch job is greater than
+the value represented by the option-argument.
+.IP "\fR.lt.\fR" 8
+The value represented by the attribute of the batch job is less than
+the value represented by the option-argument.
+.IP "\fR.le.\fR" 8
+The value represented by the attribute of the batch job is less than or
+equal to the value represented by the option-argument.
+.IP "\fR.ne.\fR" 8
+The value represented by the attribute of the batch job is not equal to
+the value represented by the option-argument.
+.SH OPTIONS
+The
+.IR qselect
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported by the implementation:
+.IP "\fB\(mia\ [\fIop\fB]\fIdate_time\fR" 10
+.br
+Restrict selection to a specific time, or a range of times.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the value of the
+.IR Execution_Time
+attribute is related to the Epoch equivalent of the local time
+expressed by the value of the
+.IR date_time
+component of the option-argument in the manner indicated by the value
+of the
+.IR op
+component of the option-argument.
+.P
+The
+.IR qselect
+utility shall accept a
+.IR date_time
+component of the option-argument that conforms to the syntax of the
+.IR time
+operand of the
+.IR touch
+utility.
+.P
+If the
+.IR op
+component of the option-argument is not presented to the
+.IR qselect
+utility, the utility shall select batch jobs for which the
+.IR Execution_Time
+attribute is equal to the
+.IR date_time
+component of the option-argument.
+.P
+When comparing times, the
+.IR qselect
+utility shall use the following definitions for the
+.IR op
+component of the option-argument:
+.IP "\fR.eq.\fR" 8
+The time represented by value of the
+.IR Execution_Time
+attribute of the batch job is equal to the time represented by the
+.IR date_time
+component of the option-argument.
+.IP "\fR.ge.\fR" 8
+The time represented by value of the
+.IR Execution_Time
+attribute of the batch job is after or equal to the time represented by
+the
+.IR date_time
+component of the option-argument.
+.IP "\fR.gt.\fR" 8
+The time represented by value of the
+.IR Execution_Time
+attribute of the batch job is after the time represented by the
+.IR date_time
+component of the option-argument.
+.IP "\fR.lt.\fR" 8
+The time represented by value of the
+.IR Execution_Time
+attribute of the batch job is before the time represented by the
+.IR date_time
+component of the option-argument.
+.IP "\fR.le.\fR" 8
+The time represented by value of the
+.IR Execution_Time
+attribute of the batch job is before or equal to the time represented
+by the
+.IR date_time
+component of the option-argument.
+.IP "\fR.ne.\fR" 8
+The time represented by value of the
+.IR Execution_Time
+attribute of the batch job is not equal to the time represented by the
+.IR date_time
+component of the option-argument.
+.P
+The
+.IR qselect
+utility shall accept the defined character strings for the
+.IR op
+component of the option-argument.
+.RE
+.IP "\fB\(miA\ \fIaccount_string\fR" 10
+.br
+Restrict selection to the batch jobs charging a specified account.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the value of the
+.IR Account_Name
+attribute of the batch job matches the value of the
+.IR account_string
+option-argument.
+.P
+The syntax of the
+.IR account_string
+option-argument is unspecified.
+.RE
+.IP "\fB\(mic\ [\fIop\fB]\fIinterval\fR" 10
+.br
+Restrict selection to batch jobs within a range of checkpoint
+intervals.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the value of the
+.IR Checkpoint
+attribute relates to the value of the
+.IR interval
+component of the option-argument in the manner indicated by the value
+of the
+.IR op
+component of the option-argument.
+.P
+If the
+.IR op
+component of the option-argument is omitted, the
+.IR qselect
+utility shall select batch jobs for which the value of the
+.IR Checkpoint
+attribute is equal to the value of the
+.IR interval
+component of the option-argument.
+.P
+When comparing checkpoint intervals, the
+.IR qselect
+utility shall use the following definitions for the
+.IR op
+component of the option-argument:
+.IP "\fR.eq.\fR" 8
+The value of the
+.IR Checkpoint
+attribute of the batch job equals the value of the
+.IR interval
+component of the option-argument.
+.IP "\fR.ge.\fR" 8
+The value of the
+.IR Checkpoint
+attribute of the batch job is greater than or equal to the value of the
+.IR interval
+component option-argument.
+.IP "\fR.gt.\fR" 8
+The value of the
+.IR Checkpoint
+attribute of the batch job is greater than the value of the
+.IR interval
+component option-argument.
+.IP "\fR.lt.\fR" 8
+The value of the
+.IR Checkpoint
+attribute of the batch job is less than the value of the
+.IR interval
+component option-argument.
+.IP "\fR.le.\fR" 8
+The value of the
+.IR Checkpoint
+attribute of the batch job is less than or equal to the value of the
+.IR interval
+component option-argument.
+.IP "\fR.ne.\fR" 8
+The value of the
+.IR Checkpoint
+attribute of the batch job does not equal the value of the
+.IR interval
+component option-argument.
+.P
+The
+.IR qselect
+utility shall accept the defined character strings for the
+.IR op
+component of the option-argument.
+.P
+The ordering relationship for the values of the interval
+option-argument is defined to be:
+.sp
+.RS 4
+.nf
+\fB
+\&`n' .gt. `s' .gt. `c=\fIminutes\fR' .ge. `c'
+.fi \fR
+.P
+.RE
+When comparing
+.IR Checkpoint
+attributes with an interval having the value of the single character
+.BR 'u' ,
+only equality or inequality are valid comparisons.
+.RE
+.IP "\fB\(mih\ \fIhold_list\fR" 10
+Restrict selection to batch jobs that have a specific type of hold.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the value of the
+.IR Hold_Types
+attribute matches the value of the
+.IR hold_list
+option-argument.
+.P
+The
+.IR qselect
+.BR \(mih
+option shall accept a value for the
+.IR hold_list
+option-argument that is a string of alphanumeric characters in the
+portable character set (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.1" ", " "Portable Character Set").
+.P
+The
+.IR qselect
+utility shall accept a value for the
+.IR hold_list
+option-argument that is a string of one or more of the characters
+.BR 'u' ,
+.BR 's' ,
+or
+.BR 'o' ,
+or the single character
+.BR 'n' .
+.P
+Each unique character in the
+.IR hold_list
+option-argument of the
+.IR qselect
+utility is defined as follows, each representing a different hold type:
+.IP "\fRu\fP" 6
+USER
+.IP "\fRs\fP" 6
+SYSTEM
+.IP "\fRo\fP" 6
+OPERATOR
+.P
+If any of these characters are duplicated in the
+.IR hold_list
+option-argument, the duplicates shall be ignored.
+.P
+The
+.IR qselect
+utility shall consider it an error if any hold type other than
+.BR 'n' 
+is combined with hold type
+.BR 'n' .
+.P
+Strictly conforming applications shall not repeat any of the characters
+.BR 'u' ,
+.BR 's' ,
+.BR 'o' ,
+or
+.BR 'n' 
+within the
+.IR hold_list
+option-argument. The
+.IR qselect
+utility shall permit the repetition of characters, but shall not assign
+additional meaning to the repeated characters.
+.P
+An implementation may define other hold types. The conformance document
+for an implementation shall describe any additional hold types, how
+they are specified, their internal behavior, and how they affect the
+behavior of the utility.
+.RE
+.IP "\fB\(mil\ \fIresource_list\fR" 10
+.br
+Restrict selection to batch jobs with specified resource limits and
+attributes.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall accept a
+.IR resource_list
+option-argument with the following syntax:
+.sp
+.RS 4
+.nf
+\fB
+\fIresource_name op value \fB[\fR,,\fIresource_name op value\fR,, ...\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+When comparing resource values, the
+.IR qselect
+utility shall use the following definitions for the
+.IR op
+component of the option-argument:
+.IP "\fR.eq.\fR" 8
+The value of the resource of the same name in the
+.IR Resource_List
+attribute of the batch job equals the value of the value component of
+the option-argument.
+.IP "\fR.ge.\fR" 8
+The value of the resource of the same name in the
+.IR Resource_List
+attribute of the batch job is greater than or equal to the value of the
+.IR value
+component of the option-argument.
+.IP "\fR.gt.\fR" 8
+The value of the resource of the same name in the
+.IR Resource_List
+attribute of the batch job is greater than the value of the value
+component of the option-argument.
+.IP "\fR.lt.\fR" 8
+The value of the resource of the same name in the
+.IR Resource_List
+attribute of the batch job is less than the value of the value
+component of the option-argument.
+.IP "\fR.ne.\fR" 8
+The value of the resource of the same name in the
+.IR Resource_List
+attribute of the batch job does not equal the value of the value
+component of the option-argument.
+.IP "\fR.le.\fR" 8
+The value of the resource of the same name in the
+.IR Resource_List
+attribute of the batch job is less than or equal to the value of the
+.IR value
+component of the option-argument.
+.P
+When comparing the limit of a
+.IR Resource_List
+attribute with the
+.IR value
+component of the option-argument, if the limit, the value, or both are
+non-numeric, only equality or inequality are valid comparisons.
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the values of the
+.IR resource_name s
+listed in the
+.IR resource_list
+option-argument match the corresponding limits of the
+.IR Resource_List
+attribute of the batch job.
+.P
+Limits of
+.IR resource_name s
+present in the
+.IR Resource_List
+attribute of the batch job that have no corresponding values in the
+.IR resource_list
+option-argument shall not be considered when selecting batch jobs.
+.RE
+.IP "\fB\(miN\ \fIname\fR" 10
+Restrict selection to batch jobs with a specified name.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the value of the
+.IR Job_Name
+attribute matches the value of the
+.IR name
+option-argument. The string specified in the
+.IR name
+option-argument shall be passed, uninterpreted, to the server. This
+allows an implementation to match ``wildcard'' patterns against batch
+job names.
+.P
+An implementation shall describe in the conformance document the format
+it supports for matching against the
+.IR Job_Name
+attribute.
+.RE
+.IP "\fB\(mip\ [\fIop\fB]\fIpriority\fR" 10
+.br
+Restrict selection to batch jobs of the specified priority or range of
+priorities.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the value of the
+.IR Priority
+attribute of the batch job relates to the value of the
+.IR priority
+component of the option-argument in the manner indicated by the value
+of the
+.IR op
+component of the option-argument.
+.P
+If the
+.IR op
+component of the option-argument is omitted, the
+.IR qselect
+utility shall select batch jobs for which the value of the
+.IR Priority
+attribute of the batch job is equal to the value of the
+.IR priority
+component of the option-argument.
+.P
+When comparing priority values, the
+.IR qselect
+utility shall use the following definitions for the
+.IR op
+component of the option-argument:
+.IP "\fR.eq.\fR" 8
+The value of the
+.IR Priority
+attribute of the batch job equals the value of the
+.IR priority
+component of the option-argument.
+.IP "\fR.ge.\fR" 8
+The value of the
+.IR Priority
+attribute of the batch job is greater than or equal to the value of the
+.IR priority
+component option-argument.
+.IP "\fR.gt.\fR" 8
+The value of the
+.IR Priority
+attribute of the batch job is greater than the value of the
+.IR priority
+component option-argument.
+.IP "\fR.lt.\fR" 8
+The value of the
+.IR Priority
+attribute of the batch job is less than the value of the
+.IR priority
+component option-argument.
+.IP "\fR.lt.\fR" 8
+The value of the
+.IR Priority
+attribute of the batch job is less than or equal to the value of the
+.IR priority
+component option-argument.
+.IP "\fR.ne.\fR" 8
+The value of the
+.IR Priority
+attribute of the batch job does not equal the value of the
+.IR priority
+component option-argument.
+.RE
+.IP "\fB\(miq\ \fIdestination\fR" 10
+.br
+Restrict selection to the specified batch queue or server, or both.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs that are located at the
+destination indicated by the value of the
+.IR destination
+option-argument.
+.P
+The destination defines a batch queue, a server, or a batch queue at a
+server.
+.P
+The
+.IR qselect
+utility shall accept an option-argument for the
+.BR \(miq
+option that conforms to the syntax for a destination. If the
+.BR \(miq
+option is not presented to the
+.IR qselect
+utility, the utility shall select batch jobs from all batch queues at
+the default batch server.
+.P
+If the option-argument describes only a batch queue, the
+.IR qselect
+utility shall select only batch jobs from the batch queue of the
+specified name at the default batch server. The means by which
+.IR qselect
+determines the default server is implementation-defined.
+.P
+If the option-argument describes only a batch server, the
+.IR qselect
+utility shall select batch jobs from all the batch queues at that batch
+server.
+.P
+If the option-argument describes both a batch queue and a batch server,
+the
+.IR qselect
+utility shall select only batch jobs from the specified batch queue at
+the specified server.
+.RE
+.IP "\fB\(mir\ \fRy\fR|\fRn\fR" 10
+Restrict selection to batch jobs with the specified rerunability
+status.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only batch jobs for which the value of the
+.IR Rerunable
+attribute of the batch job matches the value of the option-argument.
+.P
+The
+.IR qselect
+utility shall accept a value for the option-argument that consists of
+either the single character
+.BR 'y' 
+or the single character
+.BR 'n' .
+The character
+.BR 'y' 
+represents the value TRUE, and the character
+.BR 'n' 
+represents the value FALSE.
+.RE
+.IP "\fB\(mis\ \fIstates\fR" 10
+Restrict selection to batch jobs in the specified states.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall accept an option-argument that consists of any
+combination of the characters
+.BR 'e' ,
+.BR 'q' ,
+.BR 'r' ,
+.BR 'w' ,
+.BR 'h' ,
+and
+.BR 't' .
+.P
+Conforming applications shall not repeat any character in the
+option-argument. The
+.IR qselect
+utility shall permit the repetition of characters in the
+option-argument, but shall not assign additional meaning to repeated
+characters.
+.P
+The
+.IR qselect
+utility shall interpret the characters in the
+.IR states
+option-argument as follows:
+.IP "\fRe\fR" 6
+Represents the EXITING state.
+.IP "\fRq\fR" 6
+Represents the QUEUED state.
+.IP "\fRr\fR" 6
+Represents the RUNNING state.
+.IP "\fRt\fR" 6
+Represents the TRANSITING state.
+.IP "\fRh\fR" 6
+Represents the HELD state.
+.IP "\fRw\fR" 6
+Represents the WAITING state.
+.P
+For each character in the
+.IR states
+option-argument, the
+.IR qselect
+utility shall select batch jobs in the corresponding state.
+.RE
+.IP "\fB\(miu\ \fIuser_list\fR" 10
+Restrict selection to batch jobs owned by the specified user names.
+.RS 10 
+.P
+The
+.IR qselect
+utility shall select only the batch jobs of those users specified in
+the
+.IR user_list
+option-argument.
+.P
+The
+.IR qselect
+utility shall accept a
+.IR user_list
+option-argument that conforms to the following syntax:
+.sp
+.RS 4
+.nf
+\fB
+\fIusername\fB[\fR@\fIhost\fB][\fR,,\fIusername\fB[\fR@\fIhost\fB]\fR,, ...\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR qselect
+utility shall accept only one user name that is missing a corresponding
+host name. The
+.IR qselect
+utility shall accept only one user name per named host.
+.RE
+.SH OPERANDS
+None.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR qselect :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+the precedence of internationalization variables used to determine the
+values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fILOGNAME\fP" 10
+Determine the login name of the user.
+.IP "\fITZ\fP" 10
+Determine the timezone used to interpret the
+.IR date-time
+option-argument. If
+.IR TZ
+is unset or null, an unspecified default timezone shall be used.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR qselect
+utility shall write zero or more batch
+.IR job_identifier s
+to standard output.
+.P
+The
+.IR qselect
+utility shall separate the batch
+.IR job_identifier s
+written to standard output by white space.
+.P
+The
+.IR qselect
+utility shall write batch
+.IR job_identifier s
+in the following format:
+.sp
+.RS 4
+.nf
+\fB
+\fIsequence_number.server_name\fR@\fIserver\fR
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+The following example shows how a user might use the
+.IR qselect
+utility in conjunction with the
+.IR qdel
+utility to delete all of his or her jobs in the queued state without
+affecting any jobs that are already running:
+.sp
+.RS 4
+.nf
+\fB
+qdel $(qselect \(mis q)
+.fi \fR
+.P
+.RE
+.P
+or:
+.sp
+.RS 4
+.nf
+\fB
+qselect \(mis q || xargs qdel
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The
+.IR qselect
+utility allows users to acquire a list of job identifiers that match
+user-specified selection criteria. The list of identifiers returned by
+the
+.IR qselect
+utility conforms to the syntax of the batch job identifier list
+processed by a utility such as
+.IR qmove ,
+.IR qdel ,
+and
+.IR qrls .
+The
+.IR qselect
+utility is thus a powerful tool for causing another batch system
+utility to act upon a set of jobs that match a list of selection
+criteria.
+.P
+The options of the
+.IR qselect
+utility let the user apply a number of useful filters for selecting
+jobs. Each option further restricts the selection of jobs. Many of the
+selection options allow the specification of a relational operator. The
+FORTRAN-like syntax of the operator\(emthat is,
+.BR \(dq.lt.\(dq \(em\c
+was chosen rather than the C-like
+.BR \(dq<=\(dq 
+meta-characters.
+.P
+The
+.BR \(mia
+option allows users to restrict the selected jobs to those that have
+been submitted (or altered) to wait until a particular time. The time
+period is determined by the argument of this option, which includes
+both a time and an operator\(emit is thus possible to select jobs
+waiting until a specific time, jobs waiting until after a certain time,
+or those waiting for a time before the specified time.
+.P
+The
+.BR \(miA
+option allows users to restrict the selected jobs to those that have
+been submitted (or altered) to charge a particular account.
+.P
+The
+.BR \(mic
+option allows users to restrict the selected jobs to those whose
+checkpointing interval falls within the specified range.
+.P
+The
+.BR \(mil
+option allows users to select those jobs whose resource limits fall
+within the range indicated by the value of the option. For example, a
+user could select those jobs for which the CPU time limit is greater
+than two hours.
+.P
+The
+.BR \(miN
+option allows users to select jobs by job name. For instance, all the
+parts of a task that have been divided in parallel jobs might be given
+the same name, and thus manipulated as a group by means of this
+option.
+.P
+The
+.BR \(miq
+option allows users to select jobs in a specified queue.
+.P
+The
+.BR \(mir
+option allows users to select only those jobs with a specified rerun
+criteria. For instance, a user might select only those jobs that can be
+rerun for use with the
+.IR qrerun
+utility.
+.P
+The
+.BR \(mis
+option allows users to select only those jobs that are in a certain
+state.
+.P
+The
+.BR \(miu
+option allows users to select jobs that have been submitted to execute
+under a particular account.
+.P
+The selection criteria provided by the options of the
+.IR qselect
+utility allow users to select jobs based on all the appropriate
+attributes that can be assigned to jobs by the
+.IR qsub
+utility.
+.P
+Historically, the
+.IR qselect
+utility has not been a part of existing practice; it is an improvement
+that has been introduced in this volume of POSIX.1\(hy2008.
+.SH "FUTURE DIRECTIONS"
+The
+.IR qselect
+utility may be removed in a future version.
+.SH "SEE ALSO"
+.IR "Chapter 3" ", " "Batch Environment Services",
+.IR "\fIqdel\fR\^",
+.IR "\fIqrerun\fR\^",
+.IR "\fIqrls\fR\^",
+.IR "\fIqselect\fR\^",
+.IR "\fIqsub\fR\^",
+.IR "\fItouch\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.1" ", " "Portable Character Set",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

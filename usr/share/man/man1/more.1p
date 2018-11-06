@@ -1,0 +1,1382 @@
+'\" et
+.TH MORE "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+more
+\(em display files on a page-by-page basis
+.SH SYNOPSIS
+.LP
+.nf
+more \fB[\fR\(miceisu\fB] [\fR\(min \fInumber\fB] [\fR\(mip \fIcommand\fB] [\fR\(mit \fItagstring\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR more
+utility shall read files and either write them to the terminal on a
+page-by-page basis or filter them to standard output. If standard
+output is not a terminal device, all input files shall be copied to
+standard output in their entirety, without modification, except as
+specified for the
+.BR \(mis
+option. If standard output is a terminal device, the files shall be
+written a number of lines (one screenful) at a time under the control
+of user commands. See the EXTENDED DESCRIPTION section.
+.P
+Certain block-mode terminals do not have all the capabilities necessary
+to support the complete
+.IR more
+definition; they are incapable of accepting commands that are not
+terminated with a
+<newline>.
+Implementations that support such terminals shall provide an
+operating mode to
+.IR more
+in which all commands can be terminated with a
+<newline>
+on those terminals. This mode:
+.IP " *" 4
+Shall be documented in the system documentation
+.IP " *" 4
+Shall, at invocation, inform the user of the terminal deficiency that
+requires the
+<newline>
+usage and provide instructions on how this warning can be suppressed in
+future invocations
+.IP " *" 4
+Shall not be required for implementations supporting only fully capable
+terminals
+.IP " *" 4
+Shall not affect commands already requiring
+<newline>
+characters
+.IP " *" 4
+Shall not affect users on the capable terminals from using
+.IR more
+as described in this volume of POSIX.1\(hy2008
+.SH OPTIONS
+The
+.IR more
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that
+.BR '\(pl' 
+may be recognized as an option delimiter as well as
+.BR '\(mi' .
+.P
+The following options shall be supported:
+.IP "\fB\(mic\fP" 10
+If a screen is to be written that has no lines in common with the
+current screen, or
+.IR more
+is writing its first screen,
+.IR more
+shall not scroll the screen, but instead shall redraw each line of the
+screen in turn, from the top of the screen to the bottom. In addition,
+if
+.IR more
+is writing its first screen, the screen shall be cleared. This option
+may be silently ignored on devices with insufficient terminal
+capabilities.
+.IP "\fB\(mie\fP" 10
+Exit immediately after writing the last line of the last file in the
+argument list; see the EXTENDED DESCRIPTION section.
+.IP "\fB\(mii\fP" 10
+Perform pattern matching in searches without regard to case; see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 9.2" ", " "Regular Expression General Requirements".
+.IP "\fB\(min\ \fInumber\fR" 10
+Specify the number of lines per screenful. The
+.IR number
+argument is a positive decimal integer. The
+.BR \(min
+option shall override any values obtained from any other source.
+.IP "\fB\(mip\ \fIcommand\fR" 10
+Each time a screen from a new file is displayed or redisplayed
+(including as a result of
+.IR more
+commands; for example,
+.BR :p ),
+execute the
+.IR more
+command(s) in the command arguments in the order specified, as if
+entered by the user after the first screen has been displayed. No
+intermediate results shall be displayed (that is, if the command is a
+movement to a screen different from the normal first screen, only the
+screen resulting from the command shall be displayed.) If any of the
+commands fail for any reason, an informational message to this effect
+shall be written, and no further commands specified using the
+.BR \(mip
+option shall be executed for this file.
+.IP "\fB\(mis\fP" 10
+Behave as if consecutive empty lines were a single empty line.
+.IP "\fB\(mit\ \fItagstring\fR" 10
+Write the screenful of the file containing the tag named by the
+.IR tagstring
+argument. See the
+.IR "\fIctags\fR\^"
+utility. The tags feature represented by
+.BR \(mit
+.IR tagstring
+and the
+.BR :t
+command is optional. It shall be provided on any system that also
+provides a conforming implementation of
+.IR ctags ;
+otherwise, the use of
+.BR \(mit
+produces undefined results.
+.RS 10 
+.P
+The filename resulting from the
+.BR \(mit
+option shall be logically added as a prefix to the list of command line
+files, as if specified by the user. If the tag named by the
+.IR tagstring
+argument is not found, it shall be an error, and
+.IR more
+shall take no further action.
+.P
+If the tag specifies a line number, the first line of the display shall
+contain the beginning of that line. If the tag specifies a pattern, the
+first line of the display shall contain the beginning of the matching
+text from the first line of the file that contains that pattern. If the
+line does not exist in the file or matching text is not found, an
+informational message to this effect shall be displayed, and
+.IR more
+shall display the default screen as if
+.BR \(mit
+had not been specified.
+.P
+If both the
+.BR \(mit
+.IR tagstring
+and
+.BR \(mip
+.IR command
+options are given, the
+.BR \(mit
+.IR tagstring
+shall be processed first; that is, the file and starting line for the
+display shall be as specified by
+.BR \(mit ,
+and then the
+.BR \(mip
+.IR more
+command shall be executed. If the line (matching text) specified by the
+.BR \(mit
+command does not exist (is not found), no
+.BR \(mip
+.IR more
+command shall be executed for this file at any time.
+.RE
+.IP "\fB\(miu\fP" 10
+Treat a
+<backspace>
+as a printable control character, displayed as an
+implementation-defined character sequence (see the EXTENDED DESCRIPTION
+section), suppressing backspacing and the special handling that
+produces underlined or standout mode text on some terminal types.
+Also, do not ignore a
+<carriage-return>
+at the end of a line.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an input file. If no
+.IR file
+operands are specified, the standard input shall be used. If a
+.IR file
+is
+.BR '\(mi' ,
+the standard input shall be read at that point in the sequence.
+.SH STDIN
+The standard input shall be used only if no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' .
+.SH "INPUT FILES"
+The input files being examined shall be text files. If standard output
+is a terminal, standard error shall be used to read commands from the
+user. If standard output is a terminal, standard error is not readable,
+and command input is needed,
+.IR more
+may attempt to obtain user commands from the controlling terminal (for
+example,
+.BR /dev/tty );
+otherwise,
+.IR more
+shall terminate with an error indicating that it was unable to read
+user commands. If standard output is not a terminal, no error shall
+result if standard error cannot be opened for reading.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR more :
+.IP "\fICOLUMNS\fP" 10
+Override the system-selected horizontal display line size. See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+for valid values and results when it is unset or null.
+.IP "\fIEDITOR\fP" 10
+Used by the
+.BR v
+command to select an editor. See the EXTENDED DESCRIPTION section.
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements within regular expressions.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files) and the behavior of
+character classes within regular expressions.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fILINES\fP" 10
+Override the system-selected vertical screen size, used as the number
+of lines in a screenful. See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+for valid values and results when it is unset or null. The
+.BR \(min
+option shall take precedence over the
+.IR LINES
+variable for determining the number of lines in a screenful.
+.IP "\fIMORE\fP" 10
+Determine a string containing options described in the OPTIONS section
+preceded with
+<hyphen>
+characters and
+<blank>-separated
+as on the command line. Any command line options shall be processed
+after those in the
+.IR MORE
+variable, as if the command line were:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+more $MORE \fIoptions operands\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR MORE
+variable shall take precedence over the
+.IR TERM
+and
+.IR LINES
+variables for determining the number of lines in a screenful.
+.RE
+.IP "\fITERM\fP" 10
+Determine the name of the terminal type. If this variable is unset or
+null, an unspecified default terminal type is used.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be used to write the contents of the input
+files.
+.SH STDERR
+The standard error shall be used for diagnostic messages and user
+commands (see the INPUT FILES section), and, if standard output is a
+terminal device, to write a prompting string. The prompting string
+shall appear on the screen line below the last line of the file
+displayed in the current screenful. The prompt shall contain the name
+of the file currently being examined and shall contain an end-of-file
+indication and the name of the next file, if any, when prompting at the
+end-of-file. If an error or informational message is displayed, it is
+unspecified whether it is contained in the prompt. If it is not
+contained in the prompt, it shall be displayed and then the user shall
+be prompted for a continuation character, at which point another
+message or the user prompt may be displayed. The prompt is otherwise
+unspecified. It is unspecified whether informational messages are
+written for other user commands.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+The following section describes the behavior of
+.IR more
+when the standard output is a terminal device. If the standard output
+is not a terminal device, no options other than
+.BR \(mis
+shall have any effect, and all input files shall be copied to standard
+output otherwise unmodified, at which time
+.IR more
+shall exit without further action.
+.P
+The number of lines available per screen shall be determined by the
+.BR \(min
+option, if present, or by examining values in the environment (see the
+ENVIRONMENT VARIABLES section). If neither method yields a number, an
+unspecified number of lines shall be used.
+.P
+The maximum number of lines written shall be one less than this number,
+because the screen line after the last line written shall be used to
+write a user prompt and user input. If the number of lines in the
+screen is less than two, the results are undefined. It is unspecified
+whether user input is permitted to be longer than the remainder of the
+single line where the prompt has been written.
+.P
+The number of columns available per line shall be determined by
+examining values in the environment (see the ENVIRONMENT VARIABLES
+section), with a default value as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables".
+.P
+Lines that are longer than the display shall be folded; the length at
+which folding occurs is unspecified, but should be appropriate for the
+output device. Folding may occur between glyphs of single characters
+that take up multiple display columns.
+.P
+When standard output is a terminal and
+.BR \(miu
+is not specified,
+.IR more
+shall treat
+<backspace>
+and
+<carriage-return>
+characters specially:
+.IP " *" 4
+A character, followed first by a sequence of
+.IR n
+<backspace>
+characters (where
+.IR n
+is the same as the number of column positions that the character
+occupies), then by
+.IR n
+<underscore>
+characters (\c
+.BR '_' ),
+shall cause that character to be written as underlined text, if the
+terminal type supports that. The
+.IR n
+<underscore>
+characters, followed first by
+.IR n
+<backspace>
+characters, then any character with
+.IR n
+column positions, shall also cause that character to be written as
+underlined text, if the terminal type supports that.
+.IP " *" 4
+A sequence of
+.IR n
+<backspace>
+characters (where
+.IR n
+is the same as the number of column positions that the previous
+character occupies) that appears between two identical printable
+characters shall cause the first of those two characters to be written
+as emboldened text (that is, visually brighter, standout mode, or
+inverse-video mode), if the terminal type supports that, and the second
+to be discarded. Immediately subsequent occurrences of
+<backspace>/\c
+character pairs for that same character shall also be discarded. (For
+example, the sequence
+.BR \(dqa\eba\eba\eba\(dq 
+is interpreted as a single emboldened
+.BR 'a' .)
+.IP " *" 4
+The
+.IR more
+utility shall logically discard all other
+<backspace>
+characters from the line as well as the character which precedes them,
+if any.
+.IP " *" 4
+A
+<carriage-return>
+at the end of a line shall be ignored, rather than being written as a
+non-printable character, as described in the next paragraph.
+.P
+It is implementation-defined how other non-printable characters are
+written. Implementations should use the same format that they use for
+the
+.IR ex
+.BR print
+command; see the OPTIONS section within the
+.IR ed
+utility. It is unspecified whether a multi-column character shall be
+separated if it crosses a display line boundary; it shall not be
+discarded. The behavior is unspecified if the number of columns on the
+display is less than the number of columns any single character in the
+line being displayed would occupy.
+.P
+When each new file is displayed (or redisplayed),
+.IR more
+shall write the first screen of the file. Once the initial screen has
+been written,
+.IR more
+shall prompt for a user command. If the execution of the user command
+results in a screen that has lines in common with the current screen,
+and the device has sufficient terminal capabilities,
+.IR more
+shall scroll the screen; otherwise, it is unspecified whether the
+screen is scrolled or redrawn.
+.P
+For all files but the last (including standard input if no file was
+specified, and for the last file as well, if the
+.BR \(mie
+option was not specified), when
+.IR more
+has written the last line in the file,
+.IR more
+shall prompt for a user command. This prompt shall contain the name of
+the next file as well as an indication that
+.IR more
+has reached end-of-file. If the user command is
+.BR f ,
+<control>\(hyF,
+<space>,
+.BR j ,
+<newline>,
+.BR d ,
+<control>\(hyD,
+or
+.BR s ,
+.IR more
+shall display the next file. Otherwise, if displaying the last file,
+.IR more
+shall exit. Otherwise,
+.IR more
+shall execute the user command specified.
+.P
+Several of the commands described in this section display a previous
+screen from the input stream. In the case that text is being taken from
+a non-rewindable stream, such as a pipe, it is implementation-defined
+how much backwards motion is supported. If a command cannot be executed
+because of a limitation on backwards motion, an error message to this
+effect shall be displayed, the current screen shall not change, and the
+user shall be prompted for another command.
+.P
+If a command cannot be performed because there are insufficient lines
+to display,
+.IR more
+shall alert the terminal. If a command cannot be performed because
+there are insufficient lines to display or a
+.BR /
+command fails: if the input is the standard input, the last screen in
+the file may be displayed; otherwise, the current file and screen shall
+not change, and the user shall be prompted for another command.
+.P
+The interactive commands in the following sections shall be supported.
+Some commands can be preceded by a decimal integer, called
+.IR count
+in the following descriptions. If not specified with the command,
+.IR count
+shall default to 1. In the following descriptions,
+.IR pattern
+is a basic regular expression, as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 9.3" ", " "Basic Regular Expressions".
+The term ``examine'' is historical usage meaning ``open the
+file for viewing''; for example,
+.IR more
+.BR foo
+would be expressed as examining file
+.BR foo .
+.P
+In the following descriptions, unless otherwise specified,
+.IR line
+is a line in the
+.IR more
+display, not a line from the file being examined.
+.P
+In the following descriptions, the
+.IR "current position"
+refers to two things:
+.IP " 1." 4
+The position of the current line on the screen
+.IP " 2." 4
+The line number (in the file) of the current line on the screen
+.P
+Usually, the line on the screen corresponding to the current position
+is the third line on the screen. If this is not possible (there are
+fewer than three lines to display or this is the first page of the
+file, or it is the last page of the file), then the current position is
+either the first or last line on the screen as described later.
+.SS "Help"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+h
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write a summary of these commands and other implementation-defined
+commands. The behavior shall be as if the
+.IR more
+utility were executed with the
+.BR \(mie
+option on a file that contained the summary information. The user shall
+be prompted as described earlier in this section when end-of-file is
+reached. If the user command is one of those specified to continue to
+the next file,
+.IR more
+shall return to the file and screen state from which the
+.BR h
+command was executed.
+.SS "Scroll Forward One Screenful"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRf
+\fB[\fIcount\fB]\fR<control>-F
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scroll forward
+.IR count
+lines, with a default of one screenful. If
+.IR count
+is more than the screen size, only the final screenful shall be
+written.
+.SS "Scroll Backward One Screenful"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRb
+\fB[\fIcount\fB]\fR<control>-B
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scroll backward
+.IR count
+lines, with a default of one screenful (see the
+.BR \(min
+option). If
+.IR count
+is more than the screen size, only the final screenful shall be
+written.
+.SS "Scroll Forward One Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR<space>
+\fB[\fIcount\fB]\fRj
+\fB[\fIcount\fB]\fR<newline>
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scroll forward
+.IR count
+lines. The default
+.IR count
+for the
+<space>
+shall be one screenful; for
+.BR j
+and
+<newline>,
+one line. The entire
+.IR count
+lines shall be written, even if
+.IR count
+is more than the screen size.
+.SS "Scroll Backward One Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRk
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scroll backward
+.IR count
+lines. The entire
+.IR count
+lines shall be written, even if
+.IR count
+is more than the screen size.
+.SS "Scroll Forward One Half Screenful"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRd
+\fB[\fIcount\fB]\fR<control>-D
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scroll forward
+.IR count
+lines, with a default of one half of the screen size. If
+.IR count
+is specified, it shall become the new default for subsequent
+.BR d ,
+<control>\(hyD,
+and
+.BR u
+commands.
+.SS "Skip Forward One Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRs
+.fi \fR
+.P
+.RE
+.RE
+.P
+Display the screenful beginning with the line
+.IR count
+lines after the last line on the current screen. If
+.IR count
+would cause the current position to be such that less than one
+screenful would be written, the last screenful in the file shall be
+written.
+.SS "Scroll Backward One Half Screenful"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRu
+\fB[\fIcount\fB]\fR<control>-U
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scroll backward
+.IR count
+lines, with a default of one half of the screen size. If
+.IR count
+is specified, it shall become the new default for subsequent
+.BR d ,
+<control>\(miD,
+.BR u ,
+and
+<control>\(miU
+commands. The entire
+.IR count
+lines shall be written, even if
+.IR count
+is more than the screen size.
+.SS "Go to Beginning of File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRg
+.fi \fR
+.P
+.RE
+.RE
+.P
+Display the screenful beginning with line
+.IR count .
+.SS "Go to End-of-File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRG
+.fi \fR
+.P
+.RE
+.RE
+.P
+If
+.IR count
+is specified, display the screenful beginning with the line
+.IR count .
+Otherwise, display the last screenful of the file.
+.SS "Refresh the Screen"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+r
+<control>-L
+.fi \fR
+.P
+.RE
+.RE
+.P
+Refresh the screen.
+.SS "Discard and Refresh"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+R
+.fi \fR
+.P
+.RE
+.RE
+.P
+Refresh the screen, discarding any buffered input. If the current file
+is non-seekable, buffered input shall not be discarded and the
+.BR R
+command shall be equivalent to the
+.BR r
+command.
+.SS "Mark Position"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+m\fIletter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Mark the current position with the letter named by
+.IR letter ,
+where
+.IR letter
+represents the name of one of the lowercase letters of the portable
+character set. When a new file is examined, all marks may be lost.
+.SS "Return to Mark"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\&'\fIletter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Return to the position that was previously marked with the letter named
+by
+.IR letter ,
+making that line the current position.
+.SS "Return to Previous Position"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\&''
+.fi \fR
+.P
+.RE
+.RE
+.P
+Return to the position from which the last large movement command was
+executed (where a ``large movement'' is defined as any movement of more
+than a screenful of lines). If no such movements have been made, return
+to the beginning of the file.
+.SS "Search Forward for Pattern"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR/\fB[\fR!\fB]\fIpattern\fR<newline>
+.fi \fR
+.P
+.RE
+.RE
+.P
+Display the screenful beginning with the
+.IR count th
+line containing the pattern. The search shall start after the first
+line currently displayed. The null regular expression (\c
+.BR '/' 
+followed by a
+<newline>)
+shall repeat the search using the previous regular expression, with a
+default
+.IR count .
+If the character
+.BR '!' 
+is included, the matching lines shall be those that do not contain the
+.IR pattern .
+If no match is found for the
+.IR pattern ,
+a message to that effect shall be displayed.
+.SS "Search Backward for Pattern"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR?\fB[\fR!\fB]\fIpattern\fR<newline>
+.fi \fR
+.P
+.RE
+.RE
+.P
+Display the screenful beginning with the
+.IR count th
+previous line containing the pattern. The search shall start on the
+last line before the first line currently displayed. The null regular
+expression (\c
+.BR '?' 
+followed by a
+<newline>)
+shall repeat the search using the previous regular expression, with a
+default
+.IR count .
+If the character
+.BR '!' 
+is included, matching lines shall be those that do not contain the
+.IR pattern .
+If no match is found for the
+.IR pattern ,
+a message to that effect shall be displayed.
+.SS "Repeat Search"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRn
+.fi \fR
+.P
+.RE
+.RE
+.P
+Repeat the previous search for
+.IR count th
+line containing the last
+.IR pattern
+(or not containing the last
+.IR pattern ,
+if the previous search was
+.BR \(dq/!\(dq 
+or
+.BR \(dq?!\(dq ).
+.SS "Repeat Search in Reverse"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fRN
+.fi \fR
+.P
+.RE
+.RE
+.P
+Repeat the search in the opposite direction of the previous search for
+the
+.IR count th
+line containing the last
+.IR pattern
+(or not containing the last
+.IR pattern ,
+if the previous search was
+.BR \(dq/!\(dq 
+or
+.BR \(dq?!\(dq ).
+.SS "Examine New File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+:e \fB[\fIfilename\fB]\fR<newline>
+.fi \fR
+.P
+.RE
+.RE
+.P
+Examine a new file. If the
+.IR filename
+argument is not specified, the current file (see the
+.BR :n
+and
+.BR :p
+commands below) shall be re-examined. The
+.IR filename
+shall be subjected to the process of shell word expansions (see
+.IR "Section 2.6" ", " "Word Expansions");
+if more than a single pathname results, the effects are unspecified.
+If
+.IR filename
+is a
+<number-sign>
+(\c
+.BR '#' ),
+the previously examined file shall be re-examined. If
+.IR filename
+is not accessible for any reason (including that it is a non-seekable
+file), an error message to this effect shall be displayed and the
+current file and screen shall not change.
+.SS "Examine Next File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR:n
+.fi \fR
+.P
+.RE
+.RE
+.P
+Examine the next file. If a number
+.IR count
+is specified, the
+.IR count th
+next file shall be examined. If
+.IR filename
+refers to a non-seekable file, the results are unspecified.
+.SS "Examine Previous File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR:p
+.fi \fR
+.P
+.RE
+.RE
+.P
+Examine the previous file. If a number
+.IR count
+is specified, the
+.IR count th
+previous file shall be examined. If
+.IR filename
+refers to a non-seekable file, the results are unspecified.
+.SS "Go to Tag"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+:t \fItagstring\fR<newline>
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the file containing the tag named by the
+.IR tagstring
+argument is not the current file, examine the file, as if the
+.BR :e
+command was executed with that file as the argument. Otherwise, or in
+addition, display the screenful beginning with the tag, as described
+for the
+.BR \(mit
+option (see the OPTIONS section). If the
+.IR ctags
+utility is not supported by the system, the use of
+.BR :t
+produces undefined results.
+.SS "Invoke Editor"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+v
+.fi \fR
+.P
+.RE
+.RE
+.P
+Invoke an editor to edit the current file being examined. If standard
+input is being examined, the results are unspecified. The name of the
+editor shall be taken from the environment variable
+.IR EDITOR ,
+or shall default to
+.IR vi .
+If the last pathname component in
+.IR EDITOR
+is either
+.IR vi
+or
+.IR ex ,
+the editor shall be invoked with a
+.BR \(mic
+.IR linenumber
+command line argument, where
+.IR linenumber
+is the line number of the file line containing the display line
+currently displayed as the first line of the screen. It is
+implementation-defined whether line-setting options are passed to
+editors other than
+.IR vi
+and
+.IR ex .
+.P
+When the editor exits,
+.IR more
+shall resume with the same file and screen as when the editor was
+invoked.
+.SS "Display Position"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+=
+<control>-G
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write a message for which the information references the first byte of
+the line after the last line of the file on the screen. This message
+shall include the name of the file currently being examined, its number
+relative to the total number of files there are to examine, the line
+number in the file, the byte number and the total bytes in the file,
+and what percentage of the file precedes the current position. If
+.IR more
+is reading from standard input, or the file is shorter than a single
+screen, the line number, the byte number, the total bytes, and the
+percentage need not be written.
+.SS "Quit"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+q
+:q
+ZZ
+.fi \fR
+.P
+.RE
+.RE
+.P
+Exit
+.IR more .
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+If an error is encountered accessing a file when using the
+.BR :n
+command,
+.IR more
+shall attempt to examine the next file in the argument list, but the
+final exit status shall be affected. If an error is encountered
+accessing a file via the
+.BR :p
+command,
+.IR more
+shall attempt to examine the previous file in the argument list, but
+the final exit status shall be affected. If an error is encountered
+accessing a file via the
+.BR :e
+command,
+.IR more
+shall remain in the current file and the final exit status shall not be
+affected.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+When the standard output is not a terminal, only the
+.BR \(mis
+filter-modification option is effective. This is based on historical
+practice. For example, a typical implementation of
+.IR man
+pipes its output through
+.IR more
+.BR \(mis
+to squeeze excess white space for terminal users. When
+.IR man
+is piped to
+.IR lp ,
+however, it is undesirable for this squeezing to happen.
+.SH EXAMPLES
+The
+.BR \(mip
+allows arbitrary commands to be executed at the start of each file.
+Examples are:
+.IP "\fImore\ \fB\(mip\ G\ \fIfile1\ file2\fR" 6
+.br
+Examine each file starting with its last screenful.
+.IP "\fImore\ \fB\(mip\ \fR100\ \fIfile1\ file2\fR" 6
+.br
+Examine each file starting with line 100 in the current position
+(usually the third line, so line 98 would be the first line written).
+.IP "\fImore\ \fB\(mip\ \fR/100\ \fIfile1\ file2\fR" 6
+.br
+Examine each file starting with the first line containing the string
+.BR \(dq100\(dq 
+in the current position
+.SH RATIONALE
+The
+.IR more
+utility, available in BSD and BSD-derived systems, was chosen as the
+prototype for the POSIX file display program since it is more widely
+available than either the public-domain program
+.IR less
+or than
+.IR pg ,
+a pager provided in System V. The 4.4 BSD
+.IR more
+is the model for the features selected; it is almost fully
+upwards-compatible from the 4.3 BSD version in wide use and has become
+more amenable for
+.IR vi
+users. Several features originally derived from various file editors,
+found in both
+.IR less
+and
+.IR pg ,
+have been added to this volume of POSIX.1\(hy2008 as they have proved extremely popular with
+users.
+.P
+There are inconsistencies between
+.IR more
+and
+.IR vi
+that result from historical practice. For example, the single-character
+commands
+.BR h ,
+.BR f ,
+.BR b ,
+and
+<space>
+are screen movers in
+.IR more ,
+but cursor movers in
+.IR vi .
+These inconsistencies were maintained because the cursor movements are
+not applicable to
+.IR more
+and the powerful functionality achieved without the use of the control
+key justifies the differences.
+.P
+The tags interface has been included in a program that is not a text
+editor because it promotes another degree of consistent operation with
+.IR vi .
+It is conceivable that the paging environment of
+.IR more
+would be superior for browsing source code files in some
+circumstances.
+.P
+The operating mode referred to for block-mode terminals effectively
+adds a
+<newline>
+to each Synopsis line that currently has none. So, for example,
+.BR d \c
+<newline>
+would page one screenful. The mode could be triggered by a command
+line option, environment variable, or some other method. The details
+are not imposed by this volume of POSIX.1\(hy2008 because there are so few systems known to
+support such terminals. Nevertheless, it was considered that all
+systems should be able to support
+.IR more
+given the exception cited for this small community of terminals
+because, in comparison to
+.IR vi ,
+the cursor movements are few and the command set relatively amenable to
+the optional
+<newline>
+characters.
+.P
+Some versions of
+.IR more
+provide a shell escaping mechanism similar to the
+.IR ex
+.BR !
+command. The standard developers did not consider that this was
+necessary in a paginator, particularly given the wide acceptance of
+multiple window terminals and job control features. (They chose to
+retain such features in the editors and
+.IR mailx
+because the shell interaction also gives an opportunity to modify the
+editing buffer, which is not applicable to
+.IR more .)
+.P
+The
+.BR \(mip
+(position) option replaces the
+.BR +
+command because of the Utility Syntax Guidelines. The
+.BR \(pl \c
+.IR command
+option is no longer specified by POSIX.1\(hy2008 but may be present
+in some implementations. In early proposals, it took a
+.IR pattern
+argument, but historical
+.IR less
+provided the
+.IR more
+general facility of a command. It would have been desirable to use the
+same
+.BR \(mic
+as
+.IR ex
+and
+.IR vi ,
+but the letter was already in use.
+.P
+The text stating ``from a non-rewindable stream .\|.\|. implementations
+may limit the amount of backwards motion supported'' would allow an
+implementation that permitted no backwards motion beyond text already
+on the screen. It was not possible to require a minimum amount of
+backwards motion that would be effective for all conceivable device
+types. The implementation should allow the user to back up as far as
+possible, within device and reasonable memory allocation constraints.
+.P
+Historically, non-printable characters were displayed using the ARPA
+standard mappings, which are as follows:
+.IP " 1." 4
+Printable characters are left alone.
+.IP " 2." 4
+Control characters less than \e177 are represented as followed by the
+character offset from the
+.BR '@' 
+character in the ASCII map; for example, \e007 is represented as
+.BR 'G' .
+.IP " 3." 4
+\e177 is represented as followed by
+.BR '?' .
+.P
+The display of characters having their eighth bit set was less
+standard. Existing implementations use hex (0x00), octal (\e000), and a
+meta-bit display. (The latter displayed characters with their eighth
+bit set as the two characters
+.BR \(dqM\(mi\(dq ,
+followed by the seven-bit display as described previously.) The latter
+probably has the best claim to historical practice because it was used
+with the
+.BR \(miv
+option of 4 BSD and 4 BSD-derived versions of the
+.IR cat
+utility since 1980.
+.P
+No specific display format is required by POSIX.1\(hy2008. Implementations are
+encouraged to conform to historic practice in the absence of any strong
+reason to diverge.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Chapter 2" ", " "Shell Command Language",
+.IR "\fIctags\fR\^",
+.IR "\fIed\fR\^",
+.IR "\fIex\fR\^",
+.IR "\fIvi\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 9.2" ", " "Regular Expression General Requirements",
+.IR "Section 9.3" ", " "Basic Regular Expressions",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

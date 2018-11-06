@@ -1,0 +1,167 @@
+'\" et
+.TH TRUNCATE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+truncate
+\(em truncate a file to a specified length
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int truncate(const char *\fIpath\fP, off_t \fIlength\fP);
+.fi
+.SH DESCRIPTION
+The
+\fItruncate\fR()
+function shall cause the regular file named by
+.IR path
+to have a size which shall be equal to
+.IR length
+bytes.
+.P
+If the file previously was larger than
+.IR length ,
+the extra data is discarded. If the file was previously shorter than
+.IR length ,
+its size is increased, and the extended area appears as if it were
+zero-filled.
+.P
+The application shall ensure that the process has write permission for
+the file.
+.P
+If the request would cause the file size to exceed the soft file size
+limit for the process, the request shall fail and the implementation
+shall generate the SIGXFSZ signal for the process.
+.P
+The
+\fItruncate\fR()
+function shall not modify the file offset for any open file descriptions
+associated with the file. Upon successful completion, if the file size
+is changed,
+\fItruncate\fR()
+shall mark for update the last data modification and last file status
+change timestamps of the file, and the S_ISUID and S_ISGID bits of the
+file mode may be cleared.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fItruncate\fR()
+shall return 0. Otherwise, \(mi1 shall be returned, and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fItruncate\fR()
+function shall fail if:
+.TP
+.BR EINTR
+A signal was caught during execution.
+.TP
+.BR EINVAL
+The
+.IR length
+argument was less than 0.
+.TP
+.BR EFBIG " or " EINVAL
+.br
+The
+.IR length
+argument was greater than the maximum file size.
+.TP
+.BR EIO
+An I/O error occurred while reading from or writing to a file system.
+.TP
+.BR EACCES
+A component of the path prefix denies search permission, or write
+permission is denied on the file.
+.TP
+.BR EISDIR
+The named file is a directory.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.TP
+.BR EROFS
+The named file resides on a read-only file system.
+.br
+.P
+The
+\fItruncate\fR()
+function may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIopen\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

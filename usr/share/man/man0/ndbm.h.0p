@@ -1,0 +1,115 @@
+'\" et
+.TH ndbm.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ndbm.h
+\(em definitions for ndbm database operations
+.SH SYNOPSIS
+.LP
+.nf
+#include <ndbm.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <ndbm.h> 
+header shall define the
+.BR datum
+type as a structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+void   *dptr  \fRA pointer to the application's data.\fR
+size_t  dsize \fRThe size of the object pointed to by \fIdptr.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <ndbm.h> 
+header shall define the
+.BR size_t
+type as described in
+.IR <stddef.h> .
+.P
+The
+.IR <ndbm.h> 
+header shall define the
+.BR DBM
+type.
+.P
+The
+.IR <ndbm.h> 
+header shall define the following symbolic constants as possible
+values for the
+.IR store_mode
+argument to
+\fIdbm_store\fR():
+.IP DBM_INSERT 14
+Insertion of new entries only.
+.IP DBM_REPLACE 14
+Allow replacing existing entries.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int     dbm_clearerr(DBM *);
+void    dbm_close(DBM *);
+int     dbm_delete(DBM *, datum);
+int     dbm_error(DBM *);
+datum   dbm_fetch(DBM *, datum);
+datum   dbm_firstkey(DBM *);
+datum   dbm_nextkey(DBM *);
+DBM    *dbm_open(const char *, int, mode_t);
+int     dbm_store(DBM *, datum, datum, int);
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <ndbm.h> 
+header shall define the
+.BR mode_t
+type through
+.BR typedef ,
+as described in
+.IR <sys/types.h> .
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<stddef.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIdbm_clearerr\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

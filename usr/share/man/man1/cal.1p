@@ -1,0 +1,162 @@
+'\" et
+.TH CAL "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cal
+\(em print a calendar
+.SH SYNOPSIS
+.LP
+.nf
+cal \fB[[\fImonth\fB] \fIyear\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR cal
+utility shall write a calendar to standard output using the Julian
+calendar for dates from January 1, 1 through September 2, 1752 and the
+Gregorian calendar for dates from September 14, 1752 through December
+31, 9999 as though the Gregorian calendar had been adopted on September
+14, 1752.
+.P
+If no operands are given,
+.IR cal
+shall produce a one-month calendar for the current month in the
+current year. If only the
+.IR year
+operand is given,
+.IR cal
+shall produce a calendar for all twelve months in the given calendar
+year. If both
+.IR month
+and
+.IR year
+operands are given,
+.IR cal
+shall produce a one-month calendar for the given month in the given year.
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fImonth\fR" 10
+Specify the month to be displayed, represented as a decimal integer
+from 1 (January) to 12 (December).
+.IP "\fIyear\fR" 10
+Specify the year for which the calendar is displayed, represented as a
+decimal integer from 1 to 9999.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR cal :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error, and
+informative messages written to standard output.
+.IP "\fILC_TIME\fP" 10
+Determine the format and contents of the calendar.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fITZ\fP" 10
+Determine the timezone used to calculate the value of the current
+month.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be used to display the calendar, in an
+unspecified format.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Note that:
+.sp
+.RS 4
+.nf
+\fB
+cal 83
+.fi \fR
+.P
+.RE
+.P
+refers to A.D. 83, not 1983.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+Earlier versions of this standard incorrectly required that the command:
+.sp
+.RS 4
+.nf
+\fB
+cal 2000
+.fi \fR
+.P
+.RE
+.P
+write a one-month calendar for the current calendar month (no matter what
+the current year is) in the year 2000 to standard output. This did not
+match historic practice in any known version of the
+.IR cal
+utility. The description has been updated to match historic practice.
+When only the
+.IR year
+operand is given,
+.IR cal
+writes a twelve-month calendar for the specified year.
+.SH "FUTURE DIRECTIONS"
+A future version of this standard may support locale-specific
+recognition of the date of adoption of the Gregorian calendar.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

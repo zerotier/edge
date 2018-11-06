@@ -1,0 +1,146 @@
+'\" et
+.TH TMPNAM "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+tmpnam
+\(em create a name for a temporary file
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+char *tmpnam(char *\fIs\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fItmpnam\fR()
+function shall generate a string that is a valid pathname that does not
+name an existing file. The function is potentially capable of generating
+{TMP_MAX}
+different strings, but any or all of them may already be in use by
+existing files and thus not be suitable return values.
+.P
+The
+\fItmpnam\fR()
+function generates a different string each time it is called from the
+same process, up to
+{TMP_MAX}
+times. If it is called more than
+{TMP_MAX}
+times, the behavior is implementation-defined.
+.P
+The implementation shall behave as if no function defined in this volume of POSIX.1\(hy2008,
+except
+\fItempnam\fR(),
+calls
+\fItmpnam\fR().
+.P
+The
+\fItmpnam\fR()
+function need not be thread-safe if called with a NULL parameter.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fItmpnam\fR()
+shall return a pointer to a string. If no suitable string can be
+generated, the
+\fItmpnam\fR()
+function shall return a null pointer.
+.P
+If the argument
+.IR s
+is a null pointer,
+\fItmpnam\fR()
+shall leave its result in an internal static object and return a
+pointer to that object. Subsequent calls to
+\fItmpnam\fR()
+may modify the same object. If the argument
+.IR s
+is not a null pointer, it is presumed to point to an array of at least
+L_tmpnam
+.BR char s;
+\fItmpnam\fR()
+shall write its result in that array and shall return the argument
+as its value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Generating a Pathname"
+.P
+The following example generates a unique pathname and stores it in the
+array pointed to by
+.IR ptr .
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+\&...
+char pathname[L_tmpnam+1];
+char *ptr;
+.P
+ptr = tmpnam(pathname);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+This function only creates pathnames. It is the application's
+responsibility to create and remove the files.
+.P
+Between the time a pathname is created and the file is opened, it is
+possible for some other process to create a file with the same name.
+Applications may find
+\fItmpfile\fR()
+more useful.
+.P
+Applications should use the
+\fItmpfile\fR(),
+\fImkstemp\fR(),
+or
+\fImkdtemp\fR()
+functions instead of the obsolescent
+\fItmpnam\fR()
+function.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fItmpnam\fR()
+function may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIfopen\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fImkdtemp\fR\^(\|)",
+.IR "\fItempnam\fR\^(\|)",
+.IR "\fItmpfile\fR\^(\|)",
+.IR "\fIunlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

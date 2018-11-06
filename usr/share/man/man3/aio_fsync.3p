@@ -1,0 +1,191 @@
+'\" et
+.TH AIO_FSYNC "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+aio_fsync
+\(em asynchronous file synchronization
+.SH SYNOPSIS
+.LP
+.nf
+#include <aio.h>
+.P
+int aio_fsync(int \fIop\fP, struct aiocb *\fIaiocbp\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIaio_fsync\fR()
+function shall asynchronously perform a file synchronization operation,
+as specified by the
+.IR op
+argument, for I/O operations associated with the file indicated by the
+file descriptor
+.IR aio_fildes
+member of the
+.BR aiocb
+structure referenced by the
+.IR aiocbp
+argument and queued at the time of the call to
+\fIaio_fsync\fR().
+The function call shall return when the synchronization request has been
+initiated or queued to the file or device (even when the data cannot be
+synchronized immediately).
+.P
+If
+.IR op
+is O_DSYNC,
+all currently queued I/O operations shall be completed as if by a call to
+\fIfdatasync\fR();
+that is, as defined for synchronized I/O data integrity completion.
+.P
+If
+.IR op
+is O_SYNC,
+all currently queued I/O operations shall be completed as if by a call to
+\fIfsync\fR();
+that is, as defined for synchronized I/O file integrity completion.
+If the
+\fIaio_fsync\fR()
+function fails, or if the operation queued by
+\fIaio_fsync\fR()
+fails, then outstanding I/O operations are not guaranteed to have been
+completed.
+.P
+If
+\fIaio_fsync\fR()
+succeeds, then it is only the I/O that was queued at the time of the
+call to
+\fIaio_fsync\fR()
+that is guaranteed to be forced to the relevant completion state. The
+completion of subsequent I/O on the file descriptor is not guaranteed
+to be completed in a synchronized fashion.
+.P
+The
+.IR aiocbp
+argument refers to an asynchronous I/O control block. The
+.IR aiocbp
+value may be used as an argument to
+\fIaio_error\fR()
+and
+\fIaio_return\fR()
+in order to determine the error status and return status, respectively,
+of the asynchronous operation while it is proceeding. When the request
+is queued, the error status for the operation is
+.BR [EINPROGRESS] .
+When all data has been successfully transferred, the error status shall
+be reset to reflect the success or failure of the operation. If the
+operation does not complete successfully, the error status for the
+operation shall be set to indicate the error. The
+.IR aio_sigevent
+member determines the asynchronous notification to occur as specified
+in
+.IR "Section 2.4.1" ", " "Signal Generation and Delivery"
+when all operations have achieved synchronized I/O completion. All
+other members of the structure referenced by
+.IR aiocbp
+are ignored. If the control block referenced by
+.IR aiocbp
+becomes an illegal address prior to asynchronous I/O completion, then
+the behavior is undefined.
+.P
+If the
+\fIaio_fsync\fR()
+function fails or
+.IR aiocbp
+indicates an error condition, data is not guaranteed to have been
+successfully transferred.
+.SH "RETURN VALUE"
+The
+\fIaio_fsync\fR()
+function shall return the value 0 if the I/O operation is successfully
+queued; otherwise, the function shall return the value \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIaio_fsync\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The requested asynchronous operation was not queued due to
+temporary resource limitations.
+.TP
+.BR EBADF
+The
+.IR aio_fildes
+member of the
+.BR aiocb
+structure referenced by the
+.IR aiocbp
+argument is not a valid file descriptor open for writing.
+.TP
+.BR EINVAL
+This implementation does not support synchronized I/O for this file.
+.TP
+.BR EINVAL
+The
+.IR aio_fildes
+member of the
+.BR aiocb
+structure refers to a file on which an
+\fIfsync\fR()
+operation is not possible.
+.TP
+.BR EINVAL
+A value of
+.IR op
+other than O_DSYNC or O_SYNC was specified, or O_DSYNC was specified and
+the implementation does not provide runtime support for the Synchronized
+Input and Output option, or O_SYNC was specified and the implementation
+does not provide runtime support for the File Synchronization option.
+.P
+In the event that any of the queued I/O operations fail,
+\fIaio_fsync\fR()
+shall return the error condition defined for
+\fIread\fR()
+and
+\fIwrite\fR().
+The error is returned in the error status for the asynchronous operation,
+which can be retrieved using
+\fIaio_error\fR().
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIfdatasync\fR\^(\|)",
+.IR "\fIfsync\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<aio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

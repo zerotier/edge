@@ -1,0 +1,323 @@
+'\" et
+.TH SENDMSG "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sendmsg
+\(em send a message on a socket using a message structure
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+.P
+ssize_t sendmsg(int \fIsocket\fP, const struct msghdr *\fImessage\fP, int \fIflags\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsendmsg\fR()
+function shall send a message through a connection-mode or
+connectionless-mode socket. If the socket is a connectionless-mode
+socket, the message shall be sent to the address specified by
+.BR msghdr
+if no pre-specified peer address has been set. If a peer address has
+been pre-specified, either the message shall be sent to the address
+specified in
+.BR msghdr
+(overriding the pre-specified peer address), or the function shall
+return \(mi1 and set
+.IR errno
+to
+.BR [EISCONN] .
+If the socket is connection-mode, the destination address in
+.BR msghdr
+shall be ignored.
+.P
+The
+\fIsendmsg\fR()
+function takes the following arguments:
+.IP "\fIsocket\fR" 12
+Specifies the socket file descriptor.
+.IP "\fImessage\fR" 12
+Points to a
+.BR msghdr
+structure, containing both the destination address and the buffers for
+the outgoing message. The length and format of the address depend on
+the address family of the socket. The
+.IR msg_flags
+member is ignored.
+.IP "\fIflags\fR" 12
+Specifies the type of message transmission. The application may
+specify 0 or the following flag:
+.RS 12 
+.IP MSG_EOR 14
+Terminates a record (if supported by the protocol).
+.IP MSG_OOB 14
+Sends out-of-band data on sockets that support out-of-bound data. The
+significance and semantics of out-of-band data are protocol-specific.
+.IP MSG_NOSIGNAL 14
+Requests not to send the SIGPIPE signal if an attempt to send is made
+on a stream-oriented socket that is no longer connected. The
+.BR [EPIPE] 
+error shall still be returned.
+.RE
+.P
+The
+.IR msg_iov
+and
+.IR msg_iovlen
+fields of
+.IR message
+specify zero or more buffers containing the data to be sent.
+.IR msg_iov
+points to an array of
+.BR iovec
+structures;
+.IR msg_iovlen
+shall be set to the dimension of this array. In each
+.BR iovec
+structure, the
+.IR iov_base
+field specifies a storage area and the
+.IR iov_len
+field gives its size in bytes. Some of these sizes can be zero. The
+data from each storage area indicated by
+.IR msg_iov
+is sent in turn.
+.P
+Successful completion of a call to
+\fIsendmsg\fR()
+does not guarantee delivery of the message. A return value of \(mi1
+indicates only locally-detected errors.
+.P
+If space is not available at the sending socket to hold the message to
+be transmitted and the socket file descriptor does not have O_NONBLOCK
+set, the
+\fIsendmsg\fR()
+function shall block until space is available. If space is not
+available at the sending socket to hold the message to be transmitted
+and the socket file descriptor does have O_NONBLOCK set, the
+\fIsendmsg\fR()
+function shall fail.
+.P
+If the socket protocol supports broadcast and the specified address is
+a broadcast address for the socket protocol,
+\fIsendmsg\fR()
+shall fail if the SO_BROADCAST option is not set for the socket.
+.P
+The socket in use may require the process to have appropriate
+privileges to use the
+\fIsendmsg\fR()
+function.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsendmsg\fR()
+shall return the number of bytes sent. Otherwise, \(mi1 shall
+be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIsendmsg\fR()
+function shall fail if:
+.TP
+.BR EAGAIN " or " EWOULDBLOCK
+.br
+The socket's file descriptor is marked O_NONBLOCK and the requested
+operation would block.
+.TP
+.BR EAFNOSUPPORT
+.br
+Addresses in the specified address family cannot be used with this
+socket.
+.TP
+.BR EBADF
+The
+.IR socket
+argument is not a valid file descriptor.
+.TP
+.BR ECONNRESET
+A connection was forcibly closed by a peer.
+.TP
+.BR EINTR
+A signal interrupted
+\fIsendmsg\fR()
+before any data was transmitted.
+.TP
+.BR EINVAL
+The sum of the
+.IR iov_len
+values overflows an
+.BR ssize_t .
+.TP
+.BR EMSGSIZE
+The message is too large to be sent all at once (as the socket
+requires), or the
+.IR msg_iovlen
+member of the
+.BR msghdr
+structure pointed to by
+.IR message
+is less than or equal to 0 or is greater than
+{IOV_MAX}.
+.TP
+.BR ENOTCONN
+The socket is connection-mode but is not connected.
+.TP
+.BR ENOTSOCK
+The
+.IR socket
+argument does not refer to a socket.
+.TP
+.BR EOPNOTSUPP
+The
+.IR socket
+argument is associated with a socket that does not support one or more
+of the values set in
+.IR flags .
+.TP
+.BR EPIPE
+The socket is shut down for writing, or the socket is connection-mode
+and is no longer connected. In the latter case, and if the socket is of
+type SOCK_STREAM or SOCK_SEQPACKET and the MSG_NOSIGNAL flag is not set,
+the SIGPIPE signal is generated to the calling thread.
+.P
+If the address family of the socket is AF_UNIX, then
+\fIsendmsg\fR()
+shall fail if:
+.TP
+.BR EIO
+An I/O error occurred while reading from or writing to the file
+system.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+pathname in the socket address.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of the pathname does not name an existing file or the path
+name is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix of the pathname in the socket address
+names an existing file that is neither a directory nor a symbolic link
+to a directory, or the pathname in the socket address contains at least
+one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file that
+is neither a directory nor a symbolic link to a directory.
+.br
+.P
+The
+\fIsendmsg\fR()
+function may fail if:
+.TP
+.BR EACCES
+Search permission is denied for a component of the path prefix; or
+write access to the named socket is denied.
+.TP
+.BR EDESTADDRREQ
+.br
+The socket is not connection-mode and does not have its peer address
+set, and no destination address was specified.
+.TP
+.BR EHOSTUNREACH
+.br
+The destination host cannot be reached (probably because the host is
+down or a remote router cannot reach it).
+.TP
+.BR EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.BR EISCONN
+A destination address was specified and the socket is already
+connected.
+.TP
+.BR ENETDOWN
+The local network interface used to reach the destination is down.
+.TP
+.BR ENETUNREACH
+.br
+No route to the network is present.
+.TP
+.BR ENOBUFS
+Insufficient resources were available in the system to perform the
+operation.
+.TP
+.BR ENOMEM
+Insufficient memory was available to fulfill the request.
+.P
+If the address family of the socket is AF_UNIX, then
+\fIsendmsg\fR()
+may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the pathname in
+the socket address.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+Done.
+.SH "APPLICATION USAGE"
+The
+\fIselect\fR()
+and
+\fIpoll\fR()
+functions can be used to determine when it is possible to send more
+data.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIgetsockopt\fR\^(\|)",
+.IR "\fIpoll\fR\^(\|)",
+.IR "\fIpselect\fR\^(\|)",
+.IR "\fIrecv\fR\^(\|)",
+.IR "\fIrecvfrom\fR\^(\|)",
+.IR "\fIrecvmsg\fR\^(\|)",
+.IR "\fIsend\fR\^(\|)",
+.IR "\fIsendto\fR\^(\|)",
+.IR "\fIsetsockopt\fR\^(\|)",
+.IR "\fIshutdown\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_socket.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

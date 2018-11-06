@@ -1,0 +1,225 @@
+'\" et
+.TH RAND "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+rand,
+rand_r,
+srand
+\(em pseudo-random number generator
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdlib.h>
+.P
+int rand(void);
+int rand_r(unsigned *\fIseed\fP);
+void srand(unsigned \fIseed\fP);
+.fi
+.SH DESCRIPTION
+For
+\fIrand\fR()
+and
+\fIsrand\fR():
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIrand\fR()
+function shall compute a sequence of pseudo-random integers in the
+range [0,\c
+{RAND_MAX}]
+with a period of at least 2\u\s-332\s0\d.
+.P
+The
+\fIrand\fR()
+function need not be thread-safe.
+.P
+The
+\fIrand_r\fR()
+function shall compute a sequence of pseudo-random integers in
+the range [0,\c
+{RAND_MAX}].
+(The value of the
+{RAND_MAX}
+macro shall be at least 32\|767.)
+.P
+If
+\fIrand_r\fR()
+is called with the same initial value for the object pointed to by
+.IR seed
+and that object is not modified between successive returns and calls to
+\fIrand_r\fR(),
+the same sequence shall be generated.
+.P
+The
+\fIsrand\fR()
+function uses the argument as a seed for a new sequence of
+pseudo-random numbers to be returned by subsequent calls to
+\fIrand\fR().
+If
+\fIsrand\fR()
+is then called with the same seed value, the sequence of pseudo-random
+numbers shall be repeated. If
+\fIrand\fR()
+is called before any calls to
+\fIsrand\fR()
+are made, the same sequence shall be generated as when
+\fIsrand\fR()
+is first called with a seed value of 1.
+.P
+The implementation shall behave as if no function defined in this volume of POSIX.1\(hy2008
+calls
+\fIrand\fR()
+or
+\fIsrand\fR().
+.SH "RETURN VALUE"
+The
+\fIrand\fR()
+function shall return the next pseudo-random number in the sequence.
+.P
+The
+\fIrand_r\fR()
+function shall return a pseudo-random integer.
+.P
+The
+\fIsrand\fR()
+function shall not return a value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Generating a Pseudo-Random Number Sequence"
+.P
+The following example demonstrates how to generate a sequence of
+pseudo-random numbers.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <stdlib.h>
+\&...
+    long count, i;
+    char *keystr;
+    int elementlen, len;
+    char c;
+\&...
+/* Initial random number generator. */
+    srand(1);
+.P
+    /* Create keys using only lowercase characters */
+    len = 0;
+    for (i=0; i<count; i++) {
+        while (len < elementlen) {
+            c = (char) (rand() % 128);
+            if (islower(c))
+                keystr[len++] = c;
+        }
+.P
+        keystr[len] = '\e0';
+        printf("%s Element%0*ld\en", keystr, elementlen, i);
+        len = 0;
+    }
+.fi \fR
+.P
+.RE
+.SS "Generating the Same Sequence on Different Machines"
+.P
+The following code defines a pair of functions that could be
+incorporated into applications wishing to ensure that the same sequence
+of numbers is generated across different machines.
+.sp
+.RS 4
+.nf
+\fB
+static unsigned long next = 1;
+int myrand(void)  /* RAND_MAX assumed to be 32767. */
+{
+    next = next * 1103515245 + 12345;
+    return((unsigned)(next/65536) % 32768);
+}
+.P
+void mysrand(unsigned seed)
+{
+    next = seed;
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIdrand48\fR()
+function provides a much more elaborate random number generator.
+.P
+The limitations on the amount of state that can be carried between one
+function call and another mean the
+\fIrand_r\fR()
+function can never be implemented in a way which satisfies all of the
+requirements on a pseudo-random number generator. Therefore this
+function should be avoided whenever non-trivial requirements (including
+safety) have to be fulfilled.
+.SH RATIONALE
+The ISO\ C standard
+\fIrand\fR()
+and
+\fIsrand\fR()
+functions allow per-process pseudo-random streams shared by all
+threads. Those two functions need not change, but there
+has to be mutual-exclusion that prevents interference between two
+threads concurrently accessing the random number generator.
+.P
+With regard to
+\fIrand\fR(),
+there are two different behaviors that may be wanted in a multi-threaded
+program:
+.IP " 1." 4
+A single per-process sequence of pseudo-random numbers that is shared
+by all threads that call
+\fIrand\fR()
+.IP " 2." 4
+A different sequence of pseudo-random numbers for each thread that
+calls
+\fIrand\fR()
+.P
+This is provided by the modified thread-safe function based on whether
+the seed value is global to the entire process or local to each
+thread.
+.P
+This does not address the known deficiencies of the
+\fIrand\fR()
+function implementations, which have been approached by maintaining
+more state. In effect, this specifies new thread-safe forms of a
+deficient function.
+.SH "FUTURE DIRECTIONS"
+The
+\fIrand_r\fR()
+function may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIdrand48\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdlib.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

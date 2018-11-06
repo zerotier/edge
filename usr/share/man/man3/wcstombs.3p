@@ -1,0 +1,111 @@
+'\" et
+.TH WCSTOMBS "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+wcstombs
+\(em convert a wide-character string to a character string
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdlib.h>
+.P
+size_t wcstombs(char *restrict \fIs\fP, const wchar_t *restrict \fIpwcs\fP,
+    size_t \fIn\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIwcstombs\fR()
+function shall convert the sequence of wide-character codes that are
+in the array pointed to by
+.IR pwcs
+into a sequence of characters that begins in the initial shift state
+and store these characters into the array pointed to by
+.IR s ,
+stopping if a character would exceed the limit of
+.IR n
+total bytes or if a null byte is stored. Each wide-character code
+shall be converted as if by a call to
+\fIwctomb\fR(),
+except that the shift state of
+\fIwctomb\fR()
+shall not be affected.
+.P
+The behavior of this function shall be affected by the
+.IR LC_CTYPE
+category of the current locale.
+.P
+No more than
+.IR n
+bytes shall be modified in the array pointed to by
+.IR s .
+If copying takes place between objects that overlap, the behavior is
+undefined.
+If
+.IR s
+is a null pointer,
+\fIwcstombs\fR()
+shall return the length required to convert the entire array
+regardless of the value of
+.IR n ,
+but no values are stored.
+.SH "RETURN VALUE"
+If a wide-character code is encountered that does not correspond to a
+valid character (of one or more bytes each),
+\fIwcstombs\fR()
+shall return (\fBsize_t\fP)\(mi1. Otherwise,
+\fIwcstombs\fR()
+shall return the number of bytes stored in the character array, not
+including any terminating null byte. The array shall not be
+null-terminated if the value returned is
+.IR n .
+.SH ERRORS
+The
+\fIwcstombs\fR()
+function shall fail if:
+.TP
+.BR EILSEQ
+A wide-character code does not correspond to a valid character.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImblen\fR\^(\|)",
+.IR "\fImbtowc\fR\^(\|)",
+.IR "\fImbstowcs\fR\^(\|)",
+.IR "\fIwctomb\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdlib.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

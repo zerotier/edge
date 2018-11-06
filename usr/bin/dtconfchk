@@ -1,0 +1,1638 @@
+#!/usr/bin/perl
+#
+# Copyright 2004-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+#
+# dtconfchk
+#
+#	This script performs sanity checks on a DNSSEC-Tools configuration file.
+#
+
+use strict;
+
+use Getopt::Long qw(:config no_ignore_case_always);
+
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::defaults;
+
+#
+# Version information.
+#
+my $NAME   = "dtconfchk";
+my $VERS   = "$NAME version: 2.1.0";
+my $DTVERS = "DNSSEC-Tools Version: 2.1";
+
+#######################################################################
+
+#
+# Data required for command line options.
+#
+my %options = ();			# Filled option array.
+my @opts =
+(
+	"expert",			# Expert mode.
+	"quiet",			# Give no output.
+	"summary",			# Give only a summary output line.
+	"verbose",			# Give verbose output.
+	"Version",			# Display the version number.
+	"help",				# Give a usage message and exit.
+);
+
+#######################################################################
+
+#
+# List of valid encryption algorithms and length ranges.
+# (These values are taken from experimenting with dnssec-keygen.)
+#
+my @algorithms =
+(
+	"rsasha1",
+	"rsasha256",
+	"rsasha512",
+	"rsamd5",
+	"dsa",
+	"dh",
+	"hmac-md5",
+	"nsec3rsasha1"
+);
+
+my %length_low =
+(
+	"rsasha1"	=> 512,
+	"rsasha256"	=> 512,
+	"rsasha512"	=> 1024,
+	"nsec3rsasha1"	=> 512,
+	"rsamd5"	=> 512,
+	"dsa"		=> 512,
+	"dh"		=> 128,
+	"hmac-md5"	=> 1
+);
+
+my %length_high =
+(
+	"rsasha1"	=> 4096,
+	"rsasha256"	=> 4096,
+	"rsasha512"	=> 4096,
+	"nsec3rsasha1"	=> 4096,
+	"rsamd5"	=> 4096,
+	"dsa"		=> 1024,
+	"dh"		=> 4096,
+	"hmac-md5"	=> 512
+);
+
+my $MINEND = ((60*60) * 2);			# Minimum endtime (two hours.)
+
+my $MINSLEEP = 60;				# Minimum realistic sleeptime.
+
+my $MAXNSEC3ITER = 65535;			# Maximum iterations for NSEC3.
+
+#######################################################################
+
+my $expert	= 0;			# Don't do non-expert checks.
+my $quiet	= 0;			# Give no output.
+my $summary	= 0;			# Give only a summary output line.
+my $verbose	= 0;			# Give lotsa output.
+my $version	= 0;			# Display the version number.
+
+my $errs	= 0;			# Error count.
+
+my %dtconf;				# Config file contents.
+
+main();
+exit($errs);
+
+#-----------------------------------------------------------------------------
+# Routine:	main()
+#
+# Purpose:	Staging area.
+#
+sub main()
+{
+	my $conffile;			# The config file to check.
+
+	#
+	# Get our options.
+	#
+	doopts();
+
+	#
+	# Get the config filename to check.
+	#
+	if($ARGV[0] ne "")
+	{
+		$conffile = $ARGV[0];
+	}
+	else
+	{
+		$conffile = getconffile();
+	}
+
+	#
+	# Maybe print the name of the config file we're checking.
+	#
+	if($verbose && !$quiet && !$summary)
+	{
+		print "checking config file \"$conffile\"\n";
+	}
+
+	#
+	# Read the config file.
+	#
+	%dtconf = parseconfig($conffile);
+	if(%dtconf == 0)
+	{
+		err("config file \"$conffile\" not parsed\n");
+		exit(-1);
+	}
+
+	#
+	# Check the key-related records.
+	#
+	key_checks();
+
+	#
+	# Check the zonesign-related records.
+	#
+	zonesign_checks();
+
+	#
+	# Check the file-specific records.
+	#
+	check_files();
+
+	#
+	# Check the rollerd records.
+	#
+	check_rollerd();
+
+	#
+	# Check the nsec3 records.
+	#
+	check_nsec3();
+
+	#
+	# Check the miscellaneous records.
+	#
+	check_misc();
+
+	#
+	# Give an exit message that depends on the error count.
+	#
+	if($errs == 0)
+	{
+		sqprint("$conffile is valid\n");
+	}
+	else
+	{
+		sqprint("$conffile is invalid:  $errs errors\n") if($errs > 1);
+		sqprint("$conffile is invalid:  $errs error\n")  if($errs == 1);
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	doopts()
+#
+# Purpose:	This routine deals with the command's options.
+#
+sub doopts
+{
+	#
+	# Check our options.
+	#
+	GetOptions(\%options,@opts) || usage();
+	$expert	 = $options{'expert'};
+	$verbose = $options{'verbose'};
+	$version = $options{'Version'};
+	$summary = $options{'summary'};
+	$quiet	 = $options{'quiet'};
+
+	#
+	# Show the version number if requested
+	#
+	version() if(defined($options{'Version'}));
+	usage() if(defined($options{'help'}));
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	key_checks()
+#
+# Purpose:	Check key-related fields:  algorithm, count, and key length.
+#
+sub key_checks
+{
+	my $algorithm;				# Encryption algorithm.
+	my $ksklen;				# KSK length.
+	my $zsklen;				# ZSK length.
+	my $found = 0;				# Algorithm-found flag.
+
+	my $lowval;				# Low key length.
+	my $highval;				# High key length.
+
+	my $ksklife;				# Lifespan of KSK.
+	my $zskcnt;				# Count of ZSKs.
+	my $zsklife;				# Lifespan of ZSK.
+	my $lifemax;				# Max. key life.
+	my $lifemin;				# Min. key life.
+
+	$lifemax = dnssec_tools_default('lifespan-max') || 0;
+	$lifemin = dnssec_tools_default('lifespan-min') || 0;
+
+	#
+	# Get the key-related config entries.
+	#
+	$algorithm = lc($dtconf{'algorithm'});
+	$ksklife   = $dtconf{'ksklife'};
+	$zsklife   = $dtconf{'zsklife'};
+	$zskcnt	   = $dtconf{'zskcount'};
+
+	#
+	# Use "ksklength/zsklength" or "ksklen/zsklen".
+	#
+	$ksklen	   = $dtconf{'ksklength'};
+	if(!defined($dtconf{'ksklength'}))
+	{
+		$ksklen	   = $dtconf{'ksklen'};
+		$dtconf{'ksklength'} = $ksklen;
+	}
+	$zsklen	   = $dtconf{'zsklength'};
+	if(!defined($dtconf{'zsklength'}))
+	{
+		$zsklen	   = $dtconf{'zsklen'};
+		$dtconf{'zsklength'} = $zsklen;
+	}
+
+	#
+	# If the key's encryption algorithm isn't defined here, then we
+	# can't check it or any of the encryption lengths.
+	#
+	if(!defined($algorithm))
+	{
+		prt(0,"algorithm not defined; can't check length values");
+		$errs++;
+	}
+	else
+	{
+		#
+		# Search the algorithm list for this key's algorithm.  If we
+		# find it, we'll mark that it's good.
+		#
+		if(defined($algorithm))
+		{
+			foreach my $alg (@algorithms)
+			{
+				if($alg eq $algorithm)
+				{
+					$found = 1;
+					last;
+				}
+			}
+		}
+
+		#
+		# If the key's encryption algorithm is bad, we'll give an error
+		# message.  If it's okay, we'll make sure the length is in the
+		# range of valid lengths for the key type.
+		#
+		if(!$found)
+		{
+			prt(0,"invalid algorithm:  \"$algorithm\"; can't check key-length values");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"valid algorithm is $algorithm");
+
+			#
+			# Get the key length range for this algorithm.
+			#
+			$lowval  = $length_low{$algorithm};
+			$highval = $length_high{$algorithm};
+
+			#
+			# Ensure the ZSK length is in algorithm's value range.
+			#
+			if(!defined($dtconf{'ksklength'}))
+			{
+				prt(0,"ksklength not defined");
+				$errs++;
+			}
+			else
+			{
+				prt(1,"ksklength is $ksklen");
+
+				#
+				# Ensure the KSK length is greater than the
+				# algorithm's low value.
+				#
+				if($ksklen < $lowval)
+				{
+					prt(0,"invalid ksklength:  length ($ksklen) < minimum ($lowval) for $algorithm");
+					$errs++;
+				}
+
+				#
+				# Ensure the KSK length is greater than the
+				# algorithm's high value.
+				#
+				if($ksklen > $highval)
+				{
+					prt(0,"invalid ksklength:  length ($ksklen) > maximum ($highval) for $algorithm");
+					$errs++;
+				}
+			}
+
+			#
+			# Ensure the ZSK length is in algorithm's value range.
+			#
+			if(!defined($dtconf{'zsklength'}))
+			{
+				prt(0,"zsklength not defined");
+				$errs++;
+			}
+			else
+			{
+				prt(1,"zsklength is $zsklen");
+
+				#
+				# Ensure the ZSK length is greater than the
+				# algorithm's low value.
+				#
+				if($zsklen < $lowval)
+				{
+					prt(0,"invalid zsklength:  length ($zsklen) < minimum ($lowval) for $algorithm");
+					$errs++;
+				}
+
+				#
+				# Ensure the ZSK length is greater than the
+				# algorithm's high value.
+				#
+				if($zsklen > $highval)
+				{
+					prt(0,"invalid zsklength:  length ($zsklen) > maximum ($highval) for $algorithm");
+					$errs++;
+				}
+			}
+		}
+	}
+
+	#
+	# Ensure the KSK life is in a lifespan value range.  This set of
+	# checks is only performed if the -expert mode wasn't given.
+	#
+	if(!$expert)
+	{
+		if(!defined($ksklife))
+		{
+			prt(1,"ksklife not defined");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"ksklife is $ksklife");
+
+			#
+			# Ensure the KSK lifespan is greater than the suggested
+			# minimum lifespan.
+			#
+			if($ksklife < $lifemin)
+			{
+				prt(0,"invalid ksklife:  lifespan ($ksklife) < minimum lifespan ($lifemin)");
+				$errs++;
+			}
+
+			#
+			# Ensure the KSK lifespan is less than the suggested
+			# maximum lifespan.
+			#
+			if(($ksklife > $lifemax) && ($lifemax > 0))
+			{
+				prt(0,"invalid ksklife:  lifespan ($ksklife) > maximum lifespan ($lifemax)");
+				$errs++;
+			}
+		}
+	}
+
+	#
+	# Ensure the ZSK life is in a lifespan value range.  This set of
+	# checks is only performed if the -expert mode wasn't given.
+	#
+	if(!$expert)
+	{
+		if(!defined($zsklife))
+		{
+			prt(1,"zsklife not defined");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"zsklife is $zsklife");
+
+			#
+			# Ensure the ZSK lifespan is greater than the suggested
+			# minimum lifespan.
+			#
+			if($zsklife < $lifemin)
+			{
+				prt(0,"invalid zsklife:  lifespan ($zsklife) < minimum lifespan ($lifemin)");
+				$errs++;
+			}
+
+			#
+			# Ensure the ZSK lifespan is less than the suggested
+			# maximum lifespan.
+			#
+			if(($zsklife > $lifemax) && ($lifemax > 0))
+			{
+				prt(0,"invalid zsklife:  lifespan ($zsklife) > maximum lifespan ($lifemax)");
+				$errs++;
+			}
+		}
+	}
+
+	#
+	# Ensure the ZSK count is positive.
+	#
+	if(!defined($zskcnt))
+	{
+		prt(0,"zskcount not defined");
+		$errs++;
+	}
+	else
+	{
+		#
+		# Ensure the ZSK count is positive.
+		#
+		if($zskcnt < 1)
+		{
+			prt(0,"invalid zskcount:  ZSK count ($zskcnt) < 1");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"zskcount is $zskcnt");
+		}
+
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	zonesign_checks()
+#
+# Purpose:	Check the zonesign-related fields.
+#
+sub zonesign_checks
+{
+	my $endtime;				# Zone end-time.
+	my $etcnt;				# Count of seconds in endtime.
+
+	#
+	# Get the zone-related configuration entries.
+	#
+	$endtime = $dtconf{'endtime'};
+
+	#
+	# Check that the endtime is defined here.
+	#
+	if(!defined($endtime))
+	{
+		prt(0,"endtime not defined");
+		$errs++;
+		return;
+	}
+
+	#
+	# Get the endtime seconds from the endtime.
+	#
+	$endtime =~ /\+([0-9]+)/;
+	$etcnt = $1;
+
+	#
+	# Give the appropriate message, depending on if the encryption
+	# time is acceptable or not.
+	#
+	if($etcnt < $MINEND)
+	{
+		prt(0,"endtime ($endtime) < minimum realistic endtime ($MINEND)");
+		$errs++;
+	}
+	else
+	{
+		prt(1,"endtime ($endtime) acceptable");
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	check_rollerd()
+#
+# Purpose:	Check the file configuration fields.
+#
+sub check_rollerd
+{
+	my $loadzone;				# Loadzone flag for rollerd.
+	my $logfile;				# Logfile for rollerd.
+	my $loglevel;				# Log level for rollerd.
+	my $logtz;				# Log timezone for rollerd.
+	my $phasemsg;				# Phase message length.
+	my $sleep;				# Sleep time for rollerd.
+	my $username;				# Username for rollerd.
+	my $zoneerrs;				# Maximum zone error count.
+
+	my $uid;				# Username's uid.
+
+	#
+	# Get rollerd's configuration values.
+	#
+	$loadzone = $dtconf{"roll_loadzone"};
+	$logfile  = $dtconf{"roll_logfile"};
+	$loglevel = $dtconf{"roll_loglevel"};
+	$logtz	  = $dtconf{"log_tz"};
+	$phasemsg = $dtconf{"roll_phasemsg"};
+	$sleep	  = $dtconf{"roll_sleeptime"};
+	$username = $dtconf{"roll_username"};
+	$zoneerrs = $dtconf{"zone_errors"};
+
+	#
+	# Ensure rollerd's loadzone flag is an acceptable boolean.
+	#
+	bool_check('autosign');
+
+	#
+	# Ensure rollerd's loadzone flag is an acceptable boolean.
+	#
+	bool_check('roll_loadzone');
+
+	#
+	# Ensure rollerd's logfile (if it exists) is a regular file.
+	#
+	if(-e $logfile)
+	{
+		if(! -f $logfile)
+		{
+			prt(0,"invalid file type for logfile ($logfile)");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"existing rollover logfile ($logfile) acceptable");
+		}
+	}
+	else
+	{
+		prt(1,"nonexistent rollover logfile ($logfile) acceptable");
+	}
+
+	#
+	# Give the appropriate message, depending on if rollerd's log-
+	# level is acceptable or not.
+	#
+	if(($loglevel =~ /^tmi$/i)	|| ($loglevel == 1)	||
+	   ($loglevel =~ /^expire$/i)	|| ($loglevel == 3)	||
+	   ($loglevel =~ /^info$/i)	|| ($loglevel == 4)	||
+	   ($loglevel =~ /^phase$/i)	|| ($loglevel == 6)	||
+	   ($loglevel =~ /^err$/i)	|| ($loglevel == 8)	||
+	   ($loglevel =~ /^fatal$/i)	|| ($loglevel == 9))
+	{
+		prt(1,"rollover loglevel ($loglevel) acceptable");
+	}
+	else
+	{
+		prt(0,"invalid rollover loglevel ($loglevel)");
+		$errs++;
+	}
+
+	#
+	# Ensure the log timezone is acceptable.
+	#
+	if(($logtz =~ /^gmt$/i)	|| ($logtz =~ /^local$/i))
+	{
+		prt(1,"rollover logtz ($logtz) acceptable");
+	}
+	else
+	{
+		prt(0,"invalid rollover logtz ($logtz); must be either 'gmt' or 'local'");
+		$errs++;
+	}
+
+	#
+	# Ensure the phase-message length value is acceptable.
+	#
+	if(($phasemsg =~ /^long$/i) ||
+	   ($phasemsg =~ /^short$/i))
+	{
+		prt(1,"rollover phasemsg ($phasemsg) acceptable");
+	}
+	else
+	{
+		prt(0,"invalid rollover phasemsg ($phasemsg)");
+		$errs++;
+	}
+
+	#
+	# Give the appropriate message, depending on if rollerd's sleep-
+	# time is acceptable or not.
+	#
+	if($sleep < $MINSLEEP)
+	{
+		prt(0,"rollover sleeptime ($sleep) < minimum realistic sleeptime ($MINSLEEP)");
+		$errs++;
+	}
+	else
+	{
+		prt(1,"rollover sleeptime ($sleep) acceptable");
+	}
+
+	#
+	# If a username for rollerd was specified, verify that it actually
+	# exists.  This will allow for both usernames and uids, but the uids
+	# must translate to known usernames.
+	#
+	if($username ne '')
+	{
+		my $uname = $username;			# Translated username.
+
+		if($username =~ /^[0-9]+$/)
+		{
+			$uname = getpwuid($username);
+		}
+
+		$uid = getpwnam($uname);
+		if($uid eq '')
+		{
+			prt(0,"rollerd username is unknown \"$username\"");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"rollover username ($username) acceptable");
+		}
+	}
+
+	#
+	# Give the appropriate message, depending on if rollerd's zone_errors
+	# count is acceptable or not.
+	#
+	if(defined($zoneerrs))
+	{
+		if($zoneerrs eq '')
+		{
+			prt(0,"rollover zone-error count is empty");
+			$errs++;
+		}
+		elsif($zoneerrs < 0)
+		{
+			prt(0,"rollover zone-error count ($zoneerrs) < 0");
+			$errs++;
+		}
+		else
+		{
+			my $ze = $zoneerrs;	# Copy of zone error count.
+
+			$ze =~ s/[0-9]//g;
+			if($ze eq '')
+			{
+				prt(1,"rollover zone-error count ($zoneerrs) acceptable");
+			}
+			else
+			{
+				prt(0,"rollover zone-error count ($zoneerrs) must be numeric and 0 or greater");
+				$errs++;
+			}
+		}
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	check_nsec3()
+#
+# Purpose:	Check the NSEC3 fields.
+#
+sub check_nsec3
+{
+	my $iter;				# Loadzone flag for rollerd.
+	my $salt;				# Logfile for rollerd.
+
+	#
+	# Get the NSEC3 configuration values.
+	#
+	$iter = $dtconf{"nsec3iter"};
+	$salt = $dtconf{"nsec3salt"};
+
+	#
+	# Ensure the usensec3 and nsec3optout flags are valid booleans.
+	#
+	bool_check('usensec3')	  if(defined($dtconf{'usensec3'}));
+	bool_check('nsec3optout') if(defined($dtconf{'nsec3optout'}));
+
+	#
+	# Check the NSEC3 iteration count.
+	#
+	if(defined($iter))
+	{
+		#
+		# Ensure the NSEC3 iteration count is positive.
+		#
+		if($iter < 1)
+		{
+			prt(0,"NSEC3 iterations must be positive ($iter)");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"NSEC3 iterations ($iter) acceptable");
+		}
+
+		#
+		# Ensure the NSEC3 iteration count is not too big.
+		#
+		if($iter > $MAXNSEC3ITER)
+		{
+			prt(0,"NSEC3 iterations is too big ($iter > $MAXNSEC3ITER)");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"NSEC3 iterations ($iter) acceptable");
+		}
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	check_files()
+#
+# Purpose:	Check the file configuration fields.
+#
+sub check_files
+{
+
+	#
+	# Check the DNSSEC-Tools commands.
+	#
+	file_check("genkrf","x");
+	file_check("keyarch","x");
+	file_check("rollchk","x");
+	file_check("rollctl","x");
+	file_check("zonesigner","x");
+
+	#
+	# Check the some DNSSEC-Tools files and directories.
+	#
+	file_check("roll_logfile","f");
+	file_check("taresolvconf","f");
+	file_check("tatmpdir","d");
+
+	#
+	# Check the BIND commands.
+	#
+	file_check("keygen","x");
+	file_check("rndc","x");
+	file_check("zonecheck","x");
+	file_check("zonesign","x");
+
+	#
+	# Check the user-defined KSK phase commands.
+	#
+	phasecmd_check("prog-ksk1");
+	phasecmd_check("prog-ksk2");
+	phasecmd_check("prog-ksk3");
+	phasecmd_check("prog-ksk4");
+	phasecmd_check("prog-ksk5");
+	phasecmd_check("prog-ksk6");
+	phasecmd_check("prog-ksk7");
+
+	#
+	# Check the user-defined normal phase commands.
+	#
+	phasecmd_check("prog-normal");
+
+	#
+	# Check the user-defined ZSK phase commands.
+	#
+	phasecmd_check("prog-zsk1");
+	phasecmd_check("prog-zsk2");
+	phasecmd_check("prog-zsk3");
+	phasecmd_check("prog-zsk4");
+
+	#
+	# Check the other files.
+	#
+	file_check("random","c");
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	check_misc()
+#
+# Purpose:	Check several miscellaneous fields.
+#
+sub check_misc
+{
+	my $admin;				# Administrator's email address.
+	my $savekeys;				# Save-old-keys flag.
+	my $zparser;				# Parser module for zone files.
+
+	#
+	# Check some boolean flags.
+	#
+	bool_check('entropy_msg');
+	bool_check('savekeys');
+	bool_check('usegui');
+
+	#
+	# Check if there's an admin-email field.
+	#
+	if(!defined($dtconf{'admin-email'}))
+	{
+		prt(0,"admin-email is not defined");
+		$errs++;
+	}
+	else
+	{
+		$admin = $dtconf{'admin-email'};
+		if($admin eq "")
+		{
+			prt(0,"admin-email is defined but is null");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"admin-email is defined and non-null");
+		}
+	}
+
+	#
+	# If savekeys is on, check that archdir is set to a directory.
+	#
+	$savekeys = $dtconf{'savekeys'};
+	if($savekeys eq "1")
+	{
+		my $archdir = $dtconf{'archivedir'};
+
+		if(defined($archdir) && ($archdir ne ""))
+		{
+#			$archdir = $dtconf{'archivedir'};
+			if(-d $archdir)
+			{
+				prt(1,"$archdir is an existing directory");
+			}
+			elsif (-e $archdir)
+			{
+				prt(0,"archivedir $archdir exists, but is not a directory");
+				$errs++;
+			}
+                        else
+                        {
+                                prt(0,"archivedir $archdir does not exist");
+                                $errs++;
+                        }
+		}
+		else
+		{
+			prt(0,"savekeys is set on, but no archive directory is specified");
+			$errs++;
+		}
+	}
+
+	#
+	# If zonefile-parser is set, check that the module is require-able.
+	#
+	if(defined($dtconf{'zonefile-parser'}))
+	{
+		$zparser = $dtconf{'zonefile-parser'};
+		eval "require $zparser";
+
+		if($@)
+		{
+			prt(0,"zonefile parser $zparser not usable");
+			$errs++;
+		}
+		else
+		{
+			prt(1,"zonefile parser $zparser is usable");
+		}
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	file_check()
+#
+# Purpose:	Front-end for file checks.  This checks the field existence
+#		in the config data, then runs the actual check.
+#
+sub file_check
+{
+	my $field = shift;			# Field to check.
+	my $ftype = shift;			# Type of file.
+	my $fname;				# Name of file to check.
+
+	$fname	= $dtconf{"$field"};
+
+	#
+	# If the field isn't defined, we'll return.
+	#
+	if(!defined($fname))
+	{
+		prt(1,"$field not defined");
+		return;
+	}
+
+	#
+	# Do the actual file checks.
+	#
+	real_file_check($field,$fname,$ftype);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	real_file_check()
+#
+# Purpose:	Check the file fields:  ensure that the file exists and check
+#		some basic file-specific data.
+#
+sub real_file_check
+{
+	my $field = shift;			# Field being checked.
+	my $fname = shift;			# Name of file to check.
+	my $ftype = shift;			# Type of file.
+
+	#
+	# If the filename isn't an absolute path, then we'll stop
+	# checking here.
+	#
+	if($fname !~ /^\//)
+	{
+		prt(1,"no further checks for $field file $fname");
+		return;
+	}
+
+	#
+	# Ensure the file exists.
+	#
+	if(! -e $fname)
+	{
+		prt(0,"$field file $fname does not exist");
+		$errs++;
+		return;
+	}
+
+	#
+	# Check some data about this file:
+	#
+	#	f - regular file
+	#	d - directory
+	#	x - regular file that must be executable
+	#	c - character device file that must be readable
+	#
+	if($ftype eq "f")
+	{
+		if(-f $fname)
+		{
+			prt(1,"$field file $fname is a regular file");
+		}
+		else
+		{
+			prt(0,"$field file $fname is not a regular file");
+			$errs++;
+		}
+	}
+	elsif($ftype eq "d")
+	{
+		if(-d $fname)
+		{
+			prt(1,"$field file $fname is a directory");
+		}
+		else
+		{
+			prt(0,"$field file $fname is not a directory");
+			$errs++;
+		}
+		if(-x $fname)
+		{
+			prt(1,"$field file $fname is an executable directory");
+		}
+		else
+		{
+			prt(0,"$field file $fname is not an executable directory");
+			$errs++;
+		}
+	}
+	elsif($ftype eq "x")
+	{
+		if(-f $fname)
+		{
+			prt(1,"$field file $fname is a regular file");
+		}
+		else
+		{
+			prt(0,"$field file $fname is not a regular file");
+			$errs++;
+		}
+		if(-x $fname)
+		{
+			prt(1,"$field file $fname is an executable file");
+		}
+		else
+		{
+			prt(0,"$field file $fname is not an executable file");
+			$errs++;
+		}
+	}
+	elsif($ftype eq "c")
+	{
+		if(-c $fname)
+		{
+			prt(1,"$field file $fname is a character device file");
+		}
+		else
+		{
+			prt(0,"$field file $fname is not a character device file");
+			$errs++;
+		}
+		if(-r $fname)
+		{
+			prt(1,"$field file $fname is a readable file");
+		}
+		else
+		{
+			prt(0,"$field file $fname is not a readable file");
+			$errs++;
+		}
+	}
+
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	bool_check()
+#
+# Purpose:	Checks a boolean for good values (0/no/n/f/false or
+#		1/yes/y/t/true.)
+#
+sub bool_check
+{
+	my $label = shift;				# Label to check.
+	my $val;					# Value of label.
+
+	#
+	# Don't check values of undefined labels.
+	#
+	if(!defined($dtconf{$label}))
+	{
+		prt(1,"$label not defined in config file");
+		return;
+	}
+
+	#
+	# Convert the label's value into a boolean and check it for validity.
+	#
+	$val = $dtconf{$label};
+	if(($val ne "0")	&& ($val ne "1")	&&
+	   ($val !~ /^no$/i) 	&& ($val !~ /^n$/i)	&&
+	   ($val !~ /^false$/i)	&& ($val !~ /^f$/i)	&&
+	   ($val !~ /^yes$/i)	&& ($val !~ /^y$/i)	&&
+	   ($val !~ /^true$/i)	&& ($val !~ /^t$/i))
+	{
+		prt(0,"$label flag has unrecognized value  ($val)");
+		$errs++;
+	}
+	else
+	{
+		prt(1,"$label ($val) acceptable");
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	phasecmd_check()
+#
+# Purpose:	Check the named phase-command field.  If it exists, the
+#		command list is checked for validity.
+#
+sub phasecmd_check
+{
+	my $phase = shift;				# Phase to check.
+	my $cmds;					# Command list string.
+	my @cmds;					# Command list.
+
+	#
+	# Return if the field isn't defined.
+	#
+	$cmds = $dtconf{"$phase"};
+	if(!defined($cmds))
+	{
+		prt(1,"$phase not defined");
+		return;
+	}
+
+	#
+	# Break the command string into a list.
+	#
+	@cmds = split /!/, $cmds;
+
+	#
+	# Check each element of the command list.  We're only looking at the
+	# command portion of each list element, not the argument and options.
+	#
+	foreach my $cmd (@cmds)
+	{
+		#
+		# Strip off leading and trailing blanks, then just get the
+		# command name.  Arguments and options are ignored.
+		#
+		$cmd =~ s/^\s*([^\s]+)\s.*$/$1/;
+
+		#
+		# The default command is always fine.
+		#
+		next if($cmd =~ /^default$/i);
+
+		#
+		# The null command isn't.
+		#
+		if($cmd eq '')
+		{
+			prt(0,"$phase has a null command");
+			$errs++;
+			next;
+		}
+
+		#
+		# Run the file checks.
+		#
+		real_file_check($phase,$cmd,"x");
+	}
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	sqprint()
+#
+# Purpose:	Prints a line of output if -quiet wasn't given or if
+#		-summary was given.
+#
+#		This is intended to be used only by the final summarizing
+#		output lines of dtconfchk.
+#
+sub sqprint
+{
+	my $line = shift;
+
+	print $line if(!$quiet || $summary);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	prt()
+#
+# Purpose:	Prints a line of output if -verbose was given.
+#
+sub prt
+{
+	my $good = shift;		# Flag indicating success/failure.
+	my $line = shift;		# Text to be printed.
+	my $prefix = "";		# Success/failure prefix (for verbose.)
+
+	#
+	# If -quiet or -summary was given, we won't print anything.
+	#
+	return if($quiet || $summary);
+
+	#
+	# Don't print if this was a success message and -verbose wasn't given.
+	#
+	return if($good && !$verbose);
+
+	#
+	# Set a prefix if we're in verbose mode.  Otherwise, we're in normal
+	# mode and have gotten an error.  Since only errors will be printed,
+	# we don't need the prefix.
+	#
+	if($verbose)
+	{
+		$prefix = $good ? '+ ' : '- ';
+	}
+
+	print "$prefix$line\n";
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	err()
+#
+# Purpose:	Prints a line of output if -quiet wasn't given.
+#
+sub err
+{
+	my $line = shift;
+
+	print STDERR $line if(!$quiet);
+}
+
+#----------------------------------------------------------------------
+# Routine:	version()
+#
+# Purpose:	Print the version number(s) and exit.
+#
+sub version
+{
+	print STDERR "$VERS\n";
+	print STDERR "$DTVERS\n";
+
+	exit(0);
+}
+
+#-----------------------------------------------------------------------------
+# Routine:	usage()
+#
+sub usage
+{
+	print STDERR "usage:  dtconfchk [options] <config file>\n";
+	print STDERR "\toptions:\n";
+	print STDERR "\t\t-expert\n";
+	print STDERR "\t\t-quiet\n";
+	print STDERR "\t\t-status\n";
+	print STDERR "\t\t-verbose\n";
+	print STDERR "\t\t-Version\n";
+	print STDERR "\t\t-help\n";
+	exit(0);
+}
+
+1;
+
+##############################################################################
+#
+
+=pod
+
+=head1 NAME
+
+dtconfchk - Check a DNSSEC-Tools configuration file for sanity
+
+=head1 SYNOPSIS
+
+  dtconfchk [options] [config_file]
+
+=head1 DESCRIPTION
+
+B<dtconfchk> checks a DNSSEC-Tools configuration file to determine if the
+entries are valid.  If a configuration file isn't specified, the system
+configuration file will be verified.
+
+Without any display options, B<dtconfchk> displays error messages for problems
+found, followed by a summary line.  Display options will increase or decrease
+the amount of detail about the configuration file's sanity.  In all cases,
+the exit code is the count of errors found in the file.
+
+The tests are divided into five groups:  key-related checks, zone-related
+checks, path checks, rollover checks, and miscellaneous checks.  The checks
+in each of these self-explanatory groups are described below.
+
+The I<default_keyrec> configuration entry is not checked.  This entry
+specifies the default I<keyrec> file name and isn't necessarily expected
+to exist in any particular place.
+
+=head2 Boolean Values
+
+The DNSSEC-Tools configuration file has a number of fields that are expected
+to hold boolean values.  The recognized values for booleans are as follows:
+
+    true values  - 1, true,  t, yes, y
+    false values - 0, false, f, no,  n
+
+Positive values greater than 1 are recognized as true values, but it probably
+would be best to use 1.
+
+Text values that aren't in the set above are not valid and will translate to
+false values.
+
+=head2 Key-related Checks
+
+The following key-related checks are performed:
+
+=over 8
+
+=item I<algorithm>
+
+Ensure the I<algorithm> field is valid.  The acceptable values may be found
+in the B<dnssec-keygen> man page.
+
+=item I<ksklength>
+
+Ensure the I<ksklength> field is valid.  The acceptable values may be found
+in the B<dnssec-keygen> man page.  This may also be specified as I<ksklen>.
+
+=item I<ksklife>
+
+Ensure the I<ksklife> field is valid.  The acceptable values may be found
+in the B<defaults.pm> man page.
+
+=item I<zskcount>
+
+Ensure the I<zskcount> field is valid.  The ZSK count must be positive.
+
+=item I<zsklength>
+
+Ensure the I<zsklength> field is valid.  The acceptable values may be found
+in the B<dnssec-keygen> man page.  This may also be specified as I<zsklen>.
+
+=item I<zsklife>
+
+Ensure the I<zsklife> field is valid.  The acceptable values may be found
+in the B<defaults.pm> man page.
+
+=item I<random>
+
+Ensure the I<random> field is valid.  This file must be a character
+device file.
+
+=back
+
+=head2 Zone-related Checks
+
+The following zone-related checks are performed:
+
+=over 8
+
+=item I<endtime>
+
+Ensure the I<endtime> field is valid.  This value is assumed to be in the
+"+NNNNNN" format.  There is a lower limit of two hours.  (This is an
+artificial limit under which it I<may> not make sense to have an end-time.)
+
+=back
+
+=head2 Path Checks
+
+Path checks are performed for several DNSSEC-Tools commands, several BIND
+commands, and a few miscellaneous files.
+
+The following path checks are performed for DNSSEC-Tools commands:
+
+=over 8
+
+=item I<genkrf>
+
+Ensure the I<genkrf> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=item I<keyarch>
+
+Ensure the I<keyarch> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=item I<rollchk>
+
+Ensure the I<rollchk> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=item I<rollctl>
+
+Ensure the I<rollctl> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=item I<zonesigner>
+
+Ensure the I<zonesigner> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=back
+
+The following path checks are performed for BIND tools:
+
+=over 8
+
+=item I<keygen>
+
+Ensure the I<keygen> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=item I<rndc>
+
+Ensure the I<rndc> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=item I<zonecheck>
+
+Ensure the I<zonecheck> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=item I<zonesign>
+
+Ensure the I<zonesign> field is valid.  If the filename starts with a '/',
+the file must be a regular executable file.
+
+=back
+
+The following path checks are performed for miscellaneous files and
+directories:
+
+=over 8
+
+=item I<random>
+
+Ensure the I<random> field is valid.  The file must be a character device file.
+
+=item I<roll_logfile>
+
+Ensure the I<roll_logfile> field is a regular file.
+
+=item I<taresolvconf>
+
+Ensure the I<taresolvconf> field is a regular file.
+
+=item I<tatmpdir>
+
+Ensure the I<tatmpdir> field is a directory.
+
+=back
+
+=head2 Rollover Daemon Checks
+
+The following checks are performed for B<rollerd> values:
+
+=over 8
+
+=item I<autosign>
+
+Ensure that the I<autosign> flag is a valid boolean.
+
+=item I<log_tz>
+
+Ensure the I<log_tz> field is either 'gmt' or 'local'.
+
+=item I<prog_normal>
+
+=item I<prog_ksk1> ... I<prog_ksk7>
+
+=item I<prog_zsk1> ... I<prog_zsk4>
+
+Ensure that the rollover phase commands are valid paths.   Each of these
+fields is a semicolon-separated command list.  The file checks are run on
+the commands to ensure the commands exist and are executable.  Options and
+arguments to the commands are ignored, as is the I<default> keyword.
+
+=item I<roll_loadzone>
+
+Ensure that the I<roll_loadzone> flag is a valid boolean.
+
+=item I<roll_logfile>
+
+Ensure that the log file for the B<rollerd> is valid.  If the file
+exists, it must be a regular file.
+
+=item I<roll_loglevel>
+
+Ensure that the logging level for the B<rollerd> is reasonable.  The
+log level must be one of the following text or numeric values:
+
+    tmi        1       Overly verbose informational messages.
+    expire     3       A verbose countdown of zone expiration is given.
+    info       4       Informational messages.
+    phase      6       Current state of zone.
+    err        8       Error messages.
+    fatal      9       Fatal errors.
+
+Specifying a particular log level will causes messages of a higher numeric
+value to also be displayed.
+
+=item I<roll_sleeptime>
+
+Ensure that the B<rollerd>'s sleep-time is reasonable.
+B<rollerd>'s sleep-time must be at least one minute.
+
+=item I<roll_username>
+
+Ensure that the username for B<rollerd> is valid.  If it's a username, it
+must be translatable to a uid; if it's a uid, it must translate to a known
+username.
+
+=item I<zone_errors>
+
+Ensure that the zone error count is numeric and 0 or greater.
+
+=back
+
+=head2 NSEC3 Checks
+
+The following checks are performed for NSEC3-related values:
+
+=over 8
+
+=item I<nsec3iter>
+
+Ensure that the I<nsec3iter> iteration count falls within the range used by
+B<dnssec-signzone>.  The current values are from 1 - 65535.
+
+=item I<nsec3optout>
+
+Ensure that the I<nsec3optout> flag is a valid boolean.
+
+=item I<usensec3>
+
+Ensure that the I<usensec3> flag is a valid boolean.
+
+=back
+
+=head2 Miscellaneous Checks
+
+The following miscellaneous checks are performed:
+
+=over 8
+
+=item I<admin-email>
+
+Ensure that the I<admin-email> field is defined and has a value.
+B<dtconfchk> does not try to validate the email address itself.
+
+=item I<archivedir>
+
+Ensure that the I<archivedir> directory is actually a directory.
+This check is only performed if the I<savekeys> flag is set on.
+
+=item I<entropy_msg>
+
+Ensure that the I<entropy_msg> flag is a valid boolean.
+
+=item I<savekeys>
+
+Ensure that the I<savekeys> flag is a valid boolean.
+If this flag is set to 1, then the I<archivedir> field will also be checked.
+
+=item I<usegui>
+
+Ensure that the I<usegui> flag is a valid boolean.
+
+=item I<zonefile-parser>
+
+Ensure that the I<zonefile-parser> flag is a valid Perl module.  This is
+checked by using the Perl "require" facility to load the specified module.
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-expert>
+
+This option will bypass the following checks:
+
+    - KSK has a longer lifespan than the configuration
+      file's default minimum lifespan
+
+    - KSK has a shorter lifespan than the configuration
+      file's default maximum lifespan
+
+    - ZSKs have a longer lifespan than the configuration
+      file's default minimum lifespan
+
+    - ZSKs have a shorter lifespan than the configuration
+      file's default maximum lifespan
+
+=item B<-quiet>
+
+No output will be given.
+The number of errors will be used as the exit code.
+
+=item B<-summary>
+
+A final summary of success or failure will be printed.
+The number of errors will be used as the exit code.
+
+=item B<-verbose>
+
+Success or failure status of each check will be given.
+A B<+> or B<-> prefix will be given for each valid and invalid entry.
+The number of errors will be used as the exit code.
+
+=item B<-Version>
+
+Displays the version information for B<dtconfchk> and the DNSSEC-Tools package.
+
+=item B<-help>
+
+Display a usage message.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2004-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<dtdefs(8)>,
+B<dtinitconf(8)>,
+B<rollerd(8)>,
+B<zonesigner(8)>
+
+B<Net::DNS::SEC::Tools::conf.pm(3)>,
+B<Net::DNS::SEC::Tools::defaults.pm(3)>
+
+B<dnssec-tools.conf(5)>
+
+=cut

@@ -1,0 +1,119 @@
+'\" et
+.TH PTHREAD_DETACH "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_detach
+\(em detach a thread
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_detach(pthread_t \fIthread\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_detach\fR()
+function shall indicate to the implementation that storage for the
+thread
+.IR thread
+can be reclaimed when that thread terminates. If
+.IR thread
+has not terminated,
+\fIpthread_detach\fR()
+shall not cause it to terminate.
+.P
+The behavior is undefined if the value specified by the
+.IR thread
+argument to
+\fIpthread_detach\fR()
+does not refer to a joinable thread.
+.SH "RETURN VALUE"
+If the call succeeds,
+\fIpthread_detach\fR()
+shall return 0; otherwise, an error number shall be returned to
+indicate the error.
+.SH ERRORS
+The
+\fIpthread_detach\fR()
+function shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The
+\fIpthread_join\fR()
+or
+\fIpthread_detach\fR()
+functions should eventually be called for every thread that is created
+so that storage associated with the thread may be reclaimed.
+.P
+It has been suggested that a ``detach'' function is not necessary; the
+.IR detachstate
+thread creation attribute is sufficient, since a thread need never be
+dynamically detached. However, need arises in at least two cases:
+.IP " 1." 4
+In a cancellation handler for a
+\fIpthread_join\fR()
+it is nearly essential to have a
+\fIpthread_detach\fR()
+function in order to detach the thread on which
+\fIpthread_join\fR()
+was waiting. Without it, it would be necessary to have the handler do
+another
+\fIpthread_join\fR()
+to attempt to detach the thread, which would both delay the cancellation
+processing for an unbounded period and introduce a new call to
+\fIpthread_join\fR(),
+which might itself need a cancellation handler. A dynamic detach is
+nearly essential in this case.
+.IP " 2." 4
+In order to detach the ``initial thread'' (as may be desirable in
+processes that set up server threads).
+.P
+If an implementation detects that the value specified by the
+.IR thread
+argument to
+\fIpthread_detach\fR()
+does not refer to a joinable thread, it is recommended that the
+function should fail and report an
+.BR [EINVAL] 
+error.
+.P
+If an implementation detects use of a thread ID after the end of its
+lifetime, it is recommended that the function should fail and report an
+.BR [ESRCH] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIpthread_join\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

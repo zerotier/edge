@@ -1,0 +1,317 @@
+'\" et
+.TH MQ_OPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mq_open
+\(em open a message queue
+(\fBREALTIME\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <mqueue.h>
+.P
+mqd_t mq_open(const char *\fIname\fP, int \fIoflag\fP, ...);
+.fi
+.SH DESCRIPTION
+The
+\fImq_open\fR()
+function shall establish the connection between a process and a message
+queue with a message queue descriptor. It shall create an open message
+queue description that refers to the message queue, and a message queue
+descriptor that refers to that open message queue description. The
+message queue descriptor is used by other functions to refer to that
+message queue. The
+.IR name
+argument points to a string naming a message queue. It is unspecified
+whether the name appears in the file system and is visible to other
+functions that take pathnames as arguments. The
+.IR name
+argument conforms to the construction rules for a pathname, except that
+the interpretation of
+<slash>
+characters other than the leading
+<slash>
+character in
+.IR name
+is implementation-defined, and that the length limits for the
+.IR name
+argument are implementation-defined and need not be the same as the
+pathname limits
+{PATH_MAX}
+and
+{NAME_MAX}.
+If
+.IR name
+begins with the
+<slash>
+character, then processes calling
+\fImq_open\fR()
+with the same value of
+.IR name
+shall refer to the same message queue object, as long as that name
+has not been removed. If
+.IR name
+does not begin with the
+<slash>
+character, the effect is implementation-defined. If the
+.IR name
+argument is not the name of an existing message queue and creation is
+not requested,
+\fImq_open\fR()
+shall fail and return an error.
+.P
+A message queue descriptor may be implemented using a file
+descriptor, in which case applications can open up to at least
+{OPEN_MAX}
+file and message queues.
+.P
+The
+.IR oflag
+argument requests the desired receive and/or send access to the message
+queue. The requested access permission to receive messages or send
+messages shall be granted if the calling process would be granted read
+or write access, respectively, to an equivalently protected file.
+.P
+The value of
+.IR oflag
+is the bitwise-inclusive OR of values from the following list.
+Applications shall specify exactly one of the first three values
+(access modes) below in the value of
+.IR oflag :
+.IP O_RDONLY 12
+Open the message queue for receiving messages. The process can use the
+returned message queue descriptor with
+\fImq_receive\fR(),
+but not
+\fImq_send\fR().
+A message queue may be open multiple times in the same or different
+processes for receiving messages.
+.IP O_WRONLY 12
+Open the queue for sending messages. The process can use the returned
+message queue descriptor with
+\fImq_send\fR()
+but not
+\fImq_receive\fR().
+A message queue may be open multiple times in the same or different
+processes for sending messages.
+.IP O_RDWR 12
+Open the queue for both receiving and sending messages. The process
+can use any of the functions allowed for O_RDONLY and O_WRONLY. A
+message queue may be open multiple times in the same or different
+processes for sending messages.
+.P
+Any combination of the remaining flags may be specified in the value of
+.IR oflag :
+.IP O_CREAT 12
+Create a message queue. It requires two additional arguments:
+.IR mode ,
+which shall be of type
+.BR mode_t ,
+and
+.IR attr ,
+which shall be a pointer to an
+.BR mq_attr
+structure. If the pathname
+.IR name
+has already been used to create a message queue that still exists, then
+this flag shall have no effect, except as noted under O_EXCL.
+Otherwise, a message queue shall be created without any messages in
+it. The user ID of the message queue shall be set to the effective
+user ID of the process. The group ID of the message queue shall be
+set to the effective group ID of the process; however, if the
+.IR name
+argument is visible in the file system, the group ID may be set
+to the group ID of the containing directory. When bits in
+.IR mode
+other than the file permission bits are specified, the effect is
+unspecified. If
+.IR attr
+is NULL, the message queue shall be created with implementation-defined
+default message queue attributes. If
+.IR attr
+is non-NULL and the calling process has appropriate privileges on
+.IR name ,
+the message queue
+.IR mq_maxmsg
+and
+.IR mq_msgsize
+attributes shall be set to the values of the corresponding members in the
+.BR mq_attr
+structure referred to by
+.IR attr .
+The values of the
+.IR mq_flags
+and
+.IR mq_curmsgs
+members of the
+.BR mq_attr
+structure shall be ignored. If
+.IR attr
+is non-NULL, but the calling process does not have appropriate
+privileges on
+.IR name ,
+the
+\fImq_open\fR()
+function shall fail and return an error without creating the message
+queue.
+.IP O_EXCL 12
+If O_EXCL and O_CREAT are set,
+\fImq_open\fR()
+shall fail if the message queue
+.IR name
+exists. The check for the existence of the message queue and the
+creation of the message queue if it does not exist shall be atomic with
+respect to other threads executing
+\fImq_open\fR()
+naming the same
+.IR name
+with O_EXCL and O_CREAT set. If O_EXCL is set and O_CREAT is not set,
+the result is undefined.
+.IP O_NONBLOCK 12
+Determines whether an
+\fImq_send\fR()
+or
+\fImq_receive\fR()
+waits for resources or messages that are not currently available, or
+fails with
+.IR errno
+set to
+.BR [EAGAIN] ;
+see
+.IR "\fImq_send\fR\^(\|)"
+and
+.IR "\fImq_receive\fR\^(\|)"
+for details.
+.P
+The
+\fImq_open\fR()
+function does not add or remove messages from the queue.
+.SH "RETURN VALUE"
+Upon successful completion, the function shall return a message queue
+descriptor; otherwise, the function shall return (\fBmqd_t\fP)\(mi1
+and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fImq_open\fR()
+function shall fail if:
+.TP
+.BR EACCES
+The message queue exists and the permissions specified by
+.IR oflag
+are denied, or the message queue does not exist and permission to
+create the message queue is denied.
+.TP
+.BR EEXIST
+O_CREAT and O_EXCL are set and the named message queue already exists.
+.TP
+.BR EINTR
+The
+\fImq_open\fR()
+function was interrupted by a signal.
+.TP
+.BR EINVAL
+The
+\fImq_open\fR()
+function is not supported for the given name.
+.TP
+.BR EINVAL
+O_CREAT was specified in
+.IR oflag ,
+the value of
+.IR attr
+is not NULL, and either
+.IR mq_maxmsg
+or
+.IR mq_msgsize
+was less than or equal to zero.
+.TP
+.BR EMFILE
+Too many message queue descriptors or file descriptors are currently in
+use by this process.
+.TP
+.BR ENFILE
+Too many message queues are currently open in the system.
+.TP
+.BR ENOENT
+O_CREAT is not set and the named message queue does not exist.
+.TP
+.BR ENOSPC
+There is insufficient space for the creation of the new message queue.
+.br
+.P
+If any of the following conditions occur, the
+\fImq_open\fR()
+function may return (\c
+.BR mqd_t )\(mi1
+and set
+.IR errno
+to the corresponding value.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of the
+.IR name
+argument exceeds
+{_POSIX_PATH_MAX}
+on systems that do not support the XSI option
+or exceeds
+{_XOPEN_PATH_MAX}
+on XSI systems,
+or has a pathname component that is longer than
+{_POSIX_NAME_MAX}
+on systems that do not support the XSI option
+or longer than
+{_XOPEN_NAME_MAX}
+on XSI systems.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+A future version might require the
+\fImq_open\fR()
+and
+\fImq_unlink\fR()
+functions to have semantics similar to normal file system operations.
+.SH "SEE ALSO"
+.IR "\fImq_close\fR\^(\|)",
+.IR "\fImq_getattr\fR\^(\|)",
+.IR "\fImq_receive\fR\^(\|)",
+.IR "\fImq_send\fR\^(\|)",
+.IR "\fImq_setattr\fR\^(\|)",
+.IR "\fImq_unlink\fR\^(\|)",
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fImsgget\fR\^(\|)",
+.IR "\fImsgrcv\fR\^(\|)",
+.IR "\fImsgsnd\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<mqueue.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

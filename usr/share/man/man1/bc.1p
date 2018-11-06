@@ -1,0 +1,1615 @@
+'\" et
+.TH BC "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+bc
+\(em arbitrary-precision arithmetic language
+.SH SYNOPSIS
+.LP
+.nf
+bc \fB[\fR\(mil\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR bc
+utility shall implement an arbitrary precision calculator. It shall
+take input from any files given, then read from the standard input. If
+the standard input and standard output to
+.IR bc
+are attached to a terminal, the invocation of
+.IR bc
+shall be considered to be
+.IR interactive ,
+causing behavioral constraints described in the following sections.
+.SH OPTIONS
+The
+.IR bc
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(mil\fP" 10
+(The letter ell.) Define the math functions and initialize
+.IR scale
+to 20, instead of the default zero; see the EXTENDED DESCRIPTION
+section.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a text file containing
+.IR bc
+program statements. After all
+.IR file s
+have been read,
+.IR bc
+shall read the standard input.
+.SH STDIN
+See the INPUT FILES section.
+.SH "INPUT FILES"
+Input files shall be text files containing a sequence of comments,
+statements, and function definitions that shall be executed as they are
+read.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR bc :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The output of the
+.IR bc
+utility shall be controlled by the program read, and consist of zero or
+more lines containing the value of all executed expressions without
+assignments. The radix and precision of the output shall be controlled
+by the values of the
+.BR obase
+and
+.BR scale
+variables; see the EXTENDED DESCRIPTION section.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+.SS "Grammar"
+.P
+The grammar in this section and the lexical conventions in the
+following section shall together describe the syntax for
+.IR bc
+programs. The general conventions for this style of grammar are
+described in
+.IR "Section 1.3" ", " "Grammar Conventions".
+A valid program can be represented as the non-terminal symbol
+.BR program
+in the grammar. This formal syntax shall take precedence over the
+text syntax description.
+.sp
+.RS 4
+.nf
+\fB
+%token    EOF NEWLINE STRING LETTER NUMBER
+.P
+%token    MUL_OP
+/*        '*', '/', '%'                           */
+.P
+%token    ASSIGN_OP
+/*        '=', '+=', '\(mi=', '*=', '/=', '%=', '^=' */
+.P
+%token    REL_OP
+/*        '==', '<=', '>=', '!=', '<', '>'        */
+.P
+%token    INCR_DECR
+/*        '++', '\(mi\|\(mi'                              */
+.P
+%token    Define    Break    Quit    Length
+/*        'define', 'break', 'quit', 'length'     */
+.P
+%token    Return    For    If    While    Sqrt
+/*        'return', 'for', 'if', 'while', 'sqrt'  */
+.P
+%token    Scale    Ibase    Obase    Auto
+/*        'scale', 'ibase', 'obase', 'auto'       */
+.P
+%start    program
+.P
+%%
+.P
+program              : EOF
+                     | input_item program
+                     ;
+.P
+input_item           : semicolon_list NEWLINE
+                     | function
+                     ;
+.P
+semicolon_list       : /* empty */
+                     | statement
+                     | semicolon_list ';' statement
+                     | semicolon_list ';'
+                     ;
+.P
+statement_list       : /* empty */
+                     | statement
+                     | statement_list NEWLINE
+                     | statement_list NEWLINE statement
+                     | statement_list ';'
+                     | statement_list ';' statement
+                     ;
+.P
+statement            : expression
+                     | STRING
+                     | Break
+                     | Quit
+                     | Return
+                     | Return '(' return_expression ')'
+                     | For '(' expression ';'
+                           relational_expression ';'
+                           expression ')' statement
+                     | If '(' relational_expression ')' statement
+                     | While '(' relational_expression ')' statement
+                     | '{' statement_list '}'
+                     ;
+.P
+function             : Define LETTER '(' opt_parameter_list ')'
+                           '{' NEWLINE opt_auto_define_list
+                           statement_list '}'
+                     ;
+.P
+opt_parameter_list   : /* empty */
+                     | parameter_list
+                     ;
+.P
+parameter_list       : LETTER
+                     | define_list ',' LETTER
+                     ;
+.P
+opt_auto_define_list : /* empty */
+                     | Auto define_list NEWLINE
+                     | Auto define_list ';'
+                     ;
+.P
+define_list          : LETTER
+                     | LETTER '[' ']'
+                     | define_list ',' LETTER
+                     | define_list ',' LETTER '[' ']'
+                     ;
+.P
+opt_argument_list    : /* empty */
+                     | argument_list
+                     ;
+.P
+argument_list        : expression
+                     | LETTER '[' ']' ',' argument_list
+                     ;
+.P
+relational_expression : expression
+                     | expression REL_OP expression
+                     ;
+.P
+return_expression    : /* empty */
+                     | expression
+                     ;
+.P
+expression           : named_expression
+                     | NUMBER
+                     | '(' expression ')'
+                     | LETTER '(' opt_argument_list ')'
+                     | '\(mi' expression
+                     | expression '+' expression
+                     | expression '\(mi' expression
+                     | expression MUL_OP expression
+                     | expression '^' expression
+                     | INCR_DECR named_expression
+                     | named_expression INCR_DECR
+                     | named_expression ASSIGN_OP expression
+                     | Length '(' expression ')'
+                     | Sqrt '(' expression ')'
+                     | Scale '(' expression ')'
+                     ;
+.P
+named_expression     : LETTER
+                     | LETTER '[' expression ']'
+                     | Scale
+                     | Ibase
+                     | Obase
+                     ;
+.fi \fR
+.P
+.RE
+.SS "Lexical Conventions in bc"
+.P
+The lexical conventions for
+.IR bc
+programs, with respect to the preceding grammar, shall be as follows:
+.IP " 1." 4
+Except as noted,
+.IR bc
+shall recognize the longest possible token or delimiter beginning at a
+given point.
+.IP " 2." 4
+A comment shall consist of any characters beginning with the two adjacent
+characters
+.BR \(dq/*\(dq 
+and terminated by the next occurrence of the two adjacent characters
+.BR \(dq*/\(dq .
+Comments shall have no effect except to delimit lexical tokens.
+.IP " 3." 4
+The
+<newline>
+shall be recognized as the token
+.BR NEWLINE .
+.IP " 4." 4
+The token
+.BR STRING
+shall represent a string constant; it shall consist of any characters
+beginning with the double-quote character (\c
+.BR '\&"' )
+and terminated by another occurrence of the double-quote character. The
+value of the string is the sequence of all characters between, but not
+including, the two double-quote characters. All characters shall be
+taken literally from the input, and there is no way to specify a string
+containing a double-quote character. The length of the value of each
+string shall be limited to
+{BC_STRING_MAX}
+bytes.
+.IP " 5." 4
+A
+<blank>
+shall have no effect except as an ordinary character if it appears
+within a
+.BR STRING
+token, or to delimit a lexical token other than
+.BR STRING .
+.IP " 6." 4
+The combination of a
+<backslash>
+character immediately followed by a
+<newline>
+shall have no effect other than to delimit lexical tokens with the
+following exceptions:
+.RS 4 
+.IP " *" 4
+It shall be interpreted as the character sequence
+.BR \(dq\e<newline>\(dq 
+in
+.BR STRING
+tokens.
+.IP " *" 4
+It shall be ignored as part of a multi-line
+.BR NUMBER
+token.
+.RE
+.IP " 7." 4
+The token
+.BR NUMBER
+shall represent a numeric constant. It shall be recognized by the
+following grammar:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+NUMBER  : integer
+        | '.' integer
+        | integer '.'
+        | integer '.' integer
+        ;
+.P
+integer : digit
+        | integer digit
+        ;
+.P
+digit   : 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+        | 8 | 9 | A | B | C | D | E | F
+        ;
+.fi \fR
+.P
+.RE
+.RE
+.IP " 8." 4
+The value of a
+.BR NUMBER
+token shall be interpreted as a numeral in the base specified by the
+value of the internal register
+.BR ibase
+(described below). Each of the
+.BR digit
+characters shall have the value from 0 to 15 in the order listed here,
+and the
+<period>
+character shall represent the radix point. The behavior is undefined if
+digits greater than or equal to the value of
+.BR ibase
+appear in the token. However, note the exception for single-digit
+values being assigned to
+.BR ibase
+and
+.BR obase
+themselves, in
+.IR "Operations in bc".
+.IP " 9." 4
+The following keywords shall be recognized as tokens:
+.TS
+tab(@);
+lBw(0.6i)e lBe lBe lBe lBe.
+T{
+.nf
+auto
+break
+define
+T}@T{
+.nf
+ibase
+if
+for
+T}@T{
+.nf
+length
+obase
+quit
+T}@T{
+.nf
+return
+scale
+sqrt
+T}@T{
+.nf
+while
+.fi
+T}
+.TE
+.IP 10. 4
+Any of the following characters occurring anywhere except within a
+keyword shall be recognized as the token
+.BR LETTER :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+a b c d e f g h i j k l m n o p q r s t u v w x y z
+.fi \fR
+.P
+.RE
+.RE
+.IP 11. 4
+The following single-character and two-character sequences shall be
+recognized as the token
+.BR ASSIGN_OP :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+=   +=   \(mi=   *=   /=   %=   ^=
+.fi \fR
+.P
+.RE
+.RE
+.IP 12. 4
+If an
+.BR '=' 
+character, as the beginning of a token, is followed by a
+.BR '\(mi' 
+character with no intervening delimiter, the behavior is undefined.
+.IP 13. 4
+The following single-characters shall be recognized as the token
+.BR MUL_OP :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+*   /   %
+.fi \fR
+.P
+.RE
+.RE
+.IP 14. 4
+The following single-character and two-character sequences shall be
+recognized as the token
+.BR REL_OP :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+==   <=   >=   !=   <   >
+.fi \fR
+.P
+.RE
+.RE
+.IP 15. 4
+The following two-character sequences shall be recognized as the token
+.BR INCR_DECR :
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+++   \(mi\|\(mi
+.fi \fR
+.P
+.RE
+.RE
+.IP 16. 4
+The following single characters shall be recognized as tokens whose
+names are the character:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+<newline>  (  )  ,  +  \(mi  ;  [  ]  ^  {  }
+.fi \fR
+.P
+.RE
+.RE
+.IP 17. 4
+The token
+.BR EOF
+is returned when the end of input is reached.
+.SS "Operations in bc"
+.P
+There are three kinds of identifiers: ordinary identifiers, array
+identifiers, and function identifiers.
+All three types consist of single lowercase letters. Array identifiers
+shall be followed by square brackets (\c
+.BR \(dq[]\(dq ).
+An array subscript is required except in an argument or auto list.
+Arrays are singly dimensioned and can contain up to
+{BC_DIM_MAX}
+elements. Indexing shall begin at zero so an array is indexed from 0 to
+{BC_DIM_MAX}\(mi1.
+Subscripts shall be truncated to integers. The application shall ensure
+that function identifiers are followed by parentheses, possibly
+enclosing arguments. The three types of identifiers do not conflict.
+.P
+The following table summarizes the rules for precedence and
+associativity of all operators. Operators on the same line shall have
+the same precedence; rows are in order of decreasing precedence.
+.sp
+.ce 1
+\fBTable: Operators in \fIbc\fP\fR
+.TS
+center tab(@) box;
+cB | cB
+lf5 | l.
+Operator@Associativity
+_
+++, \(mi\|\(mi@N/A
+unary \(mi@N/A
+\&^@Right to left
+*, /, %@Left to right
++, binary \(mi@Left to right
+=, +=, \(mi=, *=, /=, %=, ^=@Right to left
+==, <=, >=, !=, <, >@None
+.TE
+.P
+Each expression or named expression has a
+.IR scale ,
+which is the number of decimal digits that shall be maintained as the
+fractional portion of the expression.
+.P
+.IR "Named expressions"
+are places where values are stored. Named expressions shall be valid on
+the left side of an assignment. The value of a named expression shall
+be the value stored in the place named. Simple identifiers and array
+elements are named expressions; they have an initial value of zero and
+an initial scale of zero.
+.P
+The internal registers
+.BR scale ,
+.BR ibase ,
+and
+.BR obase
+are all named expressions. The scale of an expression consisting of the
+name of one of these registers shall be zero; values assigned to any of
+these registers are truncated to integers. The
+.BR scale
+register shall contain a global value used in computing the scale of
+expressions (as described below). The value of the register
+.BR scale
+is limited to 0 \(<=
+.BR scale
+\(<=
+{BC_SCALE_MAX}
+and shall have a default value of zero. The
+.BR ibase
+and
+.BR obase
+registers are the input and output number radix, respectively. The
+value of
+.BR ibase
+shall be limited to:
+.sp
+.RS 4
+.nf
+\fB
+2 \(<= ibase \(<= 16
+.fi \fR
+.P
+.RE
+.P
+The value of
+.BR obase
+shall be limited to:
+.sp
+.RS 4
+.nf
+\fB
+2 \(<= obase \(<= {BC_BASE_MAX}
+.fi \fR
+.P
+.RE
+.P
+When either
+.BR ibase
+or
+.BR obase
+is assigned a single
+.BR digit
+value from the list in
+.IR "Lexical Conventions in bc",
+the value shall be assumed in hexadecimal. (For example,
+.BR ibase =A
+sets to base ten, regardless of the current
+.BR ibase
+value.) Otherwise, the behavior is undefined when digits greater than
+or equal to the value of
+.BR ibase
+appear in the input. Both
+.BR ibase
+and
+.BR obase
+shall have initial values of 10.
+.P
+Internal computations shall be conducted as if in decimal, regardless
+of the input and output bases, to the specified number of decimal
+digits. When an exact result is not achieved (for example,
+.BR scale "=0;\ 3.2/1)",
+the result shall be truncated.
+.P
+For all values of
+.BR obase
+specified by this volume of POSIX.1\(hy2008,
+.IR bc
+shall output numeric values by performing each of the following steps
+in order:
+.IP " 1." 4
+If the value is less than zero, a
+<hyphen>
+(\c
+.BR '\(mi' )
+character shall be output.
+.IP " 2." 4
+One of the following is output, depending on the numerical value:
+.RS 4 
+.IP " *" 4
+If the absolute value of the numerical value is greater than or equal
+to one, the integer portion of the value shall be output as a series of
+digits appropriate to
+.BR obase
+(as described below), most significant digit first. The most significant
+non-zero digit shall be output next, followed by each successively
+less significant digit.
+.IP " *" 4
+If the absolute value of the numerical value is less than one but
+greater than zero and the scale of the numerical value is greater than
+zero, it is unspecified whether the character 0 is output.
+.IP " *" 4
+If the numerical value is zero, the character 0 shall be output.
+.RE
+.IP " 3." 4
+If the scale of the value is greater than zero and the numeric value
+is not zero, a
+<period>
+character shall be output, followed by a series of digits appropriate to
+.BR obase
+(as described below) representing the most significant portion of the
+fractional part of the value. If
+.IR s
+represents the scale of the value being output, the number of digits
+output shall be
+.IR s
+if
+.BR obase
+is 10, less than or equal to
+.IR s
+if
+.BR obase
+is greater than 10, or greater than or equal to
+.IR s
+if
+.BR obase
+is less than 10. For
+.BR obase
+values other than 10, this should be the number of digits needed to
+represent a precision of 10\u\s-3\fIs\fP\s+3\d.
+.P
+For
+.BR obase
+values from 2 to 16, valid digits are the first
+.BR obase
+of the single characters:
+.sp
+.RS 4
+.nf
+\fB
+0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+.fi \fR
+.P
+.RE
+.P
+which represent the values zero to 15, inclusive, respectively.
+.P
+For bases greater than 16, each digit shall be written as a separate
+multi-digit decimal number. Each digit except the most significant
+fractional digit shall be preceded by a single
+<space>.
+For bases from 17 to 100,
+.IR bc
+shall write two-digit decimal numbers; for bases from 101 to 1\|000,
+three-digit decimal strings, and so on. For example, the decimal number
+1\|024 in base 25 would be written as:
+.sp
+.RS 4
+.nf
+\fB
+ 01 15 24
+.fi \fR
+.P
+.RE
+.P
+and in base 125, as:
+.sp
+.RS 4
+.nf
+\fB
+ 008 024
+.fi \fR
+.P
+.RE
+.P
+Very large numbers shall be split across lines with 70 characters per
+line in the POSIX locale; other locales may split at different
+character boundaries. Lines that are continued shall end with a
+<backslash>.
+.P
+A function call shall consist of a function name followed by
+parentheses containing a
+<comma>-separated
+list of expressions, which are the function arguments. A whole array
+passed as an argument shall be specified by the array name followed
+by empty square brackets. All function arguments shall be passed by
+value. As a result, changes made to the formal parameters shall have no
+effect on the actual arguments. If the function terminates by executing a
+.BR return
+statement, the value of the function shall be the value of the
+expression in the parentheses of the
+.BR return
+statement or shall be zero if no expression is provided or if there is
+no
+.BR return
+statement.
+.P
+The result of
+.BR sqrt (\c
+.IR expression )
+shall be the square root of the expression. The result shall be
+truncated in the least significant decimal place. The scale of the
+result shall be the scale of the expression or the value of
+.BR scale ,
+whichever is larger.
+.P
+The result of
+.BR length (\c
+.IR expression )
+shall be the total number of significant decimal digits in the
+expression. The scale of the result shall be zero.
+.P
+The result of
+.BR scale (\c
+.IR expression )
+shall be the scale of the expression. The scale of the result shall be
+zero.
+.P
+A numeric constant shall be an expression. The scale shall be the
+number of digits that follow the radix point in the input representing
+the constant, or zero if no radix point appears.
+.P
+The sequence (\ \fIexpression\fP\ ) shall be an expression with the
+same value and scale as
+.IR expression .
+The parentheses can be used to alter the normal precedence.
+.P
+The semantics of the unary and binary operators are as follows:
+.IP "\(mi\fIexpression\fP" 6
+.br
+The result shall be the negative of the
+.IR expression .
+The scale of the result shall be the scale of
+.IR expression .
+.P
+The unary increment and decrement operators shall not modify the scale
+of the named expression upon which they operate. The scale of the
+result shall be the scale of that named expression.
+.IP "++\fInamed-expression\fP" 6
+.br
+The named expression shall be incremented by one. The result shall be
+the value of the named expression after incrementing.
+.IP "\(mi\|\(mi\fInamed-expression\fP" 6
+.br
+The named expression shall be decremented by one. The result shall be
+the value of the named expression after decrementing.
+.IP "\fInamed-expression\fP++" 6
+.br
+The named expression shall be incremented by one. The result shall be
+the value of the named expression before incrementing.
+.IP "\fInamed-expression\fP\(mi\|\(mi" 6
+.br
+The named expression shall be decremented by one. The result shall be
+the value of the named expression before decrementing.
+.P
+The exponentiation operator,
+<circumflex>
+(\c
+.BR '^' ),
+shall bind right to left.
+.IP "\fIexpression\fP^\fIexpression\fP" 6
+.br
+The result shall be the first
+.IR expression
+raised to the power of the second
+.IR expression .
+If the second expression is not an integer, the behavior is undefined.
+If
+.IR a
+is the scale of the left expression and
+.IR b
+is the absolute value of the right expression, the scale of the result
+shall be:
+.RS 6 
+.sp
+.RS 4
+.nf
+\fB
+if b >= 0 min(a * b, max(scale, a)) if b < 0 scale
+.fi \fR
+.P
+.RE
+.RE
+The multiplicative operators (\c
+.BR '*' ,
+.BR '/' ,
+.BR '%' )
+shall bind left to right.
+.IP "\fIexpression\fP*\fIexpression\fP" 6
+.br
+The result shall be the product of the two expressions. If
+.IR a
+and
+.IR b
+are the scales of the two expressions, then the scale of the result
+shall be:
+.RS 6 
+.sp
+.RS 4
+.nf
+\fB
+min(a+b,max(scale,a,b))
+.fi \fR
+.P
+.RE
+.RE
+.IP "\fIexpression\fP/\fIexpression\fP" 6
+.br
+The result shall be the quotient of the two expressions. The scale of the
+result shall be the value of
+.BR scale .
+.IP "\fIexpression\fP%\fIexpression\fP" 6
+.br
+For expressions
+.IR a
+and
+.IR b ,
+.IR a %\c
+.IR b
+shall be evaluated equivalent to the steps:
+.RS 6 
+.IP " 1." 4
+Compute
+.IR a /\c
+.IR b
+to current scale.
+.IP " 2." 4
+Use the result to compute:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+a \(mi (a / b) * b
+.fi \fR
+.P
+.RE
+.P
+to scale:
+.sp
+.RS 4
+.nf
+\fB
+max(scale + scale(b), scale(a))
+.fi \fR
+.P
+.RE
+.RE
+The scale of the result shall be:
+.sp
+.RS 4
+.nf
+\fB
+max(scale + scale(b), scale(a))
+.fi \fR
+.P
+.RE
+.P
+When
+.BR scale
+is zero, the
+.BR '%' 
+operator is the mathematical remainder operator.
+.RE
+.P
+The additive operators (\c
+.BR '\(pl' ,
+.BR '\(mi' )
+shall bind left to right.
+.IP "\fIexpression\fP+\fIexpression\fP" 6
+.br
+The result shall be the sum of the two expressions. The scale of the
+result shall be the maximum of the scales of the expressions.
+.IP "\fIexpression\fP\(mi\fIexpression\fP" 6
+.br
+The result shall be the difference of the two expressions. The scale of
+the result shall be the maximum of the scales of the expressions.
+.P
+The assignment operators (\c
+.BR '=' ,
+.BR \(dq+=\(dq ,
+.BR \(dq\(mi=\(dq ,
+.BR \(dq*=\(dq ,
+.BR \(dq/=\(dq ,
+.BR \(dq%=\(dq ,
+.BR \(dq^=\(dq )
+shall bind right to left.
+.IP "\fInamed-expression\fP=\fIexpression\fP" 6
+.br
+This expression shall result in assigning the value of the expression
+on the right to the named expression on the left. The scale of both the
+named expression and the result shall be the scale of
+.IR expression .
+.P
+The compound assignment forms:
+.sp
+.RS 4
+.nf
+\fB
+\fInamed-expression\fR <\fIoperator\fR>= \fIexpression\fR
+.fi \fR
+.P
+.RE
+.P
+shall be equivalent to:
+.sp
+.RS 4
+.nf
+\fB
+\fInamed-expression\fR=\fInamed-expression\fR <\fIoperator\fR> \fIexpression\fR
+.fi \fR
+.P
+.RE
+.P
+except that the
+.IR named-expression
+shall be evaluated only once.
+.P
+Unlike all other operators, the relational operators (\c
+.BR '<' ,
+.BR '>' ,
+.BR \(dq<=\(dq ,
+.BR \(dq>=\(dq ,
+.BR \(dq==\(dq ,
+.BR \(dq!=\(dq )
+shall be only valid as the object of an
+.BR if ,
+.BR while ,
+or inside a
+.BR for
+statement.
+.IP "\fIexpression1\fP<\fIexpression2\fR" 6
+.br
+The relation shall be true if the value of
+.IR expression1
+is strictly less than the value of
+.IR expression2 .
+.IP "\fIexpression1\fP>\fIexpression2\fP" 6
+.br
+The relation shall be true if the value of
+.IR expression1
+is strictly greater than the value of
+.IR expression2 .
+.IP "\fIexpression1\fP<=\fIexpression2\fR" 6
+.br
+The relation shall be true if the value of
+.IR expression1
+is less than or equal to the value of
+.IR expression2 .
+.IP "\fIexpression1\fP>=\fIexpression2\fR" 6
+.br
+The relation shall be true if the value of
+.IR expression1
+is greater than or equal to the value of
+.IR expression2 .
+.IP "\fIexpression1\fP=\|=\fIexpression2\fR" 6
+.br
+The relation shall be true if the values of
+.IR expression1
+and
+.IR expression2
+are equal.
+.IP "\fIexpression1\fP!=\fIexpression2\fR" 6
+.br
+The relation shall be true if the values of
+.IR expression1
+and
+.IR expression2
+are unequal.
+.P
+There are only two storage classes in
+.IR bc :
+global and automatic (local).
+Only identifiers that are local to a function need be declared
+with the
+.BR auto
+command. The arguments to a function shall be local to the function.
+All other identifiers are assumed to be global and available to all
+functions. All identifiers, global and local, have initial values of
+zero. Identifiers declared as auto shall be allocated on entry to the
+function and released on returning from the function. They therefore do
+not retain values between function calls. Auto arrays shall be
+specified by the array name followed by empty square brackets. On entry
+to a function, the old values of the names that appear as parameters
+and as automatic variables shall be pushed onto a stack. Until the
+function returns, reference to these names shall refer only to the new
+values.
+.P
+References to any of these names from other functions that are called
+from this function also refer to the new value until one of those
+functions uses the same name for a local variable.
+.P
+When a statement is an expression, unless the main operator is an
+assignment, execution of the statement shall write the value of the
+expression followed by a
+<newline>.
+.P
+When a statement is a string, execution of the statement shall write
+the value of the string.
+.P
+Statements separated by
+<semicolon>
+or
+<newline>
+characters shall be executed sequentially. In an interactive invocation of
+.IR bc ,
+each time a
+<newline>
+is read that satisfies the grammatical production:
+.sp
+.RS 4
+.nf
+\fB
+input_item : semicolon_list NEWLINE
+.fi \fR
+.P
+.RE
+.P
+the sequential list of statements making up the
+.BR semicolon_list
+shall be executed immediately and any output produced by that execution
+shall be written without any delay due to buffering.
+.P
+In an
+.BR if
+statement (\c
+.BR if (\c
+.IR relation )
+.IR statement ),
+the
+.IR statement
+shall be executed if the relation is true.
+.P
+The
+.BR while
+statement (\c
+.BR while (\c
+.IR relation )
+.IR statement )
+implements a loop in which the
+.IR relation
+is tested; each time the
+.IR relation
+is true, the
+.IR statement
+shall be executed and the
+.IR relation
+retested. When the
+.IR relation
+is false, execution shall resume after
+.IR statement .
+.P
+A
+.BR for
+statement(\c
+.BR for (\c
+.IR expression ;
+.IR relation ;
+.IR expression )
+.IR statement )
+shall be the same as:
+.sp
+.RS 4
+.nf
+\fB
+\fIfirst-expression\fP
+while (\fIrelation\fP) {
+    \fIstatement\fP
+    \fIlast-expression\fR
+}
+.fi \fR
+.P
+.RE
+The application shall ensure that all three expressions are present.
+.P
+The
+.BR break
+statement shall cause termination of a
+.BR for
+or
+.BR while
+statement.
+.P
+The
+.BR auto
+statement (\c
+.BR auto
+.IR identifier
+.BR [ ,\c
+.IR identifier \c
+.BR ]
+\&.\|.\|.) shall cause the values of the identifiers to be pushed down.
+The identifiers can be ordinary identifiers or array identifiers. Array
+identifiers shall be specified by following the array name by empty
+square brackets. The application shall ensure that the
+.BR auto
+statement is the first statement in a function definition.
+.P
+A
+.BR define
+statement:
+.sp
+.RS 4
+.nf
+\fB
+define \fILETTER\fP ( \fIopt_parameter_list\fP ) {
+    \fIopt_auto_define_list\fP
+    \fIstatement_list\fR
+}
+.fi \fR
+.P
+.RE
+.P
+defines a function named
+.BR LETTER .
+If a function named
+.BR LETTER
+was previously defined, the
+.BR define
+statement shall replace the previous definition. The expression:
+.sp
+.RS 4
+.nf
+\fB
+LETTER ( \fIopt_argument_list\fR )
+.fi \fR
+.P
+.RE
+.P
+shall invoke the function named
+.BR LETTER .
+The behavior is undefined if the number of arguments in the invocation
+does not match the number of parameters in the definition. Functions
+shall be defined before they are invoked. A function shall be
+considered to be defined within its own body, so recursive calls are
+valid. The values of numeric constants within a function shall be
+interpreted in the base specified by the value of the
+.BR ibase
+register when the function is invoked.
+.P
+The
+.BR return
+statements (\c
+.BR return
+and
+.BR return (\c
+.IR expression ))
+shall cause termination of a function, popping of its auto variables,
+and specification of the result of the function. The first form shall
+be equivalent to
+.BR return (0).
+The value and scale of the result returned by the function shall be the
+value and scale of the expression returned.
+.P
+The
+.BR quit
+statement (\c
+.BR quit )
+shall stop execution of a
+.IR bc
+program at the point where the statement occurs in the input, even if
+it occurs in a function definition, or in an
+.BR if ,
+.BR for ,
+or
+.BR while
+statement.
+.P
+The following functions shall be defined when the
+.BR \(mil
+option is specified:
+.IP "\fBs\fR(\ \fIexpression\fR\ )" 6
+.br
+Sine of argument in radians.
+.IP "\fBc\fR(\ \fIexpression\fR\ )" 6
+.br
+Cosine of argument in radians.
+.IP "\fBa\fR(\ \fIexpression\fR\ )" 6
+.br
+Arctangent of argument.
+.IP "\fBl\fR(\ \fIexpression\fR\ )" 6
+.br
+Natural logarithm of argument.
+.IP "\fBe\fR(\ \fIexpression\fR\ )" 6
+.br
+Exponential function of argument.
+.IP "\fBj\fR(\ \fIexpression\fR,\ \fIexpression\fR\ )" 6
+.br
+Bessel function of integer order.
+.P
+The scale of the result returned by these functions shall be the value
+of the
+.BR scale
+register at the time the function is invoked. The value of the
+.BR scale
+register after these functions have completed their execution shall be
+the same value it had upon invocation. The behavior is undefined if
+any of these functions is invoked with an argument outside the domain
+of the mathematical function.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP 0 10
+All input files were processed successfully.
+.IP "\fIunspecified\fR" 10
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+If any
+.IR file
+operand is specified and the named file cannot be accessed,
+.IR bc
+shall write a diagnostic message to standard error and terminate
+without any further action.
+.P
+In an interactive invocation of
+.IR bc ,
+the utility should print an error message and recover following any
+error in the input. In a non-interactive invocation of
+.IR bc ,
+invalid input causes undefined behavior.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Automatic variables in
+.IR bc
+do not work in exactly the same way as in either C or PL/1.
+.P
+For historical reasons, the exit status from
+.IR bc
+cannot be relied upon to indicate that an error has occurred.
+Returning zero after an error is possible. Therefore,
+.IR bc
+should be used primarily by interactive users (who can react to error
+messages) or by application programs that can somehow validate the
+answers returned as not including error messages.
+.P
+The
+.IR bc
+utility always uses the
+<period>
+(\c
+.BR '.' )
+character to represent a radix point, regardless of any decimal-point
+character specified as part of the current locale. In languages like C or
+.IR awk ,
+the
+<period>
+character is used in program source, so it can be portable and
+unambiguous, while the locale-specific character is used in input and
+output. Because there is no distinction between source and input in
+.IR bc ,
+this arrangement would not be possible. Using the locale-specific
+character in
+.IR bc 's
+input would introduce ambiguities into the language; consider the
+following example in a locale with a
+<comma>
+as the decimal-point character:
+.sp
+.RS 4
+.nf
+\fB
+define f(a,b) {
+    ...
+}
+\&...
+.P
+f(1,2,3)
+.fi \fR
+.P
+.RE
+.P
+Because of such ambiguities, the
+<period>
+character is used in input. Having input follow different conventions
+from output would be confusing in either pipeline usage or interactive
+usage, so the
+<period>
+is also used in output.
+.SH EXAMPLES
+In the shell, the following assigns an approximation of the first ten
+digits of
+.BR '\(*p' 
+to the variable
+.IR x :
+.sp
+.RS 4
+.nf
+\fB
+x=$(printf "%s\en" 'scale = 10; 104348/33215' | bc)
+.fi \fR
+.P
+.RE
+.P
+The following
+.IR bc
+program prints the same approximation of
+.BR '\(*p' ,
+with a label, to standard output:
+.sp
+.RS 4
+.nf
+\fB
+scale = 10
+"pi equals "
+104348 / 33215
+.fi \fR
+.P
+.RE
+.P
+The following defines a function to compute an approximate value of the
+exponential function (note that such a function is predefined if the
+.BR \(mil
+option is specified):
+.sp
+.RS 4
+.nf
+\fB
+scale = 20
+define e(x){
+    auto a, b, c, i, s
+    a = 1
+    b = 1
+    s = 1
+    for (i = 1; 1 == 1; i++){
+        a = a*x
+        b = b*i
+        c = a/b
+        if (c == 0) {
+             return(s)
+        }
+        s = s+c
+    }
+}
+.fi \fR
+.P
+.RE
+.P
+The following prints approximate values of the exponential function of
+the first ten integers:
+.sp
+.RS 4
+.nf
+\fB
+for (i = 1; i <= 10; ++i) {
+    e(i)
+}
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The
+.IR bc
+utility is implemented historically as a front-end processor for
+.IR dc ;
+.IR dc
+was not selected to be part of this volume of POSIX.1\(hy2008 because
+.IR bc
+was thought to have a more intuitive programmatic interface. Current
+implementations that implement
+.IR bc
+using
+.IR dc
+are expected to be compliant.
+.P
+The exit status for error conditions has been left unspecified for
+several reasons:
+.IP " *" 4
+The
+.IR bc
+utility is used in both interactive and non-interactive situations.
+Different exit codes may be appropriate for the two uses.
+.IP " *" 4
+It is unclear when a non-zero exit should be given; divide-by-zero,
+undefined functions, and syntax errors are all possibilities.
+.IP " *" 4
+It is not clear what utility the exit status has.
+.IP " *" 4
+In the 4.3 BSD, System V, and Ninth Edition implementations,
+.IR bc
+works in conjunction with
+.IR dc .
+The
+.IR dc
+utility is the parent,
+.IR bc
+is the child. This was done to cleanly terminate
+.IR bc
+if
+.IR dc
+aborted.
+.P
+The decision to have
+.IR bc
+exit upon encountering an inaccessible input file is based on the
+belief that
+.IR bc
+.IR file1
+.IR file2
+is used most often when at least
+.IR file1
+contains data/function declarations/initializations. Having
+.IR bc
+continue with prerequisite files missing is probably not useful. There
+is no implication in the CONSEQUENCES OF ERRORS section that
+.IR bc
+must check all its files for accessibility before opening any of them.
+.P
+There was considerable debate on the appropriateness of the language
+accepted by
+.IR bc .
+Several reviewers preferred to see either a pure subset of the C
+language or some changes to make the language more compatible with C.
+While the
+.IR bc
+language has some obvious similarities to C, it has never claimed to be
+compatible with any version of C. An interpreter for a subset of C
+might be a very worthwhile utility, and it could potentially make
+.IR bc
+obsolete. However, no such utility is known in historical practice, and
+it was not within the scope of this volume of POSIX.1\(hy2008 to define such a language and
+utility. If and when they are defined, it may be appropriate to include
+them in a future version of this standard. This left the following
+alternatives:
+.IP " 1." 4
+Exclude any calculator language from this volume of POSIX.1\(hy2008.
+.RS 4 
+.P
+The consensus of the standard developers was that a simple programmatic
+calculator language is very useful for both applications and
+interactive users. The only arguments for excluding any calculator were
+that it would become obsolete if and when a C-compatible one emerged,
+or that the absence would encourage the development of such a
+C-compatible one. These arguments did not sufficiently address the
+needs of current application developers.
+.RE
+.IP " 2." 4
+Standardize the historical
+.IR dc ,
+possibly with minor modifications.
+.RS 4 
+.P
+The consensus of the standard developers was that
+.IR dc
+is a fundamentally less usable language and that that would be far too
+severe a penalty for avoiding the issue of being similar to but
+incompatible with C.
+.RE
+.IP " 3." 4
+Standardize the historical
+.IR bc ,
+possibly with minor modifications.
+.RS 4 
+.P
+This was the approach taken. Most of the proponents of changing the
+language would not have been satisfied until most or all of the
+incompatibilities with C were resolved. Since most of the changes
+considered most desirable would break historical applications and
+require significant modification to historical implementations, almost
+no modifications were made. The one significant modification that was
+made was the replacement of the historical
+.IR bc
+assignment operators
+.BR \(dq=+\(dq ,
+and so on, with the more modern
+.BR \(dq+=\(dq ,
+and so on. The older versions are considered to be fundamentally flawed
+because of the lexical ambiguity in uses like
+.IR a =\(mi1.
+.P
+In order to permit implementations to deal with backwards-compatibility
+as they see fit, the behavior of this one ambiguous construct was made
+undefined. (At least three implementations have been known to support
+this change already, so the degree of change involved should not be
+great.)
+.RE
+.P
+The
+.BR '%' 
+operator is the mathematical remainder operator when
+.BR scale
+is zero. The behavior of this operator for other values of
+.BR scale
+is from historical implementations of
+.IR bc ,
+and has been maintained for the sake of historical applications despite
+its non-intuitive nature.
+.P
+Historical implementations permit setting
+.BR ibase
+and
+.BR obase
+to a broader range of values. This includes values less than 2, which
+were not seen as sufficiently useful to standardize. These
+implementations do not interpret input properly for values of
+.BR ibase
+that are greater than 16. This is because numeric constants are
+recognized syntactically, rather than lexically, as described in
+\&this volume of POSIX.1\(hy2008. They are built from lexical tokens of single hexadecimal digits
+and
+<period>
+characters. Since
+<blank>
+characters between tokens are not visible at the syntactic level, it is
+not possible to recognize the multi-digit ``digits'' used in the higher
+bases properly. The ability to recognize input in these bases was not
+considered useful enough to require modifying these implementations.
+Note that the recognition of numeric constants at the syntactic level
+is not a problem with conformance to this volume of POSIX.1\(hy2008, as it does not impact the
+behavior of conforming applications (and correct
+.IR bc
+programs). Historical implementations also accept input with all of the
+digits
+.BR '0' \(mi\c
+.BR '9' 
+and
+.BR 'A' \(mi\c
+.BR 'F' 
+regardless of the value of
+.BR ibase ;
+since digits with value greater than or equal to
+.BR ibase
+are not really appropriate, the behavior when they appear is undefined,
+except for the common case of:
+.sp
+.RS 4
+.nf
+\fB
+ibase=8;
+    /* Process in octal base. */
+\&...
+ibase=A
+    /* Restore decimal base. */
+.fi \fR
+.P
+.RE
+.P
+In some historical implementations, if the expression to be written is
+an uninitialized array element, a leading
+<space>
+and/or up to four leading 0 characters may be output before the
+character zero. This behavior is considered a bug; it is unlikely that
+any currently conforming application relies on:
+.sp
+.RS 4
+.nf
+\fB
+echo 'b[3]' | bc
+.fi \fR
+.P
+.RE
+.P
+returning 00000 rather than 0.
+.P
+Exact calculation of the number of fractional digits to output for a
+given value in a base other than 10 can be computationally expensive.
+Historical implementations use a faster approximation, and this is
+permitted. Note that the requirements apply only to values of
+.BR obase
+that this volume of POSIX.1\(hy2008 requires implementations to support (in particular, not to
+1, 0, or negative bases, if an implementation supports them as an
+extension).
+.P
+Historical implementations of
+.IR bc
+did not allow array parameters to be passed as the last parameter to a
+function. New implementations are encouraged to remove this restriction
+even though it is not required by the grammar.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 1.3" ", " "Grammar Conventions",
+.IR "\fIawk\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

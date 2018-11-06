@@ -1,0 +1,214 @@
+'\" et
+.TH INSQUE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+insque,
+remque
+\(em insert or remove an element in a queue
+.SH SYNOPSIS
+.LP
+.nf
+#include <search.h>
+.P
+void insque(void *\fIelement\fP, void *\fIpred\fP);
+void remque(void *\fIelement\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIinsque\fR()
+and
+\fIremque\fR()
+functions shall manipulate queues built from doubly-linked lists.
+The queue can be either circular or linear. An application using
+\fIinsque\fR()
+or
+\fIremque\fR()
+shall ensure it defines a structure in which the first two members of
+the structure are pointers to the same type of structure, and any
+further members are application-specific. The first member of the
+structure is a forward pointer to the next entry in the queue. The
+second member is a backward pointer to the previous entry in the queue.
+If the queue is linear, the queue is terminated with null pointers. The
+names of the structure and of the pointer members are not subject to
+any special restriction.
+.P
+The
+\fIinsque\fR()
+function shall insert the element pointed to by
+.IR element
+into a queue immediately after the element pointed to by
+.IR pred .
+.P
+The
+\fIremque\fR()
+function shall remove the element pointed to by
+.IR element
+from a queue.
+.P
+If the queue is to be used as a linear list, invoking
+\fIinsque\fP(&\fIelement\fP, NULL), where
+.IR element
+is the initial element of the queue, shall initialize the forward
+and backward pointers of
+.IR element
+to null pointers.
+.P
+If the queue is to be used as a circular list, the application shall
+ensure it initializes the forward pointer and the backward pointer of
+the initial element of the queue to the element's own address.
+.SH "RETURN VALUE"
+The
+\fIinsque\fR()
+and
+\fIremque\fR()
+functions do not return a value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Creating a Linear Linked List"
+.P
+The following example creates a linear linked list.
+.sp
+.RS 4
+.nf
+\fB
+#include <search.h>
+\&...
+struct myque element1;
+struct myque element2;
+.P
+char *data1 = "DATA1";
+char *data2 = "DATA2";
+\&...
+element1.data = data1;
+element2.data = data2;
+.P
+insque (&element1, NULL);
+insque (&element2, &element1);
+.fi \fR
+.P
+.RE
+.SS "Creating a Circular Linked List"
+.P
+The following example creates a circular linked list.
+.sp
+.RS 4
+.nf
+\fB
+#include <search.h>
+\&...
+struct myque element1;
+struct myque element2;
+.P
+char *data1 = "DATA1";
+char *data2 = "DATA2";
+\&...
+element1.data = data1;
+element2.data = data2;
+.P
+element1.fwd = &element1;
+element1.bck = &element1;
+.P
+insque (&element2, &element1);
+.fi \fR
+.P
+.RE
+.SS "Removing an Element"
+.P
+The following example removes the element pointed to by
+.IR element1 .
+.sp
+.RS 4
+.nf
+\fB
+#include <search.h>
+\&...
+struct myque element1;
+\&...
+remque (&element1);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The historical implementations of these functions described the
+arguments as being of type
+.BR "struct qelem *"
+rather than as being of type
+.BR "void *"
+as defined here. In those implementations,
+.BR "struct qelem"
+was commonly defined in
+.IR <search.h> 
+as:
+.sp
+.RS 4
+.nf
+\fB
+struct qelem {
+    struct qelem  *q_forw;
+    struct qelem  *q_back;
+};
+.fi \fR
+.P
+.RE
+.P
+Applications using these functions, however, were never able to use
+this structure directly since it provided no room for the actual data
+contained in the elements. Most applications defined structures that
+contained the two pointers as the initial elements and also provided
+space for, or pointers to, the object's data. Applications that used
+these functions to update more than one type of table also had the
+problem of specifying two or more different structures with the same
+name, if they literally used
+.BR "struct qelem"
+as specified.
+.P
+As described here, the implementations were actually expecting a
+structure type where the first two members were forward and backward
+pointers to structures. With C compilers that didn't provide function
+prototypes, applications used structures as specified in the
+DESCRIPTION above and the compiler did what the application expected.
+.P
+If this method had been carried forward with an ISO\ C standard compiler and the
+historical function prototype, most applications would have to be
+modified to cast pointers to the structures actually used to be
+pointers to
+.BR "struct qelem"
+to avoid compilation warnings. By specifying
+.BR "void *"
+as the argument type, applications do not need to change (unless
+they specifically referenced
+.BR "struct qelem"
+and depended on it being defined in
+.IR <search.h> ).
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<search.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

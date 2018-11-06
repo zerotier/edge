@@ -1,0 +1,75 @@
+'\" et
+.TH CFGETOSPEED "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cfgetospeed
+\(em get output baud rate
+.SH SYNOPSIS
+.LP
+.nf
+#include <termios.h>
+.P
+speed_t cfgetospeed(const struct termios *\fItermios_p\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIcfgetospeed\fR()
+function shall extract the output baud rate from the
+.BR termios
+structure to which the
+.IR termios_p
+argument points.
+.P
+This function shall return exactly the value in the
+.BR termios
+data structure, without interpretation.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIcfgetospeed\fR()
+shall return a value of type
+.BR speed_t
+representing the output baud rate.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+Refer to
+.IR "\fIcfgetispeed\fR\^(\|)".
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIcfgetispeed\fR\^(\|)",
+.IR "\fIcfsetispeed\fR\^(\|)",
+.IR "\fIcfsetospeed\fR\^(\|)",
+.IR "\fItcgetattr\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "\fB<termios.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

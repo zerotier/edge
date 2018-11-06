@@ -1,0 +1,15 @@
+#libcrypto pkg-config source file
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: LibreSSL-libcrypto
+Description: LibreSSL cryptography library
+Version: 2.7.4
+Requires:
+Conflicts:
+Libs: -L${libdir} -lcrypto
+Libs.private:  -lpthread
+Cflags: -I${includedir}

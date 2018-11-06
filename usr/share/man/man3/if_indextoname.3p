@@ -1,0 +1,82 @@
+'\" et
+.TH IF_INDEXTONAME "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+if_indextoname
+\(em map a network interface index to its corresponding name
+.SH SYNOPSIS
+.LP
+.nf
+#include <net/if.h>
+.P
+char *if_indextoname(unsigned \fIifindex\fP, char *\fIifname\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIif_indextoname\fR()
+function shall map an interface index to its corresponding name.
+.P
+When this function is called,
+.IR ifname
+shall point to a buffer of at least
+{IF_NAMESIZE}
+bytes. The function shall place in this buffer the name of the interface
+with index
+.IR ifindex .
+.SH "RETURN VALUE"
+If
+.IR ifindex
+is an interface index, then the function shall return the value supplied in
+.IR ifname ,
+which points to a buffer now containing the interface name. Otherwise,
+the function shall return a null pointer and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIif_indextoname\fR()
+function shall fail if:
+.TP
+.BR ENXIO
+The interface does not exist.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIgetsockopt\fR\^(\|)",
+.IR "\fIif_freenameindex\fR\^(\|)",
+.IR "\fIif_nameindex\fR\^(\|)",
+.IR "\fIif_nametoindex\fR\^(\|)",
+.IR "\fIsetsockopt\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<net_if.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

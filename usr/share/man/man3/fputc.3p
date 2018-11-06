@@ -1,0 +1,157 @@
+'\" et
+.TH FPUTC "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fputc
+\(em put a byte on a stream
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+int fputc(int \fIc\fP, FILE *\fIstream\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIfputc\fR()
+function shall write the byte specified by
+.IR c
+(converted to an
+.BR "unsigned char" )
+to the output stream pointed to by
+.IR stream ,
+at the position indicated by the associated file-position indicator for
+the stream (if defined), and shall advance the indicator appropriately.
+If the file cannot support positioning requests, or if the stream was
+opened with append mode, the byte shall be appended to the output
+stream.
+.P
+The last data modification and last file status change timestamps
+of the file shall be marked for update between the successful
+execution of
+\fIfputc\fR()
+and the next successful completion of a call to
+\fIfflush\fR()
+or
+\fIfclose\fR()
+on the same stream or a call to
+\fIexit\fR()
+or
+\fIabort\fR().
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIfputc\fR()
+shall return the value it has written. Otherwise, it shall return EOF,
+the error indicator for the stream shall be set,
+and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fIfputc\fR()
+function shall fail if either the
+.IR stream
+is unbuffered or the
+.IR stream 's
+buffer needs to be flushed, and:
+.TP
+.BR EAGAIN
+The O_NONBLOCK flag is set for the file descriptor underlying
+.IR stream
+and the thread would be delayed in the write operation.
+.TP
+.BR EBADF
+The file descriptor underlying
+.IR stream
+is not a valid file descriptor open for writing.
+.TP
+.BR EFBIG
+An attempt was made to write to a file that exceeds the maximum file
+size.
+.TP
+.BR EFBIG
+An attempt was made to write to a file that exceeds the file
+size limit of the process.
+.TP
+.BR EFBIG
+The file is a regular file and an attempt was made to write at or
+beyond the offset maximum.
+.TP
+.BR EINTR
+The write operation was terminated due to the receipt of a signal, and
+no data was transferred.
+.TP
+.BR EIO
+A physical I/O error has occurred, or the process is a member of a
+background process group attempting to write to its controlling terminal,
+TOSTOP is set, the calling thread is not blocking SIGTTOU, the process
+is not ignoring SIGTTOU, and the process group of the process is orphaned.
+This error may also be returned under implementation-defined conditions.
+.TP
+.BR ENOSPC
+There was no free space remaining on the device containing the file.
+.TP
+.BR EPIPE
+An attempt is made to write to a pipe or FIFO that is not open for
+reading by any process. A SIGPIPE signal shall also be sent to the
+thread.
+.br
+.P
+The
+\fIfputc\fR()
+function may fail if:
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.TP
+.BR ENXIO
+A request was made of a nonexistent device, or the request was
+outside the capabilities of the device.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIferror\fR\^(\|)",
+.IR "\fIfopen\fR\^(\|)",
+.IR "\fIgetrlimit\fR\^(\|)",
+.IR "\fIputc\fR\^(\|)",
+.IR "\fIputs\fR\^(\|)",
+.IR "\fIsetbuf\fR\^(\|)",
+.IR "\fIulimit\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

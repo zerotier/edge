@@ -1,0 +1,279 @@
+'\" et
+.TH DU "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+du
+\(em estimate file space usage
+.SH SYNOPSIS
+.LP
+.nf
+du \fB[\fR\(mia|\(mis\fB] [\fR\(mikx\fB] [\fR\(miH|\(miL\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+By default, the
+.IR du
+utility shall write to standard output the size of the file space
+allocated to, and the size of the file space allocated to each
+subdirectory of, the file hierarchy rooted in each of the specified
+files. By default, when a symbolic link is encountered on the command
+line or in the file hierarchy,
+.IR du
+shall count the size of the symbolic link (rather than the file
+referenced by the link), and shall not follow the link to another
+portion of the file hierarchy. The size of the file space allocated to
+a file of type directory shall be defined as the sum total of space
+allocated to all files in the file hierarchy rooted in the directory
+plus the space allocated to the directory itself.
+.P
+When
+.IR du
+cannot
+\fIstat\fR()
+files or
+\fIstat\fR()
+or read directories, it shall report an error condition and the final
+exit status is affected. Files with multiple links shall be counted and
+written for only one entry. The directory entry that is selected in the
+report is unspecified. By default, file sizes shall be written in
+512-byte units, rounded up to the next 512-byte unit.
+.SH OPTIONS
+The
+.IR du
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\fP" 10
+In addition to the default output, report the size of each file not of
+type directory in the file hierarchy rooted in the specified file.
+Regardless of the presence of the
+.BR \(mia
+option, non-directories given as
+.IR file
+operands shall always be listed.
+.IP "\fB\(miH\fP" 10
+If a symbolic link is specified on the command line,
+.IR du
+shall count the size of the file or file hierarchy referenced by the
+link.
+.IP "\fB\(mik\fP" 10
+Write the files sizes in units of 1\|024 bytes, rather than the default
+512-byte units.
+.IP "\fB\(miL\fP" 10
+If a symbolic link is specified on the command line or encountered
+during the traversal of a file hierarchy,
+.IR du
+shall count the size of the file or file hierarchy referenced by the
+link.
+.IP "\fB\(mis\fP" 10
+Instead of the default output, report only the total sum for each of
+the specified files.
+.IP "\fB\(mix\fP" 10
+When evaluating file sizes, evaluate only those files that have the
+same device as the file specified by the
+.IR file
+operand.
+.P
+Specifying more than one of the mutually-exclusive options
+.BR \(miH
+and
+.BR \(miL
+shall not be considered an error. The last option specified shall
+determine the behavior of the utility.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+The pathname of a file whose size is to be written. If no
+.IR file
+is specified, the current directory shall be used.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR du :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The output from
+.IR du
+shall consist of the amount of space allocated to a file and the
+name of the file, in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%d %s\en", <\fIsize\fR>, <\fIpathname\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The use of 512-byte units is historical practice and maintains
+compatibility with
+.IR ls
+and other utilities in this volume of POSIX.1\(hy2008. This does not mandate that the
+file system itself be based on 512-byte blocks. The
+.BR \(mik
+option was added as a compromise measure. It was agreed by the standard
+developers that 512 bytes was the best default unit because of its
+complete historical consistency on System V (\fIversus\fP the mixed
+512/1\|024-byte usage on BSD systems), and that a
+.BR \(mik
+option to switch to 1\|024-byte units was a good compromise. Users who
+prefer the 1\|024-byte quantity can easily alias
+.IR du
+to
+.IR du
+.BR \(mik
+without breaking the many historical scripts relying on the 512-byte
+units.
+.P
+The
+.BR \(mib
+option was added to an early proposal to provide a resolution to the
+situation where System V and BSD systems give figures for file sizes in
+.IR blocks ,
+which is an implementation-defined concept. (In common usage, the
+block size is 512 bytes for System V and 1\|024 bytes for BSD systems.)
+However,
+.BR \(mib
+was later deleted, since the default was eventually decided as 512-byte
+units.
+.P
+Historical file systems provided no way to obtain exact figures for the
+space allocation given to files. There are two known areas of
+inaccuracies in historical file systems: cases of
+.IR "indirect blocks"
+being used by the file system or
+.IR "sparse"
+files yielding incorrectly high values. An indirect block is space used
+by the file system in the storage of the file, but that need not be
+counted in the space allocated to the file. A
+.IR sparse
+file is one in which an
+\fIlseek\fR()
+call has been made to a position beyond the end of the file and data
+has subsequently been written at that point. A file system need not
+allocate all the intervening zero-filled blocks to such a file. It is
+up to the implementation to define exactly how accurate its methods
+are.
+.P
+The
+.BR \(mia
+and
+.BR \(mis
+options were mutually-exclusive in the original version of
+.IR du .
+The POSIX Shell and Utilities description is implied by the language in
+the SVID where
+.BR \(mis
+is described as causing ``only the grand total'' to be reported. Some
+systems may produce output for
+.BR \(misa ,
+but a Strictly Conforming POSIX Shell and Utilities Application cannot
+use that combination.
+.P
+The
+.BR \(mia
+and
+.BR \(mis
+options were adopted from the SVID except that the System V behavior of
+not listing non-directories explicitly given as operands, unless the
+.BR \(mia
+option is specified, was considered a bug; the BSD-based behavior
+(report for all operands) is mandated. The default behavior of
+.IR du
+in the SVID with regard to reporting the failure to read files (it
+produces no messages) was considered counter-intuitive, and thus it was
+specified that the POSIX Shell and Utilities default behavior shall be
+to produce such messages. These messages can be turned off with shell
+redirection to achieve the System V behavior.
+.P
+The
+.BR \(mix
+option is historical practice on recent BSD systems. It has been
+adopted by this volume of POSIX.1\(hy2008 because there was no other historical method of
+limiting the
+.IR du
+search to a single file hierarchy. This limitation of the search is
+necessary to make it possible to obtain file space usage information
+about a file system on which other file systems are mounted, without
+having to resort to a lengthy
+.IR find
+and
+.IR awk
+script.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIls\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIfstatat\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

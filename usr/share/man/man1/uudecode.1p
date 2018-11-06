@@ -1,0 +1,215 @@
+'\" et
+.TH UUDECODE "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+uudecode
+\(em decode a binary file
+.SH SYNOPSIS
+.LP
+.nf
+uudecode \fB[\fR\(mio \fIoutfile\fB] [\fIfile\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR uudecode
+utility shall read a file, or standard input if no file is specified,
+that includes data created by the
+.IR uuencode
+utility. The
+.IR uudecode
+utility shall scan the input file, searching for data compatible with
+one of the formats specified in
+.IR uuencode ,
+and attempt to create or overwrite the file described by the data (or
+overridden by the
+.BR \(mio
+option). The pathname shall be contained in the data or specified by
+the
+.BR \(mio
+option. The file access permission bits and contents for the file to be
+produced shall be contained in that data. The mode bits of the created
+file (other than standard output) shall be set from the file access
+permission bits contained in the data; that is, other attributes of the
+mode, including the file mode creation mask (see
+.IR umask ),
+shall not affect the file being produced. If either of the
+.IR op
+characters
+.BR '\(pl' 
+and
+.BR '\(mi' 
+(see
+.IR chmod )
+are specified in symbolic mode, the initial mode on which those
+operations are based is unspecified.
+.P
+If the pathname of the file to be produced exists, and the user does
+not have write permission on that file,
+.IR uudecode
+shall terminate with an error. If the pathname of the file to be
+produced exists, and the user has write permission on that file, the
+existing file shall be overwritten.
+.P
+If the input data was produced by
+.IR uuencode
+on a system with a different number of bits per byte than on the target
+system, the results of
+.IR uudecode
+are unspecified.
+.SH OPTIONS
+The
+.IR uudecode
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported by the implementation:
+.IP "\fB\(mio\ \fIoutfile\fR" 10
+A pathname of a file that shall be used instead of any pathname
+contained in the input data. Specifying an
+.IR outfile
+option-argument of
+.BR /dev/stdout
+shall indicate standard output.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+The pathname of a file containing the output of
+.IR uuencode .
+.SH STDIN
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be files containing the output of
+.IR uuencode .
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR uudecode :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If the file data header encoded by
+.IR uuencode
+is
+.BR \(mi
+or
+.BR /dev/stdout ,
+or the
+.BR \(mio
+.BR /dev/stdout
+option overrides the file data, the standard output shall be in the
+same format as the file originally encoded by
+.IR uuencode .
+Otherwise, the standard output shall not be used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The output file shall be in the same format as the file originally
+encoded by
+.IR uuencode .
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The user who is invoking
+.IR uudecode
+must have write permission on any file being created.
+.P
+The output of
+.IR uuencode
+is essentially an encoded bit stream that is not cognizant of byte
+boundaries. It is possible that a 9-bit byte target machine can
+process input from an 8-bit source, if it is aware of the requirement,
+but the reverse is unlikely to be satisfying. Of course, the only data
+that is meaningful for such a transfer between architectures is
+generally character data.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+Input files are not necessarily text files, as stated by an early
+proposal. Although the
+.IR uuencode
+output is a text file, that output could have been wrapped within
+another file or mail message that is not a text file.
+.P
+The
+.BR \(mio
+option is not historical practice, but was added at the request of WG15
+so that the user could override the target pathname without having to
+edit the input data itself.
+.P
+In early drafts, the [\c
+.BR \(mio
+.IR outfile ]
+option-argument allowed the use of
+.BR \(mi
+to mean standard output. The symbol
+.BR \(mi
+has only been used previously in POSIX.1\(hy2008 as a standard input indicator.
+The standard developers did not wish to overload the meaning of
+.BR \(mi
+in this manner. The
+.BR /dev/stdout
+concept exists on most modern systems. The
+.BR /dev/stdout
+syntax does not refer to a new special file. It is just a magic cookie
+to specify standard output.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIchmod\fR\^",
+.IR "\fIumask\fR\^",
+.IR "\fIuuencode\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,82 @@
+'\" et
+.TH ISATTY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+isatty
+\(em test for a terminal device
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int isatty(int \fIfildes\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIisatty\fR()
+function shall test whether
+.IR fildes ,
+an open file descriptor, is associated with a terminal device.
+.SH "RETURN VALUE"
+The
+\fIisatty\fR()
+function shall return 1 if
+.IR fildes
+is associated with a terminal; otherwise, it shall return 0 and may set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIisatty\fR()
+function may fail if:
+.TP
+.BR EBADF
+The
+.IR fildes
+argument is not a valid open file descriptor.
+.TP
+.BR ENOTTY
+The file associated with the
+.IR fildes
+argument is not a terminal.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The
+\fIisatty\fR()
+function does not necessarily indicate that a human being is available
+for interaction via
+.IR fildes .
+It is quite possible that non-terminal devices are connected to the
+communications line.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

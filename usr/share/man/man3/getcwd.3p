@@ -1,0 +1,292 @@
+'\" et
+.TH GETCWD "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getcwd
+\(em get the pathname of the current working directory
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+char *getcwd(char *\fIbuf\fP, size_t \fIsize\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIgetcwd\fR()
+function shall place an absolute pathname of the current working directory
+in the array pointed to by
+.IR buf ,
+and return
+.IR buf .
+The pathname shall contain no components that are dot or dot-dot, or
+are symbolic links.
+.P
+If there are multiple pathnames that
+\fIgetcwd\fR()
+could place in the array pointed to by
+.IR buf ,
+one beginning with a single
+<slash>
+character and one or more beginning with two
+<slash>
+characters, then
+\fIgetcwd\fR()
+shall place the pathname beginning with a single
+<slash>
+character in the array. The pathname shall not contain any unnecessary
+<slash>
+characters after the leading one or two
+<slash>
+characters.
+.P
+The
+.IR size
+argument is the size in bytes of the character array pointed to by the
+.IR buf
+argument. If
+.IR buf
+is a null pointer, the behavior of
+\fIgetcwd\fR()
+is unspecified.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIgetcwd\fR()
+shall return the
+.IR buf
+argument. Otherwise,
+\fIgetcwd\fR()
+shall return a null pointer and set
+.IR errno
+to indicate the error. The contents of the array pointed to by
+.IR buf
+are then undefined.
+.SH ERRORS
+The
+\fIgetcwd\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The
+.IR size
+argument is 0.
+.TP
+.BR ERANGE
+The
+.IR size
+argument is greater than 0, but is smaller than the length of
+the string +1.
+.P
+The
+\fIgetcwd\fR()
+function may fail if:
+.TP
+.BR EACCES
+Search permission was denied for the current directory, or read or search
+permission was denied for a directory above the current directory in
+the file hierarchy.
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+The following example uses
+{PATH_MAX}
+as the initial buffer size (unless it is indeterminate or very large),
+and calls
+\fIgetcwd\fR()
+with progressively larger buffers until it does not give an
+.BR [ERANGE] 
+error.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+.P
+\&...
+.P
+long path_max;
+size_t size;
+char *buf;
+char *ptr;
+.P
+path_max = pathconf(".", _PC_PATH_MAX);
+if (path_max == -1)
+    size = 1024;
+else if (path_max > 10240)
+    size = 10240;
+else
+    size = path_max;
+.P
+for (buf = ptr = NULL; ptr == NULL; size *= 2)
+{
+    if ((buf = realloc(buf, size)) == NULL)
+    {
+        ... handle error ...
+    }
+.P
+    ptr = getcwd(buf, size);
+    if (ptr == NULL && errno != ERANGE)
+    {
+        ... handle error ...
+    }
+}
+\&...
+free (buf);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+If the pathname obtained from
+\fIgetcwd\fR()
+is longer than
+{PATH_MAX}
+bytes, it could produce an
+.BR [ENAMETOOLONG] 
+error if passed to
+\fIchdir\fR().
+Therefore, in order to return to that directory it may be necessary to
+break the pathname into sections shorter than
+{PATH_MAX}
+bytes and call
+\fIchdir\fR()
+on each section in turn (the first section being an absolute pathname and
+subsequent sections being relative pathnames). A simpler way to handle
+saving and restoring the working directory when it may be deeper than
+{PATH_MAX}
+bytes in the file hierarchy is to use a file descriptor and
+\fIfchdir\fR(),
+rather than
+\fIgetcwd\fR()
+and
+\fIchdir\fR().
+However, the two methods do have some differences. The
+\fIfchdir\fR()
+approach causes the program to restore a working directory even
+if it has been renamed in the meantime, whereas the
+\fIchdir\fR()
+approach restores to a directory with the same name as the original,
+even if the directories were renamed in the meantime. Since the
+\fIfchdir\fR()
+approach does not access parent directories, it can succeed when
+\fIgetcwd\fR()
+would fail due to permissions problems. In applications conforming to
+earlier versions of this standard, it was not possible to use the
+\fIfchdir\fR()
+approach when the working directory is searchable but not readable,
+as the only way to open a directory was with O_RDONLY, whereas the
+\fIgetcwd\fR()
+approach can succeed in this case.
+.SH RATIONALE
+Having
+\fIgetcwd\fR()
+take no arguments and instead use the
+\fImalloc\fR()
+function to produce space for the returned argument was considered.
+The advantage is that
+\fIgetcwd\fR()
+knows how big the working directory pathname is and can allocate an
+appropriate amount of space. But the programmer would have to use the
+\fIfree\fR()
+function to free the resulting object, or each use of
+\fIgetcwd\fR()
+would further reduce the available memory. Finally,
+\fIgetcwd\fR()
+is taken from the SVID where it has the two arguments used in this volume of POSIX.1\(hy2008.
+.P
+The older function
+.IR getwd (\|)
+was rejected for use in this context because it had only a buffer
+argument and no
+.IR size
+argument, and thus had no way to prevent overwriting the buffer, except
+to depend on the programmer to provide a large enough buffer.
+.P
+On some implementations, if
+.IR buf
+is a null pointer,
+\fIgetcwd\fR()
+may obtain
+.IR size
+bytes of memory using
+\fImalloc\fR().
+In this case, the pointer returned by
+\fIgetcwd\fR()
+may be used as the argument in a subsequent call to
+\fIfree\fR().
+Invoking
+\fIgetcwd\fR()
+with
+.IR buf
+as a null pointer is not recommended in conforming applications.
+.P
+Earlier implementations of
+\fIgetcwd\fR()
+sometimes generated pathnames like
+.BR \(dq../../../subdirname\(dq 
+internally, using them to explore the path of ancestor directories back
+to the root. If one of these internal pathnames exceeded
+{PATH_MAX}
+in length, the implementation could fail with
+.IR errno
+set to
+.BR [ENAMETOOLONG] .
+This is no longer allowed.
+.P
+If a program is operating in a directory where some (grand)parent
+directory does not permit reading,
+\fIgetcwd\fR()
+may fail, as in most implementations it must read the directory to
+determine the name of the file. This can occur if search, but not read,
+permission is granted in an intermediate directory, or if the program
+is placed in that directory by some more privileged process (for
+example, login). Including the
+.BR [EACCES] 
+error condition makes the reporting of the error consistent and warns
+the application developer that
+\fIgetcwd\fR()
+can fail for reasons beyond the control of the application developer or
+user. Some implementations can avoid this occurrence (for example, by
+implementing
+\fIgetcwd\fR()
+using
+.IR pwd ,
+where
+.IR pwd
+is a set-user-root process),
+thus the error was made optional. Since this volume of POSIX.1\(hy2008 permits the addition of
+other errors, this would be a common addition and yet one that
+applications could not be expected to deal with without this addition.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImalloc\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

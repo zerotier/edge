@@ -1,0 +1,292 @@
+'\" et
+.TH UUCP "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+uucp
+\(em system-to-system copy
+.SH SYNOPSIS
+.LP
+.nf
+uucp \fB[\fR\(micCdfjmr\fB] [\fR\(min \fIuser\fB] \fIsource-file\fR... \fIdestination-file\fR
+.fi
+.SH DESCRIPTION
+The
+.IR uucp
+utility shall copy files named by the
+.IR source-file
+argument to the
+.IR destination-file
+argument. The files named can be on local or remote systems.
+.P
+The
+.IR uucp
+utility cannot guarantee support for all character encodings in all
+circumstances. For example, transmission data may be restricted to 7
+bits by the underlying network, 8-bit data and filenames need not be
+portable to non-internationalized systems, and so on. Under these
+circumstances, it is recommended that only characters defined in the
+ISO/IEC\ 646:\|1991 standard International Reference Version (equivalent to ASCII) 7-bit range
+of characters be used, and that only characters defined in the portable
+filename character set be used for naming files. The protocol for
+transfer of files is unspecified by POSIX.1\(hy2008.
+.P
+Typical implementations of this utility require a communications line
+configured to use the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface",
+but other communications means may be used. On systems where there are
+no available communications means (either temporarily or permanently),
+this utility shall write an error message describing the problem and
+exit with a non-zero exit status.
+.SH OPTIONS
+The
+.IR uucp
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mic\fP" 10
+Do not copy local file to the spool directory for transfer to the
+remote machine (default).
+.IP "\fB\(miC\fP" 10
+Force the copy of local files to the spool directory for transfer.
+.IP "\fB\(mid\fP" 10
+Make all necessary directories for the file copy (default).
+.IP "\fB\(mif\fP" 10
+Do not make intermediate directories for the file copy.
+.IP "\fB\(mij\fP" 10
+Write the job identification string to standard output. This job
+identification can be used by
+.IR uustat
+to obtain the status or terminate a job.
+.IP "\fB\(mim\fP" 10
+Send mail to the requester when the copy is completed.
+.IP "\fB\(min\ \fIuser\fR" 10
+Notify
+.IR user
+on the remote system that a file was sent.
+.IP "\fB\(mir\fP" 10
+Do not start the file transfer; just queue the job.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIdestination-file\fR,\ \fIsource-file\fR" 10
+.br
+A pathname of a file to be copied to, or from, respectively. Either
+name can be a pathname on the local machine, or can have the form:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fIsystem-name\fR!\fIpathname\fR
+.fi \fR
+.P
+.RE
+.P
+where
+.IR system-name
+is taken from a list of system names that
+.IR uucp
+knows about.
+The destination
+.IR system-name
+can also be a list of names such as:
+.sp
+.RS 4
+.nf
+\fB
+\fIsystem-name\fR!\fIsystem-name\fR!...!\fIsystem-name\fR!\fIpathname\fR
+.fi \fR
+.P
+.RE
+.P
+in which case, an attempt is made to send the file via the specified
+route to the destination. Care should be taken to ensure that
+intermediate nodes in the route are willing to forward information.
+.P
+The shell pattern matching notation characters
+.BR '?' ,
+.BR '*' ,
+and
+.BR \(dq[...]\(dq 
+appearing in
+.IR pathname
+shall be expanded on the appropriate system.
+.P
+Pathnames can be one of:
+.IP " 1." 4
+An absolute pathname.
+.IP " 2." 4
+A pathname preceded by ~\c
+.IR user
+where
+.IR user
+is a login name on the specified system and is replaced by that user's
+login directory. Note that if an invalid login is specified, the
+default is to the public directory (called
+.IR PUBDIR ;
+the actual location of
+.IR PUBDIR
+is implementation-defined).
+.IP " 3." 4
+A pathname preceded by ~/\c
+.IR destination
+where
+.IR destination
+is appended to
+.IR PUBDIR .
+.RS 4 
+.TP 10
+.BR Note:
+This destination is treated as a filename unless more than one file is
+being transferred by this request or the destination is already a
+directory. To ensure that it is a directory, follow the destination
+with a
+.BR '/' .
+For example,
+.BR ~/dan/
+as the destination makes the directory
+.BR PUBDIR/dan
+if it does not exist and puts the requested files in that directory.
+.P
+.RE
+.IP " 4." 4
+Anything else shall be prefixed by the current directory.
+.P
+If the result is an erroneous pathname for the remote system, the copy
+shall fail. If the
+.IR destination-file
+is a directory, the last part of the
+.IR source-file
+name shall be used.
+.P
+The read, write, and execute permissions given by
+.IR uucp
+are implementation-defined.
+.RE
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+The files to be copied are regular files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR uucp :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements within bracketed filename
+patterns.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files) and the behavior of
+character classes within bracketed filename patterns (for example,
+.BR \(dq'[[:lower:]]*'\(dq ).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error, and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The output files (which may be on other systems) are copies of the
+input files.
+.P
+If
+.BR \(mim
+is used, mail files are modified.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+This utility is part of the UUCP Utilities option and need not be
+supported by all implementations.
+.P
+The domain of remotely accessible files can (and for obvious security
+reasons usually should) be severely restricted.
+.P
+Note that the
+.BR '!' 
+character in addresses has to be escaped when using
+.IR csh
+as a command interpreter because of its history substitution syntax.
+For
+.IR ksh
+and
+.IR sh
+the escape is not necessary, but may be used.
+.P
+As noted above, shell metacharacters appearing in pathnames are
+expanded on the appropriate system. On an internationalized system,
+this is done under the control of local settings of
+.IR LC_COLLATE
+and
+.IR LC_CTYPE .
+Thus, care should be taken when using bracketed filename patterns, as
+collation and typing rules may vary from one system to another. Also
+be aware that certain types of expression (that is, equivalence
+classes, character classes, and collating symbols) need not be
+supported on non-internationalized systems.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImailx\fR\^",
+.IR "\fIuuencode\fR\^",
+.IR "\fIuustat\fR\^",
+.IR "\fIuux\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

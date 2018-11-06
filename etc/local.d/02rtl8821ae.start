@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# This is some craziness to make sure the RTL8821AE driver for the WiFi
+# card is loaded successfully. Most of the time this happens fine the
+# first time on a cold boot, but on warm boots the card seems to sometimes
+# be finicky. Once initialized the card seems fine.
+
+echo >>/dev/console
+echo >>/dev/console
+for x in `seq 1 3`; do
+	echo "** Loading WiFi driver (retry $x)..." >>/dev/console
+
+	echo -n 1 >/sys/bus/pci/devices/0000\:00\:00.0/remove
+	rmmod rtl8821ae >>/dev/null 2>&1
+	rmmod rtl_pci >>/dev/null 2>&1
+	rmmod btcoexist >>/dev/null 2>&1
+	rmmod rtlwifi >>/dev/null 2>&1
+	rmmod mac80211 >>/dev/null 2>&1
+	sleep 0.25
+	echo -n 1 >/sys/bus/pci/rescan
+	sleep 0.25
+
+	modprobe rtl8821ae
+	sleep 0.5
+	iw wlan0 set power_save off
+	sysctl -w net.ipv6.conf.wlan0.autoconf=0 >>/dev/null
+	ip link set wlan0 up
+	sleep 2
+
+	if [ -z "`dmesg | grep -F 'WARNING: CPU: 0 PID: 0'`" -a -z "`dmesg | grep -F 'Polling FW ready fail'`" -a -z "`dmesg | grep -F 'ieee80211_rx_napi'`" -a -z "`dmesg | grep -F 'pci_read8'`" -a -d /proc/sys/net/ipv4/conf/wlan0 ]; then
+		break
+	fi
+
+	dmesg >>/dev/shm/wifi-retry-$x.log
+
+	echo "** Card startup issue detected, resetting and retrying..." >>/dev/console
+done
+
+echo "** WiFi init done!" >>/dev/console

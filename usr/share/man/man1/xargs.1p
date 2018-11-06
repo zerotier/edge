@@ -1,0 +1,749 @@
+'\" et
+.TH XARGS "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+xargs
+\(em construct argument lists and invoke utility
+.SH SYNOPSIS
+.LP
+.nf
+xargs \fB[\fR\(miptx\fB] [\fR\(miE \fIeofstr\fB] [\fR\(miI \fIreplstr\fR|\(miL \fInumber\fR|\(min \fInumber\fB]\fR
+    \fB[\fR\(mis \fIsize\fB] [\fIutility \fB[\fIargument\fR...\fB]]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR xargs
+utility shall construct a command line consisting of the
+.IR utility
+and
+.IR argument
+operands specified followed by as many arguments read in sequence from
+standard input as fit in length and number constraints specified by the
+options. The
+.IR xargs
+utility shall then invoke the constructed command line and wait for its
+completion. This sequence shall be repeated until one of the following
+occurs:
+.IP " *" 4
+An end-of-file condition is detected on standard input.
+.IP " *" 4
+An argument consisting of just the logical end-of-file string
+(see the
+.BR \(miE
+.IR eofstr
+option) is found on standard input after double-quote processing,
+<apostrophe>
+processing, and
+<backslash>-escape
+processing (see next paragraph). All arguments up to but not including
+the argument consisting of just the logical end-of-file string shall be
+used as arguments in constructed command lines.
+.IP " *" 4
+An invocation of a constructed command line returns an exit status of
+255.
+.P
+The application shall ensure that arguments in the standard input are
+separated by unquoted
+<blank>
+characters, unescaped
+<blank>
+characters, or
+<newline>
+characters. A string of zero or more non-double-quote (\c
+.BR '\&"' )
+characters and non-\c
+<newline>
+characters can be quoted by enclosing them in double-quotes. A string
+of zero or more non-\c
+<apostrophe>
+(\c
+.BR '\e'' )
+characters and non-\c
+<newline>
+characters can be quoted by enclosing them in
+<apostrophe>
+characters. Any unquoted character can be escaped by preceding it with a
+<backslash>.
+The utility named by
+.IR utility
+shall be executed one or more times until the end-of-file is reached or
+the logical end-of file string is found. The results are unspecified if
+the utility named by
+.IR utility
+attempts to read from its standard input.
+.P
+The generated command line length shall be the sum of the size in bytes
+of the utility name and each argument treated as strings, including a
+null byte terminator for each of these strings. The
+.IR xargs
+utility shall limit the command line length such that when the command
+line is invoked, the combined argument and environment lists (see the
+.IR exec
+family of functions in the System Interfaces volume of POSIX.1\(hy2008) shall not exceed
+{ARG_MAX}\(mi2\|048
+bytes. Within this constraint, if neither the
+.BR \(min
+nor the
+.BR \(mis
+option is specified, the default command line length shall be at least
+{LINE_MAX}.
+.SH OPTIONS
+The
+.IR xargs
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(miE\ \fIeofstr\fR" 10
+Use
+.IR eofstr
+as the logical end-of-file string. If
+.BR \(miE
+is not specified, it is unspecified whether the logical end-of-file
+string is the
+<underscore>
+character (\c
+.BR '_' )
+or the end-of-file string capability is disabled. When
+.IR eofstr
+is the null string, the logical end-of-file string capability shall be
+disabled and
+<underscore>
+characters shall be taken literally.
+.IP "\fB\(miI\ \fIreplstr\fR" 10
+Insert mode:
+.IR utility
+is executed for each logical line from standard input. Arguments in the
+standard input shall be separated only by unescaped
+<newline>
+characters, not by
+<blank>
+characters. Any unquoted unescaped
+<blank>
+characters at the beginning of each line shall be ignored. The resulting
+argument shall be inserted in
+.IR arguments
+in place of each occurrence of
+.IR replstr .
+At least five arguments in
+.IR arguments
+can each contain one or more instances of
+.IR replstr .
+Each of these constructed arguments cannot grow larger than an
+implementation-defined limit greater than or equal to 255 bytes. Option
+.BR \(mix
+shall be forced on.
+.IP "\fB\(miL\ \fInumber\fR" 10
+The
+.IR utility
+shall be executed for each non-empty
+.IR number
+lines of arguments from standard input. The last invocation of
+.IR utility
+shall be with fewer lines of arguments if fewer than
+.IR number
+remain. A line is considered to end with the first
+<newline>
+unless the last character of the line is a
+<blank>;
+a trailing
+<blank>
+signals continuation to the next non-empty line, inclusive.
+.IP "\fB\(min\ \fInumber\fR" 10
+Invoke
+.IR utility
+using as many standard input arguments as possible, up to
+.IR number
+(a positive decimal integer) arguments maximum. Fewer arguments shall
+be used if:
+.RS 10 
+.IP " *" 4
+The command line length accumulated exceeds the size specified by the
+.BR \(mis
+option (or
+{LINE_MAX}
+if there is no
+.BR \(mis
+option).
+.IP " *" 4
+The last iteration has fewer than
+.IR number ,
+but not zero, operands remaining.
+.RE
+.IP "\fB\(mip\fP" 10
+Prompt mode: the user is asked whether to execute
+.IR utility
+at each invocation. Trace mode (\c
+.BR \(mit )
+is turned on to write the command instance to be executed, followed by
+a prompt to standard error. An affirmative response read from
+.BR /dev/tty
+shall execute the command; otherwise, that particular invocation of
+.IR utility
+shall be skipped.
+.IP "\fB\(mis\ \fIsize\fR" 10
+Invoke
+.IR utility
+using as many standard input arguments as possible yielding a command
+line length less than
+.IR size
+(a positive decimal integer) bytes. Fewer arguments shall be used if:
+.RS 10 
+.IP " *" 4
+The total number of arguments exceeds that specified by the
+.BR \(min
+option.
+.IP " *" 4
+The total number of lines exceeds that specified by the
+.BR \(miL
+option.
+.IP " *" 4
+End-of-file is encountered on standard input before
+.IR size
+bytes are accumulated.
+.P
+Values of
+.IR size
+up to at least
+{LINE_MAX}
+bytes shall be supported, provided that the constraints specified in
+the DESCRIPTION are met. It shall not be considered an error if a
+value larger than that supported by the implementation or exceeding the
+constraints specified in the DESCRIPTION is given;
+.IR xargs
+shall use the largest value it supports within the constraints.
+.RE
+.IP "\fB\(mit\fP" 10
+Enable trace mode. Each generated command line shall be written to
+standard error just prior to invocation.
+.IP "\fB\(mix\fP" 10
+Terminate if a constructed command line will not fit in the
+implied or specified size (see the
+.BR \(mis
+option above).
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIutility\fR" 10
+The name of the utility to be invoked, found by search path using the
+.IR PATH
+environment variable, described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables".
+If
+.IR utility
+is omitted, the default shall be the
+.IR echo
+utility. If the
+.IR utility
+operand names any of the special built-in utilities in
+.IR "Section 2.14" ", " "Special Built-In Utilities",
+the results are undefined.
+.IP "\fIargument\fR" 10
+An initial option or operand for the invocation of
+.IR utility .
+.SH STDIN
+The standard input shall be a text file. The results are unspecified if
+an end-of-file condition is detected immediately following an escaped
+<newline>.
+.SH "INPUT FILES"
+The file
+.BR /dev/tty
+shall be used to read responses required by the
+.BR \(mip
+option.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR xargs :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements used in the extended regular
+expression defined for the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files) and the behavior of
+character classes used in the extended regular expression defined for
+the
+.BR yesexpr
+locale keyword in the
+.IR LC_MESSAGES
+category.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale used to process affirmative responses, and the
+locale used to affect the format and contents of diagnostic messages
+and prompts written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fIPATH\fP" 10
+Determine the location of
+.IR utility ,
+as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables".
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used for diagnostic messages and the
+.BR \(mit
+and
+.BR \(mip
+options. If the
+.BR \(mit
+option is specified, the
+.IR utility
+and its constructed argument list shall be written to standard error,
+as it will be invoked, prior to invocation. If
+.BR \(mip
+is specified, a prompt of the following format shall be written (in the
+POSIX locale):
+.sp
+.RS 4
+.nf
+\fB
+"?..."
+.fi \fR
+.P
+.RE
+.P
+at the end of the line of the output from
+.BR \(mit .
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\0\0\0\00" 8
+All invocations of
+.IR utility
+returned exit status zero.
+.IP "1\(hy125" 8
+A command line meeting the specified requirements could not be
+assembled, one or more of the invocations of
+.IR utility
+returned a non-zero exit status, or some other error occurred.
+.IP "\0\0126" 8
+The utility specified by
+.IR utility
+was found but could not be invoked.
+.IP "\0\0127" 8
+The utility specified by
+.IR utility
+could not be found.
+.SH "CONSEQUENCES OF ERRORS"
+If a command line meeting the specified requirements cannot be
+assembled, the utility cannot be invoked, an invocation of the utility
+is terminated by a signal, or an invocation of the utility exits with
+exit status 255, the
+.IR xargs
+utility shall write a diagnostic message and exit without processing
+any remaining input.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The 255 exit status allows a utility being used by
+.IR xargs
+to tell
+.IR xargs
+to terminate if it knows no further invocations using the current data
+stream will succeed. Thus,
+.IR utility
+should explicitly
+.IR exit
+with an appropriate value to avoid accidentally returning with 255.
+.P
+Note that since input is parsed as lines,
+<blank>
+characters separate arguments, and
+<backslash>,
+<apostrophe>,
+and double-quote characters are used for quoting, if
+.IR xargs
+is used to bundle the output of commands like
+.IR find
+.IR dir
+.BR \(miprint
+or
+.IR ls
+into commands to be executed, unexpected results are likely if any
+filenames contain
+<blank>,
+<newline>,
+or quoting characters. This can be solved by using find to call a script
+that converts each file found into a quoted string that is then piped to
+.IR xargs ,
+but in most cases it is preferable just to have
+.IR find
+do the argument aggregation itself by using
+.BR \(miexec
+with a
+.BR '+' 
+terminator instead of
+.BR ';' .
+Note that the quoting rules used by
+.IR xargs
+are not the same as in the shell. They were not made consistent here
+because existing applications depend on the current rules. An easy (but
+inefficient) method that can be used to transform input consisting of
+one argument per line into a quoted form that
+.IR xargs
+interprets correctly is to precede each non-\c
+<newline>
+character with a
+<backslash>.
+More efficient alternatives are shown in Example 2 and Example 5 below.
+.P
+On implementations with a large value for
+{ARG_MAX},
+.IR xargs
+may produce command lines longer than
+{LINE_MAX}.
+For invocation of utilities, this is not a problem. If
+.IR xargs
+is being used to create a text file, users should explicitly set the
+maximum command line length with the
+.BR \(mis
+option.
+.P
+The
+.IR command ,
+.IR env ,
+.IR nice ,
+.IR nohup ,
+.IR time ,
+and
+.IR xargs
+utilities have been specified to use exit code 127 if an error occurs
+so that applications can distinguish ``failure to find a utility'' from
+``invoked utility exited with an error indication''. The value 127 was
+chosen because it is not commonly used for other meanings; most
+utilities use small values for ``normal error conditions'' and the
+values above 128 can be confused with termination due to receipt of a
+signal. The value 126 was chosen in a similar manner to indicate that
+the utility could be found, but not invoked. Some scripts produce
+meaningful error messages differentiating the 126 and 127 cases. The
+distinction between exit codes 126 and 127 is based on KornShell
+practice that uses 127 when all attempts to
+.IR exec
+the utility fail with
+.BR [ENOENT] ,
+and uses 126 when any attempt to
+.IR exec
+the utility fails for any other reason.
+.SH EXAMPLES
+.IP " 1." 4
+The following command combines the output of the parenthesized
+commands (minus the
+<apostrophe>
+characters) onto one line, which is then appended to the file log. It
+assumes that the expansion of
+.BR \(dq$0 $*\(dq 
+does not include any
+<apostrophe>
+or
+<newline>
+characters.
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+(logname; date; printf "'%s'\en$0 $*") | xargs \(miE "" >>log
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+The following command invokes
+.IR diff
+with successive pairs of arguments originally typed as command line
+arguments. It assumes there are no embedded
+<newline>
+characters in the elements of the original argument list.
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+printf "%s\en$@" | sed 's/[^[:alnum:]]/\e\e&/g' |
+    xargs \(miE "" \(min 2 \(mix diff
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+In the following commands, the user is asked which files in the current
+directory (excluding dotfiles) are to be archived. The files are
+archived into
+.BR arch ;
+.IR a ,
+one at a time or
+.IR b ,
+many at a time. The commands assume that no filenames contain
+<blank>,
+<newline>,
+<backslash>,
+<apostrophe>,
+or double-quote characters.
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+a. ls | xargs \(miE "" \(mip \(miL 1 ar \(mir arch
+.P
+b. ls | xargs \(miE "" \(mip \(miL 1 | xargs \(miE "" ar \(mir arch
+.fi \fR
+.P
+.RE
+.RE
+.IP " 4." 4
+The following command invokes
+.IR command1
+one or more times with multiple arguments, stopping if an invocation of
+.IR command1
+has a non-zero exit status.
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+xargs \(miE "" sh \(mic 'command1 "$@" || exit 255' sh < xargs_input
+.fi \fR
+.P
+.RE
+.RE
+.IP " 5." 4
+On XSI-conformant systems, the following command moves all files
+from directory
+.BR $1
+to directory
+.BR $2 ,
+and echoes each move command just before doing it. It assumes no
+filenames contain
+<newline>
+characters and that neither
+.BR $1
+nor
+.BR $2
+contains the sequence
+.BR \(dq{}\(dq .
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+ls \(miA "$1" | sed \(mie 's/"/"\e\e""/g' \(mie 's/.*/"&"/' |
+    xargs \(miE "" \(miI {} \(mit mv "$1"/{} "$2"/{}
+.fi \fR
+.P
+.RE
+.RE
+.SH RATIONALE
+The
+.IR xargs
+utility was usually found only in System V-based systems; BSD systems
+included an
+.IR apply
+utility that provided functionality similar to
+.IR xargs
+.BR \(min
+.IR number .
+The SVID lists
+.IR xargs
+as a software development extension. This volume of POSIX.1\(hy2008 does not share the view that
+it is used only for development, and therefore it is not optional.
+.P
+The classic application of the
+.IR xargs
+utility is in conjunction with the
+.IR find
+utility to reduce the number of processes launched by a simplistic use
+of the
+.IR find
+.BR \(miexec
+combination. The
+.IR xargs
+utility is also used to enforce an upper limit on memory required to
+launch a process. With this basis in mind, this volume of POSIX.1\(hy2008 selected only the
+minimal features required.
+.P
+Although the 255 exit status is mostly an accident of historical
+implementations, it allows a utility being used by
+.IR xargs
+to tell
+.IR xargs
+to terminate if it knows no further invocations using the current data
+stream shall succeed. Any non-zero exit status from a utility falls
+into the 1\(hy125 range when
+.IR xargs
+exits. There is no statement of how the various non-zero utility exit
+status codes are accumulated by
+.IR xargs .
+The value could be the addition of all codes, their highest value, the
+last one received, or a single value such as 1. Since no algorithm is
+arguably better than the others, and since many of the standard
+utilities say little more (portably) than ``pass/fail'', no new
+algorithm was invented.
+.P
+Several other
+.IR xargs
+options were removed because simple alternatives already exist within
+\&this volume of POSIX.1\(hy2008. For example, the
+.BR \(mii
+.IR replstr
+option can be just as efficiently performed using a shell
+.BR for
+loop. Since
+.IR xargs
+calls an
+.IR exec
+function with each input line, the
+.BR \(mii
+option does not usually exploit the grouping capabilities of
+.IR xargs .
+.P
+The requirement that
+.IR xargs
+never produces command lines such that invocation of
+.IR utility
+is within 2\|048 bytes of hitting the POSIX
+.IR exec
+{ARG_MAX}
+limitations is intended to guarantee that the invoked utility has room
+to modify its environment variables and command line arguments and
+still be able to invoke another utility. Note that the minimum
+{ARG_MAX}
+allowed by the System Interfaces volume of POSIX.1\(hy2008 is 4\|096 bytes and the minimum
+value allowed by this volume of POSIX.1\(hy2008 is 2\|048 bytes; therefore,
+the 2\|048 bytes difference seems reasonable. Note, however, that
+.IR xargs
+may never be able to invoke a utility if the environment passed in to
+.IR xargs
+comes close to using
+{ARG_MAX}
+bytes.
+.P
+The version of
+.IR xargs
+required by this volume of POSIX.1\(hy2008 is required to wait for the completion of the invoked
+command before invoking another command. This was done because
+historical scripts using
+.IR xargs
+assumed sequential execution. Implementations wanting to provide
+parallel operation of the invoked utilities are encouraged to add an
+option enabling parallel invocation, but should still wait for
+termination of all of the children before
+.IR xargs
+terminates normally.
+.P
+The
+.BR \(mie
+option was omitted from the ISO\ POSIX\(hy2:\|1993 standard in the belief that the
+.IR eofstr
+option-argument was recognized only when it was on a line by itself and
+before quote and escape processing were performed, and that the logical
+end-of-file processing was only enabled if a
+.BR \(mie
+option was specified. In that case, a simple
+.IR sed
+script could be used to duplicate the
+.BR \(mie
+functionality. Further investigation revealed that:
+.IP " *" 4
+The logical end-of-file string was checked for after quote and escape
+processing, making a
+.IR sed
+script that provided equivalent functionality much more difficult to
+write.
+.IP " *" 4
+The default was to perform logical end-of-file processing with an
+<underscore>
+as the logical end-of-file string.
+.P
+To correct this misunderstanding, the
+.BR \(miE
+.IR eofstr
+option was adopted from the X/Open Portability Guide. Users should
+note that the description of the
+.BR \(miE
+option matches historical documentation of the
+.BR \(mie
+option (which was not adopted because it did not support the Utility
+Syntax Guidelines), by
+saying that if
+.IR eofstr
+is the null string, logical end-of-file processing is disabled.
+Historical implementations of
+.IR xargs
+actually did not disable logical end-of-file processing; they treated a
+null argument found in the input as a logical end-of-file string. (A
+null
+.IR string
+argument could be generated using single or double-quotes (\c
+.BR '\^' 
+or
+.BR \(dq\^\(dq ).
+Since this behavior was not documented historically, it is considered
+to be a bug.
+.P
+The
+.BR \(miI ,
+.BR \(miL ,
+and
+.BR \(min
+options are mutually-exclusive. Some implementations use the last one
+specified if more than one is given on a command line; other
+implementations treat combinations of the options in different ways.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Chapter 2" ", " "Shell Command Language",
+.IR "\fIdiff\fR\^",
+.IR "\fIecho\fR\^",
+.IR "\fIfind\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIexec\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

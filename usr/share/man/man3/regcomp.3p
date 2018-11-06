@@ -1,0 +1,873 @@
+'\" et
+.TH REGCOMP "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+regcomp,
+regerror,
+regexec,
+regfree
+\(em regular expression matching
+.SH SYNOPSIS
+.LP
+.nf
+#include <regex.h>
+.P
+int regcomp(regex_t *restrict \fIpreg\fP, const char *restrict \fIpattern\fP,
+    int \fIcflags\fP);
+size_t regerror(int \fIerrcode\fP, const regex_t *restrict \fIpreg\fP,
+    char *restrict \fIerrbuf\fP, size_t \fIerrbuf_size\fP);
+int regexec(const regex_t *restrict \fIpreg\fP, const char *restrict \fIstring\fP,
+    size_t \fInmatch\fP, regmatch_t \fIpmatch\fP[restrict], int \fIeflags\fP);
+void regfree(regex_t *\fIpreg\fP);
+.fi
+.SH DESCRIPTION
+These functions interpret
+.IR basic
+and
+.IR extended
+regular expressions as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 9" ", " "Regular Expressions".
+.P
+The
+.BR regex_t
+structure is defined in
+.IR <regex.h> 
+and contains at least the following member:
+.TS
+center box tab(!);
+cB | cB | cB
+lw(1.25i)B | lw(1.25i)I | lw(2.5i).
+Member Type!Member Name!Description
+_
+size_t!re_nsub!T{
+Number of parenthesized subexpressions.
+T}
+.TE
+.P
+The
+.BR regmatch_t
+structure is defined in
+.IR <regex.h> 
+and contains at least the following members:
+.TS
+center box tab(!);
+cB | cB | cB
+lw(1.25i)B | lw(1.25i)I | lw(2.5i).
+Member Type!Member Name!Description
+_
+regoff_t!rm_so!T{
+Byte offset from start of \fIstring\fP to start of substring.
+T}
+regoff_t!rm_eo!T{
+Byte offset from start of
+.IR string
+of the first character after the end of substring.
+T}
+.TE
+.P
+The
+\fIregcomp\fR()
+function shall compile the regular expression contained in the string
+pointed to by the
+.IR pattern
+argument and place the results in the structure pointed to by
+.IR preg .
+The
+.IR cflags
+argument is the bitwise-inclusive OR of zero or more of the following
+flags, which are defined in the
+.IR <regex.h> 
+header:
+.IP REG_EXTENDED 14
+Use Extended Regular Expressions.
+.IP REG_ICASE 14
+Ignore case in match (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 9" ", " "Regular Expressions").
+.IP REG_NOSUB 14
+Report only success/fail in
+\fIregexec\fR().
+.IP REG_NEWLINE 14
+Change the handling of
+<newline>
+characters, as described in the text.
+.P
+The default regular expression type for
+.IR pattern
+is a Basic Regular Expression. The application can specify Extended
+Regular Expressions using the REG_EXTENDED
+.IR cflags
+flag.
+.P
+If the REG_NOSUB flag was not set in
+.IR cflags ,
+then
+\fIregcomp\fR()
+shall set
+.IR re_nsub
+to the number of parenthesized subexpressions (delimited by
+.BR \(dq\e(\e)\(dq 
+in basic regular expressions or
+.BR \(dq(\|)\(dq 
+in extended regular expressions) found in
+.IR pattern .
+.P
+The
+\fIregexec\fR()
+function compares the null-terminated string specified by
+.IR string
+with the compiled regular expression
+.IR preg
+initialized by a previous call to
+\fIregcomp\fR().
+If it finds a match,
+\fIregexec\fR()
+shall return 0; otherwise, it shall return non-zero indicating either
+no match or an error. The
+.IR eflags
+argument is the bitwise-inclusive OR of zero or more of the following
+flags, which are defined in the
+.IR <regex.h> 
+header:
+.IP REG_NOTBOL 14
+The first character of the string pointed to by
+.IR string
+is not the beginning of the line. Therefore, the
+<circumflex>
+character
+(\c
+.BR '^' ),
+when taken as a special character, shall not match the beginning of
+.IR string .
+.IP REG_NOTEOL 14
+The last character of the string pointed to by
+.IR string
+is not the end of the line. Therefore, the
+<dollar-sign>
+(\c
+.BR '$' ),
+when taken as a special character, shall not match the end of
+.IR string .
+.P
+If
+.IR nmatch
+is 0 or REG_NOSUB was set in the
+.IR cflags
+argument to
+\fIregcomp\fR(),
+then
+\fIregexec\fR()
+shall ignore the
+.IR pmatch
+argument. Otherwise, the application shall ensure that the
+.IR pmatch
+argument points to an array with at least
+.IR nmatch
+elements, and
+\fIregexec\fR()
+shall fill in the elements of that array with offsets of the substrings
+of
+.IR string
+that correspond to the parenthesized subexpressions of
+.IR pattern :
+.IR pmatch [\c
+.IR i ].\c
+.IR rm_so
+shall be the byte offset of the beginning and
+.IR pmatch [\c
+.IR i ].\c
+.IR rm_eo
+shall be one greater than the byte offset of the end of substring
+.IR i .
+(Subexpression
+.IR i
+begins at the
+.IR i th
+matched open parenthesis, counting from 1.) Offsets in
+.IR pmatch [0]
+identify the substring that corresponds to the entire regular
+expression. Unused elements of
+.IR pmatch
+up to
+.IR pmatch [\c
+.IR nmatch \(mi1]
+shall be filled with \(mi1. If there are more than
+.IR nmatch
+subexpressions in
+.IR pattern
+(\c
+.IR pattern
+itself counts as a subexpression), then
+\fIregexec\fR()
+shall still do the match, but shall record only the first
+.IR nmatch
+substrings.
+.P
+When matching a basic or extended regular expression, any given
+parenthesized subexpression of
+.IR pattern
+might participate in the match of several different substrings of
+.IR string ,
+or it might not match any substring even though the pattern as a whole
+did match. The following rules shall be used to determine which
+substrings to report in
+.IR pmatch
+when matching regular expressions:
+.IP " 1." 4
+If subexpression
+.IR i
+in a regular expression is not contained within another subexpression,
+and it participated in the match several times, then the byte offsets
+in
+.IR pmatch [\c
+.IR i ]
+shall delimit the last such match.
+.IP " 2." 4
+If subexpression
+.IR i
+is not contained within another subexpression, and it did not
+participate in an otherwise successful match, the byte offsets in
+.IR pmatch [\c
+.IR i ]
+shall be \(mi1. A subexpression does not participate in the match when:
+.sp
+.RS
+.BR '*' 
+or
+.BR \(dq\e{\e}\(dq 
+appears immediately after the subexpression in a basic regular
+expression, or
+.BR '*' ,
+.BR '?' ,
+or
+.BR \(dq{\|}\(dq 
+appears immediately after the subexpression in an extended regular
+expression, and the subexpression did not match (matched 0 times)
+.RE
+.RS 4 
+.P
+or:
+.sp
+.RS
+.BR '|' 
+is used in an extended regular expression to select this subexpression
+or another, and the other subexpression matched.
+.RE
+.RE
+.IP " 3." 4
+If subexpression
+.IR i
+is contained within another subexpression
+.IR j ,
+and
+.IR i
+is not contained within any other subexpression that is contained
+within
+.IR j ,
+and a match of subexpression
+.IR j
+is reported in
+.IR pmatch [\c
+.IR j ],
+then the match or non-match of subexpression
+.IR i
+reported in
+.IR pmatch [\c
+.IR i ]
+shall be as described in 1. and 2. above, but within the substring
+reported in
+.IR pmatch [\c
+.IR j ]
+rather than the whole string. The offsets in
+.IR pmatch [\c
+.IR i ]
+are still relative to the start of
+.IR string .
+.IP " 4." 4
+If subexpression
+.IR i
+is contained in subexpression
+.IR j ,
+and the byte offsets in
+.IR pmatch [\c
+.IR j ]
+are \(mi1, then the pointers in
+.IR pmatch [\c
+.IR i ]
+shall also be \(mi1.
+.IP " 5." 4
+If subexpression
+.IR i
+matched a zero-length string, then both byte offsets in
+.IR pmatch [\c
+.IR i ]
+shall be the byte offset of the character or null terminator
+immediately following the zero-length string.
+.P
+If, when
+\fIregexec\fR()
+is called, the locale is different from when the regular expression was
+compiled, the result is undefined.
+.P
+If REG_NEWLINE is not set in
+.IR cflags ,
+then a
+<newline>
+in
+.IR pattern
+or
+.IR string
+shall be treated as an ordinary character. If REG_NEWLINE is set, then
+<newline>
+shall be treated as an ordinary character except as follows:
+.IP " 1." 4
+A
+<newline>
+in
+.IR string
+shall not be matched by a
+<period>
+outside a bracket expression or by any form of a non-matching list
+(see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 9" ", " "Regular Expressions").
+.IP " 2." 4
+A
+<circumflex>
+(\c
+.BR '^' )
+in
+.IR pattern ,
+when used to specify expression anchoring (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 9.3.8" ", " "BRE Expression Anchoring"),
+shall match the zero-length string immediately after a
+<newline>
+in
+.IR string ,
+regardless of the setting of REG_NOTBOL.
+.IP " 3." 4
+A
+<dollar-sign>
+(\c
+.BR '$' )
+in
+.IR pattern ,
+when used to specify expression anchoring, shall match the zero-length
+string immediately before a
+<newline>
+in
+.IR string ,
+regardless of the setting of REG_NOTEOL.
+.P
+The
+\fIregfree\fR()
+function frees any memory allocated by
+\fIregcomp\fR()
+associated with
+.IR preg .
+.P
+The following constants are defined as the minimum set of error return
+values, although other errors listed as implementation extensions in
+.IR <regex.h> 
+are possible:
+.IP REG_BADBR 14
+Content of
+.BR \(dq\e{\e}\(dq 
+invalid: not a number, number too large, more than two numbers, first
+larger than second.
+.IP REG_BADPAT 14
+Invalid regular expression.
+.IP REG_BADRPT 14
+.BR '?' ,
+.BR '*' ,
+or
+.BR '+' 
+not preceded by valid regular expression.
+.IP REG_EBRACE 14
+.BR \(dq\e{\e}\(dq 
+imbalance.
+.IP REG_EBRACK 14
+.BR \(dq[]\(dq 
+imbalance.
+.IP REG_ECOLLATE 14
+Invalid collating element referenced.
+.IP REG_ECTYPE 14
+Invalid character class type referenced.
+.IP REG_EESCAPE 14
+Trailing
+<backslash>
+character in pattern.
+.IP REG_EPAREN 14
+.BR \(dq\e(\e)\(dq 
+or
+.BR \(dq()\(dq 
+imbalance.
+.IP REG_ERANGE 14
+Invalid endpoint in range expression.
+.IP REG_ESPACE 14
+Out of memory.
+.IP REG_ESUBREG 14
+Number in
+.BR \(dq\edigit\(dq 
+invalid or in error.
+.IP REG_NOMATCH 14
+\fIregexec\fR()
+failed to match.
+.P
+If more than one error occurs in processing a function call, any one
+of the possible constants may be returned, as the order of detection is
+unspecified.
+.P
+The
+\fIregerror\fR()
+function provides a mapping from error codes returned by
+\fIregcomp\fR()
+and
+\fIregexec\fR()
+to unspecified printable strings. It generates a string corresponding
+to the value of the
+.IR errcode
+argument, which the application shall ensure is the last non-zero value
+returned by
+\fIregcomp\fR()
+or
+\fIregexec\fR()
+with the given value of
+.IR preg .
+If
+.IR errcode
+is not such a value, the content of the generated string is unspecified.
+.P
+If
+.IR preg
+is a null pointer, but
+.IR errcode
+is a value returned by a previous call to
+\fIregexec\fR()
+or
+\fIregcomp\fR(),
+the
+\fIregerror\fR()
+still generates an error string corresponding to the value of
+.IR errcode ,
+but it might not be as detailed under some implementations.
+.P
+If the
+.IR errbuf_size
+argument is not 0,
+\fIregerror\fR()
+shall place the generated string into the buffer of size
+.IR errbuf_size
+bytes pointed to by
+.IR errbuf .
+If the string (including the terminating null) cannot fit in the
+buffer,
+\fIregerror\fR()
+shall truncate the string and null-terminate the result.
+.P
+If
+.IR errbuf_size
+is 0,
+\fIregerror\fR()
+shall ignore the
+.IR errbuf
+argument, and return the size of the buffer needed to hold the
+generated string.
+.P
+If the
+.IR preg
+argument to
+\fIregexec\fR()
+or
+\fIregfree\fR()
+is not a compiled regular expression returned by
+\fIregcomp\fR(),
+the result is undefined. A
+.IR preg
+is no longer treated as a compiled regular expression after it is given
+to
+\fIregfree\fR().
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIregcomp\fR()
+function shall return 0. Otherwise, it shall return an integer value
+indicating an error as described in
+.IR <regex.h> ,
+and the content of
+.IR preg
+is undefined. If a code is returned, the interpretation shall be as
+given in
+.IR <regex.h> .
+.P
+If
+\fIregcomp\fR()
+detects an invalid RE, it may return REG_BADPAT, or it may return one
+of the error codes that more precisely describes the error.
+.P
+Upon successful completion, the
+\fIregexec\fR()
+function shall return 0. Otherwise, it shall return REG_NOMATCH to
+indicate no match.
+.P
+Upon successful completion, the
+\fIregerror\fR()
+function shall return the number of bytes needed to hold the entire
+generated string, including the null termination. If the return value
+is greater than
+.IR errbuf_size ,
+the string returned in the buffer pointed to by
+.IR errbuf
+has been truncated.
+.P
+The
+\fIregfree\fR()
+function shall not return a value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+.sp
+.RS 4
+.nf
+\fB
+#include <regex.h>
+.P
+/*
+ * Match string against the extended regular expression in
+ * pattern, treating errors as no match.
+ *
+ * Return 1 for match, 0 for no match.
+ */
+.P
+int
+match(const char *string, char *pattern)
+{
+    int    status;
+    regex_t    re;
+.P
+    if (regcomp(&re, pattern, REG_EXTENDED|REG_NOSUB) != 0) {
+        return(0);      /* Report error. */
+    }
+    status = regexec(&re, string, (size_t) 0, NULL, 0);
+    regfree(&re);
+    if (status != 0) {
+        return(0);      /* Report error. */
+    }
+    return(1);
+}
+.fi \fR
+.P
+.RE
+.P
+The following demonstrates how the REG_NOTBOL flag could be used with
+\fIregexec\fR()
+to find all substrings in a line that match a pattern supplied by a user.
+(For simplicity of the example, very little error checking is done.)
+.sp
+.RS 4
+.nf
+\fB
+(void) regcomp (&re, pattern, 0);
+/* This call to regexec() finds the first match on the line. */
+error = regexec (&re, &buffer[0], 1, &pm, 0);
+while (error == 0) {  /* While matches found. */
+    /* Substring found between pm.rm_so and pm.rm_eo. */
+    /* This call to regexec() finds the next match. */
+    error = regexec (&re, buffer + pm.rm_eo, 1, &pm, REG_NOTBOL);
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+An application could use:
+.sp
+.RS 4
+.nf
+\fB
+regerror(code,preg,(char *)NULL,(size_t)0)
+.fi \fR
+.P
+.RE
+.P
+to find out how big a buffer is needed for the generated string,
+\fImalloc\fR()
+a buffer to hold the string, and then call
+\fIregerror\fR()
+again to get the string. Alternatively, it could allocate a fixed,
+static buffer that is big enough to hold most strings, and then use
+\fImalloc\fR()
+to allocate a larger buffer if it finds that this is too small.
+.P
+To match a pattern as described in the Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "Section 2.13" ", " "Pattern Matching Notation",
+use the
+\fIfnmatch\fR()
+function.
+.SH RATIONALE
+The
+\fIregexec\fR()
+function must fill in all
+.IR nmatch
+elements of
+.IR pmatch ,
+where
+.IR nmatch
+and
+.IR pmatch
+are supplied by the application, even if some elements of
+.IR pmatch
+do not correspond to subexpressions in
+.IR pattern .
+The application developer should note that there is probably no reason
+for using a value of
+.IR nmatch
+that is larger than
+.IR preg \(mi>\c
+.IR re_nsub +1.
+.P
+The REG_NEWLINE flag supports a use of RE matching that is needed in
+some applications like text editors. In such applications, the user
+supplies an RE asking the application to find a line that matches the
+given expression. An anchor in such an RE anchors at the beginning or
+end of any line. Such an application can pass a sequence of
+<newline>-separated
+lines to
+\fIregexec\fR()
+as a single long string and specify REG_NEWLINE to
+\fIregcomp\fR()
+to get the desired behavior. The application must ensure that there are
+no explicit
+<newline>
+characters in
+.IR pattern
+if it wants to ensure that any match occurs entirely within a single
+line.
+.P
+The REG_NEWLINE flag affects the behavior of
+\fIregexec\fR(),
+but it is in the
+.IR cflags
+parameter to
+\fIregcomp\fR()
+to allow flexibility of implementation. Some implementations will want
+to generate the same compiled RE in
+\fIregcomp\fR()
+regardless of the setting of REG_NEWLINE and have
+\fIregexec\fR()
+handle anchors differently based on the setting of the flag. Other
+implementations will generate different compiled REs based on the
+REG_NEWLINE.
+.P
+The REG_ICASE flag supports the operations taken by the
+.IR grep
+.BR \(mii
+option and the historical implementations of
+.IR ex
+and
+.IR vi .
+Including this flag will make it easier for application code to be
+written that does the same thing as these utilities.
+.P
+The substrings reported in
+.IR pmatch [\|]
+are defined using offsets from the start of the string rather than
+pointers. This allows type-safe access to both constant and non-constant
+strings.
+.P
+The type
+.BR regoff_t
+is used for the elements of
+.IR pmatch [\|]
+to ensure that the application can represent large arrays in memory
+(important for an application conforming to the Shell and Utilities volume of POSIX.1\(hy2008).
+.P
+The 1992 edition of this standard required
+.BR regoff_t
+to be at least as wide as
+.BR off_t ,
+to facilitate future extensions in which the string to be searched is
+taken from a file. However, these future extensions have not appeared.
+The requirement rules out popular implementations with 32-bit
+.BR regoff_t
+and 64-bit
+.BR off_t ,
+so it has been removed.
+.P
+The standard developers rejected the inclusion of a
+\fIregsub\fR()
+function that would be used to do substitutions for a matched RE. While
+such a routine would be useful to some applications, its utility would
+be much more limited than the matching function described here. Both RE
+parsing and substitution are possible to implement without support
+other than that required by the ISO\ C standard, but matching is much more
+complex than substituting. The only difficult part of substitution,
+given the information supplied by
+\fIregexec\fR(),
+is finding the next character in a string when there can be multi-byte
+characters. That is a much larger issue, and one that needs a more
+general solution.
+.P
+The
+.IR errno
+variable has not been used for error returns to avoid filling the
+.IR errno
+name space for this feature.
+.P
+The interface is defined so that the matched substrings
+.IR rm_sp
+and
+.IR rm_ep
+are in a separate
+.BR regmatch_t
+structure instead of in
+.BR regex_t .
+This allows a single compiled RE to be used simultaneously in several
+contexts; in
+\fImain\fR()
+and a signal handler, perhaps, or in multiple threads of lightweight
+processes. (The
+.IR preg
+argument to
+\fIregexec\fR()
+is declared with type
+.BR const ,
+so the implementation is not permitted to use the structure to store
+intermediate results.) It also allows an application to request an
+arbitrary number of substrings from an RE. The number of
+subexpressions in the RE is reported in
+.IR re_nsub
+in
+.IR preg .
+With this change to
+\fIregexec\fR(),
+consideration was given to dropping the REG_NOSUB flag since the user
+can now specify this with a zero
+.IR nmatch
+argument to
+\fIregexec\fR().
+However, keeping REG_NOSUB allows an implementation to use a different
+(perhaps more efficient) algorithm if it knows in
+\fIregcomp\fR()
+that no subexpressions need be reported. The implementation is only
+required to fill in
+.IR pmatch
+if
+.IR nmatch
+is not zero and if REG_NOSUB is not specified. Note that the
+.BR size_t
+type, as defined in the ISO\ C standard, is unsigned, so the description of
+\fIregexec\fR()
+does not need to address negative values of
+.IR nmatch .
+.P
+REG_NOTBOL was added to allow an application to do repeated searches
+for the same pattern in a line. If the pattern contains a
+<circumflex>
+character that should match the beginning of a line, then the pattern
+should only match when matched against the beginning of the line.
+Without the REG_NOTBOL flag, the application could rewrite the
+expression for subsequent matches, but in the general case this would
+require parsing the expression. The need for REG_NOTEOL is not as
+clear; it was added for symmetry.
+.P
+The addition of the
+\fIregerror\fR()
+function addresses the historical need for conforming application
+programs to have access to error information more than ``Function
+failed to compile/match your RE for unknown reasons''.
+.P
+This interface provides for two different methods of dealing with error
+conditions. The specific error codes (REG_EBRACE, for example), defined
+in
+.IR <regex.h> ,
+allow an application to recover from an error if it is so able. Many
+applications, especially those that use patterns supplied by a user,
+will not try to deal with specific error cases, but will just use
+\fIregerror\fR()
+to obtain a human-readable error message to present to the user.
+.P
+The
+\fIregerror\fR()
+function uses a scheme similar to
+\fIconfstr\fR()
+to deal with the problem of allocating memory to hold the generated
+string. The scheme used by
+\fIstrerror\fR()
+in the ISO\ C standard was considered unacceptable since it creates difficulties
+for multi-threaded applications.
+.P
+The
+.IR preg
+argument is provided to
+\fIregerror\fR()
+to allow an implementation to generate a more descriptive message than
+would be possible with
+.IR errcode
+alone. An implementation might, for example, save the character offset
+of the offending character of the pattern in a field of
+.IR preg ,
+and then include that in the generated message string. The
+implementation may also ignore
+.IR preg .
+.P
+A REG_FILENAME flag was considered, but omitted. This flag caused
+\fIregexec\fR()
+to match patterns as described in the Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "Section 2.13" ", " "Pattern Matching Notation"
+instead of REs. This service is now provided by the
+\fIfnmatch\fR()
+function.
+.P
+Notice that there is a difference in philosophy between the ISO\ POSIX\(hy2:\|1993 standard and
+POSIX.1\(hy2008 in how to handle a ``bad'' regular expression. The ISO\ POSIX\(hy2:\|1993 standard says
+that many bad constructs ``produce undefined results'', or that
+``the interpretation is undefined''. POSIX.1\(hy2008, however, says that the
+interpretation of such REs is unspecified. The term ``undefined'' means
+that the action by the application is an error, of similar severity
+to passing a bad pointer to a function.
+.P
+The
+\fIregcomp\fR()
+and
+\fIregexec\fR()
+functions are required to accept any null-terminated string as the
+.IR pattern
+argument. If the meaning of the string is ``undefined'', the behavior
+of the function is ``unspecified''. POSIX.1\(hy2008 does not specify how the
+functions will interpret the pattern; they might return error codes, or
+they might do pattern matching in some completely unexpected way, but
+they should not do something like abort the process.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfnmatch\fR\^(\|)",
+.IR "\fIglob\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 9" ", " "Regular Expressions",
+.IR "\fB<regex.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "Section 2.13" ", " "Pattern Matching Notation"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

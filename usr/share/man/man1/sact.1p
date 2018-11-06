@@ -1,0 +1,186 @@
+'\" et
+.TH SACT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sact
+\(em print current SCCS file-editing activity (\fBDEVELOPMENT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+sact \fIfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR sact
+utility shall inform the user of any impending deltas to a named SCCS
+file by writing a list to standard output. This situation occurs when
+.IR get
+.BR \(mie
+has been executed previously without a subsequent execution of
+.IR delta ,
+.IR unget ,
+or
+.IR sccs
+.BR unedit .
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an existing SCCS file or a directory. If
+.IR file
+is a directory, the
+.IR sact
+utility shall behave as though each file in the directory were
+specified as a named file, except that non-SCCS files (last component
+of the pathname does not begin with
+.BR s. )
+and unreadable files shall be silently ignored.
+.RS 10 
+.P
+If exactly one
+.IR file
+operand appears, and it is
+.BR '\(mi' ,
+the standard input shall be read; each line of the standard input shall
+be taken to be the name of an SCCS file to be processed. Non-SCCS files
+and unreadable files shall be silently ignored.
+.RE
+.SH STDIN
+The standard input shall be a text file used only when the
+.IR file
+operand is specified as
+.BR '\(mi' .
+Each line of the text file shall be interpreted as an SCCS pathname.
+.SH "INPUT FILES"
+Any SCCS files interrogated are files of an unspecified format.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR sact :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The output for each named file shall consist of a line in the following
+format:
+.sp
+.RS 4
+.nf
+\fB
+"%s %s %s %s %s\en", <\fISID\fR>, <\fInew SID\fR>, <\fIlogin\fR>, <\fIdate\fR>, <\fItime\fR>
+.fi \fR
+.P
+.RE
+.IP "<\fISID\fR>" 10
+Specifies the SID of a delta that currently exists in the SCCS file to
+which changes are made to make the new delta.
+.IP "<\fInew\ SID\fR>" 10
+Specifies the SID for the new delta to be created.
+.IP "<\fIlogin\fR>" 10
+Contains the login name of the user who makes the delta (that is, who
+executed a
+.IR get
+for editing).
+.IP "<\fIdate\fR>" 10
+Contains the date that
+.IR get
+.BR \(mie
+was executed, in the format used by the
+.IR prs
+.BR :D:
+data keyword.
+.IP "<\fItime\fR>" 10
+Contains the time that
+.IR get
+.BR \(mie
+was executed, in the format used by the
+.IR prs
+.BR :T:
+data keyword.
+.P
+If there is more than one named file or if a directory or standard
+input is named, each pathname shall be written before each of the
+preceding lines:
+.sp
+.RS 4
+.nf
+\fB
+"\en%s:\en", <\fIpathname\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for optional informative
+messages concerning SCCS files with no impending deltas, and for
+diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIdelta\fR\^",
+.IR "\fIget\fR\^",
+.IR "\fIsccs\fR\^",
+.IR "\fIunget\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

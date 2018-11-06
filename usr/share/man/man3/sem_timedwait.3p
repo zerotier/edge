@@ -1,0 +1,231 @@
+'\" et
+.TH SEM_TIMEDWAIT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sem_timedwait
+\(em lock a semaphore
+.SH SYNOPSIS
+.LP
+.nf
+#include <semaphore.h>
+#include <time.h>
+.P
+int sem_timedwait(sem_t *restrict \fIsem\fP,
+    const struct timespec *restrict \fIabstime\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsem_timedwait\fR()
+function shall lock the semaphore referenced by
+.IR sem
+as in the
+\fIsem_wait\fR()
+function. However, if the semaphore cannot be locked without waiting
+for another process or thread to unlock the semaphore by performing a
+\fIsem_post\fR()
+function, this wait shall be terminated when the specified timeout
+expires.
+.P
+The timeout shall expire when the absolute time specified by
+.IR abstime
+passes, as measured by the clock on which timeouts are based (that is,
+when the value of that clock equals or exceeds
+.IR abstime ),
+or if the absolute time specified by
+.IR abstime
+has already been passed at the time of the call.
+.P
+The timeout shall be based on the CLOCK_REALTIME clock.
+The resolution of the timeout shall be the resolution of the
+clock on which it is based. The
+.BR timespec
+data type is defined as a structure in the
+.IR <time.h> 
+header.
+.P
+Under no circumstance shall the function fail with a timeout if the
+semaphore can be locked immediately. The validity of the
+.IR abstime
+need not be checked if the semaphore can be locked immediately.
+.SH "RETURN VALUE"
+The
+\fIsem_timedwait\fR()
+function shall return zero if the calling process successfully
+performed the semaphore lock operation on the semaphore designated by
+.IR sem .
+If the call was unsuccessful, the state of the semaphore shall be
+unchanged, and the function shall return a value of \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIsem_timedwait\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The process or thread would have blocked, and the
+.IR abstime
+parameter specified a nanoseconds field value less than zero or greater
+than or equal to 1\|000 million.
+.TP
+.BR ETIMEDOUT
+The semaphore could not be locked before the specified timeout expired.
+.P
+The
+\fIsem_timedwait\fR()
+function may fail if:
+.TP
+.BR EDEADLK
+A deadlock condition was detected.
+.TP
+.BR EINTR
+A signal interrupted this function.
+.TP
+.BR EINVAL
+The
+.IR sem
+argument does not refer to a valid semaphore.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+The program shown below operates on an unnamed semaphore. The program
+expects two command-line arguments. The first argument specifies a
+seconds value that is used to set an alarm timer to generate a SIGALRM
+signal. This handler performs a
+.IR sem_post (3)
+to increment the semaphore that is being waited on in
+\fImain\fR()
+using
+\fIsem_timedwait\fR().
+The second command-line argument specifies the length of the timeout,
+in seconds, for
+\fIsem_timedwait\fR().
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <semaphore.h>
+#include <time.h>
+#include <assert.h>
+#include <errno.h>
+#include <signal.h>
+.P
+sem_t sem;
+.P
+static void
+handler(int sig)
+{
+    int sav_errno = errno;
+    static const char info_msg[] = "sem_post() from handler\en";
+    write(STDOUT_FILENO, info_msg, sizeof info_msg - 1);
+    if (sem_post(&sem) == -1) {
+        static const char err_msg[] = "sem_post() failed\en";
+        write(STDERR_FILENO, err_msg, sizeof err_msg - 1);
+        _exit(EXIT_FAILURE);
+    }
+    errno = sav_errno;
+}
+.P
+int
+main(int argc, char *argv[])
+{
+    struct sigaction sa;
+    struct timespec ts;
+    int s;
+.P
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <alarm-secs> <wait-secs>\en",
+            argv[0]);
+        exit(EXIT_FAILURE);
+    }
+.P
+    if (sem_init(&sem, 0, 0) == -1) {
+        perror("sem_init");
+        exit(EXIT_FAILURE);
+    }
+.P
+    /* Establish SIGALRM handler; set alarm timer using argv[1] */
+.P
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGALRM, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
+.P
+    alarm(atoi(argv[1]));
+.P
+    /* Calculate relative interval as current time plus
+       number of seconds given argv[2] */
+.P
+    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+        perror("clock_gettime");
+        exit(EXIT_FAILURE);
+    }
+    ts.tv_sec += atoi(argv[2]);
+.P
+    printf("main() about to call sem_timedwait()\en");
+    while ((s = sem_timedwait(&sem, &ts)) == -1 && errno == EINTR)
+        continue;       /* Restart if interrupted by handler */
+.P
+    /* Check what happened */
+.P
+    if (s == -1) {
+        if (errno == ETIMEDOUT)
+            printf("sem_timedwait() timed out\en");
+        else
+            perror("sem_timedwait");
+    } else
+        printf("sem_timedwait() succeeded\en");
+.P
+    exit((s == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Applications using these functions may be subject to priority
+inversion, as discussed in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.287" ", " "Priority Inversion".
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIsem_post\fR\^(\|)",
+.IR "\fIsem_trywait\fR\^(\|)",
+.IR "\fIsemctl\fR\^(\|)",
+.IR "\fIsemget\fR\^(\|)",
+.IR "\fIsemop\fR\^(\|)",
+.IR "\fItime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.287" ", " "Priority Inversion",
+.IR "\fB<semaphore.h>\fP",
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

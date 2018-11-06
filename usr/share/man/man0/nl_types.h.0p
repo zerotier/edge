@@ -1,0 +1,109 @@
+'\" et
+.TH nl_types.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+nl_types.h
+\(em data types
+.SH SYNOPSIS
+.LP
+.nf
+#include <nl_types.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <nl_types.h> 
+header shall define at least the following types:
+.IP "\fBnl_catd\fP" 14
+Used by the message catalog functions
+\fIcatopen\fR(),
+\fIcatgets\fR(),
+and
+\fIcatclose\fR()
+to identify a catalog descriptor.
+.IP "\fBnl_item\fP" 14
+Used by
+\fInl_langinfo\fR()
+to identify items of
+.IR langinfo
+data. Values of objects of type
+.BR nl_item
+are defined in
+.IR <langinfo.h> .
+.P
+The
+.IR <nl_types.h> 
+header shall define at least the following symbolic constants:
+.IP NL_SETD 14
+Used by
+.IR gencat
+when no $\fIset\fP directive is specified in a message text source
+file. This constant can be passed as the value of
+.IR set_id
+on subsequent calls to
+\fIcatgets\fR()
+(that is, to retrieve messages from the default message set). The
+value of NL_SETD is implementation-defined.
+.IP NL_CAT_LOCALE 14
+Value that must be passed as the
+.IR oflag
+argument to
+\fIcatopen\fR()
+to ensure that message catalog selection depends on the
+.IR LC_MESSAGES
+locale category, rather than directly on the
+.IR LANG
+environment variable.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int       catclose(nl_catd);
+char     *catgets(nl_catd, int, int, const char *);
+nl_catd   catopen(const char *, int);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<langinfo.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIcatclose\fR\^(\|)",
+.IR "\fIcatgets\fR\^(\|)",
+.IR "\fIcatopen\fR\^(\|)",
+.IR "\fInl_langinfo\fR\^(\|)"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIgencat\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

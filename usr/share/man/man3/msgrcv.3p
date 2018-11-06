@@ -1,0 +1,272 @@
+'\" et
+.TH MSGRCV "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+msgrcv
+\(em XSI message receive operation
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/msg.h>
+.P
+ssize_t msgrcv(int \fImsqid\fP, void *\fImsgp\fP, size_t \fImsgsz\fP, long \fImsgtyp\fP,
+    int \fImsgflg\fP);
+.fi
+.SH DESCRIPTION
+The
+\fImsgrcv\fR()
+function operates on XSI message queues (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.225" ", " "Message Queue").
+It is unspecified whether this function interoperates with the
+realtime interprocess communication facilities defined in
+.IR "Section 2.8" ", " "Realtime".
+.P
+The
+\fImsgrcv\fR()
+function shall read a message from the queue associated with the message
+queue identifier specified by
+.IR msqid
+and place it in the user-defined buffer pointed to by
+.IR msgp .
+.P
+The application shall ensure that the argument
+.IR msgp
+points to a user-defined buffer that contains first a field of type
+.BR long
+specifying the type of the message, and then a data portion that holds
+the data bytes of the message. The structure below is an example of
+what this user-defined buffer might look like:
+.sp
+.RS 4
+.nf
+\fB
+struct mymsg {
+    long    mtype;     /* Message type. */
+    char    mtext[1];  /* Message text. */
+}
+.fi \fR
+.P
+.RE
+.P
+The structure member
+.IR mtype
+is the received message's type as specified by the sending process.
+.P
+The structure member
+.IR mtext
+is the text of the message.
+.P
+The argument
+.IR msgsz
+specifies the size in bytes of
+.IR mtext .
+The received message shall be truncated to
+.IR msgsz
+bytes if it is larger than
+.IR msgsz
+and (\fImsgflg\fP & MSG_NOERROR) is non-zero.
+The truncated part of the message shall be lost and no indication of
+the truncation shall be given to the calling process.
+.P
+If the value of
+.IR msgsz
+is greater than
+{SSIZE_MAX},
+the result is implementation-defined.
+.P
+The argument
+.IR msgtyp
+specifies the type of message requested as follows:
+.IP " *" 4
+If
+.IR msgtyp
+is 0, the first message on the queue shall be received.
+.IP " *" 4
+If
+.IR msgtyp
+is greater than 0, the first message of type
+.IR msgtyp
+shall be received.
+.IP " *" 4
+If
+.IR msgtyp
+is less than 0, the first message of the lowest type that is less than
+or equal to the absolute value of
+.IR msgtyp
+shall be received.
+.P
+The argument
+.IR msgflg
+specifies the action to be taken if a message of the desired type is
+not on the queue. These are as follows:
+.IP " *" 4
+If (\fImsgflg\fP & IPC_NOWAIT)
+is non-zero, the calling thread shall return immediately with a return
+value of \(mi1 and
+.IR errno
+set to
+.BR [ENOMSG] .
+.IP " *" 4
+If (\fImsgflg\fP & IPC_NOWAIT) is 0, the calling thread shall suspend
+execution until one of the following occurs:
+.RS 4 
+.IP -- 4
+A message of the desired type is placed on the queue.
+.IP -- 4
+The message queue identifier
+.IR msqid
+is removed from the system; when this occurs,
+.IR errno
+shall be set to
+.BR [EIDRM] 
+and \(mi1 shall be returned.
+.IP -- 4
+The calling thread receives a signal that is to be caught; in this case
+a message is not received and the calling thread resumes execution in
+the manner prescribed in
+.IR "\fIsigaction\fR\^(\|)".
+.RE
+.P
+Upon successful completion, the following actions are taken with
+respect to the data structure associated with
+.IR msqid :
+.IP " *" 4
+.BR msg_qnum
+shall be decremented by 1.
+.IP " *" 4
+.BR msg_lrpid
+shall be set to the process ID of the calling process.
+.IP " *" 4
+.BR msg_rtime
+shall be set to the current time, as described in
+.IR "Section 2.7.1" ", " "IPC General Description".
+.SH "RETURN VALUE"
+Upon successful completion,
+\fImsgrcv\fR()
+shall return a value equal to the number of bytes actually placed
+into the buffer
+.IR mtext .
+Otherwise, no message shall be received,
+\fImsgrcv\fR()
+shall return \(mi1, and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fImsgrcv\fR()
+function shall fail if:
+.TP
+.BR E2BIG
+The value of
+.IR mtext
+is greater than
+.IR msgsz
+and (\fImsgflg\fP & MSG_NOERROR) is 0.
+.TP
+.BR EACCES
+Operation permission is denied to the calling process; see
+.IR "Section 2.7" ", " "XSI Interprocess Communication".
+.TP
+.BR EIDRM
+The message queue identifier
+.IR msqid
+is removed from the system.
+.TP
+.BR EINTR
+The
+\fImsgrcv\fR()
+function was interrupted by a signal.
+.TP
+.BR EINVAL
+.IR msqid
+is not a valid message queue identifier.
+.TP
+.BR ENOMSG
+The queue does not contain a message of the desired type and
+(\fImsgflg\fP & IPC_NOWAIT) is non-zero.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Receiving a Message"
+.P
+The following example receives the first message on the queue (based on
+the value of the
+.IR msgtyp
+argument, 0). The queue is identified by the
+.IR msqid
+argument (assuming that the value has previously been set). This call
+specifies that an error should be reported if no message is available,
+but not if the message is too large. The message size is calculated
+directly using the
+.IR sizeof
+operator.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/msg.h>
+\&...
+int result;
+int msqid;
+struct message {
+    long type;
+    char text[20];
+} msg;
+long msgtyp = 0;
+\&...
+result = msgrcv(msqid, (void *) &msg, sizeof(msg.text),
+         msgtyp, MSG_NOERROR | IPC_NOWAIT);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The POSIX Realtime Extension defines alternative interfaces for interprocess communication
+(IPC). Application developers who need to use IPC should design their
+applications so that modules using the IPC routines described in
+.IR "Section 2.7" ", " "XSI Interprocess Communication"
+can be easily modified to use the alternative interfaces.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.7" ", " "XSI Interprocess Communication",
+.IR "Section 2.8" ", " "Realtime",
+.IR "\fImq_close\fR\^(\|)",
+.IR "\fImq_getattr\fR\^(\|)",
+.IR "\fImq_notify\fR\^(\|)",
+.IR "\fImq_open\fR\^(\|)",
+.IR "\fImq_receive\fR\^(\|)",
+.IR "\fImq_send\fR\^(\|)",
+.IR "\fImq_setattr\fR\^(\|)",
+.IR "\fImq_unlink\fR\^(\|)",
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fImsgget\fR\^(\|)",
+.IR "\fImsgsnd\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.225" ", " "Message Queue",
+.IR "\fB<sys_msg.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

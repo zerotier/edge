@@ -1,0 +1,10 @@
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet manual
+	up ip link set $IFACE up
+	down ip link set $IFACE down
+
+#auto wan
+#iface wan inet dhcp

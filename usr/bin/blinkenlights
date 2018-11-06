@@ -1,0 +1,4712 @@
+#!/usr/bin/perl
+#
+# Copyright 2006-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details.
+#
+# DNSSEC-Tools:  blinkenlights
+#
+#	blinkenlights is a display tool for use with the DNSSEC-Tools rollerd
+#	program.  As rollerd rolls the zones listed in the rollrec file,
+#	blinkenlights will display status information for the file's zones.
+#
+#	blinkenlights is implemented in Perl/Tk, so both Perl and Perl/Tk must
+#	be installed on your system.
+#
+
+use strict;
+
+use Getopt::Long qw(:config no_ignore_case_always);
+
+use Net::DNS::SEC::Tools::dnssectools;
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::keyrec;
+use Net::DNS::SEC::Tools::rollrec;
+use Net::DNS::SEC::Tools::timetrans;
+use Net::DNS::SEC::Tools::BootStrap;
+
+
+######################################################################
+#
+# Detect required Perl modules.
+#
+dnssec_tools_load_mods(
+			'Tk'		=> "",
+			'Tk::Dialog'	=> "",
+			'Tk::Pane'	=> "",
+			'Tk::Table'	=> "",
+		      );
+
+#
+# Version information.
+#
+my $NAME   = "blinkenlights";
+my $VERS   = "$NAME version: 2.1.0";
+my $DTVERS = "DNSSEC-Tools Version: 2.1";
+
+#######################################################################
+#
+# Data required for command line options.
+#
+my %options = ();			# Filled option array.
+my @opts =
+(
+	"maxzones=i",			# Maximum number of zones.
+	"display",			# Tell rollerd to execute us.
+	"Version",			# Display the version number.
+	"help",				# Give a usage message and exit.
+);
+
+my $DEFAULT_MAXZONES = 20;		# Default maximum number of zones.
+my $maxzones = $DEFAULT_MAXZONES;	# Maximum number of zones.
+
+#######################################################################
+
+#
+# blinkenlights' configuration file.
+#
+my $CONFFILE	= "blinkenlights.conf";
+my $BLCONFIG	= "./rc.blinkenlights";
+
+#######################################################################
+#
+# Data involved with column layout.
+#
+
+#
+# Row constants.
+#
+my $TITLEROW = 0;		# Row on which columns titles will be shown.
+my $STARTROW = 1;		# First row on which zone info will be shown.
+my $ROWINCR  = 3;		# Number of rows for each zone.
+
+#
+# Column constants.
+#
+my $COL0  = 0;			# Column 0.
+my $COL1  = 1;			# Column 1.
+my $COL2  = 2;			# Column 2.
+my $COL3  = 3;			# Column 3.
+my $COL4  = 4;			# Column 4.
+my $COL5  = 5;			# Column 5.
+my $COL6  = 6;			# Column 6.
+my $COL7  = 7;			# Column 7.
+my $MAXCOLS = 8;		# Maximum number of columns.
+
+#
+# Column constants for infostripe.
+#
+my $RRFCOL	= $COL0;	# Rollrec filename.
+my $ROLLCNTCOL	= $COL1;	# Rolled zones count.
+my $SKIPCNTCOL	= $COL2;	# Skipped zones count.
+my $SLEEPCOL	= $COL3;	# Rollerd's sleeptime.
+my $DISPLAYCOL	= $COL4;	# Count of displayed zones.
+my $INFO5	= $COL5;	# Unused.
+my $INFO6	= $COL6;	# Unused.
+my $INFO7	= $COL7;	# Unused.
+
+#
+# Default column constants for zonestripes.
+#
+my $NAMECOL	= $COL0;	# Rollrec name. 
+my $ZONECOL	= $COL1;	# Zone name. 
+my $ZONEGRPCOL	= $COL2;	# Zonegroup name. 
+my $PHASECOL	= $COL3;	# Rollover phase.
+my $ZSKLBLCOL	= $COL4;	# ZSK label.
+my $ZSKKEYCOL	= $COL5;	# ZSK key/signing set name.
+my $KSKLBLCOL	= $COL6;	# KSK label.
+my $KSKKEYCOL	= $COL7;	# KSK key/signing set name.
+
+my $UNUSED	= -1;		# Unused column.
+
+#
+# Variables holding current column layout data.
+#
+my $namecol	= $NAMECOL;	# Rollrec-name column.
+my $zonecol	= $ZONECOL;	# Zone-name column.
+my $zgcol	= $ZONEGRPCOL;	# Zonegroup-name column.
+my $phasecol	= $PHASECOL;	# Rollover phase.
+my $zsklblcol	= $ZSKLBLCOL;	# Current ZSK label.
+my $zskkeycol	= $ZSKKEYCOL;	# Current ZSK key/signing set name.
+my $ksklblcol	= $KSKLBLCOL;	# Current KSK label.
+my $kskkeycol	= $KSKKEYCOL;	# Current KSK key/signing set name.
+
+my $showrrnames	  = 1;		# Flag indicating if rollrec names are shown.
+my $showzonenames = 1;		# Flag indicating if zonenames are shown.
+my $showzgnames	  = 1;		# Flag indicating if zonegroup names are shown.
+my $showksksets	  = 1;		# Flag indicating if KSK signing sets are shown.
+my $showzsksets	  = 1;		# Flag indicating if ZSK signing sets are shown.
+my $showkeysets	  = 1;		# Flag indicating if keysets are shown.
+
+my $numcols	= $MAXCOLS;	# Number of columns in use.
+
+#######################################################################
+#
+# Data involved with display.
+#
+
+my $DEFPAINTMAX	= 100;		# Maximum screen paints before screen rebuild.
+my $paintmax	= $DEFPAINTMAX;	# Maximum screen paints before screen rebuild.
+my $paintcount	= -1;		# Count of screen paints.
+
+my $rczc = 0;			# Count of zone commands from rollerd.
+
+my $DLGHEIGHT = 10;		# Height of the dialog box.
+
+#
+# Font size for output window.
+#
+my $FONTMIN	= 10;		# Minimum font size we'll allow.
+my $FONTMAX	= 42;		# Maximum font size we'll allow.
+my $FONTINCR	= 2;		# Font creation loop increment.
+my $fontsize	= 18;
+my $font	= "*-*-bold-r-*-*-$fontsize-*-*-*-*-*-*-*";
+
+#
+# Foreground colors for zones.
+#
+my $NORMALFG	= 'black';			# Normal foreground color.
+my $SELECTEDFG	= 'white';			# Selected foreground color.
+
+#
+# Background colors for the zones, cycling through the list for table rows.
+#
+my $NUMCOLORS = 3;				# Maximum number of colors.
+my $INFOBG    = "white";			# Color for the info row.
+
+my $colorind  = 0;				# Current color index.
+my $skipcolor = "grey";				# Color for skip zones.
+my $ERRORBG   = "yellow";			# Color for error rows.
+
+#
+# The @kphasecolors and @zphasecolors arrays hold the color names are used for
+# the background of the rollover-status column.  (If you can't immediately
+# figure out which array is used for what, you shouldn't be editing this file.)
+# The first color is the base color for normal operations.  The other colors are
+# used for the rollover phases.  They should be shades of the base color, and
+# they should go from a light shade to progressively darker shades.  The base
+# color should be the darkest.
+#
+# The color names are taken from the X11 rgb.txt file (X11 1.1.3 - XFree86
+# 4.4.0 for MacOS X.)  If these aren't available in your rgb.txt file, you
+# should select similar names.  The actual values used are given in the 
+# blinkenlights pod, in case you need to find something similar.
+#
+
+my @kphasecolors =
+(
+	[
+		'blue',			# phase 0
+		'lightblue2',		# phase 1
+		'darkslategray1',	# phase 2
+		'skyblue1',		# phase 3
+		'steelblue1',		# phase 4
+		'turquoise1',		# phase 5
+		'cornflower blue',	# phase 6
+		'dodger blue',		# phase 7
+	],
+
+	[
+		'red',			# phase 0
+		'pink',			# phase 1
+		'lightsalmon1',		# phase 2
+		'tomato',		# phase 3
+		'indianred',		# phase 4
+		'violetred1',		# phase 5
+		'orangered1',		# phase 6
+		'firebrick1',		# phase 7
+	],
+
+	[
+		'green',		# phase 0
+		'darkseagreen1',	# phase 1
+		'darkolivegreen1',	# phase 2
+		'lightgreen',		# phase 3
+		'seagreen1',		# phase 4
+		'spring green',		# phase 5
+		'greenyellow',		# phase 6
+		'lawngreen'		# phase 7
+	],
+
+);
+
+my @zphasecolors =
+(
+	[
+		'blue',			# phase 0
+		'LightBlue2',		# phase 1
+		'skyblue1',		# phase 2
+		'cornflower blue',	# phase 3
+		'dodger blue'		# phase 4
+	],
+
+	[
+		'red',			# phase 0
+		'pink',			# phase 1
+		'indianred',		# phase 2
+		'violetred1',		# phase 3
+		'orangered1'		# phase 4
+	],
+
+	[
+		'green',		# phase 0
+		'lightgreen',		# phase 1
+		'seagreen1',		# phase 2
+		'greenyellow',		# phase 3
+		'lawngreen'		# phase 4
+	], 
+);
+
+#
+# Descriptions of the KSK rollover phases.
+#
+my @kphasedescr =
+(
+	"  normal operation  ",					# phase 0
+	"  first cache-expire wait  ",				# phase 1
+	"  sign with KSKCUR, KSKPUB, and ZSKCUR  ",		# phase 2
+	"  second cache-expire wait  ",				# phase 3
+	"  transfer keyset to parent  ",			# phase 4
+	"  wait for parent to publish DS  ",			# phase 5
+	"  third cache-expire wait  ",				# phase 6
+	"  sign with KSKPUB and ZSKCUR and reload zone  ",	# phase 7
+);
+
+#
+# Descriptions of the ZSK rollover phases.
+#
+my @zphasedescr =
+(
+	"  normal operation  ",				# phase 0
+	"  first cache-expire wait  ",			# phase 1
+	"  sign with ZSKCUR and ZSKPUB  ",		# phase 2
+	"  second cache-expire wait  ",			# phase 3
+	"  sign with ZSKPUB and ZSKNEW  ",		# phase 4
+);
+
+#######################################################################
+#
+# Global Tk widgets.
+#
+
+#
+# The main window and its frames.
+#
+my $wm;						# Main window.
+my $mbar;					# Menubar frame.
+my $info;					# Info stripe.
+my $helpwin;					# Help window.
+my $body;					# Window body frame.
+my $zonetab;					# Zone data table.
+my $infotab;					# Info data vector.
+
+my $file;					# File menu.
+my $disp;					# Edit menu.
+my $cmdg;					# General Commands menu.
+my $cmdz;					# ZSK Commands menu.
+my $cmdk;					# KSK Commands menu.
+my $dspl;					# Display menu.
+my $help;					# Help menu.
+
+#
+# Menu item widgets.
+#
+my $op_clrs;					# Colors item.
+my $op_mdfy;					# Modify toggle.
+my $op_shad;					# Shading toggle.
+my $op_skip;					# Skip toggle.
+my $op_time;					# Time toggle.
+my $dm_rrn;					# Rollrec name display toggle.
+my $dm_znm;					# Zonename display toggle.
+my $dm_zgr;					# Zonegroup display toggle.
+my $dm_ksk;					# KSK set display toggle.
+my $dm_zsk;					# ZSK set display toggle.
+my $dm_sak;					# Keyset show.
+my $dm_snk;					# Keyset no-show.
+
+#
+# Messages for the Display menu.
+#
+my $ALLOWCMDS	 = "Allow Commands";
+my $DISALLOWCMDS = "Disallow Commands";
+
+my $COLORING	 = "Color Zone Stripes";
+my $NOCOLORING	 = "Don't Color Zone Stripes";
+
+my $SHADING	 = "Shade Status Column";
+my $NOSHADING	 = "Don't Shade Status Column";
+
+my $SHOWSKIP	 = "Display Skipped Zones";
+my $NOSKIP	 = "Hide Skipped Zones";
+
+my $SHOWTIME	 = "Display Status Times";
+my $NOTIME	 = "Hide Status Times";
+
+#
+# Messages for the Display menu.
+#
+my $NORRNAME	= 'Hide Rollrec Name';
+my $RRNAME	= 'Show Rollrec Name';
+
+my $NOZONENAME	= 'Hide Zone Name';
+my $ZONENAME	= 'Show Zone Name';
+
+my $NOZONEGROUP	= 'Hide Zonegroup Name';
+my $ZONEGROUP	= 'Show Zonegroup Name';
+
+my $NOKSKSETS	= 'Hide KSK Sets';
+my $KSKSETS	= 'Show KSK Sets';
+
+my $NOZSKSETS	= 'Hide ZSK Sets';
+my $ZSKSETS	= 'Show ZSK Sets';
+
+my $NOKEYSETS	= 'Hide All Keysets';
+my $KEYSETS	= 'Show All Keysets';
+
+
+#
+# Flags for the menu options.
+#
+my $nocolors;				# Use/don't use colors in stripes.
+my $nomodify;				# Allowing/disallowing commands flag.
+my $noshading;				# Shading/not shading zone stripes flag.
+my $noskip;				# Show/don't show skipped zones flag.
+my $notimes = 0;			# Show/don't show times in status col.
+
+my $shademsg;				# Message about shading.
+my $namesetmsg;				# Message about rollrec name display.
+my $zonesetmsg;				# Message about zone name display.
+my $zgsetmsg;				# Message about zonegroup name display.
+my $ksksetmsg = '';			# Message about KSK signing set display.
+my $zsksetmsg = '';			# Message about ZSK signing set display.
+
+#######################################################################
+#
+# Global shtuff.
+#
+
+#
+# Flags.
+#
+my $inhelpwind = 0;				# Flag for showing help window.
+
+#
+# Filename variables.
+#
+my $rrfile = "dummy";				# Rollrec file being watched.
+my $title = "dummy";				# File node for title.
+
+#
+# Zone information.
+#
+my %rollers	= ();				# Zones that might roll.
+my %zones	= ();				# Zones we're watching.
+my %zonecolors	= ();				# Zone color indices.
+my %zonerows	= ();				# Zones' starting-row indices.
+my @zonenames	= ();				# Screen-order list of zones.
+my %zonenames	= ();				# Rollrec name -> zone name map.
+my %zonegroups	= ();				# Rollrec name -> zonegroup map.
+my %zonenormals = ();				# Saved times for normal mode.
+my $zonecnt	= 1;				# Count of zones we're watching.
+my %keyrecs	= ();				# Zones' keyrec filenames.
+my %display	= ();				# Zones' display flag.
+
+my %badzones	= ();				# Zones with problems.
+
+#
+# Saved zone data, needed for repaints.
+#
+my %zonechron = ();				# Zones' chronoses.
+my %zonephase = ();				# Zones' phases.
+my %zoneroll  = ();				# Zones' rollover types.
+
+#
+# Data for the info stripe.
+#
+my $rollcntmsg = ' ';				# Count of rolled zones.
+my $skipcntmsg = ' ';				# Count of skipped zones.
+
+#
+# Data for button-selected zones.
+#
+my $selzone;					# Selected zone name.
+my $selwidget;					# Selected zone's widget.
+my $lastrow = $STARTROW;			# Final row index.
+
+#
+# Command paths.
+#
+my $rollctl;					# Path for rollctl.
+
+###########################################################################
+
+main();
+exit(0);
+
+#---------------------------------------------------------------------------
+# Routine:	main()
+#
+# Purpose:	Do shtuff.
+#
+sub main
+{
+	erraction(ERR_EXIT);
+
+	$| = 1;
+
+	#
+	# Check for options.
+	#
+	optsandargs();
+
+	#
+	# Read our configuration file.
+	#
+	readconfig();
+
+	#
+	# Ensure that rollerd is actually running.
+	#
+	rollerdup();
+
+	#
+	# Build the main window.
+	#
+	buildmainwind();
+
+	#
+	# Start the whole shebang rollin'.
+	#
+	MainLoop();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	optsandargs()
+#
+# Purpose:	Parse the command line for options and arguments.
+#
+sub optsandargs
+{
+	my $argc = @ARGV;		# Command line argument count.
+
+	my %blconf;			# DNSSEC-Tools config file contents.
+	my $confdir;			# DNSSEC-Tools configuration directory.
+	my $conffile;			# blinkenlights configuration file.
+
+	#
+	# Parse the options.
+	#
+	GetOptions(\%options,@opts) || usage();
+
+	#
+	# Look for the immediate options.
+	#
+	version() if(defined($options{'Version'}));
+	usage()	  if(defined($options{'help'}));
+
+	#
+	# Check for setting the maximum number of zones to display.
+	#
+	setmaxzones(0, $options{'maxzones'} || $DEFAULT_MAXZONES );
+
+	#
+	# Get the path for the rollctl command.
+	#
+	if(($rollctl=dt_cmdpath('rollctl')) eq '')
+	{
+		print STDERR "no absolute path defined for rollctl; exiting...\n";
+		exit(1);
+	}
+
+	#
+	# Kick rollerd into *really* starting blinkenlights, but only if
+	# no arguments were given or -display was given.
+	#
+	if(($argc == 0) || defined($options{'display'}))
+	{
+		exec "$rollctl -quiet -display" || print STDERR "unable to execute $rollctl -display\n";
+		exit(1);
+	}
+
+	#
+	# Save the name of the rollrec file.
+	#
+	$rrfile = $ARGV[0];
+
+	#
+	# Build the blinkenlights configuration file's name.
+	#
+	$confdir = getconfdir();
+	$conffile = "$confdir/$CONFFILE";
+
+	#
+	# Set the option values based on the config file.
+	# Non-blinkenlights options will be ignored by setopt().
+	#
+	%blconf = parseconfig($conffile);
+	foreach my $dtk (keys(%blconf))
+	{
+		setopt($dtk,$blconf{$dtk});
+	}
+
+}
+
+#---------------------------------------------------------------------------
+# Routine:	buildmainwind()
+#
+# Purpose:	Build the main window.
+#
+sub buildmainwind
+{
+	my $curfile;					# Current keyrec.
+
+	my $colormsg;					# Color menu message.
+	my $modmsg;					# Modify menu message.
+	my $skipmsg;					# Skip menu message.
+	my $timemsg;					# Time menu message.
+	my $fnsmenu;					# Font-size menu.
+
+	#
+	# Create the main window.
+	#
+	$wm = MainWindow->new(-title => "blinkenlights");
+
+	#
+	# Create the frames we'll need.
+	#
+
+	$mbar = $wm->Frame(-relief => 'raised', -borderwidth => 1);
+	$info = $wm->Label(-text => 'dummy value', -anchor => 'w',
+			   -font => $font, -background => $INFOBG);
+	$body = $wm->Frame(-relief => 'raised', -borderwidth => 1);
+
+	$mbar->pack(-anchor => 'n', -side => 'top', -fill => 'x', -expand => 1);
+	$info->pack(-anchor => 'n', -side => 'top', -fill => 'x', -expand => 1);
+	$body->pack(-anchor => 'n', -side => 'top', -fill => 'x', -expand => 1);
+
+	#
+	# Create our menus.
+	#
+	$file = $mbar->Menubutton(-text	     => 'File',
+				  -tearoff   => 0,
+				  -underline => 0);
+	$disp = $mbar->Menubutton(-text	     => 'Options',
+				  -tearoff   => 0,
+				  -underline => 0);
+	$cmdg = $mbar->Menubutton(-text	     => 'General Control',
+				  -tearoff   => 1,
+				  -underline => 0);
+	$cmdz = $mbar->Menubutton(-text	     => 'ZSK Control',
+				  -tearoff   => 1,
+				  -underline => 0);
+	$cmdk = $mbar->Menubutton(-text	     => 'KSK Control',
+				  -tearoff   => 1,
+				  -underline => 0);
+	$dspl = $mbar->Menubutton(-text	     => 'Display',
+				  -tearoff   => 1,
+				  -underline => 5);
+	$help = $mbar->Menubutton(-text      => 'Help',
+				  -tearoff   => 0,
+				  -underline => 0);
+	$mbar->pack(-side => 'top', -fill => 'x');
+
+	##################################################
+	#
+	# Add the File menu entries.
+	#
+
+	$file->command(-label => 'Halt Rollerd After Current Operations',
+		       -command => [\&commander, "halt"]);
+	$file->command(-label => 'Halt Rollerd Now',
+		       -command => [\&commander, "halt now"]);
+	$file->separator();
+	$file->command(-label => 'Quit',
+		       -command => \&file_quit,
+		       -accelerator => 'Ctrl+Q',
+		       -underline => 0);
+	$file->pack(-side => 'left');
+
+	$wm->bind('<Control-Key-Q>',\&file_quit);
+	$wm->bind('<Control-Key-q>',\&file_quit);
+
+	##################################################
+	#
+	# Add the Options menu entries.
+	#
+	$colormsg = $NOCOLORING;
+	$colormsg = $COLORING if($nocolors);
+	$op_clrs = $disp->command(-label => $colormsg,-command => \&disp_color);
+	$disp->pack(-side => 'left');
+
+	$shademsg = $NOSHADING;
+	$shademsg = $SHADING if($noshading);
+	$op_shad = $disp->command(-label => $shademsg,-command => \&disp_shade);
+	$disp->pack(-side => 'left');
+
+	$skipmsg = $NOSKIP;
+	$skipmsg = $SHOWSKIP if($noskip);
+	$op_skip = $disp->command(-label => $skipmsg, -command => \&disp_skip);
+	$disp->pack(-side => 'left');
+
+	$timemsg = $notimes ? $SHOWTIME : $NOTIME;
+	$op_time = $disp->command(-label => $timemsg, -command => \&disp_time);
+	$disp->pack(-side => 'left');
+
+	$disp->separator();
+	$disp->pack(-side => 'left');
+
+	$modmsg = $DISALLOWCMDS;
+	$modmsg = $ALLOWCMDS if($nomodify);
+	$op_mdfy = $disp->command(-label => $modmsg, -command => \&disp_modify);
+	$disp->pack(-side => 'left');
+
+	$disp->separator();
+	$disp->pack(-side => 'left');
+
+	#
+	# Add a bunch of font sizes.
+	#
+	$fnsmenu = $disp->cascade(-label => "Font Size");
+	for(my $ind = $FONTMIN; $ind <= $FONTMAX; $ind += $FONTINCR)
+	{
+		$fnsmenu->radiobutton(-label	=> "$ind",
+				      -variable => \$fontsize,
+				      -command	=> \&disp_font);
+	}
+	$disp->pack(-side => 'left');
+
+	$disp->command(-label	=> 'Zones to Display...',
+		       -command => \&disp_zonecount);
+	$disp->pack(-side => 'left');
+
+	##################################################
+	#
+	# Add the General Control menu entries.
+	#
+	$cmdg->command(-label => 'Sign Selected Zone',
+		       -command => [\&general_cmds, "signzone"]);
+	$cmdg->command(-label => 'Sign All Zones',
+		       -command => [\&general_cmds, "signzones all"]);
+	$cmdg->command(-label => 'Sign Active Zones',
+		       -command => [\&general_cmds, "signzones active"]);
+	$cmdg->command(-label => 'Run the Queue',
+		       -command => [\&general_cmds, "runqueue"]);
+	$cmdg->separator();
+	$cmdg->command(-label => 'Skip Selected Zone',
+		       -command => [\&general_cmds, "skipzone"],
+		       -accelerator => 'Ctrl+S');
+	$cmdg->command(-label => 'Skip All Zones',
+		       -command => [\&general_cmds, "skipall"]);
+	$cmdg->separator();
+	$cmdg->command(-label => 'Restart Selected Skipped Zone',
+		       -command => [\&general_cmds, "rollzone"]);
+	$cmdg->command(-label => 'Restart All Skipped Zones',
+		       -command => [\&general_cmds, "rollall"]);
+
+	$cmdg->pack(-side => 'left');
+
+	if($nomodify)
+	{
+		$cmdg->configure(-state => 'disabled');
+	}
+
+	##################################################
+	#
+	# Add the ZSK Control menu entries.
+	#
+	$cmdz->command(-label => "Roll Selected Zone's ZSK",
+		       -command => [\&zskcmds, "rollzsk"],
+		       -accelerator => 'Ctrl+R');
+	$cmdz->command(-label => "Roll All Zones' ZSKs",
+		       -command => [\&zskcmds, "rollallzsks"]);
+
+	$cmdz->pack(-side => 'left');
+
+	$wm->bind('<Control-Key-r>', \&zone_rollzsk);
+	$wm->bind('<Control-Key-s>', \&zone_skipzone);
+
+	if($nomodify)
+	{
+		$cmdz->configure(-state => 'disabled');
+	}
+
+	##################################################
+	#
+	# Add the KSK Control menu entries.
+	#
+	$cmdk->command(-label	=> 'DS Published for Selected Zone',
+		       -command => [\&kskcmds, "dspub"]);
+	$cmdk->command(-label	=> 'DS Published for All Zones',
+		       -command => [\&kskcmds, "dspuball"], );
+	$cmdk->separator();
+	$cmdk->command(-label	=> 'Roll Selected Zone\'s KSK',
+		       -command => [\&kskcmds, "rollksk"]);
+	$cmdk->command(-label	=> 'Roll All Zones\' KSKs',
+		       -command => [\&kskcmds, "rollallksks"], );
+
+	$cmdk->pack(-side => 'left');
+
+	if($nomodify)
+	{
+		$cmdk->configure(-state => 'disabled');
+	}
+
+	##################################################
+	#
+	# Add the Display menu entries.
+	#
+	$dspl->command(-label	=> 'Zone Selection...',
+		       -command => \&zdisp_select);
+	$dspl->command(-label	=> 'Display All Zones',
+		       -command => [\&zdisp_setter, 1]);
+	$dspl->command(-label	=> 'Hide All Zones',
+		       -command => [\&zdisp_setter, 0]);
+	$dspl->separator();
+	$dspl->pack(-side => 'left');
+
+	###############
+
+	$namesetmsg = $showrrnames ? $NORRNAME : $RRNAME;
+	$dm_rrn = $dspl->command(-label   => $namesetmsg,
+				  -command => [\&disp_menus, 'RRNAME', 1],
+				  -state   => 'normal');
+
+	$zonesetmsg = $showzonenames ? $NOZONENAME : $ZONENAME;
+	$dm_znm = $dspl->command(-label   => $zonesetmsg,
+				  -command => [\&disp_menus, 'ZONENAME', 1],
+				  -state   => 'normal');
+
+	$zgsetmsg = $showzgnames ? $NOZONEGROUP : $ZONEGROUP;
+	$dm_zgr = $dspl->command(-label   => $zgsetmsg,
+				  -command => [\&disp_menus, 'ZONEGROUP', 1],
+				  -state   => 'normal');
+
+	#
+	# If we're only displaying either the rollrec name column or the
+	# zonename column, then we'll do the appropriate menu disabling.
+	#
+	if($showrrnames && ! $showzonenames)
+	{
+		$dm_rrn->configure(-state => 'disabled');
+	}
+	elsif(! $showrrnames && $showzonenames)
+	{
+		$dm_znm->configure(-state => 'disabled');
+	}
+
+	$dspl->separator();
+	$dspl->pack(-side => 'left');
+
+	###############
+
+	$ksksetmsg = $showksksets ? $NOKSKSETS : $KSKSETS;
+	$dm_ksk = $dspl->command(-label   => $ksksetmsg,
+				 -command => [\&disp_menus, 'KSK', 1],
+				 -state   => 'normal');
+
+	$zsksetmsg = $showzsksets ? $NOZSKSETS : $ZSKSETS;
+	$dm_zsk = $dspl->command(-label   => $zsksetmsg,
+				 -command => [\&disp_menus, 'ZSK', 1],
+				 -state   => 'normal');
+
+	#
+	# DO NOT collapse the show all keysets and hide all keysets commands
+	#	 into a single toggle!!!  They should both be displayed
+	#	 when some keys have been hidden, so we'll keep both menu
+	#	 entries around all the time and disable one when it isn't
+	#	 relevant.
+	#
+	$dm_sak = $dspl->command(-label   => 'Show All Keysets',
+				 -command => [\&disp_menus, 'SHOW ALL', 1],
+				 -state   => 'normal');
+
+	$dm_snk = $dspl->command(-label   => 'Hide All Keysets',
+				 -command => [\&disp_menus, 'HIDE ALL', 1],
+				 -state   => 'normal');
+
+	$dspl->pack(-side => 'left');
+
+	#
+	# Set up the show/hide all keysets menu items.
+	#
+	menuconfig();
+
+	$dspl->separator();
+	$dspl->pack(-side => 'left');
+
+	###############
+
+	#
+	# Add a menu item to force a display refresh.
+	#
+	$dspl->command(-label	=> 'Refresh Display',
+		       -command => \&disp_refresh);
+
+	##################################################
+	#
+	# Add the Help menu entries.
+	#
+	$help->command(-label => 'Help',
+		       -command => \&help_help,
+		       -accelerator => 'Ctrl+H',
+		       -underline => 0);
+	$help->command( -label => "About $NAME",    
+			-command => \&help_about,     
+			-underline => 0);
+	$help->pack(-side => 'right');
+
+	$wm->bind('<Control-Key-h>',\&help_help);
+
+	##################################################
+	#
+	# Add the big ol' zone-status widget.
+	#
+	$zonetab = maketable();
+	$zonetab->pack(-fill => 'both', -expand => 1);
+	$body->pack(-fill => 'both', -expand => 1);
+
+	##################################################
+	#
+	# Get the rollrec file info.
+	#
+#	readrrf($rrfile,0);
+	readrrf($rrfile,1);
+
+	#
+	# Set up to get input from rollerd.
+	#
+	$wm->fileevent('STDIN',readable => \&rollerdcmd);
+
+	#
+	# Set up to handle mouse clicks.
+	#
+	$wm->bind('<Button>',\&selector);
+}
+
+##############################################################################
+#
+# Menu widget interface routines.
+#
+##############################################################################
+
+#---------------------------------------------------------------------------
+# Routine:	file_quit()
+#
+# Purpose:	Handle the quit menu command.
+#
+sub file_quit
+{
+	#
+	# Destroy the main window.  This will cause MainLoop() to return,
+	# leading to the program exiting.
+	#
+	$wm->destroy;
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_color()
+#
+# Purpose:	Handle the Colors menu toggle.
+#
+sub disp_color
+{
+	if($nocolors)
+	{
+		$op_clrs->configure(-label => $NOCOLORING);
+		$cmdg->configure(-state => 'normal');
+		$nocolors = 0;
+	}
+	else
+	{
+		$op_clrs->configure(-label => $COLORING);
+		$cmdg->configure(-state => 'disabled');
+		$nocolors = 1;
+	}
+
+	calcrows();
+	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_font()
+#
+# Purpose:	Handle the Font Size menu item.  We'll set the font string
+#		and repaint the screen.
+#
+sub disp_font
+{
+	setfont();
+	painter($paintmax+1);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_modify()
+#
+# Purpose:	Handle the Modify menu toggle.
+#
+sub disp_modify
+{
+	if($nomodify)
+	{
+		$op_mdfy->configure(-label => $DISALLOWCMDS);
+		$cmdg->configure(-state => 'normal');
+		$cmdz->configure(-state => 'normal');
+		$cmdk->configure(-state => 'normal');
+		$nomodify = 0;
+	}
+	else
+	{
+		$op_mdfy->configure(-label => $ALLOWCMDS);
+		$cmdg->configure(-state => 'disabled');
+		$cmdz->configure(-state => 'disabled');
+		$cmdk->configure(-state => 'disabled');
+		$nomodify = 1;
+	}
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_shad()
+#
+# Purpose:	Handle the Shading menu toggle.
+#
+sub disp_shade
+{
+	if($noshading)
+	{
+		$op_shad->configure(-label => $NOSHADING);
+		$noshading = 0;
+	}
+	else
+	{
+		$op_shad->configure(-label => $SHADING);
+		$noshading = 1;
+	}
+
+	calcrows();
+	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_skip()
+#
+# Purpose:	Handle the Skip menu toggle.
+#
+sub disp_skip
+{
+	if($noskip)
+	{
+		$op_skip->configure(-label => $NOSKIP);
+		$noskip = 0;
+	}
+	else
+	{
+		$op_skip->configure(-label => $SHOWSKIP);
+		$noskip = 1;
+	}
+
+	calcrows();
+	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_time()
+#
+# Purpose:	Handle the Time menu toggle.
+#
+sub disp_time
+{
+	if($notimes)
+	{
+		$op_time->configure(-label => $NOTIME);
+		$notimes = 0;
+	}
+	else
+	{
+		$op_time->configure(-label => $SHOWTIME);
+		$notimes = 1;
+	}
+
+	calcrows();
+	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_menus()
+#
+# Purpose:	Handle the display menu toggles.  When handling a menu
+#		execution, the following actions are taken, regardless
+#		of what is being shown or not shown.  
+#
+#			- Toggle the menu label.
+#			- Flip the appropriate display flag.
+#			- The appropriate key and label column variables
+#			  will be set.
+#			- The display table's column count will be adjusted
+#			  by 2 for KSK and ZSK sets; it will be adjusted by
+#			  1 for all others.
+#
+#		The meaning of "appropriate" depends on why this routine
+#		was called.
+#
+sub disp_menus
+{
+	my $menucmd   = shift;		# Triggering menu command.
+	my $paintflag = shift;		# Flag indicating if we should repaint.
+
+	my $lbl;			# New menu label.
+	my $newstate;			# New state for rrname menu item.
+
+	#
+	# Handle an RRNAME enable or disable command.
+	#
+	if($menucmd eq 'RRNAME')
+	{
+		#
+		# If we're currently displaying rollrec names, we'll stop.
+		# If we aren't currently displaying rollrec names, we'll start.
+		#
+		if($showrrnames)
+		{
+			$namecol     = $UNUSED;
+			$lbl	     = $RRNAME;
+			$newstate    = 'disabled';
+			$showrrnames = 0;
+			$zonecol--;
+		}
+		else
+		{
+			$namecol     = $NAMECOL;
+			$lbl	     = $NORRNAME;
+			$newstate    = 'normal';
+			$showrrnames = 1;
+			$zonecol++;
+		}
+
+		#
+		# Set the labels on a few menu items.
+		#
+		$dm_znm->configure(-state => $newstate);
+		$dm_rrn->configure(-label => $lbl);
+	}
+	elsif($menucmd eq 'ZONENAME')
+	{
+		#
+		# If we're currently displaying zonenames, we'll stop.
+		# If we aren't currently displaying zonenames, we'll start.
+		#
+		if($showzonenames)
+		{
+			$zonecol        = $UNUSED;
+			$lbl	        = $ZONENAME;
+			$newstate      = 'disabled';
+			$showzonenames = 0;
+		}
+		else
+		{
+			#
+			# Set up for showing the zonename.
+			#
+			$zonecol       = $ZONECOL;
+			$lbl	       = $NOZONENAME;
+			$newstate      = 'normal';
+			$showzonenames = 1;
+		}
+
+		#
+		# Set the labels on a few menu items.
+		#
+		$dm_rrn->configure(-state => $newstate);
+		$dm_znm->configure(-label => $lbl);
+	}
+	elsif($menucmd eq 'ZONEGROUP')
+	{
+		#
+		# If we're currently displaying zonegroups, we'll stop.
+		# If we aren't currently displaying zonegroups, we'll start.
+		#
+		if($showzgnames)
+		{
+			$zonecol       = $UNUSED;
+			$lbl	       = $ZONEGROUP;
+			$newstate      = 'disabled';
+			$showzgnames   = 0;
+		}
+		else
+		{
+			#
+			# Set up for showing the zonename.
+			#
+			$zonecol       = $ZONECOL;
+			$lbl	       = $NOZONEGROUP;
+			$newstate      = 'normal';
+			$showzgnames   = 1;
+		}
+
+		#
+		# Set the labels on a few menu items.
+		#
+		$dm_zgr->configure(-label => $lbl);
+	}
+	elsif($menucmd eq 'KSK')
+	{
+		#
+		# If we're currently displaying KSK sets, we'll stop.
+		# If we aren't currently displaying KSK sets, we'll start.
+		#
+		if($showksksets)
+		{
+			$lbl = $KSKSETS;
+			$showksksets = 0;
+		}
+		else
+		{
+			$lbl = $NOKSKSETS;
+			$showksksets = 1;
+		}
+
+		#
+		# Set the menu item's new label.
+		#
+		$dm_ksk->configure(-label => $lbl);
+	}
+	elsif($menucmd eq 'ZSK')
+	{
+		#
+		# If we're currently displaying ZSK sets, we'll stop.
+		# If we aren't currently displaying ZSK sets, we'll start.
+		#
+		if($showzsksets)
+		{
+			$lbl	      = $ZSKSETS;
+			$showzsksets  = 0;
+		}
+		else
+		{
+			$lbl	      = $NOZSKSETS;
+			$showzsksets  = 1;
+		}
+
+		#
+		# Set the menu item's new label.
+		#
+		$dm_zsk->configure(-label => $lbl);
+	}
+	elsif($menucmd eq 'HIDE ALL')
+	{
+		#
+		# Hide all the signing sets.
+		#
+		disp_menus('KSK',0) if($showksksets);
+		disp_menus('ZSK',0) if($showzsksets);
+	}
+	elsif($menucmd eq 'SHOW ALL')
+	{
+		disp_menus('KSK',0) if(! $showksksets);
+		disp_menus('ZSK',0) if(! $showzsksets);
+	}
+
+	#
+	# Set up the show/hide all keysets menu items.
+	#
+	menuconfig();
+
+	#
+	# Recreate the display table.
+	#
+	$paintcount = $paintmax + 1;
+	painter() if($paintflag);
+
+	#
+	# Recalculate the number of rows we need and redraw the screen.
+	#
+	calcrows();
+#	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_zonecount()
+#
+# Purpose:	Handle the Zones to Display menu command.
+#
+sub disp_zonecount
+{
+	my $dlg;					# Dialog box.
+	my $lab;					# Label widget.
+	my $ent;					# Entry widget.
+	my $ret;					# Dialog box return.
+
+	my $zcnt;					# New zone count.
+
+	#
+	# Create a new dialog box to get the name of the new rollrec entry.
+	#
+	$dlg = $wm->DialogBox(-title => 'Zones to Display',
+			      -buttons => ["Okay", "Cancel" ]);
+
+	#
+	# Add a description...
+	#
+	$lab = $dlg->add('Label', -text => 'Enter new count of zones to display:  ');
+	$lab->pack(-side => 'left');
+
+	#
+	# ... and a text entry slot, focus on the entry ...
+	#
+	$ent = $dlg->add('Entry');
+	$ent->pack(-side => 'left');
+	$dlg->configure(-focus => $ent);
+
+	#
+	# ... mix, stir, and *voila*!  We've got a dialog box.
+	#
+	$ret = $dlg->Show();
+
+	#
+	# Drop out if the user changed their mind.
+	#
+	return if($ret eq "Cancel");
+
+	#
+	# Get the user's requested name.
+	#
+	$zcnt = $ent->get();
+	$zcnt =~ s/^\s*(.+)\s*/$1/;
+
+	#
+	# Give a warning if the count isn't entirely numeric. 
+	#
+	if($zcnt !~ /^[0-9]+$/)
+	{
+		my $dlg;			# Warning dialog widget.
+		my $ret;			# Warning response.
+
+		$dlg = $wm->Dialog(-title => 'Warning',
+				   -text  => "Zone count must be entirely numeric",
+				   -buttons => ["Re-enter Count", "Cancel" ]);
+		$ret = $dlg->Show();
+
+		#
+		# Drop out if the user changed their mind.
+		#
+		return if($ret eq "Cancel");
+
+		#
+		# Let the user try again.
+		#
+		disp_zonecount();
+		return;
+	}
+
+	#
+	# Give a warning if the count isn't greater than zero.
+	#
+	if($zcnt < 1)
+	{
+		my $dlg;			# Warning dialog widget.
+		my $ret;			# Warning response.
+
+		$dlg = $wm->Dialog(-title => 'Warning',
+				   -text  => "Zone count must be greater than zero",
+				   -buttons => ["Re-enter Count", "Cancel" ]);
+		$ret = $dlg->Show();
+
+		#
+		# Drop out if the user changed their mind.
+		#
+		return if($ret eq "Cancel");
+
+		#
+		# Let the user try again.
+		#
+		disp_zonecount();
+		return;
+	}
+
+	#
+	# Set the maximum-zone count.
+	#
+	setmaxzones(1,$zcnt);
+
+	#
+	# And let's get the window redrawn.
+	#
+	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	zone_rollzsk()
+#
+# Purpose:	Handle the Roll ZSK menu command.
+#
+sub zone_rollzsk
+{
+	return if($rollers{$selzone});
+	general_cmds("rollzsk");
+}
+
+#---------------------------------------------------------------------------
+# Routine:	zone_skipzone()
+#
+# Purpose:	Handle the Skip Zone menu command.
+#
+sub zone_skipzone
+{
+	return if(!$rollers{$selzone});
+	general_cmds("skipzone");
+}
+
+#---------------------------------------------------------------------------
+# Routine:	general_cmds()
+#
+# Purpose:	Handle the General Commands menu commands.
+#
+sub general_cmds
+{
+	my $rcmd = shift;				# User's command.
+	my $args = $rcmd;				# Command arguments.
+	my $rollcmd;					# Command to execute.
+	my $ret;					# Command retcode.
+
+	my $zone = $selzone;				# Zone to handle.
+
+	#
+	# Don't allow commands if -nomodify was given.
+	#
+	return if($nomodify);
+
+	#
+	# These commands need a zone.  By hook or by crook, we'll ensure
+	# that we have one.
+	#
+	if(($rcmd eq "skipzone") || ($rcmd eq "rollzone") ||
+	   ($rcmd eq "signzone"))
+	{
+		#
+		# If a zone has been selected, we'll use it.  If not,
+		# we'll prompt the user for the zone.
+		#
+		if($selzone ne '')
+		{
+			$args = "$rcmd \"$selzone\"";
+		}
+		else
+		{
+			$zone = getzone($rcmd);
+			return if($zone eq "");
+			$args = "$rcmd \"$zone\"";
+		}
+	}
+
+	#
+	# Build and execute the command string.
+	#
+	$rollcmd = "$rollctl -quiet -$args";
+	$ret = system($rollcmd);
+
+	#
+	# If the command failed, we'll re-run the command and let the
+	# user see the failure message.
+	#
+	$ret = $ret >> 8;
+	if($ret != 0)
+	{
+		#
+		# Exit if rollerd isn't running.
+		#
+		if($ret == 200)
+		{
+			exit(1);
+		}
+
+		#
+		# Quietly run the command again.
+		*
+		$rollcmd = "$rollctl -quiet $args";
+		system($rollcmd);
+
+		#
+		# If we were trying to skip this zone, we'll mark
+		# it as having a problem and repaint its stripe.
+		#
+		if($rcmd eq "skipzone")
+		{
+			$badzones{$zone} = 1;
+			zonestripe($zone,'KSK',0);
+		}
+	}
+	else
+	{
+		delete($badzones{$zone});
+	}
+
+	#
+	# And let's get the window redrawn.
+	#
+	painter($paintmax+1);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	zskcmds()
+#
+# Purpose:	Handle the ZSK Commands menu commands.
+#
+sub zskcmds
+{
+	my $rcmd = shift;				# User's command.
+	my $args = $rcmd;				# Command arguments.
+	my $rollcmd;					# Command to execute.
+	my $ret;					# Command retcode.
+
+	my $zone = $selzone;				# Zone to handle.
+
+	#
+	# Don't allow commands if -nomodify was given.
+	#
+	return if($nomodify);
+
+	#
+	# These commands need a zone.  By hook or by crook, we'll ensure
+	# that we have one.
+	#
+	if($rcmd eq "rollzsk")
+	{
+		#
+		# If a zone has been selected, we'll use it.  If not,
+		# we'll prompt the user for the zone.
+		#
+		if($selzone ne '')
+		{
+			$args = "$rcmd \"$selzone\"";
+		}
+		else
+		{
+			$zone = getzone($rcmd);
+			return if($zone eq "");
+			$args = "$rcmd \"$zone\"";
+		}
+	}
+
+	#
+	# Build and execute the command string.
+	#
+	$rollcmd = "$rollctl -quiet -$args";
+	$ret = system($rollcmd);
+
+	#
+	# If the command failed, we'll re-run the command and let the
+	# user see the failure message.
+	#
+	$ret = $ret >> 8;
+	if($ret != 0)
+	{
+		my $out;				# Command output.
+
+		#
+		# Exit if rollerd isn't running.
+		#
+		if($ret == 200)
+		{
+			exit(1);
+		}
+
+		$out = `$rollctl -$args`;
+		print $out;
+
+		#
+		# If we were trying to roll a zone, we'll complain to the
+		# user by way of a dialog box.
+		#
+		if($rcmd eq "rollzsk")
+		{
+			#
+			# Create a new dialog box for an error message.
+			#
+			if($out =~ /is already engaged in a [KZ]SK rollover/)
+			{
+				my $dbox;			# Dialog box.
+
+				$dbox = $wm->Dialog(-title => "$zone",
+					      -default_button => "Okay",
+					      -buttons => ["Okay"]);
+
+				$dbox->Label(-text => " ")->pack();
+				$dbox->Label(-text => "$zone $&.\n\nDid you really mean to restart its rollover?")->pack();
+				$dbox->Label(-text => " ")->pack();
+
+				$dbox->Show();
+			}
+
+		}
+
+		$badzones{$zone} = 1;
+#		zonestripe($zone,'ZSK',0);
+
+	}
+	else
+	{
+		delete($badzones{$zone});
+	}
+
+}
+
+#---------------------------------------------------------------------------
+# Routine:	kskcmds()
+#
+# Purpose:	Handle the KSK Command menu commands.
+#
+sub kskcmds
+{
+	my $rcmd = shift;				# Command to run.
+	my $args;					# Arguments for rollctl.
+	my $ret;					# rollctl return code.
+	my $zone;					# Zone to handle.
+
+
+	#
+	# Don't allow commands if -nomodify was given.
+	#
+	return if($nomodify);
+
+	#
+	# These commands need a zone.  We've got to query the user for
+	# one, but until then they're unimplemented.
+	#
+	if(($rcmd eq "dspub") || ($rcmd eq "rollksk"))
+	{
+		#
+		# If a zone has been selected, we'll use it.  If not,
+		# we'll prompt the user for the zone.
+		#
+		$zone = $selzone;
+		if($selzone eq '')
+		{
+			$zone = getzone($rcmd);
+			return if($zone eq "");
+		}
+
+		$args = "-$rcmd \"$zone\"";
+	}
+	else
+	{
+		$args = "-$rcmd";
+	}
+
+	#
+	# Send the command to rollerd.
+	#
+	$ret = system("$rollctl -quiet $args");
+
+	#
+	# If the command failed, we'll re-run the command and let the
+	# user see the failure message.
+	#
+	$ret = $ret >> 8;
+	if($ret != 0)
+	{
+		my $out;				# rollctl output.
+
+		#
+		# Exit if rollerd isn't running.
+		#
+		if($ret == 200)
+		{
+			exit(1);
+		}
+
+		$out = `$rollctl -$args`;
+		print $out;
+
+		#
+		# If we were trying to roll a zone, we'll complain to the
+		# user by way of a dialog box.
+		#
+		if($rcmd eq "rollksk")
+		{
+			#
+			# Create a new dialog box for an error message.
+			#
+			if($out =~ /is already engaged in a [KZ]SK rollover/)
+			{
+				my $dbox;			# Dialog box.
+
+				$dbox = $wm->Dialog(-title => "$zone",
+					      -default_button => "Okay",
+					      -buttons => ["Okay"]);
+
+				$dbox->Label(-text => " ")->pack();
+				$dbox->Label(-text => "$zone $&.\n\nDid you really mean to restart its rollover?")->pack();
+				$dbox->Label(-text => " ")->pack();
+
+				$dbox->Show();
+			}
+
+		}
+
+#		zonestripe($zone,'KSK',0);
+		$badzones{$zone} = 1;
+	}
+	else
+	{
+		delete($badzones{$zone});
+	}
+}
+
+#---------------------------------------------------------------------------
+# Routine:	commander()
+#
+# Purpose:	Handle the general commands.
+#
+sub commander
+{
+	my $rcmd = shift;				# Command to execute.
+
+	#
+	# Build and execute the command string.
+	#
+	$rcmd = "$rollctl -quiet -$rcmd";
+	system($rcmd);
+
+	#
+	# Wait a short bit and exit if rollerd hasn't killed us.
+	#
+	if($rcmd eq "halt")
+	{
+		sleep(2);
+		exit(0);
+	}
+}
+
+#---------------------------------------------------------------------------
+# Routine:	zdisp_setter()
+#
+# Purpose:	Handle the Display All/None menu choices.
+#
+sub zdisp_setter
+{
+	my $dispstate = shift;				# Display state.
+
+# print "zdisp_setter:  down in\n";
+
+	#
+	# Set the internal display state for all zones.
+	#
+	foreach my $zone (keys(%display))
+	{
+		$display{$zone} = $dispstate;
+	}
+
+	#
+	# Lock and load the rollrec file.
+	#
+	rollrec_lock();
+	rollrec_read($rrfile);
+
+	#
+	# Set the display state in the rollrec file.
+	#
+	foreach my $rname (rollrec_names())
+	{
+		rollrec_setval($rname,'display',$dispstate);
+	}
+
+	#
+	# Let others use the rollrec file.
+	#
+	rollrec_close();
+	rollrec_unlock();
+
+	#
+	# Update the screen.
+	#
+	calcrows();
+	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	zdisp_select()
+#
+# Purpose:	Display the zone-display window and let the user select
+#		which zones to display or hide.
+#
+sub zdisp_select
+{
+	my $subwin;					# Display dialog.
+	my $znframe;					# Scrolled frame.
+	my $wdgt;					# Widget for window.
+
+	my %zonebox;					# Zone checkboxes.
+
+	#
+	# Create a new dialog box to hold our help info.
+	#
+	$subwin = $wm->Dialog(-title => "Zone Display Selection",
+			      -default_button => "Okay",
+			      -height => "10",
+			      -buttons => ["Okay", "Cancel"]);
+
+	#
+	# Put a label in the label stripe.
+	#
+	$wdgt = $subwin->Label(-text => 'Checked zones will be displayed');
+	$wdgt->pack();
+
+	#
+	# Now make the containers for the window.
+	#
+	$znframe = $subwin->Scrolled("Frame", -scrollbars => 'oe');
+	$znframe->pack(-anchor	=> 'w',
+		       -side	=> 'top',
+		       -fill	=> 'both',
+		       -expand	=> 1);
+
+	#
+	# Add the zone names to the scrolled box.
+	#
+	%zonebox = ();
+	foreach my $zn (sort(keys(%display)))
+	{
+		$zonebox{$zn} = $znframe->Checkbutton(-text => $zn,
+						    -variable => \$display{$zn},
+						    -anchor => 'nw',
+						);
+		$zonebox{$zn}->pack(-side => 'top', -fill => 'x', -expand => 1);
+	}
+
+	$znframe->pack(-anchor => 'n', -side => 'top',
+		       -fill => 'both', -expand => 1);
+
+	#
+	# Display our modal dialog.
+	# 
+	return if($subwin->Show() eq "Cancel");
+
+	#
+	# Lock and load the rollrec file.
+	#
+	rollrec_lock();
+	rollrec_read($rrfile);
+
+	#
+	# Set the display state in the rollrec file.
+	#
+	foreach my $zn (rollrec_names())
+	{
+		rollrec_setval($zn,'display',$display{$zn});
+	}
+
+	#
+	# Let others use the rollrec file.
+	#
+	rollrec_close();
+	rollrec_unlock();
+
+	#
+	# Update the screen.
+	#
+	calcrows();
+	repaint();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	disp_refresh()
+#
+# Purpose:	Repaint the screen.
+#
+sub disp_refresh
+{
+	painter($paintmax+1);
+}
+
+##############################################################################
+#
+# Screen-drawing routines
+#
+##############################################################################
+
+#---------------------------------------------------------------------------
+# Routine:	painter()
+#
+# Purpose:	Adjust the screen-painting count as needed.  If we've hit
+#		a maximum value, destroy and rebuild the zone table.
+#
+sub painter
+{
+	return if($zonetab == undef);
+
+	#
+	# Set the paint-count to a user-specified value, or increment
+	# the current value if one wasn't given.
+	#
+	if(@_ > 0)
+	{
+		$paintcount = shift;
+	}
+	else
+	{
+		$paintcount++;
+	}
+
+	#
+	# If we've exceeded our maximum, reset the paint-count and rebuild
+	# the zone's table.
+	#
+	if($paintcount > $paintmax)
+	{
+		$paintcount = 0;
+		buildtable();
+	}
+}
+
+#---------------------------------------------------------------------------
+# Routine:	maketable()
+#
+# Purpose:	Create the zone status table.  As part of this, we'll also
+#		calculate the column indices for the each column.
+#
+#		The column indices do not have to be calculated here, and
+#		don't need to be calculated every time the table is created.
+#		However, this is a nice central location in which to do it
+#		and this routine is only called occasionally, so we're
+#		assuming this is a reasonable trade-off.
+#
+sub maketable
+{
+	return if($body == undef);
+
+	#
+	# Calculate the positions of each column in the table.
+	#
+	calccols();
+
+	#
+	# Create the table.
+	#
+	$zonetab = $body->Table(-rows		=> 12,
+				-columns	=> $numcols,
+				-scrollbars	=> 'e',
+				-relief		=> 'raised',
+				-borderwidth	=> 1,
+				-fixedrows	=> 0,
+				-takefocus	=> 1,
+			       );
+}
+
+#---------------------------------------------------------------------------
+# Routine:	buildtable()
+#
+# Purpose:	Rebuild the zone status table.  This also re-reads the
+#		current rollrec file, so the zones listed may increase
+#		or shrink depending on the state of that file.
+#
+sub buildtable
+{
+	#
+	# Destroy the zone table's widgets.
+	#
+	if($zonetab)
+	{
+		$zonetab->clear;
+		$zonetab->destroy;
+	}
+
+	#
+	# Create a brand new table.
+	#
+	$zonetab = maketable();
+
+	#
+	# Re-populate and update the table.
+	#
+	readrrf($rrfile,1);
+	$zonetab->update();
+
+	#
+	# Pack it all up.
+	#
+	$zonetab->pack(-fill => 'both', -expand => 1);
+	$body->pack(-fill => 'both', -expand => 1);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	calccols()
+#
+# Purpose:	Calculate the column positions of each column.  Each column's
+#		position will depend on the display state of the columns to
+#		its left.
+#
+sub calccols
+{
+	#
+	# Calculate the position of the rollrec names column.
+	#
+	if($showrrnames)
+	{
+		$namecol = $NAMECOL;
+	}
+	else
+	{
+		$zskkeycol = $UNUSED;
+	}
+
+	#
+	# Calculate the position of the zonenames column.
+	#
+	if($showzonenames)
+	{
+		if($showrrnames)
+		{
+			$zonecol = $ZONECOL;
+		}
+		else
+		{
+			$zonecol = $NAMECOL;
+		}
+	}
+	else
+	{
+		$zonecol = $UNUSED;
+	}
+
+	#
+	# Calculate the position of the zonegroups column.
+	#
+	if($showzgnames)
+	{
+		$zgcol = $showrrnames + $showzonenames;
+	}
+	else
+	{
+		$zgcol = $UNUSED;
+	}
+
+	#
+	# Calculate the position of the phase column.
+	#
+	$phasecol = $showrrnames + $showzonenames + $showzgnames;
+
+	#
+	# Calculate the position of the ZSK data columns.
+	#
+	if($showzsksets)
+	{
+		$zsklblcol = $showrrnames + $showzonenames + $showzgnames + 1;
+		$zskkeycol = $zsklblcol + 1;
+	}
+	else
+	{
+		$zskkeycol = $UNUSED;
+		$zsklblcol = $UNUSED;
+	}
+
+	#
+	# Calculate the position of the KSK data columns.
+	#
+	if($showksksets)
+	{
+		$ksklblcol = $showrrnames + $showzonenames + $showzgnames + 1 + ($showzsksets * 2);
+		$kskkeycol = $ksklblcol + 1;
+	}
+	else
+	{
+		$kskkeycol = $UNUSED;
+		$ksklblcol = $UNUSED;
+	}
+
+	#
+	# Calculate the number of columns.
+	#
+	$numcols = $showrrnames + $showzonenames + $showzgnames + 1 +
+		   ($showksksets * 2) + ($showzsksets * 2);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	readrrf()
+#
+# Purpose:	Read a rollrec file and put the info on the screen.
+#
+sub readrrf
+{
+	my $rrf	     = shift;			# Rollrec to read.
+	my $timeflag = shift;			# Flag for using current time.
+
+	my $rr;					# Rollrec reference.
+	my $zcount = 0;				# Count of displayed zones.
+
+# print "readrrf:  down in\n";
+
+	#
+	# Initialize some data.
+	#
+	@zonenames  = ();
+	%zonenames  = ();
+	%zonegroups = ();
+	%rollers    = ();
+
+	#
+	# Pretty-up the window.
+	#
+	settitle($rrf);
+	infostripe();
+	headerstripe();
+
+	#
+	# Get the rollrec contents and the names of the zones it contains.
+	#
+	rollrec_read($rrf);
+	@zonenames = rollrec_names();
+
+	foreach my $zone (@zonenames)
+	{
+		my $krf;				# Keyrec file.
+		my $kr;					# Keyrec reference.
+		my $phase;				# Rollover phase.
+		my $rolltype;				# Rollover type.
+
+		#
+		# Read the zone's rollrec record.
+		#
+		$rr = rollrec_fullrec($zone);
+
+		#
+		# Save the *actual* zonename.  $zone is the name of the
+		# rollrec entry; $zonenames{$zone} is the 'zonename' field
+		# in the rollrec.
+		#
+		$zonenames{$zone} = $zone;
+		if(defined($rr->{'zonename'}))
+		{
+			$zonenames{$zone} = $rr->{'zonename'}
+		}
+
+		#
+		# Save the *actual* zonename.  $zone is the name of the
+		# rollrec entry; $zonenames{$zone} is the 'zonename' field
+		# in the rollrec.
+		#
+		if(defined($rr->{'zonegroup'}))
+		{
+			$zonegroups{$zone} = $rr->{'zonegroup'}
+		}
+
+		#
+		# Save the current phase and rollover type.
+		#
+		$phase  = $rr->{'zskphase'};
+		$rolltype = 'ZSK';
+		if($phase == 0)
+		{
+			$phase  = $rr->{'kskphase'};
+			$rolltype = 'KSK';
+			$rolltype = '' if($phase == 0);
+		}
+
+		#
+		# Save the zone's index and add it (or don't) to our list
+		# of roll-enabled zones.
+		#
+		$zones{$zone} = $zonecnt++;
+		if($rr->{'rollrec_type'} eq "roll")
+		{
+			$rollers{$zone} = 1;
+		}
+		else
+		{
+			$rollers{$zone} = 0;
+		}
+
+		#
+		# Read the zone's keyrec and save the filename.
+		#
+		$krf = $rr->{'keyrec'};
+		if(defined($rr->{'directory'}))
+		{
+			$krf = "$rr->{'directory'}/$krf";
+		}
+		$keyrecs{$zone} = $krf;
+
+		#
+		# Don't add this zone if it shouldn't be displayed.
+		# If there isn't a display entry in the zone's rollrec,
+		# we'll assume it should be displayed.
+		#
+		$display{$zone} = 1;
+		if(defined($rr->{'display'}) && ($rr->{'display'} == 0))
+		{
+			$display{$zone} = 0;
+		}
+		next if($display{$zone} == 0);
+
+		#
+		# Skip this zone if we've already displayed the maximum
+		# number of zones.
+		#
+		next if($zcount == $maxzones);
+		$zcount++;
+
+		#
+		# Figure out where each zone's stripe starts.
+		#
+		calcrows();
+
+		#
+		# Paint the window with this zone's info.
+		#
+		if($timeflag)
+		{
+			zonestripe($zone,$rolltype,$phase,$zonechron{$zone});
+		}
+		else
+		{
+			zonestripe($zone,$rolltype,$phase);
+		}
+	}
+
+	#
+	# Housekeeping before returning.
+	#
+	infostripe();
+	rollrec_close();
+	$zonetab->update();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	infostripe()
+#
+# Purpose:	Puts some general info on the information line.
+#
+sub infostripe
+{
+	my $dispstr;				# Count of displayed zones.
+	my $timestr;				# rollerd's sleep time.
+	my $numzones;				# Number of zones in rollrec.
+	my $zcnt;				# Count of zones being shown.
+
+	my $spacer  = ' ' x 4;			# Spacer string.
+	my $infostr;				# Info string.
+
+	#
+	# Set some global count variables.
+	#
+	setcounts();
+
+	#
+	# Get rollerd's sleep value (via rollctl.)
+	#
+	open(RINFO,"$rollctl -status |");
+	while(<RINFO>)
+	{
+		my $line;			# Input line from rollctl.
+		my $key;			# Entry key from line.
+		my $value;			# Entry value from line.
+
+		$line = $_;
+		chomp($line);
+
+		#
+		# If rollerd has gone away, so will we.
+		#
+		if($line eq "rollerd is not running")
+		{
+			print STDERR "rollerd has gone away; blinkenlights following\n";
+			exit(0);
+		}
+
+		#
+		# Dig out the key/value fields of the line.
+		#
+		$line =~ /^(.*?):\W*(.*)$/;
+		$key = $1;
+		$value = $2;
+
+		#
+		# Translate the sleeptime value to something useful.
+		#
+		if($key eq "sleeptime")
+		{
+			$timestr = fuzzytimetrans($value);
+			$timestr =~ s/\.0//;
+			$timestr = "Query Interval: $timestr";
+			last;
+		}
+	}
+	close(RINFO);
+
+	#
+	# Calculate the number of zones we're displaying.
+	#
+	$numzones = keys(%rollers);
+	$zcnt = ($numzones > $maxzones) ? $maxzones : $numzones;
+	$dispstr = "Displaying $zcnt of $numzones zones";
+
+	#
+	# Build our output string and set the infostripe.
+	#
+	if($numcols == 2)
+	{
+		$spacer  = ' ' x 2;
+	}
+
+	#
+	# Build our output string and set the infostripe.
+	#
+	$infostr = $spacer . $title	 .
+		   $spacer . $rollcntmsg .
+		   $spacer . $skipcntmsg;
+
+	#
+	# Include more info, but only if there's room in the window.
+	#
+	if($numcols > 4)
+	{
+		   $infostr .= $spacer . $timestr .
+			       $spacer . $dispstr;
+	}
+
+	$info->configure(-text => $infostr);
+
+	#
+	# Maybe update the window.   (Is this needed now?)
+	#
+	painter();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	headerstripe()
+#
+# Purpose:	Puts a column header line in the top table row.
+#
+sub headerstripe
+{
+	my $lab;
+
+	if($showrrnames)
+	{
+		$lab = $zonetab->Label(-text => ' Rollrec Name ',
+				       -anchor => 'w',
+				       -font => $font, -background => 'tan');
+		$zonetab->put($TITLEROW,$namecol,$lab);
+	}
+
+	if($showzonenames)
+	{
+		$lab = $zonetab->Label(-text => ' Zone Name ',
+				       -anchor => 'w',
+				       -font => $font, -background => 'tan');
+		$zonetab->put($TITLEROW,$zonecol,$lab);
+	}
+
+	if($showzgnames)
+	{
+		$lab = $zonetab->Label(-text => ' Zone Group ',
+				       -anchor => 'w',
+				       -font => $font, -background => 'tan');
+		$zonetab->put($TITLEROW,$zgcol,$lab);
+	}
+
+	$lab = $zonetab->Label(-text => ' Status',
+			       -font => $font, -background => 'tan');
+	$zonetab->put($TITLEROW,$phasecol,$lab);
+
+	if($showzsksets)
+	{
+		$lab = $zonetab->Label(-text => ' ZSK Type ',
+				       -anchor => 'w',
+				       -font => $font, -background => 'tan');
+		$zonetab->put($TITLEROW,$zsklblcol,$lab);
+
+		$lab = $zonetab->Label(-text => ' ZSK Name ',
+				       -anchor => 'w',
+				       -font => $font, -background => 'tan');
+		$zonetab->put($TITLEROW,$zskkeycol,$lab);
+	}
+
+	if($showksksets)
+	{
+		$lab = $zonetab->Label(-text => ' KSK Type ',
+				       -anchor => 'w',
+				       -font => $font, -background => 'tan');
+		$zonetab->put($TITLEROW,$ksklblcol,$lab);
+
+		$lab = $zonetab->Label(-text => ' KSK Name ',
+				       -anchor => 'w',
+				       -font => $font, -background => 'tan');
+		$zonetab->put($TITLEROW,$kskkeycol,$lab);
+	}
+
+}
+
+#---------------------------------------------------------------------------
+# Routine:	zonestripe()
+#
+# Purpose:	Puts a line for the specified zone in the table.
+#
+sub zonestripe
+{
+	my $zone     = shift;				# Zone to add.
+	my $rolltype = shift;				# Zone's rollover type.
+	my $phase    = shift;				# Zone's rollover phase.
+	my $chronos  = shift || " ";			# Expiration-time data.
+
+	my $krf;					# Zone's keyrec file.
+	my $zonename;					# Actual zonename.
+	my $fgcolor  = $NORMALFG;			# Foreground color.
+	my $bgcolor;					# Background color.
+	my $phasecolor;					# Color of phase column.
+	my $phasestr;					# Phase description.
+
+	my $row0;					# First row in group.
+	my $row1;					# Second row in group.
+	my $row2;					# Third row in group.
+
+	my $zskcur;					# Current ZSK.
+	my $zskpub;					# Published ZSK.
+	my $zsknew;					# New ZSK.
+	my $kskcur;					# Current KSK.
+	my $kskpub;					# Published KSK.
+
+	my $blank;					# Blank label.
+	my $lab;					# Non-blank label.
+	my $zonetxt;					# Zone name.
+	my $phasedescr;					# Roll phase descrip.
+
+	#
+	# Don't account for this zone if it shouldn't be displayed.
+	#
+	return if($display{$zone} == 0);
+
+	#
+	# Get this zone's row group and row indices.
+	#
+	$row0 = $zonerows{$zone};
+	return if($row0 == 0);
+	$row1 = $row0 + 1;
+	$row2 = $row0 + 2;
+
+	#
+	# Get this zone's background color.
+	#
+	$bgcolor    = getcolor($zone,$rolltype,$phase,1);
+	$phasecolor = getcolor($zone,$rolltype,$phase,0);
+
+	#
+	# Get this zone's foreground color.
+	#
+	$fgcolor = $SELECTEDFG if($zone eq $selzone);
+
+	#
+	# Save this zone's data in case we need a repaint.
+	#
+	$zonephase{$zone} = $phase;
+#	$zonechron{$zone} = $chronos;
+	$chronos = $zonechron{$zone};
+
+	#
+	# Set the zone name's field.  (We're setting this here so it can
+	# be modified in a single place.)
+	#
+	$zonetxt  = "$zone    ";
+
+	#
+	# Set the rollover description field.
+	#
+	$phasedescr = $zphasedescr[$phase];
+	if($rolltype eq 'KSK')
+	{
+		$phasedescr = $kphasedescr[$phase];
+	}
+
+	#
+	# Get the keyrec file and actual zone name.
+	#
+	$krf = $keyrecs{$zone};
+	keyrec_read($krf);
+	$zonename = $zonenames{$zone};
+
+	#
+	# Handle skipped zones here.  We won't do anything if skipped zones
+	# shouldn't be displayed.  Otherwise, we'll just put up a single line.
+	#
+	#  col 0    col 1  col 2  col 3      col 4    col 5    col 6    col 7
+	#  rollrec  zone   zone   "skipped"  <blank>  <blank>  <blank>  <blank>
+	#  name     name   group
+	#
+	if(($rollers{$zone} == 0) || ($phase == -42))
+	{
+		my $zlabel = 'skipping';			# Zone's label.
+
+		return if($noskip);
+
+		#
+		# Set up some data for zones that have problems.
+		#
+		if(defined($badzones{$zone}))
+		{
+			$zlabel = 'ERROR -- check rollerd log';
+			$bgcolor = $ERRORBG;
+		}
+
+		if($showrrnames)
+		{
+			$lab = $zonetab->Label(-text => $zonetxt,
+					       -font => $font,
+					       -foreground => $fgcolor,
+					       -background => $bgcolor);
+			$zonetab->put($row0,$namecol,$lab);
+		}
+
+		if($showrrnames)
+		{
+			$lab = $zonetab->Label(-text => $zonename,
+					       -font => $font,
+					       -foreground => $fgcolor,
+					       -background => $bgcolor);
+			$zonetab->put($row0,$zonecol,$lab);
+		}
+
+		if($showzgnames)
+		{
+			$lab = $zonetab->Label(-text => $zonegroups{$zone},
+					       -font => $font,
+					       -foreground => $fgcolor,
+					       -background => $bgcolor);
+			$zonetab->put($row0,$zgcol,$lab);
+		}
+
+		$lab = $zonetab->Label(-text => $zlabel,
+				       -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor);
+		$zonetab->put($row0,$phasecol,$lab);
+
+		if($showzsksets)
+		{
+			$blank = $zonetab->Label(-text => ' ',
+						 -background => $bgcolor);
+			$zonetab->put($row0,$zsklblcol,$blank);
+
+			$blank = $zonetab->Label(-text => ' ',
+						 -background => $bgcolor);
+			$zonetab->put($row0,$zskkeycol,$blank);
+		}
+
+		if($showksksets)
+		{
+			$blank = $zonetab->Label(-text => ' ',
+						 -background => $bgcolor);
+			$zonetab->put($row0,$ksklblcol,$blank);
+
+			$blank = $zonetab->Label(-text => ' ',
+						 -background => $bgcolor);
+			$zonetab->put($row0,$kskkeycol,$blank);
+		}
+
+		#
+		# Update the display.
+		#
+		$zonetab->update();
+		return;
+	}
+
+	############################################
+	#
+	# First column:  rollrec name
+	#
+	if($showrrnames)
+	{
+		$blank = $zonetab->Label(-text => ' ', -background => $bgcolor);
+		$zonetab->put($row0,0,$blank);
+		$lab = $zonetab->Label(-text => " $zonetxt", -font => $font,
+				       -anchor => 'w',
+				       -foreground => $fgcolor,
+				       -background => $bgcolor);
+
+		$zonetab->put($row1,$namecol,$lab);
+		$blank = $zonetab->Label(-text => ' ', -font => $font,
+					 -background => $bgcolor);
+		$zonetab->put($row2,$namecol,$blank);
+	}
+
+	############################################
+	#
+	# Second column:  zone name
+	#
+	if($showzonenames)
+	{
+		$blank = $zonetab->Label(-text => ' ', -background => $bgcolor);
+		$zonetab->put($row0,$zonecol,$blank);
+		$lab = $zonetab->Label(-text => " $zonename", -font => $font,
+				       -anchor => 'w',
+				       -foreground => $fgcolor,
+				       -background => $bgcolor);
+
+		$zonetab->put($row1,$zonecol,$lab);
+		$blank = $zonetab->Label(-text => ' ', -font => $font,
+					 -background => $bgcolor);
+		$zonetab->put($row2,$zonecol,$blank);
+	}
+
+	############################################
+	#
+	# Third column:  zonegroup name
+	#
+	if($showzgnames)
+	{
+		$blank = $zonetab->Label(-text => ' ', -background => $bgcolor);
+		$zonetab->put($row0,$zgcol,$blank);
+		$lab = $zonetab->Label(-text => " $zonegroups{$zone}",
+				       -font => $font,
+				       -anchor => 'w',
+				       -foreground => $fgcolor,
+				       -background => $bgcolor);
+
+		$zonetab->put($row1,$zgcol,$lab);
+		$blank = $zonetab->Label(-text => ' ', -background => $bgcolor);
+		$zonetab->put($row2,$zgcol,$blank);
+	}
+
+	###########################################
+	#
+	# Fourth column:  zone rollover phase
+	#
+
+	$phasestr = ($phase != 0) ? "$rolltype phase $phase" : ' ';
+	$chronos  = ' ' if((($phase != 1) &&
+			    ($phase != 3) &&
+			    ($phase != 6) &&
+			    ($phase != 0))	||
+			   ($notimes == 1));
+
+	$lab = $zonetab->Label(-text => $phasestr, -font => $font,
+			       -foreground => $NORMALFG,
+			       -background => $phasecolor);
+	$zonetab->put($row0,$phasecol,$lab);
+	$lab = $zonetab->Label(-text => $phasedescr,
+			       -font => $font,
+			       -foreground => $NORMALFG,
+			       -background => $phasecolor);
+	$zonetab->put($row1,$phasecol,$lab);
+	$lab = $zonetab->Label(-text => $chronos, -font => $font,
+			       -foreground => $NORMALFG,
+			       -background => $phasecolor);
+	$zonetab->put($row2,$phasecol,$lab);
+
+	###########################################
+	#
+	# Fifth and sixth columns:  ZSKs
+	#
+	if($showzsksets)
+	{
+		#
+		# Get the zone's key names.
+		#
+		$zskcur = keyrec_recval($zonename,'zskcur');
+		$zskpub = keyrec_recval($zonename,'zskpub');
+		$zsknew = keyrec_recval($zonename,'zsknew');
+
+		#
+		# Fifth column:  key label
+		#
+		$lab = $zonetab->Label(-text => " Current   ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row0,$zsklblcol,$lab);
+		$lab = $zonetab->Label(-text => " Published ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row1,$zsklblcol,$lab);
+		$lab = $zonetab->Label(-text => " New       ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row2,$zsklblcol,$lab);
+
+		#
+		# Sixth columns:  key name
+		#
+		$lab = $zonetab->Label(-text => " $zskcur ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row0,$zskkeycol,$lab);
+
+		$lab = $zonetab->Label(-text => " $zskpub ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row1,$zskkeycol,$lab);
+		$lab = $zonetab->Label(-text => " $zsknew ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row2,$zskkeycol,$lab);
+	}
+
+	###########################################
+	#
+	# Seventh and eighth columns:  KSKs
+	#
+	if($showksksets)
+	{
+		#
+		# Get the zone's key names.
+		#
+		$kskcur = keyrec_recval($zonename,'kskcur');
+		$kskpub = keyrec_recval($zonename,'kskpub');
+
+		#
+		# Seventh column:  KSK keyset label
+		#
+		$lab = $zonetab->Label(-text => " Current   ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row0,$ksklblcol,$lab);
+		$lab = $zonetab->Label(-text => " Published ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row1,$ksklblcol,$lab);
+		$lab = $zonetab->Label(-text => " ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row2,$ksklblcol,$lab);
+
+		#
+		# Eighth column:  KSK keyset name
+		#
+		$lab = $zonetab->Label(-text => " $kskcur ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row0,$kskkeycol,$lab);
+		$lab = $zonetab->Label(-text => " $kskpub ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row1,$kskkeycol,$lab);
+		$lab = $zonetab->Label(-text => " ", -font => $font,
+				       -foreground => $NORMALFG,
+				       -background => $bgcolor, -anchor => 'w');
+		$zonetab->put($row2,$kskkeycol,$lab);
+
+	}
+
+	###########################################
+	#
+	# Update the display.
+	#
+	keyrec_discard();
+	$zonetab->update();
+}
+
+#----------------------------------------------------------------------
+# Routine:      repaint()
+#
+# Purpose:      Redisplay the current zone data.
+#
+sub repaint
+{
+	my $zcount = 0;				# Count of displayed zones.
+
+	foreach my $zn (sort(@zonenames))
+	{
+		#
+		# Don't account for this zone if it shouldn't be displayed.
+		#
+		next if($display{$zn} == 0);
+
+		#
+		# Skip this zone if we've already displayed the maximum
+		# number of zones.
+		#
+		last if($zcount == $maxzones);
+		$zcount++;
+
+		#
+		# Add in a stripe for this zone.
+		#
+		zonestripe($zn,$zoneroll{$zn},$zonephase{$zn},$zonechron{$zn});
+	}
+}
+
+##############################################################################
+#
+# Utility routines
+#
+##############################################################################
+
+#---------------------------------------------------------------------------
+# Routine:	rollerdcmd()
+#
+# Purpose:	Handle commands from rollerd.
+#
+sub rollerdcmd
+{
+	my $line;					# Input from rollerd.
+	my $cmd;					# Command.
+	my $zone;					# Command's zone.
+	my $phase;					# Command's phase.
+
+	#
+	# Get the data from rollerd.
+	#
+	$line = <STDIN>;
+	chomp($line);
+
+	#
+	# Don't bother doing anything if rollerd (for some reason) sent
+	# us an empty command.
+	#
+	return if($line eq '');
+
+	#
+	# Break the line into its pieces.
+	#
+#	$line =~ /^([a-z]+)\W+([a-zA-Z0-9\.\+\-_,:\/ 	]+)\W+([0-9]+)/;
+#	$line =~ /^([a-z]+)\W+([a-zA-Z0-9\.\+\-_,:\/]+)\W+([0-9]+)/;
+	$line =~ /^([a-z]+)\W+"(.+)"\W+([0-9]+)/;
+	$cmd	= $1;
+	$zone	= $2;
+	$phase	= $3;
+
+# print "\nrollerdcmd:  cmd - <$cmd>\tzone - <$zone>\tphase - <$phase>\n";
+
+	#
+	# Handle the commands from rollerd:
+	#
+	#	expiration	zone will soon expire
+	#	halt		exit
+	#	nop		do nothing
+	#	kskphase	change the specified zone's KSK phase
+	#	zskphase	change the specified zone's ZSK phase
+	#	startroll	start a zone in rollover
+	#	stoproll	stop a zone's rollover
+	#	badzone		mark zone as having problems
+	#	readrrd		force a re-read of the rollrec file
+	#
+	if(($cmd eq 'zskphase') || ($cmd eq 'kskphase'))
+	{
+		my $secs;		# Seconds left in phase.
+		my $prefix;		# Command prefix ("KSK" or "ZSK".)
+
+		#
+		# Get the roll type and set things up.
+		#
+		$prefix = uc(substr($cmd,0,3));
+		$zoneroll{$zone} = $prefix;
+		goodzone($zone);
+
+		#
+		# Get a few command-specific pieces of the command line.
+		#
+		$line =~ /^\S+\s+\S+\s+(\d+)\s+(\d+)/;
+		$phase = $1;
+		$secs  = $2;
+
+		#
+		# Set up the time field according to the phase.
+		#
+		if($phase == 0)
+		{
+			$zonechron{$zone} = ' '
+		}
+		elsif(($phase != 1) && ($phase != 3) && ($phase != 6))
+		{
+			$zonechron{$zone} = ' '
+		}
+		else
+		{
+			$zonechron{$zone} = fuzzytimetrans($secs);
+			$zonechron{$zone} =~ s/\.0//;
+		}
+
+		#
+		# And paint the zone stripe.
+		#
+		$rczc++;
+		zonestripe($zone,$prefix,$phase);
+	}
+	elsif($cmd eq "expiration")
+	{
+		my $rolltype;				# Type of rollover.
+		my $secs;				# Additional data.
+		my $timestr;				# Translated time.
+
+		#
+		# Get a few fields.
+		#
+		$line =~ /^\S+\s+(\S+)\s+(\d+)\s+([a-zA-Z]+)\s+(\d*)$/;
+		$zone	  = $1;
+		$phase	  = $2;
+		$rolltype = $3;
+		$secs	  = $4;
+
+		#
+		# Mark the zone as good.
+		#
+		goodzone($zone);
+
+		#
+		# The seconds count in normal operation (phase 0) requires
+		# a bit of special handling.  We'll be having a KSK and a
+		# ZSK expiration message arriving each pass through the
+		# zones.  Rather than having the remaining time flop between
+		# the two, we'll save the lowest and report that value.
+		#
+		if($phase == 0)
+		{
+			if(defined($zonenormals{$zone}))
+			{
+				if($zonenormals{$zone} > $secs)
+				{
+					$zonenormals{$zone} = $secs;
+				}
+				else
+				{
+					$secs = $zonenormals{$zone};
+				}
+			}
+			else
+			{
+				$zonenormals{$zone} = $secs;
+			}
+		}
+		else
+		{
+			#
+			# Reset the normal-operation time when we've
+			# entered a rollover.
+			#
+			delete $zonenormals{$zone};
+		}
+
+		#
+		# Translate the seconds count into something useful.
+		#
+		$timestr = fuzzytimetrans($secs);
+# $timestr = "$secs seconds";
+		$timestr =~ s/\.0//;
+
+		#
+		# Set up the time field according to the phase.
+		#
+		if($phase == 0)
+		{
+			$timestr = "starting roll in $timestr";
+		}
+#		elsif(($phase == 1) || ($phase == 3))
+		elsif(($phase == 1) || ($phase == 3) || ($phase == 6))
+		{
+			# Leave the time string as it is for these phases.
+		}
+		else
+		{
+			$timestr = ' ';
+		}
+		$zonechron{$zone} = $timestr;
+
+		#
+		# Paint the zone stripe.
+		#
+		$rczc++;
+#		zonestripe($zone,$rolltype,$phase,$timestr) if($rczc < $maxzones);
+		zonestripe($zone,$rolltype,$phase,$timestr);
+		$zoneroll{$zone} = '';
+	}
+	elsif($cmd eq "startroll")
+	{
+
+		$rczc = 0;
+		$paintcount = $paintmax + 1;
+		painter();
+		return;
+
+		#
+		# The rest of this block is causing problems.
+		# We're going to bypass it for now.
+		#
+		return if($zone eq '<all>');
+
+		rollrec_read($rrfile);
+		$phase = rollrec_recval($zone,'zskphase');
+		rollrec_close();
+
+		$rollers{$zone} = 1;
+		calcrows();
+		infostripe();
+
+		$zonephase{$zone} = $phase;
+		goodzone($zone);
+		repaint();
+	}
+	elsif($cmd eq "readrrf")
+	{
+		painter($paintmax+1);
+		$paintcount = $paintmax + 1;
+	}
+	elsif($cmd eq "stoproll")
+	{
+		goodzone($zone);
+		$rollers{$zone} = 0;
+		calcrows();
+		$zonephase{$zone} = -42;
+
+		infostripe();
+
+		repaint();
+	}
+	elsif($cmd eq "rollrec")
+	{
+		$rrfile = $zone;
+		buildtable();
+		return;
+	}
+	elsif($cmd eq "sleeptime")
+	{
+		infostripe();
+		return;
+	}
+	elsif($cmd eq "badzone")
+	{
+		$badzones{$zone} = 1;
+		$rczc++;
+		zonestripe($zone,'KSK',0) if($rczc < $maxzones);
+		return;
+	}
+	elsif($cmd eq "nop")
+	{
+		return;
+	}
+	elsif($cmd eq "halt")
+	{
+		exit(0);
+	}
+	else
+	{
+		print "\nUNKNOWN ROLLERD COMMAND:  \"$cmd\"\n\n";
+print "rollerd:  bad command - \"$line\"\n\n";
+	}
+
+	#
+	# Increment the screen-paint count and update the zone table.
+	#
+	painter();
+	$zonetab->update();
+}
+
+#----------------------------------------------------------------------
+# Routine:      selector()
+#
+# Purpose:      Register a mouse-selected zone name.
+#
+sub selector
+{
+	my $argv = shift;				# Argument reference.
+	my %argv = %$argv;				# Argument hash.
+
+	my $wijname;					# Event's widget.
+	my @pieces;					# Pieces of array.
+
+	my $found = 0;					# Found-row flag.
+	my $selx;					# Selection x-coord.
+	my $wij;					# Selection's widget.
+
+	my @zonearr = ();				# Temp. zone/row array.
+
+	#
+	# Make sure we're clicking in our table and not in a menu
+	# or frame.
+	#
+	#	(This ugly bit of coding depends on our only
+	#	ever making a single table.)
+	#
+	$wijname = $argv{'_TkValue_'};
+	@pieces = split /\./, $wijname;
+
+	#
+	# If the selected widget isn't a table, we'll unselect the
+	# currently selected widget.
+	#
+	if($pieces[2] ne "table")
+	{
+		if($selwidget && ($pieces[2] !~ /menubutton/))
+		{
+			$selwidget->configure(-foreground => $NORMALFG);
+			$selzone = '';
+			$selwidget = undef;
+
+		}
+		return;
+	}
+
+	#
+	# Find the widget that has the same name as the event window.
+	#
+	for(my $xind=$TITLEROW; $xind < $lastrow; $xind++)
+	{
+		for(my $yind=0; $yind < $MAXCOLS; $yind++)
+		{
+			my $pn;				# Widget's pathname.
+
+			#
+			# Get this x,y widget and its name.
+			#
+			$wij = $zonetab->get($xind,$yind);
+			$pn = $wij->PathName;
+
+			#
+			# Go to the next widget if this isn't it.
+			#
+			next if($pn ne $wijname);
+
+			#
+			# Save the index and drop out.
+			#
+			$selx = $xind;
+			$found = 1;
+			last;
+		}
+
+		last if($found);
+	}
+
+	#
+	# Nothing gets selected if the user didn't select anything.
+	# Obviously.
+	#
+	return if(!$found);
+
+	#
+	# Clear the selection and return if the click came in the title row.
+	#
+	if($selx == $TITLEROW)
+	{
+		$selwidget->configure(-foreground => $NORMALFG) if($selwidget);
+		$selwidget = undef;
+
+		$selzone = '';
+		return;
+	}
+
+	#
+	# Build an array of zone-names, indexed by the zone's first row.
+	#
+	foreach my $zone (keys(%zonerows))
+	{
+		$zonearr[$zonerows{$zone}] = $zone;
+	}
+
+	#
+	# Mark the proper zone name (row N, column 0) with a highlighted
+	# marking.  All others will be unhighlighted.  We'll work backwards
+	# in our newly constructed zone-name array and find the zone's name
+	# in the array by working backwards from the index.
+	#
+
+	for(my $i=$selx; $i > 0; $i--)
+	{
+		#
+		# Skip any blank widgets.
+		#
+		next if($zonearr[$i] eq '');
+
+		#
+		# Get the zone string's widget and set the selection
+		# color for each zone in the zone column.
+		#
+		for(my $rind=0; $rind < $lastrow; $rind++)
+		{
+			my $wij;			# Zone's widget.
+			my $zstr;			# Widget's zone.
+
+			#
+			# Get this row's column-zero widget and strip off
+			# leading and trailing blanks.  Go to the next
+			# widget if there isn't a zone in it.
+			#
+			$wij = $zonetab->get($rind,0);
+			next if(!defined($wij));
+			$zstr = $wij->cget('-text');
+			$zstr =~ s/^[ ]*//;
+			$zstr =~ s/[ ]*$//;
+			next if($zstr eq '');
+
+			#
+			# If this is our selected zone, mark the zone
+			# string as highlighted.  All others go to the
+			# normal unhighlighted look.
+			#
+			if($zstr eq $zonearr[$i])
+			{
+				$wij->configure(-foreground => $SELECTEDFG);
+				$selwidget = $wij;
+			}
+			else
+			{
+				$wij->configure(-foreground => $NORMALFG);
+			}
+		}
+
+		#
+		# Select this zone.
+		#
+		$selzone = $zonearr[$i];
+		last;
+	}
+
+}
+
+#----------------------------------------------------------------------
+# Routine:      calcrows()
+#
+# Purpose:      Calculate the starting row for each displayed zone.
+#
+sub calcrows
+{
+	my $row = $STARTROW;				# Starting-row index.
+
+	#
+	# Zap the zone row index table and zone-colors table.
+	#
+	%zonerows = ();
+	%zonecolors = ();
+
+	#
+	# Reset the color index and initialize the last-row index.
+	#
+	$colorind = 0;
+	$lastrow = $STARTROW;			# Final row index.
+
+	#
+	# Sort the zone-names list and set the zone row index table
+	# according to whether or not each zone is displayed.
+	#
+	foreach my $zn (sort(@zonenames))
+	{
+		#
+		# Save the row index for the zone name.
+		#
+		$zonerows{$zn} = $row;
+
+		#
+		# Don't account for this zone if it shouldn't be displayed
+		# or is a skipped zone.
+		#
+		if(($noskip && ($rollers{$zn} == 0)) ||
+		   ($display{$zn} == 0))
+		{
+			$zonerows{$zn} = 0;
+			next;
+		}
+
+		#
+		# Bump the row count by the appropriate amount, depending
+		# on if it's a rolled or skipped zone.  Rolled zones also
+		# get color information.
+		#
+		if($rollers{$zn} == 0)
+		{
+			$row += 1;
+		}
+		else
+		{
+			$row += $ROWINCR;
+
+			$zonecolors{$zn} = $colorind;
+			$colorind++;
+			$colorind = 0 if($colorind == $NUMCOLORS);
+		}
+
+		#
+		# Save the row index in case this is the last row.
+		#
+		$lastrow = $row;
+	}
+
+	#
+	# Calculate the final row to account for changes in maxzones.
+	#
+	$lastrow = (($maxzones * $ROWINCR) + 1) if($lastrow > $maxzones);
+
+	#
+	# Set the table to the new row size.
+	#
+	$zonetab->configure(-rows => $lastrow);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	menuconfig()
+#
+# Purpose:	Set the state of the Show/Hide All Keysets menu items.
+#
+sub menuconfig
+{
+	#
+	# Set up the show/hide all keysets menu items.
+	#
+	if(!$showksksets && !$showzsksets)
+	{
+		$dm_sak->configure(-state => 'normal');
+		$dm_snk->configure(-state => 'disabled');
+	}
+	elsif($showksksets && $showzsksets)
+	{
+		$dm_sak->configure(-state => 'disabled');
+		$dm_snk->configure(-state => 'normal');
+	}
+	else
+	{
+		$dm_sak->configure(-state => 'normal');
+		$dm_snk->configure(-state => 'normal');
+	}
+}
+
+#---------------------------------------------------------------------------
+# Routine:	getcolor()
+#
+# Purpose:	Figure out what color this zone's stripe needs.
+#
+sub getcolor
+{
+	my $zone = shift;		# Zone whose color we're getting.
+	my $rolltype = shift;		# Zone's rollover type.
+	my $phase = shift;		# Zone's phase.
+	my $base = shift;		# Base-color flag.
+
+	my $band;			# Zone's output band.
+	my $color;			# Color array we'll use.
+	my $colorname;			# Color to return.
+
+	#
+	# Return this skipped-zone color if this zone isn't rolling.
+	#
+	return($skipcolor) if(($rollers{$zone} != 1) || $nocolors);
+
+	#
+	# Get the background color for this zone in this phase.
+	#
+	$band = $zonecolors{$zone};
+
+	#
+	# Select the color group to use for the background, depending
+	# on if this is a KSK or ZSK rollover.
+	#
+	if($rolltype eq 'KSK')
+	{
+		$color = $kphasecolors[$band];
+	}
+	else
+	{
+		$color = $zphasecolors[$band];
+	}
+
+	#
+	# Get the background color for this zone in this phase and
+	# return the color.
+	#
+	if($base || $noshading)
+	{
+		$colorname = $color->[0]
+	}
+	else
+	{
+		$colorname = $color->[$phase];
+	}
+
+	#
+	# Get the background color for this zone in this phase and
+	# return the color.
+	#
+	$colorname = $skipcolor if(!defined($colorname));
+
+	#
+	# Return the appropriate color name.
+	#
+	return($colorname);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	getnode()
+#
+# Purpose:	Return the last element in a path.
+#
+sub getnode
+{
+	my @pathelts;					# Path elements.
+	my $pathnode;					# Last path elements.
+
+	@pathelts = split /\//, $rrfile;
+	$pathnode = pop @pathelts;
+
+	return($pathnode);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	getzone()
+#
+# Purpose:	This routine creates a modal dialog box to allow the user
+#		to select a zone to be rolled/skipped.  For to-be-rolled
+#		zones, only those zones are listed which are currently
+#		skipped.  Similarly, for to-be-skipped zones, only those
+#		zones are listed which are currently being rolled.
+#
+sub getzone
+{
+	my $op = shift;					# Operation for zone.
+	my $opflag = 0;					# Operation flag.
+
+	my $dlg;					# Dialog widget.
+	my $zlist;					# Zone listbox.
+
+	my $listcnt = 0;				# Count of listed zones.
+
+	my $ret;					# Dialog's return value.
+	my @indarr;					# Listbox' select array.
+	my $selzone;					# Selected zone.
+	my @selzones;					# Selected zones.
+
+	my $height = $DLGHEIGHT;			# Height of dialog box.
+	my $zonecount = @zonenames;			# Number of zones.
+
+	#
+	# Set the zone operation flag.
+	#
+	$opflag = 1 if($op eq "rollzsk");
+
+	#
+	# Massage the zone operation for the dialog box's title.
+	#
+	$op =~ s/zsk//;
+	$op = ucfirst($op);
+
+	#
+	# Set the dialog box height.
+	#
+	$height = $zonecount if($zonecount < $height);
+
+	#
+	# Build and configure the dialog box and the widgets it contains.
+	#
+	$dlg = $wm->Dialog(-title => "Select Zone to $op", -text  => '',
+			   -default_button => "Okay",
+			   -buttons => ["Okay", "Cancel"]);
+	$zlist = $dlg->Listbox(-relief	    => 'raised',
+			       -borderwidth => 1,
+			       -selectmode  => 'single');
+	$dlg->AddScrollbars($zlist);
+	$dlg->configure(-scrollbars => 'e');
+
+	#
+	# Add the zone names to the dialog's listbox.  However, we'll
+	# only add rolling zones to a skip-zone command and we'll
+	# only add skipped zones to a roll-zone command.
+	#
+	foreach my $zone (sort(@zonenames))
+	{
+		if((!$opflag && ($rollers{$zone} == 1))		||
+		   ( $opflag && ($rollers{$zone} == 0)))
+		{
+			$zlist->insert("end",$zone);
+			$listcnt++;
+		}
+	}
+
+	#
+	# If there weren't any zones added, we'll return 'cause there's
+	# nothing for us to do.  The pack() is to keep Tk from whining.
+	#
+	if($listcnt == 0)
+	{
+		$zlist->pack(-fill => 'x', -expand => 1);
+		return;
+	}
+
+	#
+	# Pack 'er up and display the zone list.
+	#
+	$zlist->pack(-fill => 'x', -expand => 1);
+	$ret = $dlg->Show();
+
+	#
+	# Go no further if no zone was selected.
+	#
+	return("") if($ret eq "Cancel");
+
+	#
+	# Dig out the selected zone and return it.
+	#
+	@indarr = $zlist->curselection;
+	return("") if(@indarr == 0);
+	@selzones = $zlist->get($indarr[0]);
+	$selzone = $selzones[0];
+	return($selzone);
+}
+
+#----------------------------------------------------------------------
+# Routine:      goodzone()
+#
+# Purpose:      Ensure that this zone is considered good.
+#
+sub goodzone
+{
+	my $zone = shift;				# Zone to mark as good.
+
+	return if(!defined($badzones{$zone}));
+
+	$rollers{$zone} = 1;
+	calcrows();
+	delete($badzones{$zone});
+}
+
+#---------------------------------------------------------------------------
+# Routine:	readconfig()
+#
+# Purpose:      Read our configuration file.  Config entries are "field value"
+#		pairs, with the following fields recognized:
+#
+#			fontsize	size of demo output font
+#			skipcolor	color to use for skip records
+#			modify		allow modification commands
+#			shading		shade the status columns
+#			showskip	show skipped zones
+#
+sub readconfig
+{
+	my $line;					# Configuration line.
+	my $field;					# Field name from line.
+	my $value;					# Field value from line.
+
+	#
+	# Return if we don't have a configuration file.
+	#
+	return if(!-e $BLCONFIG);
+
+	#
+	# Complain and return if we can't read our configuration file.
+	#
+	if(!-r $BLCONFIG)
+	{
+		print STDERR "unable to read $BLCONFIG; continuing...\n";
+		return;
+	}
+
+	#
+	# Read the config file, ignoring comment lines.  Each non-comment
+	# line is expected to be in a "field value" pair.  As we read each
+	# line, we'll take the appropriate action.
+	#
+	open(CONF,"<$BLCONFIG");
+	while(<CONF>)
+	{
+		$line = $_;
+		chomp($line);
+
+		#
+		# Skip empty and comment lines.
+		#
+		$line =~ s/^[ \t]+//;
+		next if(($line =~ /^\#/) || ($line =~ /^$/));
+
+		#
+		# Pull out the field and value from the line.
+		#
+		$line =~ /([a-zA-Z_\-]+)\W+([a-zA-Z0-9_\-]+)/;
+		$field = lc($1);
+		$value = $2;
+
+		#
+		# Set the config value.
+		#
+		setopt($field,$value);
+	}
+
+	close(CONF);
+}
+
+#----------------------------------------------------------------------
+# Routine:      setopt()
+#
+# Purpose:      Set the appropriate option from the specified field.
+#		This is done here in order to centralize things for both
+#		handling the DNSSEC-Tools configuration file and users'
+#		configuration files.
+#
+#		The following fields are recognized:
+#			colors		use different colors for stripes
+#			fontsize	size of demo output font
+#			maxzones	maximum number of zones to display
+#			modify		allow modification commands
+#			noshow		things not to show
+#			shading		shade the status columns
+#			showskip	show skipped zones
+#			showtime	show status times
+#			skipcolor	color to use for skip records
+#
+sub setopt
+{
+	my $field = shift;				
+	my $value = shift;				
+
+	#
+	# Handle the field values appropriately.
+	#
+	if($field eq "colors")
+	{
+		my $ret = flagval($value);
+
+		if($ret) { $nocolors = 0; }
+		else	 { $nocolors = 1; }
+	}
+	elsif($field eq "fontsize")
+	{
+		if($value =~ /[a-zA-Z\_\-]/)
+		{
+			print STDERR "invalid fontsize \"$value\" in configuration file\n";
+			next;
+		}
+		$fontsize = $value;
+		setfont();
+	}
+	elsif($field eq "maxzones")
+	{
+		setmaxzones(0,$value);
+	}
+	elsif($field eq "modify")
+	{
+		my $ret = flagval($value);
+
+		if($ret) { $nomodify = 0; }
+		else	 { $nomodify = 1; }
+	}
+	elsif($field eq "noshow")
+	{
+		if   ($value =~ /kskset/i)	{ $showksksets	 = 0;	}
+		elsif($value =~ /zskset/i)	{ $showzsksets	 = 0;	}
+		elsif($value =~ /keysets/i)
+		{
+			$showksksets = 0;
+			$showzsksets = 0;
+		}
+		elsif($value =~ /zonenames/i)
+		{
+			if($showrrnames == 0)
+			{
+				print STDERR "config file error:  rollrec display has already been turned off\n";
+				print STDERR "config file error:  ignoring \"noshow zonenames\"\n";
+			}
+			else
+			{
+				$showzonenames = 0;
+			}
+		}
+		elsif($value =~ /zonegroups/i)
+		{
+			$showzgnames = 0;
+		}
+		elsif($value =~ /rollrecs/i)
+		{
+			if($showzonenames == 0)
+			{
+				print STDERR "config file error:  zonenames display has already been turned off\n";
+				print STDERR "config file error:  ignoring \"noshow rrnames\"\n";
+			}
+			else
+			{
+				$showrrnames = 0;
+			}
+		}
+	}
+	elsif($field eq "shading")
+	{
+		my $ret = flagval($value);
+
+		if($ret) { $noshading = 0; }
+		else	 { $noshading = 1; }
+	}
+	elsif($field eq "showskip")
+	{
+		my $ret = flagval($value);
+
+		if($ret) { $noskip = 0; }
+		else	 { $noskip = 1; }
+	}
+	elsif($field eq "showtime")
+	{
+		my $ret = flagval($value);
+
+		if($ret) { $notimes = 0; }
+		else	 { $notimes = 1; }
+	}
+	elsif($field eq "skipcolor")
+	{
+		$skipcolor = $value;
+	}
+}
+
+#----------------------------------------------------------------------
+# Routine:      flagval()
+#
+# Purpose:      Translate a flag value into a numeric.
+#
+sub flagval
+{
+	my $val = shift;			# Flag value to translate.
+	my $ret = 0;				# Return value.
+
+	$val = lc($val);
+
+	if(($val != 0)		||
+	   ($val eq "on")	||
+	   ($val eq "y")	||
+	   ($val eq "ye")	||
+	   ($val eq "yes"))
+	{
+		$ret = 1;
+	}
+
+	return($ret);
+}
+
+#----------------------------------------------------------------------
+# Routine:      setfont()
+#
+# Purpose:      Set the $font global variable.
+#
+sub setfont
+{
+	$font = "*-*-bold-r-*-*-$fontsize-*-*-*-*-*-*-*";
+}
+
+
+#----------------------------------------------------------------------
+# Routine:      setcounts()
+#
+# Purpose:      Set the rolled zone and skipped zone messages with the
+#		current counts.
+#
+sub setcounts
+{
+	my $total = 0;					# Total zone count.
+	my $rollcnt = 0;				# Rolled zone count.
+	my $skipcnt = 0;				# Skipped zone count.
+
+	#
+	# Calculate the number of rolled and skipped zones.
+	#
+	$total = keys(%rollers);
+	foreach my $zn (keys(%rollers))
+	{
+		$rollcnt++ if($rollers{$zn});
+	}
+
+	$skipcnt = $total - $rollcnt;
+
+	#
+	# Set the messages, in a grammatically anal-retentive manner.
+	#
+	if($rollcnt != 0)
+	{
+		if($rollcnt == 1)
+		{
+			$rollcntmsg = "$rollcnt Rolling Zone";
+		}
+		else
+		{
+			$rollcntmsg = "$rollcnt Rolling Zones";
+		}
+	}
+	else
+	{
+		$rollcntmsg = "0 Rolling Zones";
+	}
+
+	if($skipcnt != 0)
+	{
+		if($skipcnt == 1)
+		{
+			$skipcntmsg = "$skipcnt Skipped Zone";
+		}
+		else
+		{
+			$skipcntmsg = "$skipcnt Skipped Zones";
+		}
+	}
+	else
+	{
+		$skipcntmsg = "0 Skipped Zones";
+	}
+}
+
+#----------------------------------------------------------------------
+# Routine:      settitle()
+#
+# Purpose:      Set the title for use in the "Monitoring File" line.
+#
+sub settitle
+{
+	my $name = shift;				# Name to use.
+
+	$title = getnode($name);
+}
+
+#----------------------------------------------------------------------
+# Routine:      setmaxzones()
+#
+# Purpose:      Set the max zones count.  We'll also adjust the paintmax
+#		count if the new max zones count exceeds it.
+#
+#		If the maxzones count rises above our normal repaint mark
+#		and then later drops below it, we'll reset the repaint
+#		mark back to the default.
+#
+sub setmaxzones
+{
+	my $build = shift;				# Rebuild flag.
+	my $mz = shift;					# New maxzones value.
+
+	if($mz > 0)
+	{
+		$maxzones = $mz;
+		$paintmax = ($maxzones + 1) if($maxzones > $paintmax);
+
+		$paintmax = $DEFPAINTMAX if($maxzones < $DEFPAINTMAX);
+
+		if($build)
+		{
+			$paintcount = $paintmax;
+			buildtable();
+		}
+	}
+}
+
+#----------------------------------------------------------------------
+# Routine:      rollerdup()
+#
+# Purpose:      Ensures that rollerd is running.
+#
+sub rollerdup
+{
+	my $rollcmd;					# rollctl command.
+	my $ret;					# rollctl return code.
+
+	#
+	# Build and execute the command string.
+	#
+	$rollcmd = "$rollctl -quiet -status";
+	$ret = system($rollcmd);
+
+	#
+	# If the command failed, we'll give an error and exit.
+	#
+	$ret = $ret >> 8;
+	if(($ret == 200) || ($ret == 201))
+	{
+		print STDERR "blinkenlights:  unable to contact rollerd\n";
+		exit(1);
+	}
+}
+
+##############################################################################
+#
+# Utility-window routines.
+#
+##############################################################################
+
+
+#---------------------------------------------------------------------------
+# Routine:	help_help()
+#
+# Purpose:	Display the help window.
+#
+#		This is a text-only version of the pod.  The Perl/Tk
+#		requirement section was removed because if the user is
+#		seeing this, then they've already got Perl/Tk.
+#
+#		Changes to this text should be reflected in the pod.
+#
+sub help_help
+{
+	my $hframe;				# Help frame.
+	my $wdgt;				# General widget.
+
+	my $helpstr;				# The help message to display.
+	my $helpwij;				# Text widget for help message.
+
+    ####################    beginning of help text    ####################
+
+	$helpstr = "
+
+blinkenlights - DNSSEC-Tools rollerd GUI
+
+SYNOPSIS
+         
+    blinkenlights <rollrec-file>
+
+DESCRIPTION
+
+blinkenlights is a GUI tool for use with monitoring and controlling the
+DNSSEC-Tools rollerd program.  It displays information on the current state of
+the zones rollerd is managing.  The user may control some aspects of rollerd's
+execution using blinkenlights menu commands.
+
+blinkenlights creates a window in which to display information about each zone
+rollerd is managing.  (These zones are those in rollerd's current rollrec
+file.) As a zone's rollover status changes, blinkenlights will update its
+display for that zone.  Skipped zones, zones listed in the rollrec file but
+which are not in rollover or normal operation, are displayed but have very
+little useful information to display.
+
+The user may also select a set of zones to hide from the display.  These
+zones, if in the rolling state, will continue to roll; however, their zone
+information will not be displayed.  Display state for each zone will persist
+across blinkenlights executions.
+
+Menu commands are available for controlling rollerd.  The commands which
+operate on a single zone may be executed by keyboard shortcuts.  The zone
+may be selected either by clicking in its \"zone stripe\" or by choosing from
+a dialog box.  Display and execution options for blinkenlights are also
+available through menu commands.  More information about the menu commands
+is available in the MENU COMMANDS section.
+
+blinkenlights is only intended to be started by rollerd, not directly by a
+user.  There are two ways to have rollerd start blinkenlights.  First, the
+-display option may be given on rollerd's command line.  Second, rollctl
+may be given the -display option.
+
+For additional information, please see the blinkenlights man page.
+
+COPYRIGHT
+
+	Copyright 2006-2014 SPARTA, Inc.  All rights reserved.
+	See the COPYING file included with the DNSSEC-Tools package for details.
+
+";
+
+    ####################    end of help text    ####################
+
+	#
+	# Create a new dialog box to hold our help info.
+	#
+	$helpwin = $wm->Dialog(-title => "Help!",
+			       -default_button => "Okay",
+			       -buttons => ["Okay"]);
+
+open(T,">>/tmp/t");
+print T "help_help:  0\n";
+close(T);
+
+	#
+	# Create a scrolled text widget for the help message itself.
+	# 
+	$helpwij = $helpwin->Scrolled('Text',
+				      -scrollbars => 'e',
+				      -state => 'normal');
+
+open(T,">>/tmp/t");
+print T "help_help:  1\n";
+close(T);
+
+	$helpwij->insert('1.0',$helpstr);
+	$helpwij->configure(-state => 'disabled');
+	$helpwij->pack(-side => 'top');
+
+	#
+	# Display our modal dialog.
+	# 
+	$helpwin->Show();
+}
+
+#---------------------------------------------------------------------------
+# Routine:	help_about()
+#
+# Purpose:	Display an about window. 
+#
+sub help_about
+{
+	my $dlg;					# About dialog widget.
+
+	$dlg = $wm->Dialog(-title => "About $NAME",
+			   -text  => "$VERS\n\n$DTVERS",
+			   -buttons => ["Continue" ]);
+	$dlg->Show();
+}
+
+##############################################################################
+#
+# Option-based routines.
+#
+##############################################################################
+
+#----------------------------------------------------------------------
+# Routine:      version()
+#
+# Purpose:      Print the version number(s) and exit.
+#
+sub version
+{
+	print STDERR "$VERS\n";
+	print STDERR "$DTVERS\n";
+	exit(0);
+}
+
+#---------------------------------------------------------------------------
+# Routine:	usage()
+#
+# Purpose:      Print a usage message and exit.
+#
+sub usage
+{
+	print STDERR "usage:  blinkenlights [options] <rollrec-file>\n";
+	print STDERR "\toptions:\n";
+	print STDERR "\t\tdisplay        tell rollerd to start display\n";
+	print STDERR "\t\tmaxzones       maximum number of zones\n";
+	print STDERR "\t\tVersion        display version info\n";
+	print STDERR "\t\thelp           display help message\n";
+	exit(0);
+}
+
+1;
+
+#############################################################################
+#
+#	This text is also displayed in the help dialog.  Any changes to this
+#	text should be reflected in that function.
+#
+
+=pod
+
+=head1 NAME
+
+blinkenlights - DNSSEC-Tools rollerd GUI
+
+=head1 SYNOPSIS
+
+  blinkenlights <rollrec-file>
+
+=head1 DESCRIPTION
+
+B<blinkenlights> is a GUI tool for use with monitoring and controlling the
+DNSSEC-Tools B<rollerd> program.  It displays information on the current state
+of the zones B<rollerd> is managing.  The user may control some aspects of
+B<rollerd>'s execution using B<blinkenlights> menu commands.
+
+B<blinkenlights> creates a window in which to display information about each
+zone B<rollerd> is managing.  (These zones are those in B<rollerd>'s current
+I<rollrec> file.)  As a zone's rollover status changes, B<blinkenlights> will
+update its display for that zone.  Skipped zones, zones listed in the
+I<rollrec> file but which are not in rollover or normal operation, are
+displayed but have very little useful information to display.
+
+The user may also select a set of zones to hide from the display.  These
+zones, if in the rolling state, will continue to roll; however, their zone
+information will not be displayed.  Display state for each zone will persist
+across B<blinkenlights> executions.
+
+Menu commands are available for controlling B<rollerd>.  The commands which
+operate on a single zone may be executed by keyboard shortcuts.  The zone may
+be selected either by clicking in its "zone stripe" or by choosing from a
+dialog box.  Display and execution options for B<blinkenlights> are also
+available through menu commands.  More information about the menu commands
+is available in the MENU COMMANDS section.
+
+B<blinkenlights> is only intended to be started by B<rollerd>, not directly
+by a user.  There are two ways to have B<rollerd> start B<blinkenlights>.
+First, B<rollctl> may be given the B<-display> option.  Second, the B<-display>
+option may be given on B<rollerd>'s command line.
+
+=head1 OPTIONS
+
+B<blinkenlights> takes the following options:
+
+=over 4
+
+=item B<-display>
+
+Tells B<rollerd> to execute B<blinkenlights> as a child process.
+
+=item B<-maxzones>
+
+Tells B<blinkenlights> how many zones to display.
+
+=item B<-Version>
+
+Displays the version information for B<blinkenlights> and the DNSSEC-Tools
+package.
+
+=item B<-help>
+
+Displays a usage message and exits.
+
+=back
+
+=head1 SCREEN LAYOUT
+
+The B<blinkenlights> window is laid out as a series of "stripes".  The top
+stripe contains status information about B<rollerd>, the second stripe
+contains column headers, and the bulk of the window consists of zone stripes.
+The list below provides more detail on the contents of each stripe.
+
+See the WINDOW COLORS section for a discussion of the colors used for the
+zone stripes.
+
+=over 4
+
+=item *
+
+B<rollerd> information stripe
+
+The information stripe contains five pieces of information:  B<rollerd>'s
+current I<rollrec> file, the count of rolling zones, the count of skipped
+zones, the count of zones to be displayed, and the amount of time B<rollerd>
+waits between processing its queue.  Coincidentally, that last datum is also
+the amount of time between B<blinkenlights> screen updates.
+
+=item *
+
+column headers stripe
+
+This stripe contains the column headers for the columns of each zone stripe.
+
+=item *
+
+zone stripes
+
+Each zone managed by B<rollerd> (i.e., every zone in the current I<rollrec>
+file) will have a zone stripe which describes that zone's current state.  The
+stripe is divided into three sections:  zone identification, the current
+rollover state, and the zone's DNSSEC keys.
+
+The zone identification section contains the name of the zone, the name of
+the zone's I<rollrec> entry, and the zone's zonegroup.
+
+The rollover state section contains the rollover phase number, a text
+explanation of the phase, and the amount of time remaining in that rollover
+phase.  The phase explanation is "normal operation" when the zone isn't
+currently in rollover.
+
+The DNSSEC key section contains two subsections, one for the zone's ZSK keys
+and another for the zone's KSK keys.  Each subsection contains the names of
+the signing sets active for the zone.  The ZSK subsection lists the Current,
+Published, and New ZSK keys; the KSK subsection lists the Current and
+Published.
+
+See the WINDOW COLORS section for a discussion of the colors used for the
+zone stripes.
+
+=back
+
+=head1 WINDOW COLORS
+
+The default B<blinkenlights> configuration uses window coloring to provide
+visual cues and to aid in easily distinguishing zone information.  The default
+window coloring behavior gives each zone stripe has its own color and the
+rollover state section of each zone stripe is shaded to show the zone's phase.
+Window coloring can be turned off (and on) with configuration options and menu
+commands.
+
+=head2 Color Usage
+
+The two window coloring behaviors are discussed more fully below:
+
+=over 4
+
+=item *
+
+zone stripe colors
+
+Each rolling zone's stripe is given one of three colors:  blue, red, or green.
+The color is assigned on a top-down basis and the colors wrap if there are
+more than three zones.  So, the first zone is always blue, the second zone
+red, the third zone green, the fourth zone blue, etc.
+
+The colors do not stay with a particular zone.  If a rolling zone becomes a
+skipped zone, the zone stripes will be reassigned new colors to account for
+that skipped zone.
+
+Skipped zones are not colored with these three colors.  Stripes for skipped
+zones are colored either grey or a color set in the configuration file.  If
+you choose to use a non-standard color for skipped zones your should ensure
+that it is B<not> one of the colors used for rolling zones' stripes.
+Modifying the B<skipcolor> configuration field allows the skipped-zone color
+to be changing.
+
+The B<colors> configuration field can be used to turn on or off the use of
+colors for zone stripes.  If stripe coloring is turned off, then every stripe
+will be displayed using the B<skipcolor> color.
+
+=item *
+
+rollover-state shading
+
+The only portion of a zone stripe that changes color is the status column; the
+color of the rest of the zone stripe stays constant.  Before a zone enters
+rollover, the status column is the same color as the rest of the stripe.  When
+the zone enters rollover, the status column's color is changed to a very light
+shade of the stripe's normal color.  As the rollover phases progress towards
+rollover completion, the status column's shade darkens.  Once rollover
+completes, the status column returns again to the same shade as the rest of
+that stripe.
+
+The B<shading> configuration field can be used to turn on or off the use of
+shading in the rollover-state column.  If shading is turned off, then the zone
+stripe will be a solid color.
+
+See the CONFIGURATION FILE section for information on setting the
+configuration fields.
+
+=back
+
+=head2 Colors Used
+
+The color names are taken from the X11 B<rgb.txt> file (X11 1.1.3 - XFree86
+4.4.0 for MacOS X.)  If these aren't available in your B<rgb.txt> file,
+similar names should be selected.  The actual red/green/blue values used are
+given below to assist in finding suitable replacements.  These values were
+taken from the B<rgb.txt> file.
+
+Blue Shades:
+
+    blue                0   0 255
+    lightblue2        178 223 238
+    darkslategray1    151 255 255
+    skyblue1          135 206 255
+    steelblue1         99 184 255
+    turquoise1          0 245 255
+    cornflower blue   100 149 237
+    dodger blue        30 144 255
+
+Red Shades:
+
+    red               255   0   0
+    pink              255 192 203
+    lightsalmon1      255 160 122
+    tomato            255  99  71
+    indianred         205  92  92
+    violetred1        255  62 150
+    orangered1        255  69   0
+    firebrick1        255  48  48
+
+Green Shades:
+
+    green               0 255   0
+    darkseagreen1     193 255 193
+    darkolivegreen1   202 255 112
+    lightgreen        144 238 144
+    seagreen1          84 255 159
+    spring green        0 255 127
+    greenyellow       173 255  47
+    lawngreen         124 252   0
+
+=head1 MENU COMMANDS
+
+A number of menu commands are available to control the behavior of
+B<blinkenlights> and to send commands to B<rollerd>.  These commands
+are discusses in this section.
+
+=head2 File Menu
+
+The commands in this menu are basic GUI commands.
+
+=over 4
+
+=item *
+
+Halt Rollerd After Current Operations
+
+B<rollerd>'s execution is halted after completing its current set of zone
+operations.  As a result, B<blinkenlights>' execution will also be halted.
+
+=item *
+
+Halt Rollerd Now
+
+B<rollerd>'s execution is halted immediately.  As a result, B<blinkenlights>'
+execution will also be halted.  If B<rollerd>'s command queue already contains
+a set of commands, they may be processed prior to this command.
+
+=item *
+
+Quit
+
+B<blinkenlights> will stop execution.
+
+=back
+
+=head2 Options Menu
+
+The commands in this menu control the appearance and behavior of
+B<blinkenlights>.
+
+=over 4
+
+=item *
+
+Row Colors (toggle)
+
+This menu item is a toggle to turn on or off the coloring of zone stripes.
+If row coloring is turned off, zone stripes will all be the same color.
+If row coloring is turned on, zone stripes will be displayed in varying
+colors.  See the WINDOW COLORS section for a discussion of row coloring.
+
+=item *
+
+Status Column Shading (toggle)
+
+This menu item is a toggle to turn on or off the shading of the zone status
+column.  If shading is turned off, the zone stripes will present a solid,
+unchanging band of color for each zone.  If shading is turned on, the color
+of the zone status column will change according to the zone's rollover state.
+
+=item *
+
+Skipped Zones Display (toggle)
+
+This menu item is a toggle to turn on or off the display of skipped zones.  If
+display is turned off, zone stripes for skipped zones will not be displayed.
+If display is turned on, zone stripes for all zones will be displayed.
+
+=item *
+
+Status Times Display (toggle)
+
+This menu item is a toggle to turn on or off the display of status times.
+If display is turned off, the remaining time for a rollover phase will not
+be displayed in the "Status" column.  If display is turned on, the remaining
+times will be displayed.
+
+=item *
+
+Modification Commands (toggle)
+
+In some situations, it may be desirable to turn off B<blinkenlights>' ability
+to send commands to B<rollerd>.  This menu item is a toggle to turn on or off
+this ability.  If the commands are turned off, then the "ZSK Control" and
+"KSK Control" menus and their keyboard shortcuts are disabled.  If the
+commands are turned on, then the "ZSK Control" and "KSK Control" menus and
+their keyboard shortcuts are enabled.
+
+=item *
+
+Font Size
+
+This menu item allows selection of font size of text displayed in the main
+window.
+
+Normally, changing the font size causes the window to grow and shrink as
+required.  However, on Mac OS X there seems to be a problem when the size
+selected increases the window size to be greater than will fit on the screen.
+If the font size is subsequently reduced, the window size does not shrink in
+response.
+
+=item *
+
+Zones to Display
+
+This menu item allows selection of the number of zones to be displayed in
+the main window.
+
+=back
+
+=head2 General Control Menu
+
+The commands in this menu are GUI interfaces for the B<rollctl> commands
+related to I<general> zone management.
+
+=over 4
+
+=item *
+
+Sign Selected Zone
+
+B<rollerd> is instructed to sign the selected zone.  The zone will only be
+signed; no key rollover will occur.
+
+=item *
+
+Sign All Zones
+
+B<rollerd> is instructed to sign all the zones it manages.  The zone will
+only be signed; no key rollover will occur.
+
+=item *
+
+Sign Active Zones
+
+B<rollerd> is instructed to sign all the zones it manages.  Skipped zones
+will not be signed.  The zone will only be signed; no key rollover will occur.
+
+=item *
+
+Run the Queue
+
+B<rollerd> is awoken and runs through its queue of zones.  The operation
+required for each zone is then performed.
+
+=item *
+
+Skip Selected Zone
+
+The selected zone will be moved to the skipped state.  This only has an effect
+on rolling zones.  A zone may be selected by clicking on its zone stripe.  If
+this command is selected without a zone having been selected, a dialog box is
+displayed from which a currently rolling zone may be chosen.
+
+=item *
+
+Skip All Zones
+
+All zones will be moved to the skipped state.  This has no effect on
+currently skipped zones.
+
+=item *
+
+Restart Selected Skipped Zone
+
+The selected zone will be moved from the skipped state to the roll state.
+The zone will re-enter the roll state at the same point from which it entered
+the skip state; it will not be moved to the beginning of either KSK or ZSK
+rollover.
+This only has an effect on skipped zones.  A zone may be selected by clicking
+on its zone stripe.  If this command is selected without a zone having been
+selected, a dialog box is displayed from which a currently skipped zone may be
+chosen.
+
+=item *
+
+Restart All Skipped Zones
+
+All zones will be moved from the skipped state to the roll state.
+The zones will re-enter the roll state at the same point from which they
+entered the skip state; they will not be moved to the beginning of either
+KSK or ZSK rollover.  This has no effect on currently rolling zones.
+
+=back
+
+=head2 ZSK Control Menu
+
+The commands in this menu are GUI interfaces for the B<rollctl> commands
+related to ZSK-specific zone management.
+
+=over 4
+
+=item *
+
+Roll Selected Zone's ZSK
+
+The selected zone's ZSK will be moved to the rollover state.  This has no
+effect on zones that are already in rollover.  A zone may be selected by
+clicking on its zone stripe.  If this command is selected without a zone
+having been selected, a dialog box is displayed from which a currently
+skipped zone may be chosen.
+
+=item *
+
+Roll All Zones' ZSKs
+
+All zones' ZSKs will be moved to the rollover state.  This has no effect on
+currently rolling zones.
+
+=back
+
+=head2 KSK Control Menu
+
+The commands in this menu are GUI interfaces for the B<rollctl> commands
+related to KSK-specific zone management.
+
+=over 4
+
+=item *
+
+DS Published for Selected Zone
+
+This command is used to indicate that the selected zone's parent has published
+a new DS record for the zone.  It moves the zone from phase 5 to phase 6 of
+KSK rollover.
+
+=item *
+
+DS Published for All Zones
+
+This command is used to indicate that all the zones in KSK rollover phase 5
+have new DS records published by their parents.  It moves all these zones from
+phase 5 to phase 6 of KSK rollover.  There is no effect on zones not in KSK
+rollover phase 5.
+
+=item *
+
+Roll Selected Zone's KSK
+
+The selected zone's KSK will be moved to the rollover state.  This has no
+effect on zones that are already in rollover.  A zone may be selected by
+clicking on its zone stripe.  If this command is selected without a zone
+having been selected, a dialog box is displayed from which a currently
+skipped zone may be chosen.
+
+=item *
+
+Roll All Zones' KSKs
+
+All zones' KSKs will be moved to the rollover state.  This has no effect on
+currently rolling zones.
+
+=back
+
+=head2 Display Menu
+
+The commands in this menu provide control over what is being displayed.  There
+are commands for displaying and hiding both zone stripes, columns of key sets,
+columns of rollrec names, and columns of zonenames.
+
+The zonestripe commands allow all, some, or none of the zone stripes to be
+displayed.  Undisplayed rolling zones will continue to roll, but they will do
+so without the B<blinkenlights> window indicating this.
+
+The data column commands allow individual columns of data to be hidden or
+displayed.  The zone status column may not be hidden.  Only one of the
+I<rollrec> name and I<zonename> columns may be hidden at a time.
+
+=over 4
+
+=item *
+
+Zone Selection
+
+A dialog box is displayed that holds a list of the zones currently managed by
+B<rollerd>.  The user may select which zones should be displayed by clicking
+on the zone's checkbox.  Zones with a selected checkbox will be displayed;
+zones without a selected checkbox will not be displayed.
+
+=item *
+
+Display All Zones
+
+All zones will be displayed in the B<blinkenlights> window.
+
+=item *
+
+Hide All Zones
+
+No zones will be displayed in the B<blinkenlights> window.
+
+=item *
+
+Rollrec Name (toggle)
+
+This menu item is a toggle to turn on or off the display of I<rollrec> names.
+If display is turned off, the column holding the I<rollrec> names will be removed
+from the display and the display window will shrink.  If display is turned on,
+the column holding the I<rollrec> names will be restored to the display and the
+display window will be expanded.
+
+When displayed, the I<rollrec> names will always be the leftmost columns.
+
+=item *
+
+Zone Name (toggle)
+
+This menu item is a toggle to turn on or off the display of the zone names in
+a I<rollrec> entry.  If display is turned off, the column holding the zone
+names will be removed from the display and the display window will shrink.  If
+display is turned on, the column holding the zone names will be restored to
+the display and the display window will be expanded.
+
+When displayed, the zone name will always be the second-from left or leftmost
+column, depending on if the I<rollrec> name is also being displayed.
+
+=item *
+
+Zonegroup Name (toggle)
+
+This menu item is a toggle to turn on or off the display of the zoneground in
+I<rollrec> entries.  If display is turned off, the column holding the rollrec
+names will be removed from the display and the display window will shrink.  If
+display is turned on, the column holding the rollrec names will be restored to
+the display and the display window will be expanded.
+
+When displayed, the rollrec names will always be the in one of the first
+through third columns, depending on if the I<rollrec> name and zone name
+are also being displayed.
+
+=item *
+
+KSK Sets (toggle)
+
+This menu item is a toggle to turn on or off the display of KSK signing set
+names.  If display is turned off, the columns holding the KSK signing set
+names and labels will be removed from the display and the display window will
+shrink.  If display is turned on, the columns holding the KSK signing set
+names and labels will be restored to the display and the display window will
+be expanded.
+
+When displayed, KSK signing sets will always be the rightmost columns.
+
+=item *
+
+ZSK Sets (toggle)
+
+This menu item is a toggle to turn on or off the display of ZSK signing set
+names.  If display is turned off, the columns holding the ZSK signing set
+names and labels will be removed from the display and the display window will
+shrink.  If display is turned on, the columns holding the ZSK signing set
+names and labels will be restored to the display and the display window will
+be expanded.
+
+When displayed, ZSK signing sets will always be immediately to the right of
+the zone status column.
+
+=item *
+
+Hide All Keysets
+
+Turns off display of the KSK and ZSK signing set names.
+
+=item *
+
+Show All Keysets
+
+Turns on display of the KSK and ZSK signing set names.
+
+=item *
+
+Refresh Display
+
+Refresh the B<blinkenlights> display.  The display will automatically refresh
+after a certain number of updates; this command forces it to happen immediately
+upon invocation.
+
+=back
+
+=head2 Help Menu
+
+The commands in this menu provide assistance to the user.
+
+=over 4
+
+=item *
+
+Help
+
+Display a window containing help information.
+
+=item *
+
+About Blinkenlights
+
+Display a window containing version information on B<blinkenlights> and
+DNSSEC-Tools.
+
+=back
+
+=head1 CONFIGURATION FILE
+
+Several aspects of B<blinkenlights>' behavior may be controlled from
+configuration files.  Configuration value may be specified in the DNSSEC Tools
+configuration file or in a more specific B<rc.blinkenlights>.  The system-wide
+B<blinkenlights> configuration file is in the DNSSEC-Tools configuration
+directory and is named B<blinkenlights.conf>.  Multiple B<rc.blinkenlights>
+files may exist on a system, but only the one in the directory in which
+B<blinkenlights> is executed is used.
+
+The following are the available configuration values:
+
+    colors	Turn on/off use of colors on zone stripes.
+    fontsize	The size of the font in the output window.
+    maxzones	The number of zones to display.
+    modify	Turn on/off execution of rollerd modification commands.
+    noshow	Turn off display of particular columns.
+    shading	Turn on/off shading of the status columns.
+    showskip	Turn on/off display of skipped zones.
+    skipcolor	The background color used for skipped zones.
+
+The B<rc.blinkenlights> file is B<only> searched for in the directory in
+which B<blinkenlights> is executed.  The potential problems inherent in
+this may cause these B<blinkenlights>-specific configuration files to be
+removed in the future.
+
+This file is in the "field value" format, where I<field> specifies the output
+aspect and I<value> defines the value for that field.  The following are the
+recognized fields:
+
+Empty lines and comments are ignored.  Comment lines are lines that start
+with an octothorpe ('#').
+
+Spaces are not allowed in the configuration values.
+
+Choose your skipcolors carefully.  The only foreground color used is black, so
+your background colors must work well with black.
+
+The I<noshow> command controls display of the various data columns.  The
+command valid values are:
+
+    rollrecs	Turn off display of the rollrec names column.
+		This value may not be used with "noshow zonenames".
+    zonenames	Turn off display of the zonenames column.
+		This value may not be used with "noshow rollrecs".
+    zonegroups	Turn off display of the zonegroups column.
+    kskset	Turn off display of the KSK signing set columns.
+    zskset	Turn off display of the ZSK signing set columns.
+    keysets	Turn off display of the KSK and ZSK signing set columns.
+
+=head1 REQUIREMENTS
+
+B<blinkenlights> is implemented in Perl/Tk, so both Perl and Perl/Tk must be
+installed on your system.
+
+=head1 WARNINGS
+
+B<blinkenlights> has several potential problems that must be taken into
+account.
+
+=over 4
+
+=item development environment
+
+B<blinkenlights> was developed and tested on a single-user system running X11
+using a relatively small number of zones.  While it works fine in this
+environment, it has not been run on a system with many users or in a situation
+where the system console hasn't been in use by the B<blinkenlights> user.
+
+=item long-term performance issues
+
+In early tests, the longer B<blinkenlights> runs, the slower the
+updates become.  This is I<probably> a result of the Tk implementation
+or the way Tk interfaces with X11.  This is pure supposition, though.
+
+This performance impact is affected by a number of things, such as the number
+of zones managed by B<rollerd> and the length of B<rollerd>'s sleep interval.
+Large numbers of zones or very short sleep intervals will increase the
+possibility of B<blinkenlights>' performance degrading.
+
+This appears to have been resolved by periodically performing a complete
+rebuild of the screen.  B<blinkenlights> keeps track of the number of screen
+updates it makes and rebuilds the screen when this count exceeds a threshold.
+The threshold is built into B<blinkenlights> and stored in the B<$paintmax>
+variable.  This threshold may be adjusted if there are too many screen
+rebuilds or if B<blinkenlights>' performance slows too much.  Raising the
+number will reduce the screen rebuilds; lowering the number will (may)
+increase performance.
+
+=item display irregularities
+
+If the user modifies the number of zones to be displayed, then sometimes
+the B<blinkenlights> window is left in an irregular state.  The requested
+number of zones are displayed, but there is a large grey void above and below
+the zone display.  This is an occasional problem and will be fixed as time
+allows.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2006-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<bubbles(8)>,
+B<rollctl(8)>,
+B<rollerd(8)>,
+B<zonesigner(8)>
+
+B<Net::DNS::SEC::Tools::timetrans(3)>
+
+B<Net::DNS::SEC::Tools::keyrec(5)>,
+B<Net::DNS::SEC::Tools::rollrec(5)>,
+
+=cut
+

@@ -1,0 +1,141 @@
+'\" et
+.TH SETREUID "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+setreuid
+\(em set real and effective user IDs
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int setreuid(uid_t \fIruid\fP, uid_t \fIeuid\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsetreuid\fR()
+function shall set the real and effective user IDs of the current
+process to the values specified by the
+.IR ruid
+and
+.IR euid
+arguments. If
+.IR ruid
+or
+.IR euid
+is \(mi1, the corresponding effective or real user ID of the current
+process shall be left unchanged.
+.P
+A process with appropriate privileges can set either ID to any value.
+An unprivileged process can only set the effective user ID if the
+.IR euid
+argument is equal to either the real, effective, or saved user ID of
+the process.
+.P
+If the real user ID is being set (\c
+.IR ruid
+is not \(mi1), or the effective user ID is being set to a value not
+equal to the real user ID, then the saved set-user-ID of the current
+process shall be set equal to the new effective user ID.
+.P
+It is unspecified whether a process without appropriate privileges is
+permitted to change the real user ID to match the current effective user
+ID or saved set-user-ID of the process.
+.SH "RETURN VALUE"
+Upon successful completion, 0 shall be returned. Otherwise, \(mi1
+shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIsetreuid\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR ruid
+or
+.IR euid
+argument is invalid or out-of-range.
+.TP
+.BR EPERM
+The current process does not have appropriate privileges, and either an
+attempt was made to change the effective user ID to a value other than
+the real user ID or the saved set-user-ID or an attempt was made to
+change the real user ID to a value not permitted by the
+implementation.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Setting the Effective User ID to the Real User ID"
+.P
+The following example sets the effective user ID of the calling process
+to the real user ID, so that files created later will be owned by the
+current user. It also sets the saved set-user-ID to the real user ID,
+so any future attempt to set the effective user ID back to its previous
+value will fail.
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+#include <sys/types.h>
+\&...
+setreuid(getuid(), getuid());
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+Earlier versions of this standard did not specify whether the saved
+set-user-ID was affected by
+\fIsetreuid\fR()
+calls. This version specifies common existing practice that constitutes
+an important security feature. The ability to set both the effective user
+ID and saved set-user-ID to be the same as the real user ID means that
+any security weakness in code that is executed after that point cannot
+result in malicious code being executed with the previous effective user
+ID. Privileged applications could already do this using just
+\fIsetuid\fR(),
+but for non-privileged applications the only standard method available
+is to use this feature of
+\fIsetreuid\fR().
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIgetegid\fR\^(\|)",
+.IR "\fIgeteuid\fR\^(\|)",
+.IR "\fIgetgid\fR\^(\|)",
+.IR "\fIgetuid\fR\^(\|)",
+.IR "\fIsetegid\fR\^(\|)",
+.IR "\fIseteuid\fR\^(\|)",
+.IR "\fIsetgid\fR\^(\|)",
+.IR "\fIsetregid\fR\^(\|)",
+.IR "\fIsetuid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

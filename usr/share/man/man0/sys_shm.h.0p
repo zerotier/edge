@@ -1,0 +1,120 @@
+'\" et
+.TH sys_shm.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/shm.h
+\(em XSI shared memory facility
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/shm.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/shm.h> 
+header shall define the following symbolic constants:
+.IP SHM_RDONLY 12
+Attach read-only (else read-write).
+.IP SHM_RND 12
+Round attach address to SHMLBA.
+.IP SHMLBA 12
+Segment low boundary address multiple.
+.P
+The
+.IR <sys/shm.h> 
+header shall define the following data types through
+.BR typedef :
+.IP "\fBshmatt_t\fP" 12
+Unsigned integer used for the number of current attaches that must be
+able to store values at least as large as a type
+.BR "unsigned short" .
+.P
+The
+.IR <sys/shm.h> 
+header shall define the
+.BR shmid_ds
+structure, which shall include the following members:
+.sp
+.RS 4
+.nf
+\fB
+struct ipc_perm shm_perm   \fROperation permission structure.\fR
+size_t          shm_segsz  \fRSize of segment in bytes.\fR
+pid_t           shm_lpid   \fRProcess ID of last shared memory operation.\fR
+pid_t           shm_cpid   \fRProcess ID of creator.\fR
+shmatt_t        shm_nattch \fRNumber of current attaches.\fR
+time_t          shm_atime  \fRTime of last \fIshmat\fP\^(\|).\fR
+time_t          shm_dtime  \fRTime of last \fIshmdt\fP\^(\|).\fR
+time_t          shm_ctime  \fRTime of last change by \fIshmctl\fP\^(\|).\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <sys/shm.h> 
+header shall define the
+.BR pid_t ,
+.BR size_t ,
+and
+.BR time_t
+types as described in
+.IR <sys/types.h> .
+.P
+The following shall be declared as functions and may also be defined
+as macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+void *shmat(int, const void *, int);
+int   shmctl(int, int, struct shmid_ds *);
+int   shmdt(const void *);
+int   shmget(key_t, size_t, int);
+.fi \fR
+.P
+.RE
+.P
+In addition, the
+.IR <sys/shm.h> 
+header shall include the
+.IR <sys/ipc.h> 
+header.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_ipc.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIshmat\fR\^(\|)",
+.IR "\fIshmctl\fR\^(\|)",
+.IR "\fIshmdt\fR\^(\|)",
+.IR "\fIshmget\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

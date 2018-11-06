@@ -1,0 +1,201 @@
+'\" et
+.TH SETPGID "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+setpgid
+\(em set process group ID for job control
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int setpgid(pid_t \fIpid\fP, pid_t \fIpgid\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsetpgid\fR()
+function shall either join an existing process group or create a
+new process group within the session of the calling process.
+.P
+The process group ID of a session leader shall not change.
+.P
+Upon successful completion, the process group ID of the process with
+a process ID that matches
+.IR pid
+shall be set to
+.IR pgid .
+.P
+As a special case, if
+.IR pid
+is 0, the process ID of the calling process shall be used. Also, if
+.IR pgid
+is 0, the process ID of the indicated process shall be used.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsetpgid\fR()
+shall return 0; otherwise, \(mi1 shall be returned and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fIsetpgid\fR()
+function shall fail if:
+.TP
+.BR EACCES
+The value of the
+.IR pid
+argument matches the process ID of a child process of the calling
+process and the child process has successfully executed one of the
+.IR exec
+functions.
+.TP
+.BR EINVAL
+The value of the
+.IR pgid
+argument is less than 0, or is not a value supported by the
+implementation.
+.TP
+.BR EPERM
+The process indicated by the
+.IR pid
+argument is a session leader.
+.TP
+.BR EPERM
+The value of the
+.IR pid
+argument matches the process ID of a child process of the calling
+process and the child process is not in the same session as the calling
+process.
+.TP
+.BR EPERM
+The value of the
+.IR pgid
+argument is valid but does not match the process ID of the process
+indicated by the
+.IR pid
+argument and there is no process with a process group ID that matches
+the value of the
+.IR pgid
+argument in the same session as the calling process.
+.TP
+.BR ESRCH
+The value of the
+.IR pid
+argument does not match the process ID of the calling process or of a
+child process of the calling process.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The
+\fIsetpgid\fR()
+function shall group processes together for the purpose of
+signaling, placement in foreground or background,
+and other job control actions.
+.P
+The
+\fIsetpgid\fR()
+function is similar to the
+\fIsetpgrp\fR()
+function of 4.2 BSD, except that 4.2 BSD allowed the specified new process
+group to assume any value. This presents certain security problems and
+is more
+flexible than necessary to support job control.
+.P
+To provide tighter security,
+\fIsetpgid\fR()
+only allows the calling process to join a process group already in use
+inside its session or create a new process group
+whose process group ID was equal to its process ID.
+.P
+When a job control shell spawns a new job, the processes in the
+job must be placed into a new process group via
+\fIsetpgid\fR().
+There are two timing constraints involved in this action:
+.IP " 1." 4
+The new process must be placed in the new process group before the
+appropriate program is launched via one of the
+.IR exec
+functions.
+.IP " 2." 4
+The new process must be placed in the new process group before the
+shell can correctly send signals to the new process group.
+.P
+To address these constraints, the following actions are performed. The
+new processes call
+\fIsetpgid\fR()
+to alter their own process groups after
+\fIfork\fR()
+but before
+.IR exec .
+This satisfies the first constraint. Under 4.3 BSD, the second
+constraint is satisfied by the synchronization property of
+.IR vfork (\|);
+that is, the shell is suspended until the child has completed the
+.IR exec ,
+thus ensuring that the child has completed the
+\fIsetpgid\fR().
+A new version of
+\fIfork\fR()
+with this same synchronization property was considered, but it was
+decided instead to merely allow the parent shell process to adjust the
+process group of its child processes via
+\fIsetpgid\fR().
+Both timing constraints are now satisfied by having both the parent
+shell and the child attempt to adjust the process group of the child
+process; it does not matter which succeeds first.
+.P
+Since it would be confusing to an application to have its process
+group change after it began executing (that is, after
+.IR exec ),
+and because the child process would already have adjusted its process
+group before this, the
+.BR [EACCES] 
+error was added to disallow this.
+.P
+One non-obvious use of
+\fIsetpgid\fR()
+is to allow a job control shell to return itself to its original
+process group (the one in effect when the job control shell was
+executed). A job control shell does this before returning control back
+to its parent when it is terminating or suspending itself as a way of
+restoring its job control ``state'' back to what its parent would
+expect. (Note that the original process group of the job control shell
+typically matches the process group of its parent, but this is not
+necessarily always the case.)
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^",
+.IR "\fIgetpgrp\fR\^(\|)",
+.IR "\fIsetsid\fR\^(\|)",
+.IR "\fItcsetpgrp\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,442 @@
+'\" et
+.TH STRPTIME "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+strptime
+\(em date and time conversion
+.SH SYNOPSIS
+.LP
+.nf
+#include <time.h>
+.P
+char *strptime(const char *restrict \fIbuf\fP, const char *restrict \fIformat\fP,
+    struct tm *restrict \fItm\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIstrptime\fR()
+function shall convert the character string pointed to by
+.IR buf
+to values which are stored in the
+.BR tm
+structure pointed to by
+.IR tm ,
+using the format specified by
+.IR format .
+.P
+The format is composed of zero or more directives. Each directive is
+composed of one of the following: one or more white-space characters
+(as specified by
+\fIisspace\fR());
+an ordinary character (neither
+.BR '%' 
+nor a white-space character); or a conversion specification.
+.P
+Each conversion specification is introduced by the
+.BR '%' 
+character after which the following appear in sequence:
+.IP " *" 4
+An optional flag, the zero character (\c
+.BR '0' )
+or the
+<plus-sign>
+character (\c
+.BR '+' ),
+which is ignored.
+.IP " *" 4
+An optional field width. If a field width is specified, it shall be
+interpreted as a string of decimal digits that will determine the maximum
+number of bytes converted for the conversion rather than the number of
+bytes specified below in the description of the conversion specifiers.
+.IP " *" 4
+An optional
+.BR E
+or
+.BR O
+modifier.
+.IP " *" 4
+A terminating conversion specifier character that indicates the type of
+conversion to be applied.
+.P
+The conversions are determined using the
+.IR LC_TIME
+category of the current locale. The application shall ensure that
+there is white-space or other non-alphanumeric characters between any
+two conversion specifications unless all of the adjacent conversion
+specifications convert a known, fixed number of characters. In the
+following list, the maximum number of characters scanned (excluding the
+one matching the next directive) is as follows:
+.IP " *" 4
+If a maximum field width is specified, then that number
+.IP " *" 4
+Otherwise, the pattern
+.BR \(dq{x}\(dq 
+indicates that the maximum is
+.IR x
+.IP " *" 4
+Otherwise, the pattern
+.BR \(dq[x,y]\(dq 
+indicates that the value shall fall within the range given (both bounds
+being inclusive), and the maximum number of characters scanned shall be
+the maximum required to represent any value in the range without leading
+zeros and without a leading
+<plus-sign>
+.P
+The following conversion specifiers are supported.
+.P
+The results are unspecified if a modifier is specified with a flag or
+with a minimum field width, or if a field width is specified for any
+conversion specifier other than
+.BR C ,
+.BR F ,
+or
+.BR Y .
+.IP "\fRa\fR" 8
+The day of the week, using the locale's weekday names; either the
+abbreviated or full name may be specified.
+.IP "\fRA\fR" 8
+Equivalent to
+.BR %a .
+.IP "\fRb\fR" 8
+The month, using the locale's month names; either the abbreviated or
+full name may be specified.
+.IP "\fRB\fR" 8
+Equivalent to
+.BR %b .
+.IP "\fRc\fR" 8
+Replaced by the locale's appropriate date and time representation.
+.IP "\fRC\fR" 8
+All but the last two digits of the year {2}; leading zeros shall be
+permitted but shall not be required. A leading
+.BR '+' 
+or
+.BR '\(mi' 
+character shall be permitted before any leading zeros but shall not
+be required.
+.IP "\fRd\fR" 8
+The day of the month [01,31]; leading zeros shall be permitted but shall
+not be required.
+.IP "\fRD\fR" 8
+The date as
+.BR %m /\c
+.BR %d /\c
+.BR %y .
+.IP "\fRe\fR" 8
+Equivalent to
+.BR %d .
+.IP "\fRh\fR" 8
+Equivalent to
+.BR %b .
+.IP "\fRH\fR" 8
+The hour (24-hour clock) [00,23]; leading zeros shall be permitted but
+shall not be required.
+.IP "\fRI\fR" 8
+The hour (12-hour clock) [01,12]; leading zeros shall be permitted but
+shall not be required.
+.IP "\fRj\fR" 8
+The day number of the year [001,366]; leading zeros shall be permitted
+but shall not be required.
+.IP "\fRm\fR" 8
+The month number [01,12]; leading zeros shall be permitted but shall
+not be required.
+.IP "\fRM\fR" 8
+The minute [00,59]; leading zeros shall be permitted but shall not
+be required.
+.IP "\fRn\fR" 8
+Any white space.
+.IP "\fRp\fR" 8
+The locale's equivalent of a.m. or p.m.
+.IP "\fRr\fR" 8
+12-hour clock time using the AM/PM notation if
+.BR t_fmt_ampm
+is not an empty string in the
+.IR LC_TIME
+portion of the current locale; in the POSIX locale, this shall
+be equivalent to
+.BR %I :\c
+.BR %M :\c
+.BR %S
+.BR %p .
+.IP "\fRR\fR" 8
+The time as
+.BR %H :\c
+.BR %M .
+.IP "\fRS\fR" 8
+The seconds [00,60]; leading zeros shall be permitted but shall
+not be required.
+.IP "\fRt\fR" 8
+Any white space.
+.IP "\fRT\fR" 8
+The time as
+.BR %H :\c
+.BR %M :\c
+.BR %S .
+.IP "\fRU\fR" 8
+The week number of the year (Sunday as the first day of the week) as a
+decimal number [00,53]; leading zeros shall be permitted but shall
+not be required.
+.IP "\fRw\fR" 8
+The weekday as a decimal number [0,6], with 0 representing Sunday.
+.IP "\fRW\fR" 8
+The week number of the year (Monday as the first day of the week) as a
+decimal number [00,53]; leading zeros shall be permitted but shall
+not be required.
+.IP "\fRx\fR" 8
+The date, using the locale's date format.
+.IP "\fRX\fR" 8
+The time, using the locale's time format.
+.IP "\fRy\fR" 8
+The last two digits of the year. When
+.IR format
+contains neither a
+.BR C
+conversion specifier nor a
+.BR Y
+conversion specifier, values in the range [69,99] shall refer to years
+1969 to 1999 inclusive and values in the range [00,68] shall refer to
+years 2000 to 2068 inclusive; leading zeros shall be permitted but shall
+not be required. A leading
+.BR '+' 
+or
+.BR '\(mi' 
+character shall be permitted before any leading zeros but shall not
+be required.
+.RS 8 
+.TP 10
+.BR Note:
+It is expected that in a future version of this standard the default
+century inferred from a 2-digit year will change. (This would apply
+to all commands accepting a 2-digit year as input.)
+.P
+.RE
+.IP "\fRY\fR" 8
+The full year {4}; leading zeros shall be permitted but shall
+not be required. A leading
+.BR '+' 
+or
+.BR '\(mi' 
+character shall be permitted before any leading zeros but shall not
+be required.
+.IP "\fR%\fP" 8
+Replaced by
+.BR % .
+.SS "Modified Conversion Specifiers"
+.P
+Some conversion specifiers can be modified by the
+.BR E
+and
+.BR O
+modifier characters to indicate that an alternative format or
+specification should be used rather than the one normally used by the
+unmodified conversion specifier. If the alternative format or
+specification does not exist in the current locale, the behavior shall
+be as if the unmodified conversion specification were used.
+.IP "\fR%Ec\fR" 8
+The locale's alternative appropriate date and time representation.
+.IP "\fR%EC\fR" 8
+The name of the base year (period) in the locale's alternative
+representation.
+.IP "\fR%Ex\fR" 8
+The locale's alternative date representation.
+.IP "\fR%EX\fR" 8
+The locale's alternative time representation.
+.IP "\fR%Ey\fR" 8
+The offset from
+.BR %EC
+(year only) in the locale's alternative representation.
+.IP "\fR%EY\fR" 8
+The full alternative year representation.
+.IP "\fR%Od\fR" 8
+The day of the month using the locale's alternative numeric symbols;
+leading zeros shall be permitted but shall not be required.
+.IP "\fR%Oe\fR" 8
+Equivalent to
+.BR %Od .
+.IP "\fR%OH\fR" 8
+The hour (24-hour clock) using the locale's alternative numeric
+symbols.
+.IP "\fR%OI\fR" 8
+The hour (12-hour clock) using the locale's alternative numeric
+symbols.
+.IP "\fR%Om\fR" 8
+The month using the locale's alternative numeric symbols.
+.IP "\fR%OM\fR" 8
+The minutes using the locale's alternative numeric symbols.
+.IP "\fR%OS\fR" 8
+The seconds using the locale's alternative numeric symbols.
+.IP "\fR%OU\fR" 8
+The week number of the year (Sunday as the first day of the week) using
+the locale's alternative numeric symbols.
+.IP "\fR%Ow\fR" 8
+The number of the weekday (Sunday=0) using the locale's alternative
+numeric symbols.
+.IP "\fR%OW\fR" 8
+The week number of the year (Monday as the first day of the week) using
+the locale's alternative numeric symbols.
+.IP "\fR%Oy\fR" 8
+The year (offset from
+.BR %C )
+using the locale's alternative numeric symbols.
+.P
+A conversion specification composed of white-space characters is
+executed by scanning input up to the first character that is not
+white-space (which remains unscanned), or until no more characters can
+be scanned.
+.P
+A conversion specification that is an ordinary character is executed by
+scanning the next character from the buffer. If the character scanned
+from the buffer differs from the one comprising the directive, the
+directive fails, and the differing and subsequent characters remain
+unscanned.
+.P
+A series of conversion specifications composed of
+.BR %n ,
+.BR %t ,
+white-space characters, or any combination is executed by scanning up
+to the first character that is not white space (which remains
+unscanned), or until no more characters can be scanned.
+.P
+Any other conversion specification is executed by scanning characters
+until a character matching the next directive is scanned, or until no
+more characters can be scanned. These characters, except the one
+matching the next directive, are then compared to the locale values
+associated with the conversion specifier. If a match is found, values
+for the appropriate
+.BR tm
+structure members are set to values corresponding to the locale
+information. Case is ignored when matching items in
+.IR buf
+such as month or weekday names. If no match is found,
+\fIstrptime\fR()
+fails and no more characters are scanned.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIstrptime\fR()
+shall return a pointer to the character following the last character
+parsed. Otherwise, a null pointer shall be returned.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Convert a Data-Plus-Time String to Broken-Down Time and Then into Seconds"
+.P
+The following example demonstrates the use of
+\fIstrptime\fR()
+to convert a string into broken-down time. The broken-down time is then
+converted into seconds since the Epoch using
+\fImktime\fR().
+.sp
+.RS 4
+.nf
+\fB
+#include <time.h>
+\&...
+.P
+struct tm tm;
+time_t t;
+.P
+if (strptime("6 Dec 2001 12:33:45", "%d %b %Y %H:%M:%S", &tm) == NULL)
+    /* Handle error */;
+.P
+printf("year: %d; month: %d; day: %d;\en",
+        tm.tm_year, tm.tm_mon, tm.tm_mday);
+printf("hour: %d; minute: %d; second: %d\en",
+        tm.tm_hour, tm.tm_min, tm.tm_sec);
+printf("week day: %d; year day: %d\en", tm.tm_wday, tm.tm_yday);
+.P
+tm.tm_isdst = \(mi1;      /* Not set by strptime(); tells mktime()
+                          to determine whether daylight saving time
+                          is in effect */
+t = mktime(&tm);
+if (t == \(mi1)
+    /* Handle error */;
+printf("seconds since the Epoch: %ld\en", (long) t);"
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Several ``equivalent to'' formats and the special processing of
+white-space characters are provided in order to ease the use of
+identical
+.IR format
+strings for
+\fIstrftime\fR()
+and
+\fIstrptime\fR().
+.P
+It should be noted that dates constructed by the
+\fIstrftime\fR()
+function with the
+.BR %Y
+or
+.BR %C%y
+conversion specifiers may have values larger than 9\|999. If the
+\fIstrptime\fR()
+function is used to read such values using
+.BR %C%y
+or
+.BR %Y ,
+the year values will be truncated to four digits. Applications should use
+.BR %+ \c
+.IR w \c
+.BR %y
+or
+.BR %+ \c
+.IR x \c
+.BR Y
+with
+.IR w
+and
+.IR x
+set large enough to contain the full value of any years that will be
+printed or scanned.
+.P
+See also the APPLICATION USAGE section in
+.IR "\fIstrftime\fR\^(\|)".
+.P
+It is unspecified whether multiple calls to
+\fIstrptime\fR()
+using the same
+.BR tm
+structure will update the current contents of the structure or
+overwrite all contents of the structure. Conforming applications
+should make a single call to
+\fIstrptime\fR()
+with a format and all data needed to completely specify the date and
+time being converted.
+.SH RATIONALE
+See the RATIONALE section for
+.IR "\fIstrftime\fR\^(\|)".
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfprintf\fR\^(\|)",
+.IR "\fIfscanf\fR\^(\|)",
+.IR "\fIstrftime\fR\^(\|)",
+.IR "\fItime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

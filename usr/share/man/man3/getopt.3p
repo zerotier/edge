@@ -1,0 +1,445 @@
+'\" et
+.TH GETOPT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getopt,
+optarg,
+opterr,
+optind,
+optopt
+\(em command option parsing
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int getopt(int \fIargc\fP, char * const \fIargv\fP[], const char *\fIoptstring\fP);
+extern char *optarg;
+extern int opterr, optind, optopt;
+.fi
+.SH DESCRIPTION
+The
+\fIgetopt\fR()
+function is a command-line parser that shall follow Utility Syntax
+Guidelines 3, 4, 5, 6, 7, 9, and 10 in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The parameters
+.IR argc
+and
+.IR argv
+are the argument count and argument array as passed to
+\fImain\fR()
+(see
+\fIexec\fR()).
+The argument
+.IR optstring
+is a string of recognized option characters; if a character is followed
+by a
+<colon>,
+the option takes an argument. All option characters allowed by Utility
+Syntax Guideline 3 are allowed in
+.IR optstring .
+The implementation may accept other characters as an extension.
+.P
+The variable
+.IR optind
+is the index of the next element of the
+.IR argv [\^]
+vector to be processed. It shall be initialized to 1 by the system, and
+\fIgetopt\fR()
+shall update it when it finishes with each element of
+.IR argv [\|].
+If the application sets
+.IR optind
+to zero before calling
+\fIgetopt\fR(),
+the behavior is unspecified. When an element of
+.IR argv [\|]
+contains multiple option characters, it is unspecified how
+\fIgetopt\fR()
+determines which options have already been processed.
+.P
+The
+\fIgetopt\fR()
+function shall return the next option character (if one is found) from
+.IR argv
+that matches a character in
+.IR optstring ,
+if there is one that matches. If the option takes an argument,
+\fIgetopt\fR()
+shall set the variable
+.IR optarg
+to point to the option-argument as follows:
+.IP " 1." 4
+If the option was the last character in the string pointed to by an
+element of
+.IR argv ,
+then
+.IR optarg
+shall contain the next element of
+.IR argv ,
+and
+.IR optind
+shall be incremented by 2. If the resulting value of
+.IR optind
+is greater than
+.IR argc ,
+this indicates a missing option-argument, and
+\fIgetopt\fR()
+shall return an error indication.
+.IP " 2." 4
+Otherwise,
+.IR optarg
+shall point to the string following the option character in that
+element of
+.IR argv ,
+and
+.IR optind
+shall be incremented by 1.
+.P
+If, when
+\fIgetopt\fR()
+is called:
+.sp
+.RS 4
+.nf
+\fB
+ \fIargv\fP[optind]  \fRis a null pointer\fP
+*\fIargv\fP[optind]  \fRis not the character\fP \(mi
+ \fIargv\fP[optind]  \fRpoints to the string\fP "\(mi"
+.fi \fR
+.P
+.RE
+.P
+\fIgetopt\fR()
+shall return \(mi1 without changing
+.IR optind .
+If:
+.sp
+.RS 4
+.nf
+\fB
+\fIargv\fP[optind]   \fRpoints to the string\fP "\(mi\|\(mi"
+.fi \fR
+.P
+.RE
+.P
+\fIgetopt\fR()
+shall return \(mi1 after incrementing
+.IR optind .
+.P
+If
+\fIgetopt\fR()
+encounters an option character that is not contained in
+.IR optstring ,
+it shall return the
+<question-mark>
+(\c
+.BR '?' )
+character. If it detects a missing option-argument, it shall return the
+<colon>
+character (\c
+.BR ':' )
+if the first character of
+.IR optstring
+was a
+<colon>,
+or a
+<question-mark>
+character (\c
+.BR '?' )
+otherwise. In either case,
+\fIgetopt\fR()
+shall set the variable
+.IR optopt
+to the option character that caused the error. If the application has
+not set the variable
+.IR opterr
+to 0 and the first character of
+.IR optstring
+is not a
+<colon>,
+\fIgetopt\fR()
+shall also print a diagnostic message to
+.IR stderr
+in the format specified for the
+.IR getopts
+utility.
+.P
+The
+\fIgetopt\fR()
+function need not be thread-safe.
+.SH "RETURN VALUE"
+The
+\fIgetopt\fR()
+function shall return the next option character specified on the command
+line.
+.P
+A
+<colon>
+(\c
+.BR ':' )
+shall be returned if
+\fIgetopt\fR()
+detects a missing argument and the first character of
+.IR optstring
+was a
+<colon>
+(\c
+.BR ':' ).
+.P
+A
+<question-mark>
+(\c
+.BR '?' )
+shall be returned if
+\fIgetopt\fR()
+encounters an option character not in
+.IR optstring
+or detects a missing argument and the first character of
+.IR optstring
+was not a
+<colon>
+(\c
+.BR ':' ).
+.P
+Otherwise,
+\fIgetopt\fR()
+shall return \(mi1 when all command line options are parsed.
+.SH ERRORS
+If the application has not set the variable
+.IR opterr
+to 0, the first character of
+.IR optstring
+is not a
+<colon>,
+and a write error occurs while
+\fIgetopt\fR()
+is printing a diagnostic message to
+.IR stderr ,
+then the error indicator for
+.IR stderr
+shall be set; but
+\fIgetopt\fR()
+shall still succeed and the value of
+.IR errno
+after
+\fIgetopt\fR()
+is unspecified.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Parsing Command Line Options"
+.P
+The following code fragment shows how you might process the arguments
+for a utility that can take the mutually-exclusive options
+.IR a
+and
+.IR b
+and the options
+.IR f
+and
+.IR o ,
+both of which require arguments:
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+.P
+int
+main(int argc, char *argv[ ])
+{
+    int c;
+    int bflg = 0, aflg = 0, errflg = 0;
+    char *ifile;
+    char *ofile;
+    . . .
+    while ((c = getopt(argc, argv, ":abf:o:")) != -1) {
+        switch(c) {
+        case 'a':
+            if (bflg)
+                errflg++;
+            else
+                aflg++;
+            break;
+        case 'b':
+            if (aflg)
+                errflg++;
+            else
+                bflg++;
+            break;
+        case 'f':
+            ifile = optarg;
+            break;
+        case 'o':
+            ofile = optarg;
+            break;
+        case ':':       /* -f or -o without operand */
+            fprintf(stderr,
+                "Option -%c requires an operand\en", optopt);
+            errflg++;
+            break;
+        case '?':
+            fprintf(stderr,
+                "Unrecognized option: '-%c'\en", optopt);
+            errflg++;
+        }
+    }
+    if (errflg) {
+        fprintf(stderr, "usage: . . . ");
+        exit(2);
+    }
+    for ( ; optind < argc; optind++) {
+        if (access(argv[optind], R_OK)) {
+    . . .
+}
+.fi \fR
+.P
+.RE
+.P
+This code accepts any of the following as equivalent:
+.sp
+.RS 4
+.nf
+\fB
+cmd \(miao arg path path
+cmd \(mia \(mio arg path path
+cmd \(mio arg \(mia path path
+cmd \(mia \(mio arg \(mi\|\(mi path path
+cmd \(mia \(mioarg path path
+cmd \(miaoarg path path
+.fi \fR
+.P
+.RE
+.SS "Selecting Options from the Command Line"
+.P
+The following example selects the type of database routines the user
+wants to use based on the
+.IR Options
+argument.
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+#include <string.h>
+\&...
+const char *Options = "hdbtl";
+\&...
+int dbtype, c;
+char *st;
+\&...
+dbtype = 0;
+while ((c = getopt(argc, argv, Options)) != \(mi1) {
+    if ((st = strchr(Options, c)) != NULL) {
+        dbtype = st - Options;
+        break;
+    }
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIgetopt\fR()
+function is only required to support option characters included in
+Utility Syntax Guideline 3. Many historical implementations of
+\fIgetopt\fR()
+support other characters as options. This is an allowed extension, but
+applications that use extensions are not maximally portable. Note that
+support for multi-byte option characters is only possible when such
+characters can be represented as type
+.BR int .
+.P
+While
+.IR ferror ( stderr )
+may be used to detect failures to write a diagnostic to
+.IR stderr
+when
+\fIgetopt\fR()
+returns
+.BR '?' ,
+the value of
+.IR errno
+is unspecified in such a condition. Applications desiring more control
+over handling write failures should set
+.IR opterr
+to 0 and independently perform output to
+.IR stderr ,
+rather than relying on
+\fIgetopt\fR()
+to do the output.
+.SH RATIONALE
+The
+.IR optopt
+variable represents historical practice and allows the application to
+obtain the identity of the invalid option.
+.P
+The description has been written to make it clear that
+\fIgetopt\fR(),
+like the
+.IR getopts
+utility, deals with option-arguments whether separated from the option
+by
+<blank>
+characters or not. Note that the requirements on
+\fIgetopt\fR()
+and
+.IR getopts
+are more stringent than the Utility Syntax Guidelines.
+.P
+The
+\fIgetopt\fR()
+function shall return \(mi1, rather than EOF, so that
+.IR <stdio.h> 
+is not required.
+.P
+The special significance of a
+<colon>
+as the first character of
+.IR optstring
+makes
+\fIgetopt\fR()
+consistent with the
+.IR getopts
+utility. It allows an application to make a distinction between a
+missing argument and an incorrect option letter without having to
+examine the option letter. It is true that a missing argument can only
+be detected in one case, but that is a case that has to be considered.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+.IR "\fB<unistd.h>\fP"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIgetopts\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

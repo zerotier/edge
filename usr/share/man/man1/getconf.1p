@@ -1,0 +1,443 @@
+'\" et
+.TH GETCONF "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getconf
+\(em get configuration values
+.SH SYNOPSIS
+.LP
+.nf
+getconf \fB[\fR\(miv specification\fB] \fIsystem_var\fR
+.P
+getconf \fB[\fR\(miv specification\fB] \fIpath_var pathname\fR
+.fi
+.SH DESCRIPTION
+In the first synopsis form, the
+.IR getconf
+utility shall write to the standard output the value of the variable
+specified by the
+.IR system_var
+operand.
+.P
+In the second synopsis form, the
+.IR getconf
+utility shall write to the standard output the value of the variable
+specified by the
+.IR path_var
+operand for the path specified by the
+.IR pathname
+operand.
+.P
+The value of each configuration variable shall be determined as if it
+were obtained by calling the function from which it is defined to be
+available by this volume of POSIX.1\(hy2008 or by the System Interfaces volume of POSIX.1\(hy2008 (see the OPERANDS section). The
+value shall reflect conditions in the current operating environment.
+.SH OPTIONS
+The
+.IR getconf
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(miv\ \fIspecification\fR" 10
+.br
+Indicate a specific specification and version for which configuration
+variables shall be determined. If this option is not specified, the
+values returned correspond to an implementation default conforming
+compilation environment.
+.RS 10 
+.P
+If the command:
+.sp
+.RS 4
+.nf
+\fB
+getconf _POSIX_V7_ILP32_OFF32
+.fi \fR
+.P
+.RE
+.P
+does not write
+.BR \(dq\(mi1\en\(dq 
+or
+.BR \(dqundefined\en\(dq 
+to standard output, then commands of the form:
+.sp
+.RS 4
+.nf
+\fB
+getconf \(miv POSIX_V7_ILP32_OFF32 ...
+.fi \fR
+.P
+.RE
+.P
+determine values for configuration variables corresponding to the
+POSIX_V7_ILP32_OFF32 compilation environment specified in
+.IR "\fIc99\fR\^",
+the EXTENDED DESCRIPTION.
+.P
+If the command:
+.sp
+.RS 4
+.nf
+\fB
+getconf _POSIX_V7_ILP32_OFFBIG
+.fi \fR
+.P
+.RE
+.P
+does not write
+.BR \(dq\(mi1\en\(dq 
+or
+.BR \(dqundefined\en\(dq 
+to standard output, then commands of the form:
+.sp
+.RS 4
+.nf
+\fB
+getconf \(miv POSIX_V7_ILP32_OFFBIG ...
+.fi \fR
+.P
+.RE
+.P
+determine values for configuration variables corresponding to the
+POSIX_V7_ILP32_OFFBIG compilation environment specified in
+.IR "\fIc99\fR\^",
+the EXTENDED DESCRIPTION.
+.P
+If the command:
+.sp
+.RS 4
+.nf
+\fB
+getconf _POSIX_V7_LP64_OFF64
+.fi \fR
+.P
+.RE
+.P
+does not write
+.BR \(dq\(mi1\en\(dq 
+or
+.BR \(dqundefined\en\(dq 
+to standard output, then commands of the form:
+.sp
+.RS 4
+.nf
+\fB
+getconf \(miv POSIX_V7_LP64_OFF64 ...
+.fi \fR
+.P
+.RE
+.P
+determine values for configuration variables corresponding to the
+POSIX_V7_LP64_OFF64 compilation environment specified in
+.IR "\fIc99\fR\^",
+the EXTENDED DESCRIPTION.
+.P
+If the command:
+.sp
+.RS 4
+.nf
+\fB
+getconf _POSIX_V7_LPBIG_OFFBIG
+.fi \fR
+.P
+.RE
+.P
+does not write
+.BR \(dq\(mi1\en\(dq 
+or
+.BR \(dqundefined\en\(dq 
+to standard output, then commands of the form:
+.sp
+.RS 4
+.nf
+\fB
+getconf \(miv POSIX_V7_LPBIG_OFFBIG ...
+.fi \fR
+.P
+.RE
+.P
+determine values for configuration variables corresponding to the
+POSIX_V7_LPBIG_OFFBIG compilation environment specified in
+.IR "\fIc99\fR\^",
+the EXTENDED DESCRIPTION.
+.RE
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIpath_var\fR" 10
+A name of a configuration variable. All of the variables in the
+Variable column of the table in the DESCRIPTION of the
+\fIfpathconf\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008, without the enclosing braces, shall be
+supported. The implementation may add other local variables.
+.IP "\fIpathname\fR" 10
+A pathname for which the variable specified by
+.IR path_var
+is to be determined.
+.IP "\fIsystem_var\fR" 10
+A name of a configuration variable. All of the following variables
+shall be supported:
+.RS 10 
+.IP " *" 4
+The names in the Variable column of the table in the DESCRIPTION of the
+\fIsysconf\fR()
+function in the System Interfaces volume of POSIX.1\(hy2008, except for the entries corresponding to
+_SC_CLK_TCK, _SC_GETGR_R_SIZE_MAX, and _SC_GETPW_R_SIZE_MAX, without
+the enclosing braces.
+.RS 4 
+.P
+For compatibility with earlier versions, the following variable names
+shall also be supported:
+POSIX2_C_BIND
+POSIX2_C_DEV
+POSIX2_CHAR_TERM
+POSIX2_FORT_DEV
+POSIX2_FORT_RUN
+POSIX2_LOCALEDEF
+POSIX2_SW_DEV
+POSIX2_UPE
+POSIX2_VERSION
+.P
+and shall be equivalent to the same name prefixed with an
+<underscore>.
+This requirement may be removed in a future version.
+.RE
+.IP " *" 4
+The names of the symbolic constants used as the
+.IR name
+argument of the
+\fIconfstr\fR()
+function in the System Interfaces volume of POSIX.1\(hy2008, without the _CS_ prefix.
+.IP " *" 4
+The names of the symbolic constants listed under the headings ``Maximum
+Values'' and ``Minimum Values'' in the description of the
+.IR <limits.h> 
+header in the Base Definitions volume of POSIX.1\(hy2008, without the enclosing braces.
+.RS 4 
+.P
+For compatibility with earlier versions, the following variable names
+shall also be supported:
+POSIX2_BC_BASE_MAX
+POSIX2_BC_DIM_MAX
+POSIX2_BC_SCALE_MAX
+POSIX2_BC_STRING_MAX
+POSIX2_COLL_WEIGHTS_MAX
+POSIX2_EXPR_NEST_MAX
+POSIX2_LINE_MAX
+POSIX2_RE_DUP_MAX
+.P
+and shall be equivalent to the same name prefixed with an
+<underscore>.
+This requirement may be removed in a future version.
+.RE
+.P
+The implementation may add other local values.
+.RE
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR getconf :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If the specified variable is defined on the system and its value is
+described to be available from the
+\fIconfstr\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008, its value shall be written in the
+following format:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIvalue\fR>
+.fi \fR
+.P
+.RE
+.P
+Otherwise, if the specified variable is defined on the system, its
+value shall be written in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%d\en", <\fIvalue\fR>
+.fi \fR
+.P
+.RE
+.P
+If the specified variable is valid, but is undefined on the system,
+.IR getconf
+shall write using the following format:
+.sp
+.RS 4
+.nf
+\fB
+"undefined\en"
+.fi \fR
+.P
+.RE
+.P
+If the variable name is invalid or an error occurs, nothing shall be
+written to standard output.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The specified variable is valid and information about its current state
+was written successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+The following example illustrates the value of
+{NGROUPS_MAX}:
+.sp
+.RS 4
+.nf
+\fB
+getconf NGROUPS_MAX
+.fi \fR
+.P
+.RE
+.P
+The following example illustrates the value of
+{NAME_MAX}
+for a specific directory:
+.sp
+.RS 4
+.nf
+\fB
+getconf NAME_MAX /usr
+.fi \fR
+.P
+.RE
+.P
+The following example shows how to deal more carefully with results
+that might be unspecified:
+.sp
+.RS 4
+.nf
+\fB
+if value=$(getconf PATH_MAX /usr); then
+    if [ "$value" = "undefined" ]; then
+        echo PATH_MAX in /usr is indeterminate.
+    else
+        echo PATH_MAX in /usr is $value.
+    fi
+else
+    echo Error in getconf.
+fi
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The original need for this utility, and for the
+\fIconfstr\fR()
+function, was to provide a way of finding the configuration-defined
+default value for the
+.IR PATH
+environment variable. Since
+.IR PATH
+can be modified by the user to include directories that could contain
+utilities replacing the standard utilities, shell scripts need
+a way to determine the system-supplied
+.IR PATH
+environment variable value that contains the correct search path for
+the standard utilities. It was later suggested that access to the other
+variables described in this volume of POSIX.1\(hy2008 could also be useful to applications.
+.P
+This functionality of
+.IR getconf
+would not be adequately subsumed by another command such as:
+.sp
+.RS 4
+.nf
+\fB
+grep \fIvar\fP /etc/conf
+.fi \fR
+.P
+.RE
+.P
+because such a strategy would provide correct values for neither those
+variables that can vary at runtime, nor those that can vary depending
+on the path.
+.P
+Early proposal versions of
+.IR getconf
+specified exit status 1 when the specified variable was valid, but not
+defined on the system. The output string
+.BR \(dqundefined\(dq 
+is now used to specify this case with exit code 0 because so many
+things depend on an exit code of zero when an invoked utility is
+successful.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIc99\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+.IR "\fB<limits.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIconfstr\fR\^(\|)",
+.IR "\fIfpathconf\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)",
+.IR "\fIsystem\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

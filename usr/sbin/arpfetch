@@ -1,0 +1,33 @@
+#!/bin/sh
+# @(#) $Id: arpfetch,v 1.6 2006/07/28 18:10:29 leres Exp $ (LBL)
+#
+# arpfetch - collect arp data from a cisco using net-snmp
+#
+
+export PATH="/usr/local/bin:${PATH}"
+
+prog=`basename $0`
+
+if [ $# -ne 2 ]; then
+	echo "usage: ${prog} host cname" 2>&1
+	exit 1
+fi
+
+host="$1"
+cname="$2"
+
+what="ip.ipNetToMediaTable.ipNetToMediaEntry.ipNetToMediaPhysAddress"
+#
+# Get the data and convert it
+#
+snmpwalk -Oq -Os -v 1 -c ${cname} ${host} ${what} | 2>&1 tr A-Z a-z |
+    awk '{
+	    ip = $1
+	    n = split(ip, a, ".")
+	    if (n > 4)
+		    ip =  a[n - 3] "." a[n - 2] "." a[n - 1] "." a[n]
+	    ea = $2
+	    print ea "\t" ip
+    }'
+
+rm -f ${t1}

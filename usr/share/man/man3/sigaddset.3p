@@ -1,0 +1,103 @@
+'\" et
+.TH SIGADDSET "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sigaddset
+\(em add a signal to a signal set
+.SH SYNOPSIS
+.LP
+.nf
+#include <signal.h>
+.P
+int sigaddset(sigset_t *\fIset\fP, int \fIsigno\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsigaddset\fR()
+function adds the individual signal specified by the
+.IR signo
+to the signal set pointed to by
+.IR set .
+.P
+Applications shall call either
+\fIsigemptyset\fR()
+or
+\fIsigfillset\fR()
+at least once for each object of type
+.BR sigset_t
+prior to any other use of that object. If such an object is not
+initialized in this way, but is nonetheless supplied as an argument to
+any of
+\fIpthread_sigmask\fR(),
+\fIsigaction\fR(),
+\fIsigaddset\fR(),
+\fIsigdelset\fR(),
+\fIsigismember\fR(),
+\fIsigpending\fR(),
+\fIsigprocmask\fR(),
+\fIsigsuspend\fR(),
+\fIsigtimedwait\fR(),
+\fIsigwait\fR(),
+or
+\fIsigwaitinfo\fR(),
+the results are undefined.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsigaddset\fR()
+shall return 0; otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIsigaddset\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR signo
+argument is an invalid or unsupported signal number.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.4" ", " "Signal Concepts",
+.IR "\fIpthread_sigmask\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)",
+.IR "\fIsigdelset\fR\^(\|)",
+.IR "\fIsigemptyset\fR\^(\|)",
+.IR "\fIsigfillset\fR\^(\|)",
+.IR "\fIsigismember\fR\^(\|)",
+.IR "\fIsigpending\fR\^(\|)",
+.IR "\fIsigsuspend\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<signal.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

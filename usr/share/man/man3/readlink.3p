@@ -1,0 +1,255 @@
+'\" et
+.TH READLINK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+readlink, readlinkat
+\(em read the contents of a symbolic link
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+ssize_t readlink(const char *restrict \fIpath\fP, char *restrict \fIbuf\fP,
+    size_t \fIbufsize\fP);
+ssize_t readlinkat(int \fIfd\fP, const char *restrict \fIpath\fP,
+    char *restrict \fIbuf\fP, size_t \fIbufsize\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIreadlink\fR()
+function shall place the contents of the symbolic link referred to by
+.IR path
+in the buffer
+.IR buf
+which has size
+.IR bufsize .
+If the number of bytes in the symbolic link is less than
+.IR bufsize ,
+the contents of the remainder of
+.IR buf
+are unspecified. If the
+.IR buf
+argument is not large enough to contain the link content, the first
+.IR bufsize
+bytes shall be placed in
+.IR buf .
+.P
+If the value of
+.IR bufsize
+is greater than
+{SSIZE_MAX},
+the result is implementation-defined.
+.P
+Upon successful completion,
+\fIreadlink\fR()
+shall mark for update the last data access timestamp of the symbolic
+link.
+.P
+The
+\fIreadlinkat\fR()
+function shall be equivalent to the
+\fIreadlink\fR()
+function except in the case where
+.IR path
+specifies a relative path. In this case the symbolic link whose content
+is read is relative to the directory associated with the file
+descriptor
+.IR fd
+instead of the current working directory. If the file descriptor was
+opened without O_SEARCH, the function shall check whether directory
+searches are permitted using the current permissions of the directory
+underlying the file descriptor. If the file descriptor was opened with
+O_SEARCH, the function shall not perform the check.
+.P
+If
+\fIreadlinkat\fR()
+is passed the special value AT_FDCWD in the
+.IR fd
+parameter, the current working directory shall be used and the behavior
+shall be identical to a call to
+\fIreadlink\fR().
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return the count of
+bytes placed in the buffer. Otherwise, these functions shall return a
+value of \(mi1, leave the buffer unchanged, and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP
+.BR EINVAL
+The
+.IR path
+argument names a file that is not a symbolic link.
+.TP
+.BR EIO
+An I/O error occurred while reading from the file system.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file that
+is neither a directory nor a symbolic link to a directory.
+.br
+.P
+The
+\fIreadlinkat\fR()
+function shall fail if:
+.TP
+.BR EACCES
+.IR fd
+was not opened with O_SEARCH and the permissions of the directory
+underlying
+.IR fd
+do not permit directory searches.
+.TP
+.BR EBADF
+The
+.IR path
+argument does not specify an absolute path and the
+.IR fd
+argument is neither AT_FDCWD nor a valid file descriptor open for reading
+or searching.
+.TP
+.BR ENOTDIR
+The
+.IR path
+argument is not an absolute path and
+.IR fd
+is a file descriptor associated with a non-directory file.
+.P
+These functions may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Reading the Name of a Symbolic Link"
+.P
+The following example shows how to read the name of a symbolic link
+named
+.BR /modules/pass1 .
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+.P
+char buf[1024];
+ssize_t len;
+\&...
+if ((len = readlink("/modules/pass1", buf, sizeof(buf)-1)) != -1)
+    buf[len] = '\e0';
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Conforming applications should not assume that the returned contents of
+the symbolic link are null-terminated.
+.SH RATIONALE
+The type associated with
+.IR bufsiz
+is a
+.BR size_t
+in order to be consistent with both the ISO\ C standard and the definition of
+\fIread\fR().
+The behavior specified for
+\fIreadlink\fR()
+when
+.IR bufsiz
+is zero represents historical practice. For this case, the standard
+developers considered a change whereby
+\fIreadlink\fR()
+would return the number of non-null bytes contained in the symbolic
+link with the buffer
+.IR buf
+remaining unchanged; however, since the
+.BR stat
+structure member
+.IR st_size
+value can be used to determine the size of buffer necessary to contain
+the contents of the symbolic link as returned by
+\fIreadlink\fR(),
+this proposal was rejected, and the historical practice retained.
+.P
+The purpose of the
+\fIreadlinkat\fR()
+function is to read the content of symbolic links in directories other
+than the current working directory without exposure to race conditions.
+Any part of the path of a file could be changed in parallel to a call
+to
+\fIreadlink\fR(),
+resulting in unspecified behavior. By opening a file descriptor for
+the target directory and using the
+\fIreadlinkat\fR()
+function it can be guaranteed that the symbolic link read is located
+relative to the desired directory.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfstatat\fR\^(\|)",
+.IR "\fIsymlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

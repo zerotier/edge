@@ -1,0 +1,138 @@
+#!/bin/sh
+
+# abump - bump pkgver in APKBUILDs
+# Copyright (c) 2012 Natanael Copa <ncopa@alpinelinux.org>
+#
+# Distributed under GPL-2
+#
+
+program_version=3.3.0_pre1-r1
+datadir=/usr/share/abuild
+
+if ! [ -f "$datadir/functions.sh" ]; then
+	echo "$datadir/functions.sh: not found" >&2
+	exit 1
+fi
+. "$datadir/functions.sh"
+
+: ${ABUILD:="abuild"}
+
+
+# version bump packages
+do_bump() {
+	local p rc=0 notbumped="" name ver section message
+	local upgrade="${cvelist:+security }upgrade"
+	local a
+	for p; do
+		if [ $rc -gt 0 ]; then
+			notbumped="$notbumped $p"
+			continue
+		fi
+		name=${p%-[0-9]*}
+		ver=${p#${name}-}
+		if [ "$name" = "$ver" ]; then
+			die "version missing for $p"
+		fi
+
+		(
+		set -e
+
+		# calculate APKBUILD's path    #vim syntax higlight '
+		if [ "${name#*/}" != "$name" ] && ! [ -d "$APORTSDIR/${name%/*}" ]; then
+			die "'$p' should be of form 'foo-1.2.3' or 'main/foo-1.2.3'"
+		fi
+		a=$(aports_buildscript "$name" ) \
+			|| die "can't find APKBUILD for $name"
+
+		# verify APKBUILD
+		. "$a" || exit 1
+		name=${name#*/}
+		[ "$pkgname" = "$name" ] \
+			|| die "APKBUILD has different \$pkgname for $name"
+		type package | grep -q function \
+			|| die "missing package() for $name"
+
+		cd "${a%/*}"
+		section=${PWD%/*}
+		section=${section##*/}
+
+		message="$section/$name: $upgrade to ${ver}${cvelist}"
+		if [ -n "$fixes" ]; then
+			message="$message
+
+fixes #${fixes#\#}
+"
+		fi
+		msg "$message"
+
+		sed -i -e "s/^pkgver=.*/pkgver=$ver/" \
+			-e "s/^pkgrel=.*/pkgrel=0/" \
+			APKBUILD
+
+		$ABUILD $abuild_opts checksum all
+
+		git add APKBUILD
+		git commit -m"$message"
+		)
+		rc=$?
+		if [ $rc -gt 0 ]; then
+			error "Failed to build $p"
+		fi
+	done
+	if [ -n "$notbumped" ]; then
+		error "Not bumped: $notbumped"
+	fi
+	return $rc
+}
+
+usage() {
+	cat >&2 <<-__EOF__
+		$program $program_version - bump pkgver in APKBUILDs
+		Usage: $program [-s CVE-1,CVE-2,...] [-f ISSUE] [-R|--recursive] [-k|--keep] PKGNAME-1.2.3 ...
+		Options:
+		  -s, --security CVE1,CVE-2,...  Security update
+		  -f, --fixes ISSUE              Fixes ISSUE
+		  -R, --recursive                Run abuild with -R for recursive building
+		  -k, --keep                     Run abuild with -k to keep existing packages
+		  -q, --quiet
+		  -h, --help                     Show this help
+
+	__EOF__
+}
+
+keep=
+recursive="-r"
+cvelist=
+fixes=
+
+[ -n "$APORTSDIR" ] || error "can't locate \$APORTSDIR"
+git rev-parse 2>/dev/null || die "not in a git tree"
+
+args=$(getopt -o f:s:Rkqh --long fixes:,security:,recursive,keep,quiet,help \
+	-n "$program" -- "$@")
+if [ $? -ne 0 ]; then
+	usage
+	exit 2
+fi
+eval set -- "$args"
+while true; do
+	case $1 in
+		-s|--security) cvelist=" ($2)"; shift;;
+		-f|--fixes) fixes="$2"; shift;;
+		-R|--recursive) recursive="-R";;
+		-k|--keep) keep="-k";;
+		-q|--quiet) quiet=1;; # suppresses msg
+		-h|--help) usage; exit;;
+		--) shift; break;;
+		*) exit 1;; # getopt error
+	esac
+	shift
+done
+if [ $# -eq 0 ]; then
+	usage
+	exit 2
+fi
+
+abuild_opts="$recursive $keep"
+
+do_bump "$@"

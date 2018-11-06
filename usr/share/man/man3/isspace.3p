@@ -1,0 +1,114 @@
+'\" et
+.TH ISSPACE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+isspace,
+isspace_l
+\(em test for a white-space character
+.SH SYNOPSIS
+.LP
+.nf
+#include <ctype.h>
+.P
+int isspace(int \fIc\fP);
+int isspace_l(int \fIc\fP, locale_t \fIlocale\fP);
+.fi
+.SH DESCRIPTION
+For
+\fIisspace\fR():
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIisspace\fR()
+and
+\fIisspace_l\fR()
+functions shall test whether
+.IR c
+is a character of class
+.BR space
+in the current locale,
+or in the locale represented by
+.IR locale ,
+respectively; see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale".
+.P
+The
+.IR c
+argument is an
+.BR int ,
+the value of which the application shall ensure is a character
+representable as an
+.BR "unsigned char"
+or equal to the value of the macro EOF. If the argument has any other
+value, the behavior is undefined.
+.P
+The behavior is undefined if the
+.IR locale
+argument to
+\fIisspace_l\fR()
+is the special locale object LC_GLOBAL_LOCALE or is not a valid locale
+object handle.
+.SH "RETURN VALUE"
+The
+\fIisspace\fR()
+and
+\fIisspace_l\fR()
+functions shall return non-zero if
+.IR c
+is a white-space character; otherwise, they shall return 0.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+To ensure applications portability, especially across natural
+languages, only these functions and the functions in the reference pages
+listed in the SEE ALSO section should be used for character classification.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIisalnum\fR\^(\|)",
+.IR "\fIisalpha\fR\^(\|)",
+.IR "\fIiscntrl\fR\^(\|)",
+.IR "\fIisdigit\fR\^(\|)",
+.IR "\fIisgraph\fR\^(\|)",
+.IR "\fIislower\fR\^(\|)",
+.IR "\fIisprint\fR\^(\|)",
+.IR "\fIispunct\fR\^(\|)",
+.IR "\fIisupper\fR\^(\|)",
+.IR "\fIisxdigit\fR\^(\|)",
+.IR "\fIsetlocale\fR\^(\|)",
+.IR "\fIuselocale\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+.IR "\fB<ctype.h>\fP",
+.IR "\fB<locale.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

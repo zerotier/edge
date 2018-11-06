@@ -1,0 +1,117 @@
+'\" et
+.TH AIO_ERROR "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+aio_error
+\(em retrieve errors status for an asynchronous I/O operation
+.SH SYNOPSIS
+.LP
+.nf
+#include <aio.h>
+.P
+int aio_error(const struct aiocb *\fIaiocbp\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIaio_error\fR()
+function shall return the error status associated with the
+.BR aiocb
+structure referenced by the
+.IR aiocbp
+argument. The error status for an asynchronous I/O operation is the
+.IR errno
+value that would be set by the corresponding
+\fIread\fR(),
+\fIwrite\fR(),
+\fIfdatasync\fR(),
+or
+\fIfsync\fR()
+operation. If the operation has not yet completed, then the error
+status shall be equal to
+.BR [EINPROGRESS] .
+.P
+If the
+.BR aiocb
+structure pointed to by
+.IR aiocbp
+is not associated with an operation that has been scheduled, the
+results are undefined.
+.SH "RETURN VALUE"
+If the asynchronous I/O operation has completed successfully, then 0
+shall be returned. If the asynchronous operation has completed
+unsuccessfully, then the error status, as described for
+\fIread\fR(),
+\fIwrite\fR(),
+\fIfdatasync\fR(),
+and
+\fIfsync\fR(),
+shall be returned. If the asynchronous I/O operation has not yet
+completed, then
+.BR [EINPROGRESS] 
+shall be returned.
+.P
+If the
+\fIaio_error\fR()
+function fails, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIaio_error\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The
+.IR aiocbp
+argument does not refer to an asynchronous operation whose return
+status has not yet been retrieved.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIaio_cancel\fR\^(\|)",
+.IR "\fIaio_fsync\fR\^(\|)",
+.IR "\fIaio_read\fR\^(\|)",
+.IR "\fIaio_return\fR\^(\|)",
+.IR "\fIaio_write\fR\^(\|)",
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIexit\fR\^(\|)",
+.IR "\fIfork\fR\^(\|)",
+.IR "\fIlio_listio\fR\^(\|)",
+.IR "\fIlseek\fR\^(\|)",
+.IR "\fIread\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<aio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

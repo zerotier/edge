@@ -1,0 +1,496 @@
+'\" et
+.TH CUT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cut
+\(em cut out selected fields of each line of a file
+.SH SYNOPSIS
+.LP
+.nf
+cut \(mib \fIlist \fB[\fR\(min\fB] [\fIfile\fR...\fB]\fR
+.P
+cut \(mic \fIlist \fB[\fIfile\fR...\fB]\fR
+.P
+cut \(mif \fIlist \fB[\fR\(mid \fIdelim\fB] [\fR\(mis\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR cut
+utility shall cut out bytes (\c
+.BR \(mib
+option), characters (\c
+.BR \(mic
+option), or character-delimited fields (\c
+.BR \(mif
+option) from each line in one or more files, concatenate them, and
+write them to standard output.
+.SH OPTIONS
+The
+.IR cut
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The application shall ensure that the option-argument
+.IR list
+(see options
+.BR \(mib ,
+.BR \(mic ,
+and
+.BR \(mif
+below) is a
+<comma>-separated
+list or
+<blank>-separated
+list of positive numbers and ranges. Ranges can be in three forms. The
+first is two positive numbers separated by a
+<hyphen>
+(\c
+.IR low \(mi\c
+.IR high ),
+which represents all fields from the first number to the second
+number. The second is a positive number preceded by a
+<hyphen>
+(\(mi\c
+.IR high ),
+which represents all fields from field number 1 to that number. The
+third is a positive number followed by a
+<hyphen>
+(\c
+.IR low \(mi),
+which represents that number to the last field, inclusive. The elements
+in
+.IR list
+can be repeated, can overlap, and can be specified in any order, but
+the bytes, characters, or fields selected shall be written in the order
+of the input data. If an element appears in the selection list more
+than once, it shall be written exactly once.
+.P
+The following options shall be supported:
+.IP "\fB\(mib\ \fIlist\fR" 10
+Cut based on a
+.IR list
+of bytes. Each selected byte shall be output unless the
+.BR \(min
+option is also specified. It shall not be an error to select bytes not
+present in the input line.
+.IP "\fB\(mic\ \fIlist\fR" 10
+Cut based on a
+.IR list
+of characters. Each selected character shall be output. It shall not
+be an error to select characters not present in the input line.
+.IP "\fB\(mid\ \fIdelim\fR" 10
+Set the field delimiter to the character
+.IR delim .
+The default is the
+<tab>.
+.IP "\fB\(mif\ \fIlist\fR" 10
+Cut based on a
+.IR list
+of fields, assumed to be separated in the file by a delimiter character
+(see
+.BR \(mid ).
+Each selected field shall be output. Output fields shall be separated
+by a single occurrence of the field delimiter character. Lines with no
+field delimiters shall be passed through intact, unless
+.BR \(mis
+is specified. It shall not be an error to select fields not present in
+the input line.
+.IP "\fB\(min\fP" 10
+Do not split characters. When specified with the
+.BR \(mib
+option, each element in
+.IR list
+of the form
+.IR low \(mi\c
+.IR high
+(\c
+<hyphen>-separated
+numbers) shall be modified as follows:
+.RS 10 
+.IP " *" 4
+If the byte selected by
+.IR low
+is not the first byte of a character,
+.IR low
+shall be decremented to select the first byte of the character
+originally selected by
+.IR low .
+If the byte selected by
+.IR high
+is not the last byte of a character,
+.IR high
+shall be decremented to select the last byte of the character prior to
+the character originally selected by
+.IR high ,
+or zero if there is no prior character. If the resulting range element
+has
+.IR high
+equal to zero or
+.IR low
+greater than
+.IR high ,
+the list element shall be dropped from
+.IR list
+for that input line without causing an error.
+.P
+Each element in
+.IR list
+of the form
+.IR low \(mi
+shall be treated as above with
+.IR high
+set to the number of bytes in the current line, not including the
+terminating
+<newline>.
+Each element in
+.IR list
+of the form \(mi\c
+.IR high
+shall be treated as above with
+.IR low
+set to 1. Each element in
+.IR list
+of the form
+.IR num
+(a single number) shall be treated as above with
+.IR low
+set to
+.IR num
+and
+.IR high
+set to
+.IR num .
+.RE
+.IP "\fB\(mis\fP" 10
+Suppress lines with no delimiter characters, when used with the
+.BR \(mif
+option. Unless specified, lines with no delimiters shall be passed
+through untouched.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an input file. If no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' ,
+the standard input shall be used.
+.SH STDIN
+The standard input shall be used only if no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' .
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be text files, except that line lengths shall be
+unlimited.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR cut :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR cut
+utility output shall be a concatenation of the selected bytes,
+characters, or fields (one of the following):
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIconcatenation of bytes\fR>
+.P
+"%s\en", <\fIconcatenation of characters\fR>
+.P
+"%s\en", <\fIconcatenation of fields and field delimiters\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All input files were output successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.IR cut
+and
+.IR fold
+utilities can be used to create text files out of files with
+arbitrary line lengths. The
+.IR cut
+utility should be used when the number of lines (or records) needs
+to remain constant. The
+.IR fold
+utility should be used when the contents of long lines need to be
+kept contiguous.
+.P
+Earlier versions of the
+.IR cut
+utility worked in an environment where bytes and characters were
+considered equivalent (modulo
+<backspace>
+and
+<tab>
+processing in some implementations). In the extended world of
+multi-byte characters, the new
+.BR \(mib
+option has been added. The
+.BR \(min
+option (used with
+.BR \(mib )
+allows it to be used to act on bytes rounded to character boundaries.
+The algorithm specified for
+.BR \(min
+guarantees that:
+.sp
+.RS 4
+.nf
+\fB
+cut \(mib 1\(mi500 \(min file > file1
+cut \(mib 501\(mi \(min file > file2
+.fi \fR
+.P
+.RE
+.P
+ends up with all the characters in
+.BR file
+appearing exactly once in
+.BR file1
+or
+.BR file2 .
+(There is, however, a
+<newline>
+in both
+.BR file1
+and
+.BR file2
+for each
+<newline>
+in
+.BR file .)
+.SH EXAMPLES
+Examples of the option qualifier list:
+.IP 1,4,7 8
+Select the first, fourth, and seventh bytes, characters, or fields and
+field delimiters.
+.IP "1\(mi3,8" 8
+Equivalent to 1,2,3,8.
+.IP "\(mi5,10" 8
+Equivalent to 1,2,3,4,5,10.
+.IP "3\(mi" 8
+Equivalent to third to last, inclusive.
+.P
+The
+.IR low \(mi\c
+.IR high
+forms are not always equivalent when used with
+.BR \(mib
+and
+.BR \(min
+and multi-byte characters; see the description of
+.BR \(min .
+.P
+The following command:
+.sp
+.RS 4
+.nf
+\fB
+cut \(mid : \(mif 1,6 /etc/passwd
+.fi \fR
+.P
+.RE
+.P
+reads the System V password file (user database) and produces lines of
+the form:
+.sp
+.RS 4
+.nf
+\fB
+<\fIuser ID\fR>:<\fIhome directory\fR>
+.fi \fR
+.P
+.RE
+.P
+Most utilities in this volume of POSIX.1\(hy2008 work on text files. The
+.IR cut
+utility can be used to turn files with arbitrary line lengths into a
+set of text files containing the same data. The
+.IR paste
+utility can be used to create (or recreate) files with arbitrary line
+lengths. For example, if
+.BR file
+contains long lines:
+.sp
+.RS 4
+.nf
+\fB
+cut \(mib 1\(mi500 \(min file > file1
+cut \(mib 501\(mi \(min file > file2
+.fi \fR
+.P
+.RE
+.P
+creates
+.BR file1
+(a text file) with lines no longer than 500 bytes (plus the
+<newline>)
+and
+.BR file2
+that contains the remainder of the data from
+.BR file .
+(Note that
+.BR file2
+is not a text file if there are lines in
+.BR file
+that are longer than 500 +
+{LINE_MAX}
+bytes.) The original file can be recreated from
+.BR file1
+and
+.BR file2
+using the command:
+.sp
+.RS 4
+.nf
+\fB
+paste \(mid "\e0" file1 file2 > file
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+Some historical implementations do not count
+<backspace>
+characters in determining character counts with the
+.BR \(mic
+option. This may be useful for using
+.IR cut
+for processing
+.IR nroff
+output. It was deliberately decided not to have the
+.BR \(mic
+option treat either
+<backspace>
+or
+<tab>
+characters in any special fashion. The
+.IR fold
+utility does treat these characters specially.
+.P
+Unlike other utilities, some historical implementations of
+.IR cut
+exit after not finding an input file, rather than continuing to process
+the remaining
+.IR file
+operands. This behavior is prohibited by this volume of POSIX.1\(hy2008, where only the exit
+status is affected by this problem.
+.P
+The behavior of
+.IR cut
+when provided with either mutually-exclusive options or options that do
+not work logically together has been deliberately left unspecified in
+favor of global wording in
+.IR "Section 1.4" ", " "Utility Description Defaults".
+.P
+The OPTIONS section was changed in response to IEEE PASC Interpretation
+1003.2 #149. The change represents historical practice on all known
+systems. The original standard was ambiguous on the nature of the
+output.
+.P
+The
+.IR list
+option-arguments are historically used to select the portions of the
+line to be written, but do not affect the order of the data. For
+example:
+.sp
+.RS 4
+.nf
+\fB
+echo abcdefghi | cut \(mic6,2,4\(mi7,1
+.fi \fR
+.P
+.RE
+.P
+yields
+.BR \(dqabdefg\(dq .
+.P
+A proposal to enhance
+.IR cut
+with the following option:
+.IP "\fB\(mio\fP" 6
+Preserve the selected field order. When this option is specified, each
+byte, character, or field (or ranges of such) shall be written in the
+order specified by the
+.IR list
+option-argument, even if this requires multiple outputs of the same
+bytes, characters, or fields.
+.P
+was rejected because this type of enhancement is outside the scope of
+the IEEE\ P1003.2b draft standard.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Parameters and Variables",
+.IR "\fIfold\fR\^",
+.IR "\fIgrep\fR\^",
+.IR "\fIpaste\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

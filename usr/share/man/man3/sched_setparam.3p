@@ -1,0 +1,157 @@
+'\" et
+.TH SCHED_SETPARAM "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sched_setparam
+\(em set scheduling parameters
+(\fBREALTIME\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <sched.h>
+.P
+int sched_setparam(pid_t \fIpid\fP, const struct sched_param *\fIparam\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsched_setparam\fR()
+function shall set the scheduling parameters of the process specified by
+.IR pid
+to the values specified by the
+.BR sched_param
+structure pointed to by
+.IR param .
+The value of the
+.IR sched_priority
+member in the
+.BR sched_param
+structure shall be any integer within the inclusive priority range for
+the current scheduling policy of the process specified by
+.IR pid .
+Higher numerical values for the priority represent higher priorities.
+If the value of
+.IR pid
+is negative, the behavior of the
+\fIsched_setparam\fR()
+function is unspecified.
+.P
+If a process specified by
+.IR pid
+exists, and if the calling process has permission, the scheduling
+parameters shall be set for the process whose process ID is equal to
+.IR pid .
+.P
+If
+.IR pid
+is zero, the scheduling parameters shall be set for the calling process.
+.P
+The conditions under which one process has permission to change the
+scheduling parameters of another process are implementation-defined.
+.P
+Implementations may require the requesting process to have appropriate
+privileges to set its own scheduling parameters or those of another
+process.
+.P
+See
+.IR "Scheduling Policies"
+for a description on how this function affects the scheduling of
+the threads within the target process.
+.P
+If the current scheduling policy for the target process is not
+SCHED_FIFO, SCHED_RR,
+or SCHED_SPORADIC,
+the result is implementation-defined; this case includes the
+SCHED_OTHER policy.
+.P
+The specified
+.IR sched_ss_repl_period
+shall be greater than or equal to the specified
+.IR sched_ss_init_budget
+for the function to succeed; if it is not, then the function shall
+fail.
+.P
+The value of
+.IR sched_ss_max_repl
+shall be within the inclusive range [1,{SS_REPL_MAX}] for the function
+to succeed; if not, the function shall fail. It is unspecified whether the
+.IR sched_ss_repl_period
+and
+.IR sched_ss_init_budget
+values are stored as provided by this function or are rounded to
+align with the resolution of the clock being used.
+.P
+This function is not atomic with respect to other threads in the
+process. Threads may continue to execute while this function call is in
+the process of changing the scheduling policy for the underlying
+kernel-scheduled entities used by the process contention scope
+threads.
+.SH "RETURN VALUE"
+If successful, the
+\fIsched_setparam\fR()
+function shall return zero.
+.P
+If the call to
+\fIsched_setparam\fR()
+is unsuccessful, the priority shall remain unchanged, and the function
+shall return a value of \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIsched_setparam\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+One or more of the requested scheduling parameters is outside the range
+defined for the scheduling policy of the specified
+.IR pid .
+.TP
+.BR EPERM
+The requesting process does not have permission to set the scheduling
+parameters for the specified process, or does not have appropriate
+privileges to invoke
+\fIsched_setparam\fR().
+.TP
+.BR ESRCH
+No process can be found corresponding to that specified by
+.IR pid .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Scheduling Policies",
+.IR "\fIsched_getparam\fR\^(\|)",
+.IR "\fIsched_getscheduler\fR\^(\|)",
+.IR "\fIsched_setscheduler\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sched.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

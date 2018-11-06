@@ -1,0 +1,81 @@
+'\" et
+.TH CBRT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cbrt,
+cbrtf,
+cbrtl
+\(em cube root functions
+.SH SYNOPSIS
+.LP
+.nf
+#include <math.h>
+.P
+double cbrt(double \fIx\fP);
+float cbrtf(float \fIx\fP);
+long double cbrtl(long double \fIx\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+These functions shall compute the real cube root of their argument
+.IR x .
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return the cube root
+of
+.IR x .
+.P
+If
+.IR x
+is NaN, a NaN shall be returned.
+.P
+If
+.IR x
+is \(+-0 or \(+-Inf,
+.IR x
+shall be returned.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+For some applications, a true cube root function, which returns
+negative results for negative arguments, is more appropriate than
+.IR pow (\c
+.IR x ,
+1.0/3.0), which returns a NaN for
+.IR x
+less than 0.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<math.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

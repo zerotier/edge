@@ -1,0 +1,285 @@
+'\" et
+.TH fenv.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fenv.h
+\(em floating-point environment
+.SH SYNOPSIS
+.LP
+.nf
+#include <fenv.h>
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+.IR <fenv.h> 
+header shall define the following data types through
+.BR typedef :
+.IP "\fBfenv_t\fR" 10
+Represents the entire floating-point environment. The floating-point
+environment refers collectively to any floating-point status flags and
+control modes supported by the implementation.
+.IP "\fBfexcept_t\fR" 10
+Represents the floating-point status flags collectively, including any
+status the implementation associates with the flags. A floating-point
+status flag is a system variable whose value is set (but never cleared)
+when a floating-point exception is raised, which occurs as a side-effect
+of exceptional floating-point arithmetic to provide auxiliary
+information. A floating-point control mode is a system variable whose
+value may be set by the user to affect the subsequent behavior of
+floating-point arithmetic.
+.P
+The
+.IR <fenv.h> 
+header shall define each of the following macros if and only if the
+implementation supports the floating-point exception by means of the
+floating-point functions
+\fIfeclearexcept\fR(),
+\fIfegetexceptflag\fR(),
+\fIferaiseexcept\fR(),
+\fIfesetexceptflag\fR(),
+and
+\fIfetestexcept\fR().
+The defined macros shall expand to integer constant expressions with
+values that are bitwise-distinct.
+.sp
+.RS
+FE_DIVBYZERO
+FE_INEXACT
+FE_INVALID
+FE_OVERFLOW
+FE_UNDERFLOW
+.RE
+.P
+If the implementation supports the IEC 60559 Floating-Point option, all
+five macros shall be defined.
+Additional implementation-defined floating-point exceptions with
+macros beginning with FE_ and an uppercase letter may also be
+specified by the implementation.
+.P
+The
+.IR <fenv.h> 
+header shall define the macro FE_ALL_EXCEPT as the bitwise-inclusive
+OR of all floating-point exception macros defined by the
+implementation, if any. If no such macros are defined, then the
+macro FE_ALL_EXCEPT shall be defined as zero.
+.P
+The
+.IR <fenv.h> 
+header shall define each of the following macros if and only if the
+implementation supports getting and setting the represented rounding
+direction by means of the
+\fIfegetround\fR()
+and
+\fIfesetround\fR()
+functions. The defined macros shall expand to integer constant
+expressions whose values are distinct non-negative values.
+.sp
+.RS
+FE_DOWNWARD
+FE_TONEAREST
+FE_TOWARDZERO
+FE_UPWARD
+.RE
+.P
+If the implementation supports the IEC 60559 Floating-Point option, all
+four macros shall be defined.
+Additional implementation-defined rounding directions with macros
+beginning with FE_ and an uppercase letter may also be specified by the
+implementation.
+.P
+The
+.IR <fenv.h> 
+header shall define the following macro, which represents the
+default floating-point environment (that is, the one installed at
+program startup) and has type pointer to const-qualified
+.BR fenv_t .
+It can be used as an argument to the functions within the
+.IR <fenv.h> 
+header that manage the floating-point environment.
+.sp
+.RS
+FE_DFL_ENV
+.RE
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int  feclearexcept(int);
+int  fegetenv(fenv_t *);
+int  fegetexceptflag(fexcept_t *, int);
+int  fegetround(void);
+int  feholdexcept(fenv_t *);
+int  feraiseexcept(int);
+int  fesetenv(const fenv_t *);
+int  fesetexceptflag(const fexcept_t *, int);
+int  fesetround(int);
+int  fetestexcept(int);
+int  feupdateenv(const fenv_t *);
+.fi \fR
+.P
+.RE
+.P
+The FENV_ACCESS pragma provides a means to inform the implementation
+when an application might access the floating-point environment to test
+floating-point status flags or run under non-default floating-point
+control modes. The pragma shall occur either outside external
+declarations or preceding all explicit declarations and statements
+inside a compound statement. When outside external declarations, the
+pragma takes effect from its occurrence until another FENV_ACCESS
+pragma is encountered, or until the end of the translation unit. When
+inside a compound statement, the pragma takes effect from its
+occurrence until another FENV_ACCESS pragma is encountered (including
+within a nested compound statement), or until the end of the compound
+statement; at the end of a compound statement the state for the pragma
+is restored to its condition just before the compound statement. If
+this pragma is used in any other context, the behavior is undefined. If
+part of an application tests floating-point status flags, sets
+floating-point control modes, or runs under non-default mode settings,
+but was translated with the state for the FENV_ACCESS pragma off, the
+behavior is undefined. The default state (on or off) for the pragma is
+implementation-defined. (When execution passes from a part of the
+application translated with FENV_ACCESS off to a part translated with
+FENV_ACCESS on, the state of the floating-point status flags is
+unspecified and the floating-point control modes have their default
+settings.)
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+This header is designed to support the floating-point exception status
+flags and directed-rounding control modes required by the IEC\ 60559:\|1989 standard, and
+other similar floating-point state information. Also it is designed to
+facilitate code portability among all systems.
+.P
+Certain application programming conventions support the intended model
+of use for the floating-point environment:
+.IP " *" 4
+A function call does not alter its caller's floating-point control
+modes, clear its caller's floating-point status flags, nor depend on
+the state of its caller's floating-point status flags unless the
+function is so documented.
+.IP " *" 4
+A function call is assumed to require default floating-point control
+modes, unless its documentation promises otherwise.
+.IP " *" 4
+A function call is assumed to have the potential for raising
+floating-point exceptions, unless its documentation promises otherwise.
+.P
+With these conventions, an application can safely assume default
+floating-point control modes (or be unaware of them). The
+responsibilities associated with accessing the floating-point
+environment fall on the application that does so explicitly.
+.P
+Even though the rounding direction macros may expand to constants
+corresponding to the values of FLT_ROUNDS, they are not required to do
+so.
+.P
+For example:
+.sp
+.RS 4
+.nf
+\fB
+#include <fenv.h>
+void f(double x)
+{
+    #pragma STDC FENV_ACCESS ON
+    void g(double);
+    void h(double);
+    /* ... */
+    g(x + 1);
+    h(x + 1);
+    /* ... */
+}
+.fi \fR
+.P
+.RE
+.P
+If the function
+\fIg\fR()
+might depend on status flags set as a side-effect of the first
+.IR x +1,
+or if the second
+.IR x +1
+might depend on control modes set as a side-effect of the call to
+function
+\fIg\fR(),
+then the application shall contain an appropriately placed invocation
+as follows:
+.sp
+.RS 4
+.nf
+\fB
+#pragma STDC FENV_ACCESS ON
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+.SS "The fexcept_t Type"
+.P
+.BR fexcept_t
+does not have to be an integer type. Its values must be obtained by a
+call to
+\fIfegetexceptflag\fR(),
+and cannot be created by logical operations from the exception macros.
+An implementation might simply implement
+.BR fexcept_t
+as an
+.BR int
+and use the representations reflected by the exception macros, but is
+not required to; other representations might contain extra information
+about the exceptions.
+.BR fexcept_t
+might be a
+.BR struct
+with a member for each exception (that might hold the address of the
+first or last floating-point instruction that caused that exception).
+The ISO/IEC\ 9899:\|1999 standard makes no claims about the internals of an
+.BR fexcept_t ,
+and so the user cannot inspect it.
+.SS "Exception and Rounding Macros"
+.P
+Macros corresponding to unsupported modes and rounding directions are
+not defined by the implementation and must not be defined by the
+application. An application might use
+.BR #ifdef
+to test for this.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIfeclearexcept\fR\^(\|)",
+.IR "\fIfegetenv\fR\^(\|)",
+.IR "\fIfegetexceptflag\fR\^(\|)",
+.IR "\fIfegetround\fR\^(\|)",
+.IR "\fIfeholdexcept\fR\^(\|)",
+.IR "\fIferaiseexcept\fR\^(\|)",
+.IR "\fIfetestexcept\fR\^(\|)",
+.IR "\fIfeupdateenv\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

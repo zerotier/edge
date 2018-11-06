@@ -1,0 +1,242 @@
+'\" et
+.TH inttypes.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+inttypes.h
+\(em fixed size integer types
+.SH SYNOPSIS
+.LP
+.nf
+#include <inttypes.h>
+.fi
+.SH DESCRIPTION
+Some of the functionality described on this reference page extends the
+ISO\ C standard. Applications shall define the appropriate feature test macro
+(see the System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment")
+to enable the visibility of these symbols in this header.
+.P
+The
+.IR <inttypes.h> 
+header shall include the
+.IR <stdint.h> 
+header.
+.P
+The
+.IR <inttypes.h> 
+header shall define at least the following types:
+.IP "\fBimaxdiv_t\fR" 12
+Structure type that is the type of the value returned by the
+\fIimaxdiv\fR()
+function.
+.IP "\fBwchar_t\fR" 12
+As described in
+.IR <stddef.h> .
+.P
+The
+.IR <inttypes.h> 
+header shall define the following macros. Each expands to a
+character string literal containing a conversion specifier, possibly
+modified by a length modifier, suitable for use within the
+.IR format
+argument of a formatted input/output function when converting the
+corresponding integer type. These macros have the general form of
+PRI (character string literals for the
+\fIfprintf\fR()
+and
+\fIfwprintf\fR()
+family of functions) or SCN (character string literals for the
+\fIfscanf\fR()
+and
+\fIfwscanf\fR()
+family of functions), followed by the conversion specifier, followed by
+a name corresponding to a similar type name in
+.IR <stdint.h> .
+In these names,
+.IR N
+represents the width of the type as described in
+.IR <stdint.h> .
+For example,
+.IR PRIdFAST32
+can be used in a format string to print the value of an integer of type
+.BR int_fast32_t .
+.P
+The
+\fIfprintf\fR()
+macros for signed integers are:
+.sp
+.RS
+.TS
+tab(!);
+le le le le le.
+PRId\fIN\fR!PRIdLEAST\fIN\fR!PRIdFAST\fIN\fR!PRIdMAX!PRIdPTR
+PRIi\fIN\fR!PRIiLEAST\fIN\fR!PRIiFAST\fIN\fR!PRIiMAX!PRIiPTR
+.TE
+.RE
+.P
+The
+\fIfprintf\fR()
+macros for unsigned integers are:
+.sp
+.RS
+.TS
+tab(!);
+le le le le le.
+PRIo\fIN\fR!PRIoLEAST\fIN\fR!PRIoFAST\fIN\fR!PRIoMAX!PRIoPTR
+PRIu\fIN\fR!PRIuLEAST\fIN\fR!PRIuFAST\fIN\fR!PRIuMAX!PRIuPTR
+PRIx\fIN\fR!PRIxLEAST\fIN\fR!PRIxFAST\fIN\fR!PRIxMAX!PRIxPTR
+PRIX\fIN\fR!PRIXLEAST\fIN\fR!PRIXFAST\fIN\fR!PRIXMAX!PRIXPTR
+.TE
+.RE
+.P
+The
+\fIfscanf\fR()
+macros for signed integers are:
+.sp
+.RS
+.TS
+tab(!);
+le le le le le.
+SCNd\fIN\fR!SCNdLEAST\fIN\fR!SCNdFAST\fIN\fR!SCNdMAX!SCNdPTR
+SCNi\fIN\fR!SCNiLEAST\fIN\fR!SCNiFAST\fIN\fR!SCNiMAX!SCNiPTR
+.TE
+.RE
+.P
+The
+\fIfscanf\fR()
+macros for unsigned integers are:
+.sp
+.RS
+.TS
+tab(!);
+le le le le le.
+SCNo\fIN\fR!SCNoLEAST\fIN\fR!SCNoFAST\fIN\fR!SCNoMAX!SCNoPTR
+SCNu\fIN\fR!SCNuLEAST\fIN\fR!SCNuFAST\fIN\fR!SCNuMAX!SCNuPTR
+SCNx\fIN\fR!SCNxLEAST\fIN\fR!SCNxFAST\fIN\fR!SCNxMAX!SCNxPTR
+.TE
+.RE
+.P
+For each type that the implementation provides in
+.IR <stdint.h> ,
+the corresponding
+\fIfprintf\fR()
+and
+\fIfwprintf\fR()
+macros shall be defined and the corresponding
+\fIfscanf\fR()
+and
+\fIfwscanf\fR()
+macros shall be defined unless the implementation does not have a
+suitable modifier for the type.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+intmax_t  imaxabs(intmax_t);
+imaxdiv_t imaxdiv(intmax_t, intmax_t);
+intmax_t  strtoimax(const char *restrict, char **restrict, int);
+uintmax_t strtoumax(const char *restrict, char **restrict, int);
+intmax_t  wcstoimax(const wchar_t *restrict, wchar_t **restrict, int);
+uintmax_t wcstoumax(const wchar_t *restrict, wchar_t **restrict, int);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+.LP
+.nf
+#include <inttypes.h>
+#include <wchar.h>
+int main(void)
+{
+    uintmax_t i = UINTMAX_MAX; // This type always exists.
+    wprintf(L"The largest integer value is %020"
+        PRIxMAX "\en", i);
+    return 0;
+}
+.fi
+.SH "APPLICATION USAGE"
+The purpose of
+.IR <inttypes.h> 
+is to provide a set of integer types whose definitions are consistent
+across machines and independent of operating systems and other
+implementation idiosyncrasies. It defines, through
+.BR typedef ,
+integer types of various sizes. Implementations are free to
+.BR typedef
+them as ISO\ C standard integer types or extensions that they support. Consistent
+use of this header will greatly increase the portability of applications
+across platforms.
+.SH RATIONALE
+The ISO/IEC\ 9899:\|1990 standard specified that the language should support four signed and
+unsigned integer data types\(em\c
+.BR char ,
+.BR short ,
+.BR int ,
+and
+.BR long \(em\c
+but placed very little requirement on their size other than that
+.BR int
+and
+.BR short
+be at least 16 bits and
+.BR long
+be at least as long as
+.BR int
+and not smaller than 32 bits. For 16-bit systems, most implementations
+assigned 8, 16, 16, and 32 bits to
+.BR char ,
+.BR short ,
+.BR int ,
+and
+.BR long ,
+respectively. For 32-bit systems, the common practice has been to
+assign 8, 16, 32, and 32 bits to these types. This difference in
+.BR int
+size can create some problems for users who migrate from one system to
+another which assigns different sizes to integer types, because the
+ISO\ C standard integer promotion rule can produce silent changes unexpectedly.
+The need for defining an extended integer type increased with the
+introduction of 64-bit systems.
+.SH "FUTURE DIRECTIONS"
+Macro names beginning with PRI or SCN followed by any lowercase letter
+or
+.BR 'X' 
+may be added to the macros defined in the
+.IR <inttypes.h> 
+header.
+.SH "SEE ALSO"
+.IR "\fB<stddef.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment",
+.IR "\fIimaxabs\fR\^(\|)",
+.IR "\fIimaxdiv\fR\^(\|)",
+.IR "\fIstrtoimax\fR\^(\|)",
+.IR "\fIwcstoimax\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

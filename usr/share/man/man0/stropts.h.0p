@@ -1,0 +1,433 @@
+'\" et
+.TH stropts.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+stropts.h
+\(em STREAMS interface (\fBSTREAMS\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <stropts.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <stropts.h> 
+header shall define the
+.BR bandinfo
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+int            bi_flag  \fRFlushing type.\fR
+unsigned char  bi_pri   \fRPriority band.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR strpeek
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+struct strbuf  ctlbuf   \fRThe control portion of the message.\fR
+struct strbuf  databuf  \fRThe data portion of the message.\fR
+t_uscalar_t    flags    \fRRS_HIPRI or 0.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR strbuf
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+char  *buf     \fRPointer to buffer.\fP
+int    len     \fRLength of data.\fP
+int    maxlen  \fRMaximum buffer length.\fP
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR strfdinsert
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+struct strbuf  ctlbuf   \fRThe control portion of the message.\fR
+struct strbuf  databuf  \fRThe data portion of the message.\fR
+int            fildes   \fRFile descriptor of the other STREAM.\fR
+t_uscalar_t    flags    \fRRS_HIPRI or 0.\fR
+int            offset   \fRRelative location of the stored value.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR strioctl
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+int    ic_cmd     \fIioctl\fR(\|) command.\fR
+char  *ic_dp      \fRPointer to buffer.\fR
+int    ic_len     \fRLength of data.\fR
+int    ic_timout  \fRTimeout for response.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR strrecvfd
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+int    fd   \fRReceived file descriptor.\fR
+gid_t  gid  \fRGID of sender.\fR
+uid_t  uid  \fRUID of sender.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR uid_t
+and
+.BR gid_t
+types through
+.BR typedef ,
+as described in
+.IR <sys/types.h> .
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR t_scalar_t
+and
+.BR t_uscalar_t
+types, respectively, as signed and unsigned opaque types of equal
+length of at least 32 bits.
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR str_list
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+struct str_mlist  *sl_modlist  \fRSTREAMS module names.\fR
+int                sl_nmods    \fRNumber of STREAMS module names.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define the
+.BR str_mlist
+structure, which shall include at least the following member:
+.sp
+.RS 4
+.nf
+\fB
+char  l_name[FMNAMESZ+1]  \fRA STREAMS module name.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constants for use
+as the
+.IR request
+argument to
+\fIioctl\fR():
+.IP I_ATMARK 12
+Is the top message ``marked''?
+.IP I_CANPUT 12
+Is a band writable?
+.IP I_CKBAND 12
+See if any messages exist in a band.
+.IP I_FDINSERT 12
+Send implementation-defined information about another STREAM.
+.IP I_FIND 12
+Look for a STREAMS module.
+.IP I_FLUSH 12
+Flush a STREAM.
+.IP I_FLUSHBAND 12
+Flush one band of a STREAM.
+.IP I_GETBAND 12
+Get the band of the top message on a STREAM.
+.IP I_GETCLTIME 12
+Get close time delay.
+.IP I_GETSIG 12
+Retrieve current notification signals.
+.IP I_GRDOPT 12
+Get the read mode.
+.IP I_GWROPT 12
+Get the write mode.
+.IP I_LINK 12
+Connect two STREAMs.
+.IP I_LIST 12
+Get all the module names on a STREAM.
+.IP I_LOOK 12
+Get the top module name.
+.IP I_NREAD 12
+Size the top message.
+.IP I_PEEK 12
+Peek at the top message on a STREAM.
+.IP I_PLINK 12
+Persistently connect two STREAMs.
+.IP I_POP 12
+Pop a STREAMS module.
+.IP I_PUNLINK 12
+Dismantle a persistent STREAMS link.
+.IP I_PUSH 12
+Push a STREAMS module.
+.IP I_RECVFD 12
+Get a file descriptor sent via I_SENDFD.
+.IP I_SENDFD 12
+Pass a file descriptor through a STREAMS pipe.
+.IP I_SETCLTIME 12
+Set close time delay.
+.IP I_SETSIG 12
+Ask for notification signals.
+.IP I_SRDOPT 12
+Set the read mode.
+.IP I_STR 12
+Send a STREAMS
+\fIioctl\fR().
+.IP I_SWROPT 12
+Set the write mode.
+.IP I_UNLINK 12
+Disconnect two STREAMs.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constant for use
+with I_LOOK:
+.IP FMNAMESZ 12
+The minimum size in bytes of the buffer referred to by the
+.IR arg
+argument.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constants for use
+with I_FLUSH:
+.IP FLUSHR 12
+Flush read queues.
+.IP FLUSHRW 12
+Flush read and write queues.
+.IP FLUSHW 12
+Flush write queues.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constants for use
+with I_SETSIG:
+.IP S_BANDURG 12
+When used in conjunction with S_RDBAND, SIGURG is generated instead of
+SIGPOLL when a priority message reaches the front of the STREAM head
+read queue.
+.IP S_ERROR 12
+Notification of an error condition reaches the STREAM head.
+.IP S_HANGUP 12
+Notification of a hangup reaches the STREAM head.
+.IP S_HIPRI 12
+A high-priority message is present on a STREAM head read queue.
+.IP S_INPUT 12
+A message, other than a high-priority message, has arrived at the head
+of a STREAM head read queue.
+.IP S_MSG 12
+A STREAMS signal message that contains the SIGPOLL signal reaches the
+front of the STREAM head read queue.
+.IP S_OUTPUT 12
+The write queue for normal data (priority band 0) just below the STREAM
+head is no longer full. This notifies the process that there is room
+on the queue for sending (or writing) normal data downstream.
+.IP S_RDBAND 12
+A message with a non-zero priority band has arrived at the head of a
+STREAM head read queue.
+.IP S_RDNORM 12
+A normal (priority band set to 0) message has arrived at the head of a
+STREAM head read queue.
+.IP S_WRBAND 12
+The write queue for a non-zero priority band just below the STREAM head
+is no longer full.
+.IP S_WRNORM 12
+Equivalent to S_OUTPUT.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constant for use
+with I_PEEK:
+.IP RS_HIPRI 12
+Only look for high-priority messages.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constants for use
+with I_SRDOPT:
+.IP RMSGD 12
+Message-discard mode.
+.IP RMSGN 12
+Message-non-discard mode.
+.IP RNORM 12
+Byte-STREAM mode, the default.
+.IP RPROTDAT 12
+Deliver the control part of a message as data when a process issues a
+\fIread\fR().
+.IP RPROTDIS 12
+Discard the control part of a message, delivering any data part, when a
+process issues a
+\fIread\fR().
+.IP RPROTNORM 12
+Fail
+\fIread\fR()
+with
+.BR [EBADMSG] 
+if a message containing a control part is at the front of the STREAM
+head read queue.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constant for use
+with I_SWOPT:
+.IP SNDZERO 12
+Send a zero-length message downstream when a
+\fIwrite\fR()
+of 0 bytes occurs.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constants for use
+with I_ATMARK:
+.IP ANYMARK 12
+Check if the message is marked.
+.IP LASTMARK 12
+Check if the message is the last one marked on the queue.
+.P
+The
+.IR <stropts.h> 
+header shall define at least the following symbolic constant for use
+with I_UNLINK:
+.IP MUXID_ALL 12
+Unlink all STREAMs linked to the STREAM associated with
+.IR fildes .
+.P
+The
+.IR <stropts.h> 
+header shall define the following symbolic constants for
+\fIgetmsg\fR(),
+\fIgetpmsg\fR(),
+\fIputmsg\fR(),
+and
+\fIputpmsg\fR():
+.IP MORECTL 12
+More control information is left in message.
+.IP MOREDATA 12
+More data is left in message.
+.IP MSG_ANY 12
+Receive any message.
+.IP MSG_BAND 12
+Receive message from specified band.
+.IP MSG_HIPRI 12
+Send/receive high-priority message.
+.P
+The
+.IR <stropts.h> 
+header may make visible all of the symbols from
+.IR <unistd.h> .
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int    fattach(int, const char *);
+int    fdetach(const char *);
+int    getmsg(int, struct strbuf *restrict, struct strbuf *restrict,
+           int *restrict);
+int    getpmsg(int, struct strbuf *restrict, struct strbuf *restrict,
+           int *restrict, int *restrict);
+int    ioctl(int, int, ...);
+int    isastream(int);
+int    putmsg(int, const struct strbuf *, const struct strbuf *, int);
+int    putpmsg(int, const struct strbuf *, const struct strbuf *, int,
+           int);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIfattach\fR\^(\|)",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIfdetach\fR\^(\|)",
+.IR "\fIgetmsg\fR\^(\|)",
+.IR "\fIioctl\fR\^(\|)",
+.IR "\fIisastream\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIpipe\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIpoll\fR\^(\|)",
+.IR "\fIputmsg\fR\^(\|)",
+.IR "\fIsignal\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

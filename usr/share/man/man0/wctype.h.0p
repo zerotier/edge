@@ -1,0 +1,178 @@
+'\" et
+.TH wctype.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+wctype.h
+\(em wide-character classification and mapping utilities
+.SH SYNOPSIS
+.LP
+.nf
+#include <wctype.h>
+.fi
+.SH DESCRIPTION
+Some of the functionality described on this reference page extends the
+ISO\ C standard. Applications shall define the appropriate feature test macro
+(see the System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment")
+to enable the visibility of these symbols in this header.
+.P
+The
+.IR <wctype.h> 
+header shall define the following types:
+.IP "\fBwint_t\fP" 12
+As described in
+.IR <wchar.h> .
+.IP "\fBwctrans_t\fP" 12
+A scalar type that can hold values which represent locale-specific
+character mappings.
+.IP "\fBwctype_t\fP" 12
+As described in
+.IR <wchar.h> .
+.P
+The
+.IR <wctype.h> 
+header shall define the
+.BR locale_t
+type as described in
+.IR <locale.h> .
+.P
+The
+.IR <wctype.h> 
+header shall define the following macro:
+.IP WEOF 12
+As described in
+.IR <wchar.h> .
+.P
+For all functions described in this header that accept an argument of
+type
+.BR wint_t ,
+the value is representable as a
+.BR wchar_t
+or equals the value of WEOF. If this argument has any other value, the
+behavior is undefined.
+.P
+The behavior of these functions shall be affected by the
+.IR LC_CTYPE
+category of the current locale.
+.P
+Inclusion of the
+.IR <wctype.h> 
+header may make visible all symbols from the headers
+.IR <ctype.h> ,
+.IR <stdarg.h> ,
+.IR <stddef.h> ,
+.IR <stdio.h> ,
+.IR <stdlib.h> ,
+.IR <string.h> ,
+.IR <time.h> ,
+and
+.IR <wchar.h> .
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided for use with ISO\ C standard
+compilers.
+.sp
+.RS 4
+.nf
+\fB
+int       iswalnum(wint_t);
+int       iswalnum_l(wint_t, locale_t);
+int       iswalpha(wint_t);
+int       iswalpha_l(wint_t, locale_t);
+int       iswblank(wint_t);
+int       iswblank_l(wint_t, locale_t);
+int       iswcntrl(wint_t);
+int       iswcntrl_l(wint_t, locale_t);
+int       iswctype(wint_t, wctype_t);
+int       iswctype_l(wint_t, wctype_t, locale_t);
+int       iswdigit(wint_t);
+int       iswdigit_l(wint_t, locale_t);
+int       iswgraph(wint_t);
+int       iswgraph_l(wint_t, locale_t);
+int       iswlower(wint_t);
+int       iswlower_l(wint_t, locale_t);
+int       iswprint(wint_t);
+int       iswprint_l(wint_t, locale_t);
+int       iswpunct(wint_t);
+int       iswpunct_l(wint_t, locale_t);
+int       iswspace(wint_t);
+int       iswspace_l(wint_t, locale_t);
+int       iswupper(wint_t);
+int       iswupper_l(wint_t, locale_t);
+int       iswxdigit(wint_t);
+int       iswxdigit_l(wint_t, locale_t);
+wint_t    towctrans(wint_t, wctrans_t);
+wint_t    towctrans_l(wint_t, wctrans_t, locale_t);
+wint_t    towlower(wint_t);
+wint_t    towlower_l(wint_t, locale_t);
+wint_t    towupper(wint_t);
+wint_t    towupper_l(wint_t, locale_t);
+wctrans_t wctrans(const char *);
+wctrans_t wctrans_l(const char *, locale_t);
+wctype_t  wctype(const char *);
+wctype_t  wctype_l(const char *, locale_t);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<ctype.h>\fP",
+.IR "\fB<locale.h>\fP",
+.IR "\fB<stdarg.h>\fP",
+.IR "\fB<stddef.h>\fP",
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<stdlib.h>\fP",
+.IR "\fB<string.h>\fP",
+.IR "\fB<time.h>\fP",
+.IR "\fB<wchar.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment",
+.IR "\fIiswalnum\fR\^(\|)",
+.IR "\fIiswalpha\fR\^(\|)",
+.IR "\fIiswblank\fR\^(\|)",
+.IR "\fIiswcntrl\fR\^(\|)",
+.IR "\fIiswctype\fR\^(\|)",
+.IR "\fIiswdigit\fR\^(\|)",
+.IR "\fIiswgraph\fR\^(\|)",
+.IR "\fIiswlower\fR\^(\|)",
+.IR "\fIiswprint\fR\^(\|)",
+.IR "\fIiswpunct\fR\^(\|)",
+.IR "\fIiswspace\fR\^(\|)",
+.IR "\fIiswupper\fR\^(\|)",
+.IR "\fIiswxdigit\fR\^(\|)",
+.IR "\fIsetlocale\fR\^(\|)",
+.IR "\fItowctrans\fR\^(\|)",
+.IR "\fItowlower\fR\^(\|)",
+.IR "\fItowupper\fR\^(\|)",
+.IR "\fIwctrans\fR\^(\|)",
+.IR "\fIwctype\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

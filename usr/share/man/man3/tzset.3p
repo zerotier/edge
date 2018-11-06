@@ -1,0 +1,128 @@
+'\" et
+.TH TZSET "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+daylight,
+timezone,
+tzname,
+tzset
+\(em set timezone conversion information
+.SH SYNOPSIS
+.LP
+.nf
+#include <time.h>
+.P
+extern int daylight;
+extern long timezone;
+extern char *tzname[2];
+void tzset(void);
+.fi
+.SH DESCRIPTION
+The
+\fItzset\fR()
+function shall use the value of the environment variable
+.IR TZ
+to set time conversion information used by
+.IR "\fIctime\fR\^(\|)",
+.IR "\fIlocaltime\fR\^(\|)",
+.IR "\fImktime\fR\^(\|)",
+and
+.IR "\fIstrftime\fR\^(\|)".
+If
+.IR TZ
+is absent from the environment, implementation-defined default
+timezone information shall be used.
+.P
+The
+\fItzset\fR()
+function shall set the external variable
+.IR tzname
+as follows:
+.sp
+.RS 4
+.nf
+\fB
+tzname[0] = "\fIstd\fP";
+tzname[1] = "\fIdst\fP";
+.fi \fR
+.P
+.RE
+.P
+where
+.IR std
+and
+.IR dst
+are as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables".
+.P
+The
+\fItzset\fR()
+function also shall set the external variable
+.IR daylight
+to 0 if Daylight Savings Time conversions should never be applied for
+the timezone in use; otherwise, non-zero. The external variable
+.IR timezone
+shall be set to the difference, in seconds, between Coordinated
+Universal Time (UTC) and local standard time.
+.SH "RETURN VALUE"
+The
+\fItzset\fR()
+function shall not return a value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+Example
+.IR TZ
+variables and their timezone differences are given in the table below:
+.TS
+center box tab(!);
+cI | cI
+lw(1i) | lw(1i).
+TZ!timezone
+_
+EST5EDT!5*60*60
+GMT0!0*60*60
+JST-9!\(mi9*60*60
+MET-1MEST!\(mi1*60*60
+MST7MDT!7*60*60
+PST8PDT!8*60*60
+.TE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIctime\fR\^(\|)",
+.IR "\fIlocaltime\fR\^(\|)",
+.IR "\fImktime\fR\^(\|)",
+.IR "\fIstrftime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

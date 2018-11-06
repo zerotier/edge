@@ -1,0 +1,3090 @@
+'\" et
+.TH MAILX "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mailx
+\(em process messages
+.SH SYNOPSIS
+.SS "Send Mode"
+.sp
+.RS 4
+.nf
+\fB
+mailx \fB[\fR\(mis \fIsubject\fB]\fI address\fR...
+.fi \fR
+.P
+.RE
+.SS "Receive Mode"
+.sp
+.RS 4
+.nf
+\fB
+mailx \(mie
+.P
+mailx \fB[\fR\(miHiNn\fB] [\fR\(miF\fB] [\fR\(miu \fIuser\fB]\fR
+.P
+mailx \(mif \fB[\fR\(miHiNn\fB] [\fR\(miF\fB] [\fIfile\fB]\fR
+.fi \fR
+.P
+.RE
+.SH DESCRIPTION
+The
+.IR mailx
+utility provides a message sending and receiving facility. It has two
+major modes, selected by the options used: Send Mode and Receive
+Mode.
+.P
+On systems that do not support the User Portability Utilities option,
+an application using
+.IR mailx
+shall have the ability to send messages in an unspecified manner (Send
+Mode). Unless the first character of one or more lines is
+<tilde>
+(\c
+.BR '~' ),
+all characters in the input message shall appear in the delivered
+message, but additional characters may be inserted in the message
+before it is retrieved.
+.P
+On systems supporting the User Portability Utilities option,
+mail-receiving capabilities and other interactive features, Receive
+Mode, described below, also shall be enabled.
+.SS "Send Mode"
+.P
+Send Mode can be used by applications or users to send messages from
+the text in standard input.
+.SS "\*!Receive Mode"
+.P
+Receive Mode is more oriented towards interactive users. Mail can be read
+and sent in this interactive mode.
+.P
+When reading mail,
+.IR mailx
+provides commands to facilitate saving, deleting, and responding to
+messages. When sending mail,
+.IR mailx
+allows editing, reviewing, and other modification of the message as it
+is entered.
+.P
+Incoming mail shall be stored in one or more unspecified locations for
+each user, collectively called the system
+.IR mailbox
+for that user. When
+.IR mailx
+is invoked in Receive Mode, the system mailbox shall be the default
+place to find new mail. As messages are read, they shall be marked to
+be moved to a secondary file for storage, unless specific action is
+taken. This secondary file is called the
+.BR mbox
+and is normally located in the directory referred to by the
+.IR HOME
+environment variable (see
+.IR MBOX
+in the ENVIRONMENT VARIABLES section for a description of this file).
+Messages shall remain in this file until explicitly removed. When the
+.BR \(mif
+option is used to read mail messages from secondary files, messages
+shall be retained in those files unless specifically removed. All
+three of these locations\(emsystem mailbox,
+.BR mbox ,
+and secondary file\(emare referred to in this section as simply
+``mailboxes'', unless more specific identification is required.
+.SH OPTIONS
+The
+.IR mailx
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported. (Only the
+.BR \(mis
+.IR subject
+option shall be required on all systems. The other options are required
+only on systems supporting the User Portability Utilities option.)
+.IP "\fB\(mie\fP" 10
+Test for the presence of mail in the system mailbox. The
+.IR mailx
+utility shall write nothing and exit with a successful return code if
+there is mail to read.
+.IP "\fB\(mif\fP" 10
+Read messages from the file named by the
+.IR file
+operand instead of the system mailbox. (See also
+.BR folder .)
+If no
+.IR file
+operand is specified, read messages from
+.BR mbox
+instead of the system mailbox.
+.IP "\fB\(miF\fP" 10
+Record the message in a file named after the first recipient. The name
+is the login-name portion of the address found first on the
+.BR To:
+line in the mail header. Overrides the
+.BR record
+variable, if set (see
+.IR "Internal Variables in mailx").
+.IP "\fB\(miH\fP" 10
+Write a header summary only.
+.IP "\fB\(mii\fP" 10
+Ignore interrupts. (See also
+.BR ignore .)
+.IP "\fB\(min\fP" 10
+Do not initialize from the system default start-up file. See the
+EXTENDED DESCRIPTION section.
+.IP "\fB\(miN\fP" 10
+Do not write an initial header summary.
+.IP "\fB\(mis\0\fIsubject\fR" 10
+Set the
+.BR Subject
+header field to
+.IR subject .
+All characters in the
+.IR subject
+string shall appear in the delivered message. The results are
+unspecified if
+.IR subject
+is longer than
+{LINE_MAX}
+\(mi 10 bytes or contains a
+<newline>.
+.IP "\fB\(miu\0\fIuser\fR" 10
+Read the system mailbox of the login name
+.IR user .
+This shall only be successful if the invoking user has appropriate
+privileges to read the system mailbox of that user.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIaddress\fR" 10
+Addressee of message. When
+.BR \(min
+is specified and no user start-up files are accessed (see the EXTENDED
+DESCRIPTION section), the user or application shall ensure this is an
+address to pass to the mail delivery system. Any system or user
+start-up files may enable aliases (see
+.BR alias
+under
+.IR "Commands in mailx")
+that may modify the form of
+.IR address
+before it is passed to the mail delivery system.
+.IP "\fIfile\fR" 10
+A pathname of a file to be read instead of the system mailbox when
+.BR \(mif
+is specified. The meaning of the
+.IR file
+option-argument shall be affected by the contents of the
+.BR folder
+internal variable; see
+.IR "Internal Variables in mailx".
+.SH STDIN
+When
+.IR mailx
+is invoked in Send Mode (the first synopsis line), standard input shall
+be the message to be delivered to the specified addresses.
+When in Receive Mode, user commands shall be accepted from
+.IR stdin .
+If the User Portability Utilities option is not supported, standard
+input lines beginning with a
+<tilde>
+(\c
+.BR '~' )
+character produce unspecified results.
+.P
+If the User Portability Utilities option is supported, then in both
+Send and Receive Modes, standard input lines beginning with the escape
+character (usually
+<tilde>
+(\c
+.BR '~' ))
+shall affect processing as described in
+.IR "Command Escapes in mailx".
+.SH "INPUT FILES"
+When
+.IR mailx
+is used as described by this volume of POSIX.1\(hy2008, the
+.IR file
+option-argument (see the
+.BR \(mif
+option) and the
+.BR mbox
+shall be text files containing mail messages, formatted as described in
+the OUTPUT FILES section. The nature of the system mailbox is
+unspecified; it need not be a file.
+.SH "ENVIRONMENT VARIABLES"
+Some of the functionality described in this section shall be provided on
+implementations that support the User Portability Utilities option
+as described in the text, and is not further shaded for this option.
+.P
+The following environment variables shall affect the execution of
+.IR mailx :
+.IP "\fIDEAD\fP" 10
+Determine the pathname of the file in which to save partial messages in
+case of interrupts or delivery errors. The default shall be
+.BR dead.letter
+in the directory named by the
+.IR HOME
+variable. The behavior of
+.IR mailx
+in saving partial messages is unspecified if the User Portability
+Utilities option is not supported and
+.IR DEAD
+is not defined with the value
+.BR /dev/null .
+.IP "\fIEDITOR\fP" 10
+Determine the name of a utility to invoke when the
+.BR edit
+(see
+.IR "Commands in mailx")
+or
+.BR ~e
+(see
+.IR "Command Escapes in mailx")
+command is used. The default editor is unspecified.
+On XSI-conformant systems it is
+.IR ed .
+The effects of this variable are unspecified if the User Portability
+Utilities option is not supported.
+.IP "\fIHOME\fP" 10
+Determine the pathname of the user's home directory.
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files) and the handling of
+case-insensitive address and header-field comparisons.
+.IP "\fILC_TIME\fP" 10
+This variable may determine the format and contents of the date and
+time strings written by
+.IR mailx .
+This volume of POSIX.1\(hy2008 specifies the effects of this variable only for systems
+supporting the User Portability Utilities option.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fILISTER\fP" 10
+Determine a string representing the command for writing the contents of
+the
+.BR folder
+directory to standard output when the
+.BR folders
+command is given (see
+.BR folders
+in
+.IR "Commands in mailx").
+Any string acceptable as a
+.IR command_string
+operand to the
+.IR sh
+.BR \(mic
+command shall be valid. If this variable is null or not set, the output
+command shall be
+.IR ls .
+The effects of this variable are unspecified if the User Portability
+Utilities option is not supported.
+.IP "\fIMAILRC\fP" 10
+Determine the pathname of the start-up file. The default shall be
+.BR .mailrc
+in the directory referred to by the
+.IR HOME
+environment variable. The behavior of
+.IR mailx
+is unspecified if the User Portability Utilities option is not
+supported and
+.IR MAILRC
+is not defined with the value
+.BR /dev/null .
+.IP "\fIMBOX\fP" 10
+Determine a pathname of the file to save messages from the system
+mailbox that have been read. The
+.BR exit
+command shall override this function, as shall saving the message
+explicitly in another file. The default shall be
+.BR mbox
+in the directory named by the
+.IR HOME
+variable. The effects of this variable are unspecified if the User
+Portability Utilities option is not supported.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fIPAGER\fP" 10
+Determine a string representing an output filtering or pagination
+command for writing the output to the terminal. Any string acceptable
+as a
+.IR command_string
+operand to the
+.IR sh
+.BR \(mic
+command shall be valid. When standard output is a terminal device, the
+message output shall be piped through the command if the
+.IR mailx
+internal variable
+.BR crt
+is set to a value less the number of lines in the message; see
+.IR "Internal Variables in mailx".
+If the
+.IR PAGER
+variable is null or not set, the paginator shall be either
+.IR more
+or another paginator utility documented in the system documentation.
+The effects of this variable are unspecified if the User Portability
+Utilities option is not supported.
+.IP "\fISHELL\fP" 10
+Determine the name of a preferred command interpreter. The default
+shall be
+.IR sh .
+The effects of this variable are unspecified if the User Portability
+Utilities option is not supported.
+.IP "\fITERM\fP" 10
+If the internal variable
+.BR screen
+is not specified, determine the name of the terminal type to indicate
+in an unspecified manner the number of lines in a screenful of headers.
+If
+.IR TERM
+is not set or is set to null, an unspecified default terminal type
+shall be used and the value of a screenful is unspecified. The effects
+of this variable are unspecified if the User Portability Utilities
+option is not supported.
+.IP "\fITZ\fP" 10
+This variable may determine the timezone used to calculate date and
+time strings written by
+.IR mailx .
+If
+.IR TZ
+is unset or null, an unspecified default timezone shall be used.
+.IP "\fIVISUAL\fP" 10
+Determine a pathname of a utility to invoke when the
+.BR visual
+command (see
+.IR "Commands in mailx")
+or
+.BR ~v
+command-escape (see
+.IR "Command Escapes in mailx")
+is used. If this variable is null or not set, the full-screen editor
+shall be
+.IR vi .
+The effects of this variable are unspecified if the User Portability
+Utilities option is not supported.
+.SH "ASYNCHRONOUS EVENTS"
+When
+.IR mailx
+is in Send Mode and standard input is not a terminal, it shall take the
+standard action for all signals.
+.P
+In
+Receive Mode, or in
+Send Mode when standard input is a terminal, if a SIGINT signal
+is received:
+.IP " 1." 4
+If in command mode, the current command, if there is one, shall be
+aborted, and a command-mode prompt shall be written.
+.IP " 2." 4
+If in input mode:
+.RS 4 
+.IP " a." 4
+If
+.BR ignore
+is set,
+.IR mailx
+shall write
+.BR \(dq@\en\(dq ,
+discard the current input line, and continue processing, bypassing the
+message-abort mechanism described in item 2b.
+.IP " b." 4
+If the interrupt was received while sending mail, either when in
+Receive Mode or in
+Send Mode, a message shall be written, and another
+subsequent interrupt, with no other intervening characters typed, shall
+be required to abort the mail message.
+If in Receive Mode and another
+interrupt is received, a command-mode prompt shall be written.
+If in Send Mode and another interrupt is received,
+.IR mailx
+shall terminate with a non-zero status.
+.RS 4 
+.P
+In both cases listed in item b, if the message is not empty:
+.IP " i." 5
+If
+.BR save
+is enabled and the file named by
+.IR DEAD
+can be created, the message shall be written to the file named by
+.IR DEAD .
+If the file exists, the message shall be written to replace the
+contents of the file.
+.IP ii. 5
+If
+.BR save
+is not enabled, or
+the file named by
+.IR DEAD
+cannot be created, the message shall not be saved.
+.RE
+.RE
+.P
+The
+.IR mailx
+utility shall take the standard action for all other signals.
+.SH STDOUT
+In command and input modes, all output, including prompts and messages,
+shall be written to standard output.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+Various
+.IR mailx
+commands and command escapes can create or add to files, including the
+.BR mbox ,
+the dead-letter file, and secondary mailboxes. When
+.IR mailx
+is used as described in this volume of POSIX.1\(hy2008, these files shall be text files,
+formatted as follows:
+.sp
+.RS
+\fRline beginning with \fBFrom<space>
+.br
+[\fRone or more \fIheader-lines\fR; see
+.IR "Commands in mailx"]
+.br
+\fIempty line
+.br
+\fB[\fRzero or more \fIbody lines
+.br
+\fIempty line]
+.br
+\fB[\fRline beginning with \fBFrom<space>...]\fR
+.RE
+.P
+where each message begins with the
+.BR "From\0<space>"
+line shown, preceded by the beginning of the file or an empty line.
+(The
+.BR "From <space>"
+line is considered to be part of the message header, but not one of the
+header-lines referred to in
+.IR "Commands in mailx";
+thus, it shall not be affected by the
+.BR discard ,
+.BR ignore ,
+or
+.BR retain
+commands.) The formats of the remainder of the
+.BR "From <space>"
+line and any additional header lines are unspecified, except that none
+shall be empty. The format of a message body line is also unspecified,
+except that no line following an empty line shall start with
+.BR "From <space>" ;
+.IR mailx
+shall modify any such user-entered message body lines (following an
+empty line and beginning with
+.BR "From <space>" )
+by adding one or more characters to precede the
+.BR 'F' ;
+it may add these characters to
+.BR "From <space>"
+lines that are not preceded by an empty line.
+.P
+When a message from the system mailbox or entered by the user is not a
+text file, it is implementation-defined how such a message is stored
+in files written by
+.IR mailx .
+.SH "EXTENDED DESCRIPTION"
+The functionality in the entire EXTENDED DESCRIPTION section shall
+be provided on implementations supporting the User Portability
+Utilities option.
+The functionality described in this section shall be provided on
+implementations that support the User Portability Utilities option
+(and the rest of this section is not further shaded for this option).
+.P
+The
+.IR mailx
+utility need not support for all character encodings in all
+circumstances. For example, inter-system mail may be restricted to
+7-bit data by the underlying network, 8-bit data need not be portable
+to non-internationalized systems, and so on. Under these
+circumstances, it is recommended that only characters defined in the
+ISO/IEC\ 646:\|1991 standard International Reference Version (equivalent to ASCII) 7-bit range
+of characters be used.
+.P
+When
+.IR mailx
+is invoked using one of the Receive Mode synopsis forms, it shall write
+a page of header-summary lines (if
+.BR \(miN
+was not specified and there are messages, see below), followed by a
+prompt indicating that
+.IR mailx
+can accept regular commands (see
+.IR "Commands in mailx");
+this is termed
+.IR "command mode" .
+The page of header-summary lines shall contain the first new message if
+there are new messages, or the first unread message if there are unread
+messages, or the first message. When
+.IR mailx
+is invoked using the Send Mode synopsis and standard input is a
+terminal, if no subject is specified on the command line and the
+.BR asksub
+variable is set, a prompt for the subject shall be written. At this
+point,
+.IR mailx
+shall be in input mode. This input mode shall also be entered when using
+one of the Receive Mode synopsis forms and a reply or new message is
+composed using the
+.BR reply ,
+.BR Reply ,
+.BR followup ,
+.BR Followup ,
+or
+.BR mail
+commands and standard input is a terminal. When the message is typed
+and the end of the message is encountered, the message shall be passed to
+the mail delivery software. Commands can be entered by beginning a line
+with the escape character (by default,
+<tilde>
+(\c
+.BR '~' ))
+followed by a single command letter and optional arguments. See
+.IR "Commands in mailx"
+for a summary of these commands. It is unspecified what effect these
+commands will have if standard input is not a terminal when a message
+is entered using either the Send Mode synopsis, or the Read Mode
+commands
+.BR reply ,
+.BR Reply ,
+.BR followup ,
+.BR Followup ,
+or
+.BR mail .
+.TP 10
+.BR Note:
+For notational convenience, this section uses the default escape
+character,
+<tilde>,
+in all references and examples.
+.P
+.P
+At any time, the behavior of
+.IR mailx
+shall be governed by a set of environmental and internal variables.
+These are flags and valued parameters that can be set and cleared via
+the
+.IR mailx
+.BR set
+and
+.BR unset
+commands.
+.P
+Regular commands are of the form:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcommand\fB] [\fImsglist\fB] [\fIargument \fR...\fB]
+.fi \fR
+.P
+.RE
+.P
+If no
+.IR command
+is specified in command mode,
+.BR next
+shall be assumed. In input mode, commands shall be recognized by the
+escape character, and lines not treated as commands shall be taken as
+input for the message.
+.P
+In command mode, each message shall be assigned a sequential number,
+starting with 1.
+.P
+All messages have a state that shall affect how they are displayed in
+the header summary and how they are retained or deleted upon
+termination of
+.IR mailx .
+There is at any time the notion of a
+.IR current
+message, which shall be marked by a
+.BR '>' 
+at the beginning of a line in the header summary. When
+.IR mailx
+is invoked using one of the Receive Mode synopsis forms, the current
+message shall be the first new message, if there is a new message, or
+the first unread message if there is an unread message, or the first
+message if there are any messages, or unspecified if there are no
+messages in the mailbox. Each command that takes an optional list of
+messages (\fImsglist\fP) or an optional single message (\fImessage\fP)
+on which to operate shall leave the current message set to the
+highest-numbered message of the messages specified, unless the command
+deletes messages, in which case the current message shall be set to the
+first undeleted message (that is, a message not in the deleted state)
+after the highest-numbered message deleted by the command, if one
+exists, or the first undeleted message before the highest-numbered
+message deleted by the command, if one exists, or to an unspecified
+value if there are no remaining undeleted messages. All messages
+shall be in one of the following states:
+.IP "\fInew\fR" 10
+The message is present in the system mailbox and has not been viewed by
+the user or moved to any other state. Messages in state
+.IR new
+when
+.IR mailx
+quits shall be retained in the system mailbox.
+.IP "\fIunread\fR" 10
+The message has been present in the system mailbox for more than one
+invocation of
+.IR mailx
+and has not been viewed by the user or moved to any other state.
+Messages in state
+.IR unread
+when
+.IR mailx
+quits shall be retained in the system mailbox.
+.IP "\fIread\fR" 10
+The message has been processed by one of the following commands:
+.BR ~f ,
+.BR ~m ,
+.BR ~F ,
+.BR ~M ,
+.BR copy ,
+.BR mbox ,
+.BR next ,
+.BR pipe ,
+.BR print ,
+.BR Print ,
+.BR top ,
+.BR type ,
+.BR Type ,
+.BR undelete .
+The
+.BR delete ,
+.BR dp ,
+and
+.BR dt
+commands may also cause the next message to be marked as
+.IR read ,
+depending on the value of the
+.BR autoprint
+variable. Messages that are in the system mailbox and in state
+.IR read
+when
+.IR mailx
+quits shall be saved in the
+.BR mbox ,
+unless the internal variable
+.BR hold
+was set. Messages that are in the
+.BR mbox
+or in a secondary mailbox and in state
+.IR read
+when
+.IR mailx
+quits shall be retained in their current location.
+.IP "\fIdeleted\fR" 10
+The message has been processed by one of the following commands:
+.BR delete ,
+.BR dp ,
+.BR dt .
+Messages in state
+.IR deleted
+when
+.IR mailx
+quits shall be deleted. Deleted messages shall be ignored until
+.IR mailx
+quits or changes mailboxes or they are specified to the undelete
+command; for example, the message specification /\c
+.IR string
+shall only search the subject lines of messages that have not yet been
+deleted, unless the command operating on the list of messages is
+.BR undelete .
+No deleted message or deleted message header shall be displayed by any
+.IR mailx
+command other than
+.BR undelete .
+.IP "\fIpreserved\fR" 10
+The message has been processed by a
+.BR preserve
+command. When
+.IR mailx
+quits, the message shall be retained in its current location.
+.IP "\fIsaved\fR" 10
+The message has been processed by one of the following commands:
+.BR save
+or
+.BR write .
+If the current mailbox is the system mailbox, and the internal variable
+.BR keepsave
+is set, messages in the state saved shall be saved to the file
+designated by the
+.IR MBOX
+variable (see the ENVIRONMENT VARIABLES section). If the current
+mailbox is the system mailbox, messages in the state
+.IR saved
+shall be deleted from the current mailbox, when the
+.BR quit
+or
+.BR file
+command is used to exit the current mailbox.
+.P
+The header-summary line for each message shall indicate the state of
+the message.
+.P
+Many commands take an optional list of messages (\c
+.IR msglist )
+on which to operate, which defaults to the current message. A
+.IR msglist
+is a list of message specifications separated by
+<blank>
+characters, which can include:
+.IP "\fRn\fR" 8
+Message number
+.IR n .
+.IP "\fR+\fR" 8
+The next undeleted message, or the next deleted message for the
+.BR undelete
+command.
+.IP "\fR\(mi\fR" 8
+The next previous undeleted message, or the next previous deleted
+message for the
+.BR undelete
+command.
+.IP "\fR.\fR" 8
+The current message.
+.IP "\fR^\fR" 8
+The first undeleted message, or the first deleted message for the
+.BR undelete
+command.
+.IP "\fR$\fR" 8
+The last message.
+.IP "\fR*\fR" 8
+All messages.
+.IP "\fRn\(hym\fR" 8
+An inclusive range of message numbers.
+.IP "\fIaddress\fR" 8
+All messages from
+.IR address ;
+any address as shown in a header summary shall be matchable in this
+form.
+.IP "/\fIstring\fR" 8
+All messages with
+.IR string
+in the subject line (case ignored).
+.IP "\fR:c\fR" 8
+All messages of type
+.IR c ,
+where
+.IR c
+shall be one of:
+.RS 8 
+.IP "\fRd\fR" 6
+Deleted messages.
+.IP "\fRn\fR" 6
+New messages.
+.IP "\fRo\fR" 6
+Old messages (any not in state
+.IR read
+or
+.IR new ).
+.IP "\fRr\fR" 6
+Read messages.
+.IP "\fRu\fR" 6
+Unread messages.
+.RE
+.P
+Other commands take an optional message (\c
+.IR message )
+on which to operate, which defaults to the current message. All of the
+forms allowed for
+.IR msglist
+are also allowed for
+.IR message ,
+but if more than one message is specified, only the first shall be
+operated on.
+.P
+Other arguments are usually arbitrary strings whose usage depends on
+the command involved.
+.SS "Start-Up in mailx"
+.P
+At start-up time,
+.IR mailx
+shall take the following steps in sequence:
+.IP " 1." 4
+Establish all variables at their stated default values.
+.IP " 2." 4
+Process command line options, overriding corresponding default values.
+.IP " 3." 4
+Import any of the
+.IR DEAD ,
+.IR EDITOR ,
+.IR MBOX ,
+.IR LISTER ,
+.IR PAGER ,
+.IR SHELL ,
+or
+.IR VISUAL
+variables that are present in the environment, overriding the
+corresponding default values.
+.IP " 4." 4
+Read
+.IR mailx
+commands from an unspecified system start-up file, unless the
+.BR \(min
+option is given, to initialize any internal
+.IR mailx
+variables and aliases.
+.IP " 5." 4
+Process the start-up file of
+.IR mailx
+commands named in the user
+.IR MAILRC
+variable.
+.P
+Most regular
+.IR mailx
+commands are valid inside start-up files, the most common use being to
+set up initial display options and alias lists. The following commands
+shall be invalid in the start-up file:
+.BR ! ,
+.BR edit ,
+.BR hold ,
+.BR mail ,
+.BR preserve ,
+.BR reply ,
+.BR Reply ,
+.BR shell ,
+.BR visual ,
+.BR Copy ,
+.BR followup ,
+and
+.BR Followup .
+Any errors in the start-up file shall either cause
+.IR mailx
+to terminate with a diagnostic message and a non-zero status or to
+continue after writing a diagnostic message, ignoring the remainder of
+the lines in the start-up file.
+.P
+A blank line in a start-up file shall be ignored.
+.SS "Internal Variables in mailx"
+.P
+The following variables are internal
+.IR mailx
+variables. Each internal variable can be set via the
+.IR mailx
+.BR set
+command at any time. The
+.BR unset
+and
+.BR "set\0no"
+.IR name
+commands can be used to erase variables.
+.P
+In the following list, variables shown as:
+.sp
+.RS 4
+.nf
+\fB
+variable
+.fi \fR
+.P
+.RE
+.P
+represent Boolean values. Variables shown as:
+.sp
+.RS 4
+.nf
+\fB
+variable=\fIvalue\fP
+.fi \fR
+.P
+.RE
+.P
+shall be assigned string or numeric values. For string values, the
+rules in
+.IR "Commands in mailx"
+concerning filenames and quoting shall also apply.
+.P
+The defaults specified here may be changed by the unspecified system
+start-up file unless the user specifies the
+.BR \(min
+option.
+.IP "\fBallnet\fP" 10
+All network names whose login name components match shall be treated as
+identical. This shall cause the
+.IR msglist
+message specifications to behave similarly. The default shall be
+.BR noallnet .
+See also the
+.BR alternates
+command and the
+.BR metoo
+variable.
+.IP "\fBappend\fR" 10
+Append messages to the end of the
+.BR mbox
+file upon termination instead of placing them at the beginning. The
+default shall be
+.BR noappend .
+This variable shall not affect the
+.BR save
+command when saving to
+.BR mbox .
+.IP "\fBask\fR,\0\fBasksub\fR" 10
+Prompt for a subject line on outgoing mail if one is not specified on
+the command line with the
+.BR \(mis
+option. The
+.BR ask
+and
+.BR asksub
+forms are synonyms; the system shall refer to
+.BR asksub
+and
+.BR noasksub
+in its messages, but shall accept
+.BR ask
+and
+.BR noask
+as user input to mean
+.BR asksub
+and
+.BR noasksub .
+It shall not be possible to set both
+.BR ask
+and
+.BR noasksub ,
+or
+.BR noask
+and
+.BR asksub .
+The default shall be
+.BR asksub ,
+but no prompting shall be done if standard input is not a terminal.
+.IP "\fBaskbcc\fR" 10
+Prompt for the blind copy list. The default shall be
+.BR noaskbcc .
+.IP "\fBaskcc\fR" 10
+Prompt for the copy list. The default shall be
+.BR noaskcc .
+.IP "\fBautoprint\fR" 10
+Enable automatic writing of messages after
+.BR delete
+and
+.BR undelete
+commands. The default shall be
+.BR noautoprint .
+.IP "\fBbang\fR" 10
+Enable the special-case treatment of
+<exclamation-mark>
+characters (\c
+.BR '!' )
+in escape command lines; see the
+.BR escape
+command and
+.IR "Command Escapes in mailx".
+The default shall be
+.BR nobang ,
+disabling the expansion of
+.BR '!' 
+in the
+.IR command
+argument to the
+.BR ~!
+command and the
+.BR ~<! \c
+.IR command
+escape.
+.IP "\fBcmd\fR=\fIcommand\fR" 10
+.br
+Set the default command to be invoked by the
+.BR pipe
+command. The default shall be
+.BR nocmd .
+.IP "\fBcrt\fR=\fInumber\fR" 10
+Pipe messages having more than
+.IR number
+lines through the command specified by the value of the
+.IR PAGER
+variable. The default shall be
+.BR nocrt .
+If it is set to null, the value used is implementation-defined.
+.IP "\fBdebug\fR" 10
+Enable verbose diagnostics for debugging. Messages are not delivered.
+The default shall be
+.BR nodebug .
+.IP "\fBdot\fR" 10
+When
+.BR dot
+is set, a
+<period>
+on a line by itself during message input from a terminal shall also
+signify end-of-file (in addition to normal end-of-file). The default
+shall be
+.BR nodot .
+If
+.BR ignoreeof
+is set (see below), a setting of
+.BR nodot
+shall be ignored and the
+<period>
+is the only method to terminate input mode.
+.IP "\fBescape\fR=\fIc\fR" 10
+Set the command escape character to be the character
+.BR 'c' .
+By default, the command escape character shall be
+<tilde>.
+If
+.BR escape
+is unset,
+<tilde>
+shall be used; if it is set to null, command escaping shall be disabled.
+.IP "\fBflipr\fR" 10
+Reverse the meanings of the
+.BR R
+and
+.BR r
+commands. The default shall be
+.BR noflipr .
+.IP "\fBfolder\fR=\fIdirectory\fR" 10
+.br
+The default directory for saving mail files. User-specified filenames
+beginning with a
+<plus-sign>
+(\c
+.BR '\(pl' )
+shall be expanded by preceding the filename with this directory name
+to obtain the real pathname. If
+.IR directory
+does not start with a
+<slash>
+(\c
+.BR '/' ),
+the contents of
+.IR HOME
+shall be prefixed to it. The default shall be
+.BR nofolder .
+If
+.BR folder
+is unset or set to null, user-specified filenames beginning with
+.BR '\(pl' 
+shall refer to files in the current directory that begin with the
+literal
+.BR '\(pl' 
+character. See also
+.BR outfolder
+below. The
+.BR folder
+value need not affect the processing of the files named in
+.IR MBOX
+and
+.IR DEAD .
+.IP "\fBheader\fR" 10
+Enable writing of the header summary when entering
+.IR mailx
+in Receive Mode. The default shall be
+.BR header .
+.IP "\fBhold\fR" 10
+Preserve all messages that are read in the system mailbox instead of
+putting them in the
+.BR mbox
+save file. The default shall be
+.BR nohold .
+.IP "\fBignore\fR" 10
+Ignore interrupts while entering messages. The default shall be
+.BR noignore .
+.IP "\fBignoreeof\fR" 10
+Ignore normal end-of-file during message input. Input can be
+terminated only by entering a
+<period>
+(\c
+.BR '.' )
+on a line by itself or by the
+.BR ~.
+command escape. The default shall be
+.BR noignoreeof .
+See also
+.BR dot
+above.
+.IP "\fBindentprefix\fR=\fIstring\fR" 10
+.br
+A string that shall be added as a prefix to each line that is inserted
+into the message by the
+.BR ~m
+command escape. This variable shall default to one
+<tab>.
+.IP "\fBkeep\fR" 10
+When a system mailbox, secondary mailbox, or
+.BR mbox
+is empty, truncate it to zero length instead of removing it. The
+default shall be
+.BR nokeep .
+.IP "\fBkeepsave\fR" 10
+Keep the messages that have been saved from the system mailbox into
+other files in the file designated by the variable
+.IR MBOX ,
+instead of deleting them. The default shall be
+.BR nokeepsave .
+.IP "\fBmetoo\fR" 10
+Suppress the deletion of the login name of the user from the recipient
+list when replying to a message or sending to a group. The default
+shall be
+.BR nometoo .
+.IP "\fBonehop\fR" 10
+When responding to a message that was originally sent to several
+recipients, the other recipient addresses are normally forced to be
+relative to the originating author's machine for the response. This
+flag disables alteration of the recipients' addresses, improving
+efficiency in a network where all machines can send directly to all
+other machines (that is, one hop away). The default shall be
+.BR noonehop .
+.IP "\fBoutfolder\fR" 10
+Cause the files used to record outgoing messages to be located in the
+directory specified by the
+.BR folder
+variable unless the pathname is absolute. The default shall be
+.BR nooutfolder .
+See the
+.BR record
+variable.
+.IP "\fBpage\fR" 10
+Insert a
+<form-feed>
+after each message sent through the pipe created by the
+.BR pipe
+command. The default shall be
+.BR nopage .
+.IP "\fBprompt\fR=\fIstring\fR" 10
+.br
+Set the command-mode prompt to
+.IR string .
+If
+.IR string
+is null or if
+.BR noprompt
+is set, no prompting shall occur. The default shall be to prompt with
+the string
+.BR \(dq?\0\(dq .
+.IP "\fBquiet\fR" 10
+Refrain from writing the opening message and version when entering
+.IR mailx .
+The default shall be
+.BR noquiet .
+.IP "\fBrecord\fR=\fIfile\fR" 10
+Record all outgoing mail in the file with the pathname
+.IR file .
+The default shall be
+.BR norecord .
+See also
+.BR outfolder
+above.
+.IP "\fBsave\fR" 10
+Enable saving of messages in the dead-letter file on interrupt or
+delivery error. See the variable
+.IR DEAD
+for the location of the dead-letter file. The default shall be
+.BR save .
+.IP "\fBscreen\fR=\fInumber\fR" 10
+.br
+Set the number of lines in a screenful of headers for the
+.BR headers
+and
+.BR z
+commands. If
+.BR screen
+is not specified, a value based on the terminal type identified by the
+.IR TERM
+environment variable, the window size, the baud rate, or some
+combination of these shall be used.
+.IP "\fBsendwait\fR" 10
+Wait for the background mailer to finish before returning. The default
+shall be
+.BR nosendwait .
+.IP "\fBshowto\fR" 10
+When the sender of the message was the user who is invoking
+.IR mailx ,
+write the information from the
+.BR To:
+line instead of the
+.BR From:
+line in the header summary. The default shall be
+.BR noshowto .
+.IP "\fBsign\fR=\fIstring\fR" 10
+Set the variable inserted into the text of a message when the
+.BR ~a
+command escape is given. The default shall be
+.BR nosign .
+The character sequences
+.BR '\et' 
+and
+.BR '\en' 
+shall be recognized in the variable as
+<tab>
+and
+<newline>
+characters, respectively. (See also
+.BR ~i
+in
+.IR "Command Escapes in mailx".)
+.IP "\fBSign\fR=\fIstring\fR" 10
+Set the variable inserted into the text of a message when the
+.BR ~A
+command escape is given. The default shall be
+.BR noSign .
+The character sequences
+.BR '\et' 
+and
+.BR '\en' 
+shall be recognized in the variable as
+<tab>
+and
+<newline>
+characters, respectively.
+.IP "\fBtoplines\fR=\fInumber\fR" 10
+.br
+Set the number of lines of the message to write with the
+.BR top
+command. The default shall be 5.
+.SS "Commands in mailx"
+.P
+The following
+.IR mailx
+commands shall be provided. In the following list, header refers to
+lines from the message header, as shown in the OUTPUT FILES section.
+Header-line refers to lines within the header that begin with one or
+more non-white-space characters, immediately followed by a
+<colon>
+and white space and continuing until the next line beginning with a
+non-white-space character or an empty line. Header-field refers to the
+portion of a header line prior to the first
+<colon>
+in that line.
+.P
+For each of the commands listed below, the command can be entered as
+the abbreviation (those characters in the Synopsis command word
+preceding the
+.BR '[' ),
+the full command (all characters shown for the command word, omitting
+the
+.BR '[' 
+and
+.BR ']' ),
+or any truncation of the full command down to the abbreviation. For
+example, the
+.BR exit
+command (shown as \fBex[it]\fR in the Synopsis) can be entered as
+.BR ex ,
+.BR exi ,
+or
+.BR exit .
+.P
+The arguments to commands can be quoted, using the following methods:
+.IP " *" 4
+An argument can be enclosed between paired double-quotes (\c
+.BR \(dq\^\(dq )
+or single-quotes (\c
+.BR '\^' );
+any white space, shell word expansion, or
+<backslash>
+characters within the quotes shall be treated literally as part of the
+argument. A double-quote shall be treated literally within single-quotes
+and \fIvice versa\fP. These special properties of the
+<quotation-mark>
+characters shall occur only when they are paired at the beginning and
+end of the argument.
+.IP " *" 4
+A
+<backslash>
+outside of the enclosing quotes shall be discarded and the following
+character treated literally as part of the argument.
+.IP " *" 4
+An unquoted
+<backslash>
+at the end of a command line shall be discarded and the next line shall
+continue the command.
+.br
+.P
+Filenames, where expected, shall be subjected to the following
+transformations, in sequence:
+.IP " *" 4
+If the filename begins with an unquoted
+<plus-sign>,
+and the
+.BR folder
+variable is defined (see the
+.BR folder
+variable), the
+<plus-sign>
+shall be replaced by the value of the
+.BR folder
+variable followed by a
+<slash>.
+If the
+.BR folder
+variable is unset or is set to null, the filename shall be unchanged.
+.IP " *" 4
+Shell word expansions shall be applied to the filename (see
+.IR "Section 2.6" ", " "Word Expansions").
+If more than a single pathname results from this expansion and the
+command is expecting one file, the effects are unspecified.
+.SS "Declare Aliases"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+a\fB[\fRlias\fB] [\fIalias \fB[\fIaddress\fR...\fB]]\fR
+g\fB[\fRroup\fB] [\fIalias \fB[\fIaddress\fR...\fB]]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Add the given addresses to the alias specified by
+.IR alias .
+The names shall be substituted when
+.IR alias
+is used as a recipient address specified by the user in an outgoing
+message (that is, other recipients addressed indirectly through the
+.BR reply
+command shall not be substituted in this manner). Mail address alias
+substitution shall apply only when the alias string is used as a full
+address; for example, when
+.BR hlj
+is an alias,
+.IR hlj@posix.com
+does not trigger the alias substitution. If no arguments are given,
+write a listing of the current aliases to standard output. If only an
+.IR alias
+argument is given, write a listing of the specified alias to standard
+output. These listings need not reflect the same order of addresses
+that were entered.
+.SS "Declare Alternatives"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+alt\fB[\fRernates\fB] \fIname\fR...
+.fi \fR
+.P
+.RE
+.RE
+.P
+(See also the
+.BR metoo
+variable.) Declare a list of alternative names for the user's login.
+When responding to a message, these names shall be removed from the
+list of recipients for the response. The comparison of names shall be
+in a case-insensitive manner. With no arguments,
+.BR alternates
+shall write the current list of alternative names.
+.SS "Change Current Directory"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+cd \fB[\fIdirectory\fB]\fR
+ch\fB[\fRdir\fB] [\fIdirectory\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Change directory. If
+.IR directory
+is not specified, the contents of
+.IR HOME
+shall be used.
+.SS "Copy Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+c\fB[\fRopy\fB] [\fIfile\fB]\fR
+c\fB[\fRopy\fB] [\fImsglist\fB] \fIfile\fR
+C\fB[\fRopy\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Copy messages to the file named by the pathname
+.IR file
+without marking the messages as saved. Otherwise, it shall be
+equivalent to the
+.BR save
+command.
+.P
+In the capitalized form, save the specified messages in a file whose
+name is derived from the author of the message to be saved, without
+marking the messages as saved. Otherwise, it shall be equivalent to
+the
+.BR Save
+command.
+.SS "Delete Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+d\fB[\fRelete\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Mark messages for deletion from the mailbox. The deletions shall not
+occur until
+.IR mailx
+quits (see the
+.BR quit
+command) or changes mailboxes (see the
+.BR folder
+command). If
+.BR autoprint
+is set and there are messages remaining after the
+.BR delete
+command, the current message shall be written as described for the
+.BR print
+command (see the
+.BR print
+command); otherwise, the
+.IR mailx
+prompt shall be written.
+.SS "Discard Header Fields"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+di\fB[\fRscard\fB] [\fIheader-field\fR...\fB]\fR
+ig\fB[\fRnore\fB] [\fIheader-field\fR...\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Suppress the specified header fields when writing messages. Specified
+.IR header-fields
+shall be added to the list of suppressed header fields. Examples of
+header fields to ignore are
+.BR status
+and
+.BR cc .
+The fields shall be included when the message is saved. The
+.BR Print
+and
+.BR Type
+commands shall override this command. The comparison of header fields
+shall be in a case-insensitive manner. If no arguments are specified,
+write a list of the currently suppressed header fields to standard
+output; the listing need not reflect the same order of header fields
+that were entered.
+.P
+If both
+.BR retain
+and
+.BR discard
+commands are given,
+.BR discard
+commands shall be ignored.
+.SS "Delete Messages and Display"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+dp \fB[\fImsglist\fB]\fR
+dt \fB[\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Delete the specified messages as described for the
+.BR delete
+command, except that the
+.BR autoprint
+variable shall have no effect, and the current message shall be written
+only if it was set to a message after the last message deleted by the
+command. Otherwise, an informational message to the effect that there
+are no further messages in the mailbox shall be written, followed by
+the
+.IR mailx
+prompt.
+.SS "Echo a String"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+ec\fB[\fRho\fB] \fIstring\fR ...
+.fi \fR
+.P
+.RE
+.RE
+.P
+Echo the given strings, equivalent to the shell
+.IR echo
+utility.
+.SS "Edit Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+e\fB[\fRdit\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Edit the given messages. The messages shall be placed in a temporary
+file and the utility named by the
+.IR EDITOR
+variable is invoked to edit each file in sequence. The default
+.IR EDITOR
+is unspecified.
+.P
+The
+.BR edit
+command does not modify the contents of those messages in the mailbox.
+.SS "Exit"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+ex\fB[\fRit\fB]\fR
+x\fB[\fRit\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Exit from
+.IR mailx
+without changing the mailbox. No messages shall be saved in the
+.BR mbox
+(see also
+.BR quit ).
+.SS "Change Folder"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+fi\fB[\fRle\fB] [\fIfile\fB]\fR
+fold\fB[\fRer\fB] [\fIfile\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Quit (see the
+.BR quit
+command) from the current file of messages and read in the file named
+by the pathname
+.IR file .
+If no argument is given, the name and status of the current mailbox
+shall be written.
+.P
+Several unquoted special characters shall be recognized when used as
+.IR file
+names, with the following substitutions:
+.IP "\fR%\fR" 8
+The system mailbox for the invoking user.
+.IP "\fR%\fIuser\fR" 8
+The system mailbox for
+.IR user .
+.IP "\fR#\fR" 8
+The previous file.
+.IP "\fR&\fR" 8
+The current
+.BR mbox .
+.IP "\fR+\fIfile\fR" 8
+The named file in the
+.BR folder
+directory. (See the
+.BR folder
+variable.)
+.P
+The default file shall be the current mailbox.
+.SS "Display List of Folders"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fRfolders\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the names of the files in the directory set by the
+.BR folder
+variable. The command specified by the
+.IR LISTER
+environment variable shall be used (see the ENVIRONMENT VARIABLES
+section).
+.SS "Follow Up Specified Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+fo\fB[\fRllowup\fB] [\fImessage\fB]\fR
+F\fB[\fRollowup\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+In the lowercase form, respond to a message, recording the response in
+a file whose name is derived from the author of the message. See also
+the
+.BR save
+and
+.BR copy
+commands and
+.BR outfolder .
+.P
+In the capitalized form, respond to the first message in the
+.IR msglist ,
+sending the message to the author of each message in the
+.IR msglist .
+The subject line shall be taken from the first message and the response
+shall be recorded in a file whose name is derived from the author of
+the first message. See also the
+.BR Save
+and
+.BR Copy
+commands and
+.BR outfolder .
+.P
+Both forms shall override the
+.BR record
+variable, if set.
+.SS "Display Header Summary for Specified Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+f\fB[\fRrom\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the header summary for the specified messages.
+.SS "Display Header Summary"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+h\fB[\fReaders\fB] [\fImessage\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the page of headers that includes the message specified. If the
+.IR message
+argument is not specified, the current message shall not change.
+However, if the
+.IR message
+argument is specified, the current message shall become the message
+that appears at the top of the page of headers that includes the
+message specified. The
+.BR screen
+variable sets the number of headers per page. See also the
+.BR z
+command.
+.SS "Help"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+hel\fB[\fRp\fB]\fR
+?
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write a summary of commands.
+.SS "Hold Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+ho\fB[\fRld\fB] [\fImsglist\fB]\fR
+pre\fB[\fRserve\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Mark the messages in
+.IR msglist
+to be retained in the mailbox when
+.IR mailx
+terminates. This shall override any commands that might previously
+have marked the messages to be deleted. During the current invocation
+of
+.IR mailx ,
+only the
+.BR delete ,
+.BR dp ,
+or
+.BR dt
+commands shall remove the
+.IR preserve
+marking of a message.
+.SS "Execute Commands Conditionally"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+i\fB[\fRf\fB]\fR s|r
+\fImail-command\fRs
+el\fB[\fRse\fB]
+\fImail-command\fRs
+en\fB[\fRdif\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Execute commands conditionally, where
+.BR "if\0s"
+executes the following
+.IR mail-command s,
+up to an
+.BR else
+or
+.BR endif ,
+if the program is in Send Mode, and
+.BR "if\0r"
+shall cause the
+.IR mail-command s
+to be executed only in Receive Mode.
+.SS "List Available Commands"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+l\fB[\fRist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write a list of all commands available. No explanation shall be
+given.
+.SS "Mail a Message"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+m\fB[\fRail\fB] \fIaddress\fR...
+.fi \fR
+.P
+.RE
+.RE
+.P
+Mail a message to the specified addresses or aliases.
+.SS "Direct Messages to mbox"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+mb\fB[\fRox\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Arrange for the given messages to end up in the
+.BR mbox
+save file when
+.IR mailx
+terminates normally. See
+.IR MBOX .
+See also the
+.BR exit
+and
+.BR quit
+commands.
+.SS "Process Next Specified Message"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+n\fB[\fRext\fB] [\fImessage\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the current message has not been written (for example, by the
+.BR print
+command) since
+.IR mailx
+started or since any other message was the current message, behave as
+if the
+.BR print
+command was entered. Otherwise, if there is an undeleted message after
+the current message, make it the current message and behave as if the
+.BR print
+command was entered. Otherwise, an informational message to the effect
+that there are no further messages in the mailbox shall be written,
+followed by the
+.IR mailx
+prompt. Should the current message location be the result of an
+immediately preceding
+.BR hold ,
+.BR mbox ,
+.BR preserve ,
+or
+.BR touch
+command,
+.BR next
+will act as if the current message has already been written.
+.SS "Pipe Message"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+pi\fB[\fRpe\fB] [[\fImsglist\fB] \fIcommand\fB]\fR
+| \fB[[\fImsglist\fB] \fIcommand\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Pipe the messages through the given
+.IR command
+by invoking the command interpreter specified by
+.IR SHELL
+with two arguments:
+.BR \(mic
+and
+.IR command .
+(See also
+.IR sh
+.BR \(mic .)
+The application shall ensure that the command is given as a single
+argument. Quoting, described previously, can be used to accomplish
+this. If no arguments are given, the current message shall be piped
+through the command specified by the value of the
+.BR cmd
+variable. If the
+.BR page
+variable is set, a
+<form-feed>
+shall be inserted after each message.
+.SS "Display Message with Headers"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+P\fB[\fRrint\fB] [\fImsglist\fB]\fR
+T\fB[\fRype\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the specified messages, including all header lines, to standard
+output. Override suppression of lines by the
+.BR discard ,
+.BR ignore ,
+and
+.BR retain
+commands. If
+.BR crt
+is set, the messages longer than the number of lines specified by the
+.BR crt
+variable shall be paged through the command specified by the
+.IR PAGER
+environment variable.
+.SS "Display Message"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+p\fB[\fRrint\fB] [\fImsglist\fB]\fR
+t\fB[\fRype\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the specified messages to standard output. If
+.BR crt
+is set, the messages longer than the number of lines specified by the
+.BR crt
+variable shall be paged through the command specified by the
+.IR PAGER
+environment variable.
+.SS "Quit"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+q\fB[\fRuit\fB]
+\fIend-of-file\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Terminate
+.IR mailx ,
+storing messages that were read in
+.BR mbox
+(if the current mailbox is the system mailbox and unless
+.BR hold
+is set), deleting messages that have been explicitly saved (unless
+.BR keepsave
+is set), discarding messages that have been deleted, and saving all
+remaining messages in the mailbox.
+.SS "Reply to a Message List"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+R\fB[\fReply\fB] [\fImsglist\fB]\fR
+R\fB[\fRespond\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Mail a reply message to the sender of each message in the
+.IR msglist .
+The subject line shall be formed by concatenating
+.BR Re: \c
+<space>
+(unless it already begins with that string) and the subject from the
+first message. If
+.BR record
+is set to a filename, the response shall be saved at the end of that
+file.
+.P
+See also the
+.BR flipr
+variable.
+.SS "Reply to a Message"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+r\fB[\fReply\fB] [\fImessage\fB]\fR
+r\fB[\fRespond\fB] [\fImessage\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Mail a reply message to all recipients included in the header of the
+message. The subject line shall be formed by concatenating
+.BR Re: \c
+<space>
+(unless it already begins with that string) and the subject from the
+message. If
+.BR record
+is set to a filename, the response shall be saved at the end of that
+file.
+.P
+See also the
+.BR flipr
+variable.
+.SS "Retain Header Fields"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+ret\fB[\fRain\fB] [\fIheader-field\fR...\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Retain the specified header fields when writing messages. This command
+shall override all
+.BR discard
+and
+.BR ignore
+commands. The comparison of header fields shall be in a
+case-insensitive manner. If no arguments are specified, write a list
+of the currently retained header fields to standard output; the listing
+need not reflect the same order of header fields that were entered.
+.SS "Save Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+s\fB[\fRave\fB] [\fIfile\fB]\fR
+s\fB[\fRave\fB] [\fImsglist\fB] \fIfile\fR
+S\fB[\fRave\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Save the specified messages in the file named by the pathname
+.IR file ,
+or the
+.BR mbox
+if the
+.IR file
+argument is omitted. The file shall be created if it does not exist;
+otherwise, the messages shall be appended to the file. The message
+shall be put in the state
+.IR saved ,
+and shall behave as specified in the description of the
+.IR saved
+state when the current mailbox is exited by the
+.BR quit
+or
+.BR file
+command.
+.P
+In the capitalized form, save the specified messages in a file whose
+name is derived from the author of the first message. The name of the
+file shall be taken to be the author's name with all network addressing
+stripped off. See also the
+.BR Copy ,
+.BR followup ,
+and
+.BR Followup
+commands and
+.BR outfolder
+variable.
+.SS "Set Variables"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+se\fB[\fRt\fB] [\fIname\fB[\fR=\fB[\fIstring\fB]] \fR...\fB] [\fIname\fR=\fInumber \fR...\fB] [\fRno\fIname \fR...\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Define one or more variables called
+.IR name .
+The variable can be given a null, string, or numeric value. Quoting and
+<backslash>-escapes
+can occur anywhere in
+.IR string ,
+as described previously, as if the
+.IR string
+portion of the argument were the entire argument. The forms
+.IR name
+and
+.IR name =
+shall be equivalent to
+.IR name =""
+for variables that take string values. The
+.BR set
+command without arguments shall write a list of all defined variables
+and their values. The
+.BR no
+.IR name
+form shall be equivalent to
+.BR unset
+.IR name .
+.SS "Invoke a Shell"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+sh\fB[\fRell\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Invoke an interactive command interpreter (see also
+.IR SHELL ).
+.SS "Display Message Size"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+si\fB[\fRze\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the size in bytes of each of the specified messages.
+.SS "Read mailx Commands From a File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+so\fB[\fRurce\fB] \fIfile\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Read and execute commands from the file named by the pathname
+.IR file
+and return to command mode.
+.SS "Display Beginning of Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+to\fB[\fRp\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the top few lines of each of the specified messages. If the
+.BR toplines
+variable is set, it is taken as the number of lines to write. The
+default shall be 5.
+.SS "Touch Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+tou\fB[\fRch\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Touch the specified messages. If any message in
+.IR msglist
+is not specifically deleted nor saved in a file, it shall be placed in
+the
+.BR mbox
+upon normal termination. See
+.BR exit
+and
+.BR quit .
+.SS "Delete Aliases"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+una\fB[\fRlias\fB] [\fIalias\fB]\fR...
+.fi \fR
+.P
+.RE
+.RE
+.P
+Delete the specified alias names. If a specified alias does not exist,
+the results are unspecified.
+.SS "Undelete Messages"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+u\fB[\fRndelete\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Change the state of the specified messages from deleted to read. If
+.BR autoprint
+is set, the last message of those restored shall be written. If
+.IR msglist
+is not specified, the message shall be selected as follows:
+.IP " *" 4
+If there are any deleted messages that follow the current message, the
+first of these shall be chosen.
+.IP " *" 4
+Otherwise, the last deleted message that also precedes the current
+message shall be chosen.
+.SS "Unset Variables"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+uns\fB[\fRet\fB] \fIname\fR...
+.fi \fR
+.P
+.RE
+.RE
+.P
+Cause the specified variables to be erased.
+.SS "Edit Message with Full-Screen Editor"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+v\fB[\fRisual\fB] [\fImsglist\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Edit the given messages with a screen editor. Each message shall be
+placed in a temporary file, and the utility named by the
+.IR VISUAL
+variable shall be invoked to edit each file in sequence. The default
+editor shall be
+.IR vi .
+.P
+The
+.BR visual
+command does not modify the contents of those messages in the mailbox.
+.SS "Write Messages to a File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+w\fB[\fRrite\fB] [\fImsglist\fB] \fIfile\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the given messages to the file specified by the pathname
+.IR file ,
+minus the message header. Otherwise, it shall be equivalent to the
+.BR save
+command.
+.SS "Scroll Header Display"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+z\fB[\fR+|\(mi\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scroll the header display forward (if
+.BR '\(pl' 
+is specified or if no option is specified) or backward (if
+.BR '\(mi' 
+is specified) one screenful. The number of headers written shall be
+set by the
+.BR screen
+variable.
+.SS "Invoke Shell Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+!\fIcommand\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Invoke the command interpreter specified by
+.IR SHELL
+with two arguments:
+.BR \(mic
+and
+.IR command .
+(See also
+.IR sh
+.BR \(mic .)
+If the
+.BR bang
+variable is set, each unescaped occurrence of
+.BR '!' 
+in
+.IR command
+shall be replaced with the command executed by the previous
+.BR !
+command or
+.BR ~!
+command escape.
+.SS "Null Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+# \fIcomment\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+This null command (comment) shall be ignored by
+.IR mailx .
+.SS "Display Current Message Number"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+=
+.fi \fR
+.P
+.RE
+.RE
+.P
+Write the current message number.
+.SS "Command Escapes in mailx"
+.P
+The following commands can be entered only from input mode, by
+beginning a line with the escape character (by default,
+<tilde>
+(\c
+.BR '~' )).
+See the
+.BR escape
+variable description for changing this special character. The format
+for the commands shall be:
+.sp
+.RS 4
+.nf
+\fB
+<\fIescape-character\fR><\fIcommand-char\fR><\fIseparator\fR>\fB[\fR<\fIarguments\fR>\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+where the <\fIseparator\fP> can be zero or more
+<blank>
+characters.
+.P
+In the following descriptions, the application shall ensure that the
+argument
+.IR command
+(but not
+.IR mailx-command)
+is a shell command string. Any string acceptable to the command
+interpreter specified by the
+.IR SHELL
+variable when it is invoked as
+.IR SHELL
+.BR \(mic
+.IR command_string
+shall be valid. The command can be presented as multiple arguments
+(that is, quoting is not required).
+.P
+Command escapes that are listed with
+.IR msglist
+or
+.IR mailx-command
+arguments are invalid in Send Mode and produce unspecified results.
+.IP "\fB~!\0\fIcommand\fR" 10
+Invoke the command interpreter specified by
+.IR SHELL
+with two arguments:
+.BR \(mic
+and
+.IR command ;
+and then return to input mode. If the
+.BR bang
+variable is set, each unescaped occurrence of
+.BR '!' 
+in
+.IR command
+shall be replaced with the command executed by the previous
+.BR !
+command or
+.BR ~!
+command escape.
+.IP "\fB~.\fR" 10
+Simulate end-of-file (terminate message input).
+.IP "\fB~:\0\fImailx-command\fR,\0\fB~_\0\fImailx-command\fR" 10
+.br
+Perform the command-level request.
+.IP "\fB~?\fR" 10
+Write a summary of command escapes.
+.IP "\fB~A\fR" 10
+This shall be equivalent to
+.BR "~i\0Sign" .
+.IP "\fB~a\fR" 10
+This shall be equivalent to
+.BR "~i\0sign" .
+.IP "\fB~b\0\fIname\fR.\|.\|." 10
+Add the
+.IR name s
+to the blind carbon copy (\c
+.BR Bcc )
+list.
+.IP "\fB~c\0\fIname\fR.\|.\|." 10
+Add the
+.IR name s
+to the carbon copy (\c
+.BR Cc )
+list.
+.IP "\fB~d\fR" 10
+Read in the dead-letter file. See
+.IR DEAD
+for a description of this file.
+.IP "\fB~e\fR" 10
+Invoke the editor, as specified by the
+.IR EDITOR
+environment variable, on the partial message.
+.IP "\fB~\|f\0[\fImsglist\fB]\fR" 10
+Forward the specified messages. The specified messages shall be
+inserted into the current message without alteration. This command
+escape also shall insert message headers into the message with field
+selection affected by the
+.BR discard ,
+.BR ignore ,
+and
+.BR retain
+commands.
+.IP "\fB~\|F\0[\fImsglist\fB]\fR" 10
+This shall be the equivalent of the
+.BR ~f
+command escape, except that all headers shall be included in the
+message, regardless of previous
+.BR discard ,
+.BR ignore ,
+and
+.BR retain
+commands.
+.IP "\fB~h\fR" 10
+If standard input is a terminal, prompt for a
+.BR Subject
+line and the
+.BR To ,
+.BR Cc ,
+and
+.BR Bcc
+lists. Other implementation-defined headers may also be presented
+for editing. If the field is written with an initial value, it can be
+edited as if it had just been typed.
+.IP "\fB~i\0\fIstring\fR" 10
+Insert the value of the named variable, followed by a
+<newline>,
+into the text of the message. If the string is unset or null, the
+message shall not be changed.
+.IP "\fB~\|m\0[\fImsglist\fB]\fR" 10
+Insert the specified messages into the message, prefixing non-empty
+lines with the string in the
+.BR indentprefix
+variable. This command escape also shall insert message headers into
+the message, with field selection affected by the
+.BR discard ,
+.BR ignore ,
+and
+.BR retain
+commands.
+.IP "\fB~\|M\0[\fImsglist\fB]\fR" 10
+This shall be the equivalent of the
+.BR ~m
+command escape, except that all headers shall be included in the
+message, regardless of previous
+.BR discard ,
+.BR ignore ,
+and
+.BR retain
+commands.
+.IP "\fB~p\fR" 10
+Write the message being entered. If the message is longer than
+.BR crt
+lines (see
+.IR "Internal Variables in mailx"),
+the output shall be paginated as described for the
+.IR PAGER
+variable.
+.IP "\fB~q\fR" 10
+Quit (see the
+.BR quit
+command) from input mode by simulating an interrupt. If the body of
+the message is not empty, the partial message shall be saved in the
+dead-letter file. See
+.IR DEAD
+for a description of this file.
+.IP "\fB~r\0\fIfile\fR,\0\fB~<\0\fIfile\fR,\0\fB~r\0!\fIcommand\fR,\0\fB~<\0!\fIcommand\fR" 10
+.br
+Read in the file specified by the pathname
+.IR file .
+If the argument begins with an
+<exclamation-mark>
+(\c
+.BR '!' ),
+the rest of the string shall be taken as an arbitrary system command;
+the command interpreter specified by
+.IR SHELL
+shall be invoked with two arguments:
+.BR \(mic
+and
+.IR command .
+The standard output of
+.IR command
+shall be inserted into the message.
+.IP "\fB~s\0\fIstring\fR" 10
+Set the subject line to
+.IR string .
+.IP "\fB~t\0\fIname\fR.\|.\|." 10
+Add the given
+.IR name s
+to the
+.BR To
+list.
+.IP "\fB~v\fR" 10
+Invoke the full-screen editor, as specified by the
+.IR VISUAL
+environment variable, on the partial message.
+.IP "\fB~w\0\fIfile\fR" 10
+Write the partial message, without the header, onto the file named by
+the pathname
+.IR file .
+The file shall be created or the message shall be appended to it if the
+file exists.
+.IP "\fB~x\fR" 10
+Exit as with
+.BR ~q ,
+except the message shall not be saved in the dead-letter file.
+.IP "\fB~|\0\fIcommand\fR" 10
+Pipe the body of the message through the given
+.IR command
+by invoking the command interpreter specified by
+.IR SHELL
+with two arguments:
+.BR \(mic
+and
+.IR command .
+If the
+.IR command
+returns a successful exit status, the standard output of the command
+shall replace the message. Otherwise, the message shall remain
+unchanged. If the
+.IR command
+fails, an error message giving the exit status shall be written.
+.br
+.SH "EXIT STATUS"
+When the
+.BR \(mie
+option is specified, the following exit values are returned:
+.IP "\00" 6
+Mail was found.
+.IP >0 6
+Mail was not found or an error occurred.
+.P
+Otherwise, the following exit values are returned:
+.IP "\00" 6
+Successful completion; note that this status implies that all messages
+were
+.IR sent ,
+but it gives no assurances that any of them were actually
+.IR delivered .
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+When in
+input mode (Receive Mode)
+or Send Mode:
+.IP " *" 4
+If an error is encountered processing an input line beginning
+with a
+<tilde>
+(\c
+.BR '~' )
+character,
+(see
+.IR "Command Escapes in mailx"),
+a diagnostic message shall be written to standard error, and the
+message being composed may be modified, but this condition shall not
+prevent the message from being sent.
+.IP " *" 4
+Other errors shall prevent the sending of the message.
+.P
+When in command mode:
+.IP " *" 4
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Delivery of messages to remote systems requires the existence of
+communication paths to such systems. These need not exist.
+.P
+Input lines are limited to
+{LINE_MAX}
+bytes, but mailers between systems may impose more severe line-length
+restrictions. This volume of POSIX.1\(hy2008 does not place any restrictions on the length of
+messages handled by
+.IR mailx ,
+and for delivery of local messages the only limitations should be the
+normal problems of available disk space for the target mail file. When
+sending messages to external machines, applications are advised to
+limit messages to less than 100\|000 bytes because some mail gateways
+impose message-length restrictions.
+.P
+The format of the system mailbox is intentionally unspecified. Not all
+systems implement system mailboxes as flat files, particularly with the
+advent of multimedia mail messages. Some system mailboxes may be
+multiple files, others records in a database. The internal format of
+the messages themselves is specified with the historical format from
+Version\ 7, but only after the messages have been saved in some file
+other than the system mailbox. This was done so that many historical
+applications expecting text-file mailboxes are not broken.
+.P
+Some new formats for messages can be expected in the future, probably
+including binary data, bit maps, and various multimedia objects. As
+described here,
+.IR mailx
+is not prohibited from handling such messages, but it must store them
+as text files in secondary mailboxes (unless some extension, such as a
+variable or command line option, is used to change the stored format).
+Its method of doing so is implementation-defined and might include
+translating the data into text file-compatible or readable form or
+omitting certain portions of the message from the stored output.
+.P
+The
+.BR discard
+and
+.BR ignore
+commands are not inverses of the
+.BR retain
+command. The
+.BR retain
+command discards all header-fields except those explicitly retained.
+The
+.BR discard
+command keeps all header-fields except those explicitly discarded. If
+headers exist on the retained header list,
+.BR discard
+and
+.BR ignore
+commands are ignored.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The standard developers felt strongly that a method for applications to
+send messages to specific users was necessary. The obvious example is a
+batch utility, running non-interactively, that wishes to communicate
+errors or results to a user. However, the actual format, delivery
+mechanism, and method of reading the message are clearly beyond the
+scope of this volume of POSIX.1\(hy2008.
+.P
+The intent of this command is to provide a simple, portable interface
+for sending messages non-interactively. It merely defines a
+``front-end'' to the historical mail system. It is suggested that
+implementations explicitly denote the sender and recipient in the body
+of the delivered message. Further specification of formats for either
+the message envelope or the message itself were deliberately not made,
+as the industry is in the midst of changing from the current standards
+to a more internationalized standard and it is probably incorrect, at
+this time, to require either one.
+.P
+Implementations are encouraged to conform to the various delivery
+mechanisms described in the CCITT X.400 standards or to the equivalent
+Internet standards, described in Internet Request for Comment (RFC)
+documents RFC\ 819, RFC\ 822, RFC\ 920, RFC\ 921, and RFC\ 1123.
+.P
+Many historical systems modified each body line that started with
+.BR "From\0"
+by prefixing the
+.BR 'F' 
+with
+.BR '>' .
+It is unnecessary, but allowed, to do that when the string does not
+follow a blank line because it cannot be confused with the next
+header.
+.P
+The
+.BR edit
+and
+.BR visual
+commands merely edit the specified messages in a temporary file. They
+do not modify the contents of those messages in the mailbox; such a
+capability could be added as an extension, such as by using different
+command names.
+.P
+The restriction on a subject line being
+{LINE_MAX}\(mi10
+bytes is based on the historical format that consumes 10 bytes for
+.BR "Subject:\0"
+and the trailing
+<newline>.
+Many historical mailers that a message may encounter on other systems
+are not able to handle lines that long, however.
+.P
+Like the utilities
+.IR logger
+and
+.IR lp ,
+.IR mailx
+admittedly is difficult to test. This was not deemed sufficient
+justification to exclude this utility from this volume of POSIX.1\(hy2008. It is also arguable
+that it is, in fact, testable, but that the tests themselves are not
+portable.
+.P
+When
+.IR mailx
+is being used by an application that wishes to receive the results as
+if none of the User Portability Utilities option features were
+supported, the
+.IR DEAD
+environment variable must be set to
+.BR /dev/null .
+Otherwise, it may be subject to the file creations described in
+.IR mailx
+ASYNCHRONOUS EVENTS. Similarly, if the
+.IR MAILRC
+environment variable is not set to
+.BR /dev/null ,
+historical versions of
+.IR mailx
+and
+.IR Mail
+read initialization commands from a file before processing begins.
+Since the initialization that a user specifies could alter the contents
+of messages an application is trying to send, such applications must
+set
+.IR MAILRC
+to
+.BR /dev/null .
+.P
+The description of
+.IR LC_TIME
+uses ``may affect'' because many historical implementations do not or
+cannot manipulate the date and time strings in the incoming mail
+headers. Some headers found in incoming mail do not have enough
+information to determine the timezone in which the mail originated,
+and, therefore,
+.IR mailx
+cannot convert the date and time strings into the internal form that
+then is parsed by routines like
+\fIstrftime\fR()
+that can take
+.IR LC_TIME
+settings into account. Changing all these times to a user-specified
+format is allowed, but not required.
+.P
+The paginator selected when
+.IR PAGER
+is null or unset is partially unspecified to allow the System V
+historical practice of using
+.IR pg
+as the default. Bypassing the pagination function, such as by declaring
+that
+.IR cat
+is the paginator, would not meet with the intended meaning of this
+description. However, any ``portable user'' would have to set
+.IR PAGER
+explicitly to get his or her preferred paginator on all systems. The
+paginator choice was made partially unspecified, unlike the
+.IR VISUAL
+editor choice (mandated to be
+.IR vi )
+because most historical pagers follow a common theme of user input,
+whereas editors differ dramatically.
+.P
+Options to specify addresses as
+.BR cc
+(carbon copy) or
+.BR bcc
+(blind carbon copy) were considered to be format details and were
+omitted.
+.P
+A zero exit status implies that all messages were
+.IR sent ,
+but it gives no assurances that any of them were actually
+.IR delivered .
+The reliability of the delivery mechanism is unspecified and is an
+appropriate marketing distinction between systems.
+.P
+In order to conform to the Utility Syntax Guidelines, a solution was
+required to the optional
+.IR file
+option-argument to
+.BR \(mif .
+By making
+.IR file
+an operand, the guidelines are satisfied and users remain portable.
+However, it does force implementations to support usage such as:
+.sp
+.RS 4
+.nf
+\fB
+mailx \(mifin mymail.box
+.fi \fR
+.P
+.RE
+.P
+The
+.BR no
+.IR name
+method of unsetting variables is not present in all historical systems,
+but it is in System V and provides a logical set of commands
+corresponding to the format of the display of options from the
+.IR mailx
+.IR set
+command without arguments.
+.P
+The
+.BR ask
+and
+.BR asksub
+variables are the names selected by BSD and System V, respectively, for
+the same feature. They are synonyms in this volume of POSIX.1\(hy2008.
+.P
+The
+.IR mailx
+.IR echo
+command was not documented in the BSD version and has been omitted here
+because it is not obviously useful for interactive users.
+.P
+The default prompt on the System V
+.IR mailx
+is a
+<question-mark>,
+on BSD
+.IR Mail
+an
+<ampersand>.
+Since this volume of POSIX.1\(hy2008 chose the
+.IR mailx
+name, it kept the System V default, assuming that BSD users would not
+have difficulty with this minor incompatibility (that they can
+override).
+.P
+The meanings of
+.BR r
+and
+.BR R
+are reversed between System V
+.IR mailx
+and SunOS
+.IR Mail .
+Once again, since this volume of POSIX.1\(hy2008 chose the
+.IR mailx
+name, it kept the System V default, but allows the SunOS user to
+achieve the desired results using
+.BR flipr ,
+an internal variable in System V
+.IR mailx ,
+although it has not been documented in the SVID.
+.P
+The
+.BR indentprefix
+variable, the
+.BR retain
+and
+.BR unalias
+commands, and the
+.BR ~F
+and
+.BR ~M
+command escapes were adopted from 4.3 BSD
+.IR Mail .
+.P
+The
+.BR version
+command was not included because no sufficiently general specification
+of the version information could be devised that would still be useful
+to a portable user. This command name should be used by suppliers who
+wish to provide version information about the
+.IR mailx
+command.
+.P
+The ``implementation-specific (unspecified) system start-up file''
+historically has been named
+.BR /etc/mailx.rc ,
+but this specific name and location are not required.
+.P
+The intent of the wording for the
+.BR next
+command is that if any command has already displayed the current
+message it should display a following message, but, otherwise, it
+should display the current message. Consider the command sequence:
+.sp
+.RS 4
+.nf
+\fB
+next 3
+delete 3
+next
+.fi \fR
+.P
+.RE
+.P
+where the
+.BR autoprint
+option was not set. The normative text specifies that the second
+.BR next
+command should display a message following the third message, because
+even though the current message has not been displayed since it was set
+by the
+.BR delete
+command, it has been displayed since the current message was anything
+other than message number 3. This does not always match historical
+practice in some implementations, where the command file address
+followed by
+.BR next
+(or the default command) would skip the message for which the user had
+searched.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Chapter 2" ", " "Shell Command Language",
+.IR "\fIed\fR\^",
+.IR "\fIls\fR\^",
+.IR "\fImore\fR\^",
+.IR "\fIvi\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

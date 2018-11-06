@@ -1,0 +1,435 @@
+'\" et
+.TH FORK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fork
+\(em create a new process
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+pid_t fork(void);
+.fi
+.SH DESCRIPTION
+The
+\fIfork\fR()
+function shall create a new process. The new process (child process)
+shall be an exact copy of the calling process (parent process) except
+as detailed below:
+.IP " *" 4
+The child process shall have a unique process ID.
+.IP " *" 4
+The child process ID also shall not match any active process group ID.
+.IP " *" 4
+The child process shall have a different parent process ID, which shall
+be the process ID of the calling process.
+.IP " *" 4
+The child process shall have its own copy of the parent's file
+descriptors. Each of the child's file descriptors shall refer to the
+same open file description with the corresponding file descriptor of
+the parent.
+.IP " *" 4
+The child process shall have its own copy of the parent's open directory
+streams. Each open directory stream in the child process may share
+directory stream positioning with the corresponding directory stream of
+the parent.
+.IP " *" 4
+The child process shall have its own copy of the parent's message
+catalog descriptors.
+.IP " *" 4
+The child process values of
+.IR tms_utime ,
+.IR tms_stime ,
+.IR tms_cutime ,
+and
+.IR tms_cstime
+shall be set to 0.
+.IP " *" 4
+The time left until an alarm clock signal shall be reset to zero, and
+the alarm, if any, shall be canceled; see
+.IR "\fIalarm\fR\^(\|)".
+.IP " *" 4
+All
+.IR semadj
+values shall be cleared.
+.IP " *" 4
+File locks set by the parent process shall not be inherited by the
+child process.
+.IP " *" 4
+The set of signals pending for the child process shall be initialized
+to the empty set.
+.IP " *" 4
+Interval timers shall be reset in the child process.
+.IP " *" 4
+Any semaphores that are open in the parent process shall also be open
+in the child process.
+.IP " *" 4
+The child process shall not inherit any address space memory locks
+established by the parent process via calls to
+\fImlockall\fR()
+or
+\fImlock\fR().
+.IP " *" 4
+Memory mappings created in the parent shall be retained in the child
+process. MAP_PRIVATE mappings inherited from the parent shall also be
+MAP_PRIVATE mappings in the child, and any modifications to the data in
+these mappings made by the parent prior to calling
+\fIfork\fR()
+shall be visible to the child. Any modifications to the data in
+MAP_PRIVATE mappings made by the parent after
+\fIfork\fR()
+returns shall be visible only to the parent. Modifications to the data
+in MAP_PRIVATE mappings made by the child shall be visible only to the
+child.
+.IP " *" 4
+For the SCHED_FIFO and SCHED_RR scheduling policies,
+the child process shall inherit the policy and priority settings of the
+parent process during a
+\fIfork\fR()
+function. For other scheduling policies, the policy and priority
+settings on
+\fIfork\fR()
+are implementation-defined.
+.IP " *" 4
+Per-process timers created by the parent shall not be inherited by
+the child process.
+.IP " *" 4
+The child process shall have its own copy of the message queue
+descriptors of the parent. Each of the message descriptors of the child
+shall refer to the same open message queue description as the
+corresponding message descriptor of the parent.
+.IP " *" 4
+No asynchronous input or asynchronous output operations shall be
+inherited by the child process. Any use of asynchronous control blocks
+created by the parent produces undefined behavior.
+.IP " *" 4
+A process shall be created with a single thread. If a multi-threaded
+process calls
+\fIfork\fR(),
+the new process shall contain a replica of the calling thread and its
+entire address space, possibly including the states of mutexes and
+other resources. Consequently, to avoid errors, the child process may
+only execute async-signal-safe operations until such time as one of the
+.IR exec
+functions is called. Fork handlers may be established by means of the
+\fIpthread_atfork\fR()
+function in order to maintain application invariants across
+\fIfork\fR()
+calls.
+.RS 4 
+.P
+When the application calls
+\fIfork\fR()
+from a signal handler and any of the fork handlers registered by
+\fIpthread_atfork\fR()
+calls a function that is not async-signal-safe, the behavior is
+undefined.
+.RE
+.IP " *" 4
+If the Trace option and the Trace Inherit option are both supported:
+.RS 4 
+.P
+If the calling process was being traced in a trace stream that had its
+inheritance policy set to POSIX_TRACE_INHERITED, the child process shall
+be traced into that trace stream, and the child process shall inherit
+the parent's mapping of trace event names to trace event type
+identifiers. If the trace stream in which the calling process was being
+traced had its inheritance policy set to POSIX_TRACE_CLOSE_FOR_CHILD,
+the child process shall not be traced into that trace stream. The
+inheritance policy is set by a call to the
+\fIposix_trace_attr_setinherited\fR()
+function.
+.RE
+.IP " *" 4
+If the Trace option is supported, but the Trace Inherit option is not
+supported:
+.RS 4 
+.P
+The child process shall not be traced into any of the trace streams
+of its parent process.
+.RE
+.IP " *" 4
+If the Trace option is supported, the child process of a trace
+controller process shall not control the trace streams controlled by
+its parent process.
+.IP " *" 4
+The initial value of the CPU-time clock of the child process shall be
+set to zero.
+.IP " *" 4
+The initial value of the CPU-time clock of the single thread of the
+child process shall be set to zero.
+.P
+All other process characteristics defined by POSIX.1\(hy2008 shall be the same in
+the parent and child processes. The inheritance of process
+characteristics not defined by POSIX.1\(hy2008 is unspecified by POSIX.1\(hy2008.
+.P
+After
+\fIfork\fR(),
+both the parent and the child processes shall be capable of executing
+independently before either one terminates.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIfork\fR()
+shall return 0 to the child process and shall return the process ID
+of the child process to the parent process. Both processes shall
+continue to execute from the
+\fIfork\fR()
+function. Otherwise, \(mi1 shall be
+returned to the parent process, no child process shall be created, and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fIfork\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The system lacked the necessary resources to create another process, or
+the system-imposed limit on the total number of processes under
+execution system-wide or by a single user
+{CHILD_MAX}
+would be exceeded.
+.br
+.P
+The
+\fIfork\fR()
+function may fail if:
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+Many historical implementations have timing windows where a signal sent
+to a process group (for example, an interactive SIGINT)
+just prior to or during execution of
+\fIfork\fR()
+is delivered to the parent following the
+\fIfork\fR()
+but not to the child because the
+\fIfork\fR()
+code clears the child's set of pending signals. This volume of POSIX.1\(hy2008 does not require,
+or even permit, this behavior. However, it is pragmatic to expect that
+problems of this nature may continue to exist in implementations that
+appear to conform to this volume of POSIX.1\(hy2008 and pass available verification suites. This
+behavior is only a consequence of the implementation failing to make
+the interval between signal generation and delivery totally invisible.
+From the application's perspective, a
+\fIfork\fR()
+call should appear atomic. A signal that is generated prior to the
+\fIfork\fR()
+should be delivered prior to the
+\fIfork\fR().
+A signal sent to the process group after the
+\fIfork\fR()
+should be delivered to both parent and child. The implementation may
+actually initialize internal data structures corresponding to the
+child's set of pending signals to include signals sent to the process
+group during the
+\fIfork\fR().
+Since the
+\fIfork\fR()
+call can be considered as atomic from the application's perspective,
+the set would be initialized as empty and such signals would have
+arrived after the
+\fIfork\fR();
+see also
+.IR <signal.h> .
+.P
+One approach that has been suggested to address the problem of signal
+inheritance across
+\fIfork\fR()
+is to add an
+.BR [EINTR] 
+error, which would be returned when a signal is detected during the
+call. While this is preferable to losing signals, it was not
+considered an optimal solution. Although it is not recommended for
+this purpose, such an error would be an allowable extension for an
+implementation.
+.P
+The
+.BR [ENOMEM] 
+error value is reserved for those implementations that detect and
+distinguish such a condition. This condition occurs when an
+implementation detects that there is not enough memory to create the
+process. This is intended to be returned when
+.BR [EAGAIN] 
+is inappropriate because there can never be enough memory (either
+primary or secondary storage) to perform the operation. Since
+\fIfork\fR()
+duplicates an existing process, this must be a condition where there is
+sufficient memory for one such process, but not for two. Many
+historical implementations actually return
+.BR [ENOMEM] 
+due to temporary lack of memory, a case that is not generally distinct
+from
+.BR [EAGAIN] 
+from the perspective of a conforming application.
+.P
+Part of the reason for including the optional error
+.BR [ENOMEM] 
+is because the SVID specifies it and it should be reserved for the
+error condition specified there. The condition is not applicable on
+many implementations.
+.P
+IEEE\ Std\ 1003.1\(hy1988 neglected to require concurrent execution of the parent and child
+of
+\fIfork\fR().
+A system that single-threads processes was clearly not intended and is
+considered an unacceptable ``toy implementation'' of this volume of POSIX.1\(hy2008.
+The only objection anticipated to the phrase ``executing
+independently'' is testability, but this assertion should be testable.
+Such tests require that both the parent and child can block on a
+detectable action of the other, such as a write to a pipe or a signal.
+An interactive exchange of such actions should be possible for the
+system to conform to the intent of this volume of POSIX.1\(hy2008.
+.P
+The
+.BR [EAGAIN] 
+error exists to warn applications that such a condition might occur.
+Whether it occurs or not is not in any practical sense under the
+control of the application because the condition is usually a
+consequence of the user's use of the system, not of the application's
+code. Thus, no application can or should rely upon its occurrence
+under any circumstances, nor should the exact semantics of what concept
+of ``user'' is used be of concern to the application developer.
+Validation writers should be cognizant of this limitation.
+.P
+There are two reasons why POSIX programmers call
+\fIfork\fR().
+One reason is to create a new thread of control within the same program
+(which was originally only possible in POSIX by creating a new
+process); the other is to create a new process running a different
+program. In the latter case, the call to
+\fIfork\fR()
+is soon followed by a call to one of the
+.IR exec
+functions.
+.P
+The general problem with making
+\fIfork\fR()
+work in a multi-threaded world is what to do with all of the threads.
+There are two alternatives. One is to copy all of the threads into the
+new process. This causes the programmer or implementation to deal with
+threads that are suspended on system calls or that might be about to
+execute system calls that should not be executed in the new process.
+The other alternative is to copy only the thread that calls
+\fIfork\fR().
+This creates the difficulty that the state of process-local resources
+is usually held in process memory. If a thread that is not calling
+\fIfork\fR()
+holds a resource, that resource is never released in the child process
+because the thread whose job it is to release the resource does not
+exist in the child process.
+.P
+When a programmer is writing a multi-threaded program, the first
+described use of
+\fIfork\fR(),
+creating new threads in the same program, is provided by the
+\fIpthread_create\fR()
+function. The
+\fIfork\fR()
+function is thus used only to run new programs, and the effects of
+calling functions that require certain resources between the call to
+\fIfork\fR()
+and the call to an
+.IR exec
+function are undefined.
+.P
+The addition of the
+\fIforkall\fR()
+function to the standard was considered and rejected. The
+\fIforkall\fR()
+function lets all the threads in the parent be duplicated in the
+child. This essentially duplicates the state of the parent in the
+child. This allows threads in the child to continue processing and
+allows locks and the state to be preserved without explicit
+\fIpthread_atfork\fR()
+code. The calling process has to ensure that the threads processing
+state that is shared between the parent and child (that is, file
+descriptors or MAP_SHARED
+memory) behaves properly after
+\fIforkall\fR().
+For example, if a thread is reading a file descriptor in the parent
+when
+\fIforkall\fR()
+is called, then two threads (one in the parent and one in the child)
+are reading the file descriptor after the
+\fIforkall\fR().
+If this is not desired behavior, the parent process has to synchronize
+with such threads before calling
+\fIforkall\fR().
+.P
+While the
+\fIfork\fR()
+function is async-signal-safe, there is no way for an implementation to
+determine whether the fork handlers established by
+\fIpthread_atfork\fR()
+are async-signal-safe. The fork handlers may attempt to execute
+portions of the implementation that are not async-signal-safe, such as
+those that are protected by mutexes, leading to a deadlock condition.
+It is therefore undefined for the fork handlers to execute functions
+that are not async-signal-safe when
+\fIfork\fR()
+is called from a signal handler.
+.P
+When
+\fIforkall\fR()
+is called, threads, other than the calling thread, that are in
+functions that can return with an
+.BR [EINTR] 
+error may have those functions return
+.BR [EINTR] 
+if the implementation cannot ensure that the function behaves correctly
+in the parent and child. In particular,
+\fIpthread_cond_wait\fR()
+and
+\fIpthread_cond_timedwait\fR()
+need to return in order to ensure that the condition has not changed.
+These functions can be awakened by a spurious condition wakeup rather
+than returning
+.BR [EINTR] .
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIalarm\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIposix_trace_attr_getinherited\fR\^(\|)",
+.IR "\fIposix_trace_eventid_equal\fR\^(\|)",
+.IR "\fIpthread_atfork\fR\^(\|)",
+.IR "\fIsemop\fR\^(\|)",
+.IR "\fIsignal\fR\^(\|)",
+.IR "\fItimes\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.11" ", " "Memory Synchronization",
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

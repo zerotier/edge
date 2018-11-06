@@ -1,0 +1,101 @@
+'\" et
+.TH VFPRINTF "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+vdprintf,
+vfprintf,
+vprintf,
+vsnprintf,
+vsprintf
+\(em format output of a stdarg argument list
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdarg.h>
+#include <stdio.h>
+.P
+int vdprintf(int \fIfildes\fR, const char *restrict \fIformat\fR, va_list \fIap\fR);
+int vfprintf(FILE *restrict \fIstream\fP, const char *restrict \fIformat\fP,
+    va_list \fIap\fP);
+int vprintf(const char *restrict \fIformat\fP, va_list \fIap\fP);
+int vsnprintf(char *restrict \fIs\fP, size_t \fIn\fP, const char *restrict \fIformat\fP,
+    va_list \fIap\fP);
+int vsprintf(char *restrict \fIs\fP, const char *restrict \fIformat\fP, va_list \fIap\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIvdprintf\fR(),
+\fIvfprintf\fR(),
+\fIvprintf\fR(),
+\fIvsnprintf\fR(),
+and
+\fIvsprintf\fR()
+functions shall be equivalent to the \&
+\fIdprintf\fR(),
+\fIfprintf\fR(),
+\fIprintf\fR(),
+\fIsnprintf\fR(),
+and
+\fIsprintf\fR()
+functions respectively, except that instead of being called with a
+variable number of arguments, they are called with an argument list as
+defined by
+.IR <stdarg.h> .
+.P
+These functions shall not invoke the
+.IR va_end
+macro. As these functions invoke the
+.IR va_arg
+macro, the value of
+.IR ap
+after the return is unspecified.
+.SH "RETURN VALUE"
+Refer to
+.IR "\fIfprintf\fR\^(\|)".
+.SH ERRORS
+Refer to
+.IR "\fIfprintf\fR\^(\|)".
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Applications using these functions should call \fIva_end\fP(\fIap\fP)
+afterwards to clean up.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIfprintf\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdarg.h>\fP",
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,89 @@
+'\" et
+.TH sys_un.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/un.h
+\(em definitions for UNIX domain sockets
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/un.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/un.h> 
+header shall define the
+.BR sockaddr_un
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+sa_family_t  sun_family  \fRAddress family.\fR
+char         sun_path[]  \fRSocket pathname.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.BR sockaddr_un
+structure is used to store addresses for UNIX domain sockets.
+Pointers to this type shall be cast by applications to
+.BR "struct sockaddr *"
+for use with socket functions.
+.P
+The
+.IR <sys/un.h> 
+header shall define the
+.BR sa_family_t
+type as described in
+.IR <sys/socket.h> .
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The size of
+.IR sun_path
+has intentionally been left undefined. This is because different
+implementations use different sizes. For example, 4.3 BSD uses a size of
+108, and 4.4 BSD uses a size of 104. Since most implementations
+originate from BSD versions, the size is typically in the range 92 to
+108.
+.P
+Applications should not assume a particular length for
+.IR sun_path
+or assume that it can hold
+{_POSIX_PATH_MAX}
+bytes (256).
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_socket.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIbind\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)",
+.IR "\fIsocketpair\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

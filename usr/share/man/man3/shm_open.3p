@@ -1,0 +1,400 @@
+'\" et
+.TH SHM_OPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+shm_open
+\(em open a shared memory object
+(\fBREALTIME\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mman.h>
+.P
+int shm_open(const char *\fIname\fP, int \fIoflag\fP, mode_t \fImode\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIshm_open\fR()
+function shall establish a connection between a shared memory object
+and a file descriptor. It shall create an open file description that
+refers to the shared memory object and a file descriptor that refers to
+that open file description. The file descriptor is used by other
+functions to refer to that shared memory object. The
+.IR name
+argument points to a string naming a shared memory object. It is
+unspecified whether the name appears in the file system and is visible
+to other functions that take pathnames as arguments. The
+.IR name
+argument conforms to the construction rules for a pathname, except that
+the interpretation of
+<slash>
+characters other than the leading
+<slash>
+character in
+.IR name
+is implementation-defined, and that the length limits for the
+.IR name
+argument are implementation-defined and need not be the same as the
+pathname limits
+{PATH_MAX}
+and
+{NAME_MAX}.
+If
+.IR name
+begins with the
+<slash>
+character, then processes calling
+\fIshm_open\fR()
+with the same value of
+.IR name
+refer to the same shared memory object, as long as that name has not
+been removed. If
+.IR name
+does not begin with the
+<slash>
+character, the effect is implementation-defined.
+.P
+If successful,
+\fIshm_open\fR()
+shall return a file descriptor for the shared memory object that is the
+lowest numbered file descriptor not currently open for that process.
+The open file description is new, and therefore the file descriptor
+does not share it with any other processes. It is unspecified whether
+the file offset is set. The FD_CLOEXEC
+file descriptor flag associated with the new file descriptor is set.
+.P
+The file status flags and file access modes of the open file
+description are according to the value of
+.IR oflag .
+The
+.IR oflag
+argument is the bitwise-inclusive OR of the following flags defined in
+the
+.IR <fcntl.h> 
+header. Applications specify exactly one of the first two values
+(access modes) below in the value of
+.IR oflag :
+.IP O_RDONLY 12
+Open for read access only.
+.IP O_RDWR 12
+Open for read or write access.
+.P
+Any combination of the remaining flags may be specified in the value of
+.IR oflag :
+.IP O_CREAT 12
+If the shared memory object exists, this flag has no effect, except
+as noted under O_EXCL below. Otherwise, the shared memory object is
+created. The user ID of the shared memory object shall be set to the
+effective user ID of the process. The group ID of the shared memory object
+shall be set to the effective group ID of the process; however, if the
+.IR name
+argument is visible in the file system, the group ID may be set to the
+group ID of the containing directory. The permission bits of the shared
+memory object shall be set to the value of the
+.IR mode
+argument except those set in the file mode creation mask of the
+process. When bits in
+.IR mode
+other than the file permission bits are set, the effect is
+unspecified. The
+.IR mode
+argument does not affect whether the shared memory object is opened for
+reading, for writing, or for both. The shared memory object has a size
+of zero.
+.IP O_EXCL 12
+If O_EXCL and O_CREAT are set,
+\fIshm_open\fR()
+fails if the shared memory object exists. The check for the existence
+of the shared memory object and the creation of the object if it does
+not exist is atomic with respect to other processes executing
+\fIshm_open\fR()
+naming the same shared memory object with O_EXCL and O_CREAT set. If
+O_EXCL is set and O_CREAT is not set, the result is undefined.
+.IP O_TRUNC 12
+If the shared memory object exists, and it is successfully opened
+O_RDWR, the object shall be truncated to zero length and the mode and
+owner shall be unchanged by this function call. The result of using
+O_TRUNC with O_RDONLY is undefined.
+.P
+When a shared memory object is created, the state of the shared memory
+object, including all data associated with the shared memory object,
+persists until the shared memory object is unlinked and all other
+references are gone. It is unspecified whether the name and shared
+memory object state remain valid after a system reboot.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIshm_open\fR()
+function shall return a non-negative integer representing the lowest
+numbered unused file descriptor. Otherwise, it shall return \(mi1 and
+set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIshm_open\fR()
+function shall fail if:
+.TP
+.BR EACCES
+The shared memory object exists and the permissions specified by
+.IR oflag
+are denied, or the shared memory object does not exist and permission
+to create the shared memory object is denied, or O_TRUNC is specified
+and write permission is denied.
+.TP
+.BR EEXIST
+O_CREAT and O_EXCL are set and
+the named shared memory object already exists.
+.TP
+.BR EINTR
+The
+\fIshm_open\fR()
+operation was interrupted by a signal.
+.TP
+.BR EINVAL
+The
+\fIshm_open\fR()
+operation is not supported for the given name.
+.TP
+.BR EMFILE
+All file descriptors available to the process are currently open.
+.TP
+.BR ENFILE
+Too many shared memory objects are currently open in the system.
+.TP
+.BR ENOENT
+O_CREAT is not set and the named shared memory object does not exist.
+.TP
+.BR ENOSPC
+There is insufficient space for the creation of the new shared memory
+object.
+.P
+The
+\fIshm_open\fR()
+function may fail if:
+.TP
+.BR ENAMETOOLONG
+.br
+The length of the
+.IR name
+argument exceeds
+{_POSIX_PATH_MAX}
+on systems that do not support the XSI option
+or exceeds
+{_XOPEN_PATH_MAX}
+on XSI systems,
+or has a pathname component that is longer than
+{_POSIX_NAME_MAX}
+on systems that do not support the XSI option
+or longer than
+{_XOPEN_NAME_MAX}
+on XSI systems.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Creating and Mapping a Shared Memory Object"
+.P
+The following code segment demonstrates the use of
+\fIshm_open\fR()
+to create a shared memory object which is then sized using
+\fIftruncate\fR()
+before being mapped into the process address space using
+\fImmap\fR():
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+#include <sys/mman.h>
+\&...
+.P
+#define MAX_LEN 10000
+struct region {        /* Defines "structure" of shared memory */
+    int len;
+    char buf[MAX_LEN];
+};
+struct region *rptr;
+int fd;
+.P
+/* Create shared memory object and set its size */
+.P
+fd = shm_open("/myregion", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+if (fd == \(mi1)
+    /* Handle error */;
+.P
+if (ftruncate(fd, sizeof(struct region)) == \(mi1)
+    /* Handle error */;
+.P
+/* Map shared memory object */
+.P
+rptr = mmap(NULL, sizeof(struct region),
+       PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+if (rptr == MAP_FAILED)
+    /* Handle error */;
+.P
+/* Now we can refer to mapped region using fields of rptr;
+   for example, rptr->len */
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+When the Memory Mapped Files option is supported, the normal
+\fIopen\fR()
+call is used to obtain a descriptor to a file to be mapped according to
+existing practice with
+\fImmap\fR().
+When the Shared Memory Objects option is supported, the
+\fIshm_open\fR()
+function shall obtain a descriptor to the shared memory object
+to be mapped.
+.P
+There is ample precedent for having a file descriptor represent several
+types of objects. In the POSIX.1\(hy1990 standard, a file descriptor can represent a
+file, a pipe, a FIFO, a tty, or a directory. Many implementations
+simply have an operations vector, which is indexed by the file
+descriptor type and does very different operations. Note that in some
+cases the file descriptor passed to generic operations on file
+descriptors is returned by
+\fIopen\fR()
+or
+\fIcreat\fR()
+and in some cases returned by alternate functions, such as
+\fIpipe\fR().
+The latter technique is used by
+\fIshm_open\fR().
+.P
+Note that such shared memory objects can actually be implemented as
+mapped files. In both cases, the size can be set after the open using
+\fIftruncate\fR().
+The
+\fIshm_open\fR()
+function itself does not create a shared object of a specified size
+because this would duplicate an extant function that set the size of
+an object referenced by a file descriptor.
+.P
+On implementations where memory objects are implemented using the
+existing file system, the
+\fIshm_open\fR()
+function may be implemented using a macro that invokes
+\fIopen\fR(),
+and the
+\fIshm_unlink\fR()
+function may be implemented using a macro that invokes
+\fIunlink\fR().
+.P
+For implementations without a permanent file system, the definition of
+the name of the memory objects is allowed not to survive a system
+reboot. Note that this allows systems with a permanent file system to
+implement memory objects as data structures internal to the
+implementation as well.
+.P
+On implementations that choose to implement memory objects using memory
+directly, a
+\fIshm_open\fR()
+followed by an
+\fIftruncate\fR()
+and
+\fIclose\fR()
+can be used to preallocate a shared memory area and to set the size of
+that preallocation. This may be necessary for systems without virtual
+memory hardware support in order to ensure that the memory is
+contiguous.
+.P
+The set of valid open flags to
+\fIshm_open\fR()
+was restricted to O_RDONLY, O_RDWR, O_CREAT, and O_TRUNC
+because these could be easily implemented on most memory mapping
+systems. This volume of POSIX.1\(hy2008 is silent on the results if the implementation
+cannot supply the requested file access because of
+implementation-defined reasons, including hardware ones.
+.P
+The error conditions
+.BR [EACCES] 
+and
+.BR [ENOTSUP] 
+are provided to inform the application that the implementation cannot
+complete a request.
+.P
+.BR [EACCES] 
+indicates for implementation-defined reasons, probably
+hardware-related, that the implementation cannot comply with a
+requested mode because it conflicts with another requested mode. An
+example might be that an application desires to open a memory object
+two times, mapping different areas with different access modes. If the
+implementation cannot map a single area into a process space in two
+places, which would be required if different access modes were required
+for the two areas, then the implementation may inform the application
+at the time of the second open.
+.P
+.BR [ENOTSUP] 
+indicates for implementation-defined reasons, probably
+hardware-related, that the implementation cannot comply with a
+requested mode at all. An example would be that the hardware of the
+implementation cannot support write-only shared memory areas.
+.P
+On all implementations, it may be desirable to restrict the location of
+the memory objects to specific file systems for performance (such as a
+RAM disk) or implementation-defined reasons (shared memory supported
+directly only on certain file systems). The
+\fIshm_open\fR()
+function may be used to enforce these restrictions. There are a number
+of methods available to the application to determine an appropriate
+name of the file or the location of an appropriate directory. One way
+is from the environment via
+\fIgetenv\fR().
+Another would be from a configuration file.
+.P
+This volume of POSIX.1\(hy2008 specifies that memory objects have initial contents of
+zero when created. This is consistent with current behavior for both
+files and newly allocated memory. For those implementations that use
+physical memory, it would be possible that such implementations could
+simply use available memory and give it to the process uninitialized.
+This, however, is not consistent with standard behavior for the
+uninitialized data area, the stack, and of course, files. Finally, it
+is highly desirable to set the allocated memory to zero for security
+reasons. Thus, initializing memory objects to zero is required.
+.SH "FUTURE DIRECTIONS"
+A future version might require the
+\fIshm_open\fR()
+and
+\fIshm_unlink\fR()
+functions to have semantics similar to normal file system operations.
+.SH "SEE ALSO"
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIdup\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fImmap\fR\^(\|)",
+.IR "\fIshmat\fR\^(\|)",
+.IR "\fIshmctl\fR\^(\|)",
+.IR "\fIshmdt\fR\^(\|)",
+.IR "\fIshm_unlink\fR\^(\|)",
+.IR "\fIumask\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<sys_mman.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

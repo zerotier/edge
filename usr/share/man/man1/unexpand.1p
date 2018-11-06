@@ -1,0 +1,238 @@
+'\" et
+.TH UNEXPAND "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+unexpand
+\(em convert spaces to tabs
+.SH SYNOPSIS
+.LP
+.nf
+unexpand \fB[\fR\(mia|\(mit \fItablist\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR unexpand
+utility shall copy files or standard input to standard output,
+converting
+<blank>
+characters at the beginning of each line into the maximum number of
+<tab>
+characters followed by the minimum number of
+<space>
+characters needed to fill the same column positions originally filled
+by the translated
+<blank>
+characters. By default, tabstops shall be set at every eighth column
+position. Each
+<backspace>
+shall be copied to the output, and shall cause the column position
+count for tab calculations to be decremented; the count shall never be
+decremented to a value less than one.
+.SH OPTIONS
+The
+.IR unexpand
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\fP" 10
+In addition to translating
+<blank>
+characters at the beginning of each line, translate all sequences of
+two or more
+<blank>
+characters immediately preceding a tab stop to the maximum number of
+<tab>
+characters followed by the minimum number of
+<space>
+characters needed to fill the same column positions originally filled
+by the translated
+<blank>
+characters.
+.IP "\fB\(mit\ \fItablist\fR" 10
+Specify the tab stops. The application shall ensure that the
+.IR tablist
+option-argument is a single argument consisting of a single positive
+decimal integer or multiple positive decimal integers, separated by
+<blank>
+or
+<comma>
+characters, in ascending order. If a single number is given, tabs shall
+be set
+.IR tablist
+column positions apart instead of the default 8. If multiple numbers
+are given, the tabs shall be set at those specific column positions.
+.RS 10 
+.P
+The application shall ensure that each tab-stop position
+.IR N
+is an integer value greater than zero, and the list shall be in
+strictly ascending order. This is taken to mean that, from the start of
+a line of output, tabbing to position
+.IR N
+shall cause the next character output to be in the (\c
+.IR N +1)th
+column position on that line. When the
+.BR \(mit
+option is not specified, the default shall be the equivalent of
+specifying
+.BR "\(mit\ 8"
+(except for the interaction with
+.BR \(mia ,
+described below).
+.P
+No
+<space>-to-\c
+<tab>
+conversions shall occur for characters at positions beyond the last of
+those specified in a multiple tab-stop list.
+.P
+When
+.BR \(mit
+is specified, the presence or absence of the
+.BR \(mia
+option shall be ignored; conversion shall not be limited to the
+processing of leading
+<blank>
+characters.
+.RE
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a text file to be used as input.
+.SH STDIN
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be text files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR unexpand :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files), the processing of
+<tab>
+and
+<space>
+characters, and for the determination of the width in column positions
+each character would occupy on an output device.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be equivalent to the input files with
+the specified
+<space>-to-\c
+<tab>
+conversions.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+One non-intuitive aspect of
+.IR unexpand
+is its restriction to leading
+<space>
+characters when neither
+.BR \(mia
+nor
+.BR \(mit
+is specified. Users who always want to convert all
+<space>
+characters in a file can easily alias
+.IR unexpand
+to use the
+.BR \(mia
+or
+.BR "\(mit\ 8"
+option.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+On several occasions, consideration was given to adding a
+.BR \(mit
+option to the
+.IR unexpand
+utility to complement the
+.BR \(mit
+in
+.IR expand
+(see
+.IR "\fIexpand\fR\^").
+The historical intent of
+.IR unexpand
+was to translate multiple
+<blank>
+characters into tab stops, where tab stops were a multiple of eight
+column positions on most UNIX systems. An early proposal omitted
+.BR \(mit
+because it seemed outside the scope of the User Portability Utilities
+option; it was not described in any of the base documents. However,
+hard-coding tab stops every eight columns was not suitable for the
+international community and broke historical precedents for some
+vendors in the FORTRAN community, so
+.BR \(mit
+was restored in conjunction with the list of valid extension categories
+considered by the standard developers. Thus,
+.IR unexpand
+is now the logical converse of
+.IR expand .
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexpand\fR\^",
+.IR "\fItabs\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

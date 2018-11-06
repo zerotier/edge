@@ -1,0 +1,201 @@
+'\" et
+.TH UNAME "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+uname
+\(em return system name
+.SH SYNOPSIS
+.LP
+.nf
+uname \fB[\fR\(miamnrsv\fB]\fR
+.fi
+.SH DESCRIPTION
+By default, the
+.IR uname
+utility shall write the operating system name to standard output. When
+options are specified, symbols representing one or more system
+characteristics shall be written to the standard output. The format
+and contents of the symbols are implementation-defined. On systems
+conforming to the System Interfaces volume of POSIX.1\(hy2008, the symbols written shall be those supported
+by the
+\fIuname\fR()
+function as defined in the System Interfaces volume of POSIX.1\(hy2008.
+.SH OPTIONS
+The
+.IR uname
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\fP" 10
+Behave as though all of the options
+.BR \(mimnrsv
+were specified.
+.IP "\fB\(mim\fP" 10
+Write the name of the hardware type on which the system is running to
+standard output.
+.IP "\fB\(min\fP" 10
+Write the name of this node within an implementation-defined
+communications network.
+.IP "\fB\(mir\fP" 10
+Write the current release level of the operating system
+implementation.
+.IP "\fB\(mis\fP" 10
+Write the name of the implementation of the operating system.
+.IP "\fB\(miv\fP" 10
+Write the current version level of this release of the operating system
+implementation.
+.P
+If no options are specified, the
+.IR uname
+utility shall write the operating system name, as if the
+.BR \(mis
+option had been specified.
+.SH OPERANDS
+None.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR uname :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+By default, the output shall be a single line of the following form:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIsysname\fR>
+.fi \fR
+.P
+.RE
+.P
+If the
+.BR \(mia
+option is specified, the output shall be a single line of the following
+form:
+.sp
+.RS 4
+.nf
+\fB
+"%s %s %s %s %s\en", <\fIsysname\fR>, <\fInodename\fR>, <\fIrelease\fR>,
+    <\fIversion\fR>, <\fImachine\fR>
+.fi \fR
+.P
+.RE
+.P
+Additional implementation-defined symbols may be written; all such
+symbols shall be written at the end of the line of output before the
+<newline>.
+.P
+If options are specified to select different combinations of the
+symbols, only those symbols shall be written, in the order shown above
+for the
+.BR \(mia
+option. If a symbol is not selected for writing, its corresponding
+trailing
+<blank>
+characters also shall not be written.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The requested information was successfully written.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Note that any of the symbols could include embedded
+<space>
+characters, which may affect parsing algorithms if multiple options are
+selected for output.
+.P
+The node name is typically a name that the system uses to identify
+itself for inter-system communication addressing.
+.SH EXAMPLES
+The following command:
+.sp
+.RS 4
+.nf
+\fB
+uname \(misr
+.fi \fR
+.P
+.RE
+.P
+writes the operating system name and release level, separated by one or
+more
+<blank>
+characters.
+.SH RATIONALE
+It was suggested that this utility cannot be used portably since the
+format of the symbols is implementation-defined. The POSIX.1 working
+group could not achieve consensus on defining these formats in the
+underlying
+\fIuname\fR()
+function, and there was no expectation that this volume of POSIX.1\(hy2008 would be any more
+successful. Some applications may still find this historical utility of
+value. For example, the symbols could be used for system log entries or
+for comparison with operator or user input.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIuname\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

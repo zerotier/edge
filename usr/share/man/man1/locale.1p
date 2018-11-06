@@ -1,0 +1,560 @@
+'\" et
+.TH LOCALE "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+locale
+\(em get locale-specific information
+.SH SYNOPSIS
+.LP
+.nf
+locale \fB[\fR\(mia|\(mim\fB]\fR
+.P
+locale \fB[\fR\(mick\fB] \fIname\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR locale
+utility shall write information about the current locale environment,
+or all public locales, to the standard output. For the purposes of
+this section, a
+.IR "public locale"
+is one provided by the implementation that is accessible to the
+application.
+.P
+When
+.IR locale
+is invoked without any arguments, it shall summarize the current locale
+environment for each locale category as determined by the settings of
+the environment variables defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale".
+.P
+When invoked with operands, it shall write values that have been
+assigned to the keywords in the locale categories, as follows:
+.IP " *" 4
+Specifying a keyword name shall select the named keyword and the
+category containing that keyword.
+.IP " *" 4
+Specifying a category name shall select the named category and all
+keywords in that category.
+.SH OPTIONS
+The
+.IR locale
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\fP" 10
+Write information about all available public locales. The available
+locales shall include
+.BR POSIX ,
+representing the POSIX locale. The manner in which the implementation
+determines what other locales are available is
+implementation-defined.
+.IP "\fB\(mic\fP" 10
+Write the names of selected locale categories; see the STDOUT section.
+The
+.BR \(mic
+option increases readability when more than one category is selected
+(for example, via more than one keyword name or via a category name).
+It is valid both with and without the
+.BR \(mik
+option.
+.IP "\fB\(mik\fP" 10
+Write the names and values of selected keywords. The implementation
+may omit values for some keywords; see the OPERANDS section.
+.IP "\fB\(mim\fP" 10
+Write names of available charmaps; see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.1" ", " "Portable Character Set".
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIname\fR" 10
+The name of a locale category as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+the name of a keyword in a locale category, or the reserved name
+.BR charmap .
+The named category or keyword shall be selected for output. If a
+single
+.IR name
+represents both a locale category name and a keyword name in the
+current locale, the results are unspecified. Otherwise, both category
+and keyword names can be specified as
+.IR name
+operands, in any sequence. It is implementation-defined whether any
+keyword values are written for the categories
+.IR LC_CTYPE
+and
+.IR LC_COLLATE .
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR locale :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.P
+The application shall ensure that the
+.IR LANG ,
+.IR LC_* ,
+and
+.IR NLSPATH
+environment variables specify the current locale environment to be
+written out; they shall be used if the
+.BR \(mia
+option is not specified.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR LANG
+variable shall be written first using the format:
+.sp
+.RS 4
+.nf
+\fB
+"LANG=%s\en", <\fIvalue\fR>
+.fi \fR
+.P
+.RE
+.P
+If
+.IR LANG
+is not set or is an empty string, the value is the empty string.
+.P
+If
+.IR locale
+is invoked without any options or operands, the names and values of the
+.IR LC_*
+environment variables described in this volume of POSIX.1\(hy2008 shall be written to the
+standard output, one variable per line, and each line using the
+following format. Only those variables set in the environment and not
+overridden by
+.IR LC_ALL
+shall be written using this format:
+.sp
+.RS 4
+.nf
+\fB
+"%s=%s\en", <\fIvariable_name\fR>, <\fIvalue\fR>
+.fi \fR
+.P
+.RE
+.P
+The names of those
+.IR LC_*
+variables associated with locale categories defined in this volume of POSIX.1\(hy2008 that are
+not set in the environment or are overridden by
+.IR LC_ALL
+shall be written in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%s=\e"%s\e"\en", <\fIvariable_name\fR>, <\fIimplied value\fR>
+.fi \fR
+.P
+.RE
+.P
+The <\fIimplied\ value\fP> shall be the name of the locale that has
+been selected for that category by the implementation, based on the
+values in
+.IR LANG
+and
+.IR LC_ALL ,
+as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables".
+.P
+The <\fIvalue\fP> and <\fIimplied\ value\fP> shown above shall be
+properly quoted for possible later reentry to the shell. The
+<\fIvalue\fP> shall not be quoted using double-quotes (so that it can
+be distinguished by the user from the <\fIimplied\ value\fP> case,
+which always requires double-quotes).
+.P
+The
+.IR LC_ALL
+variable shall be written last, using the first format shown above. If
+it is not set, it shall be written as:
+.sp
+.RS 4
+.nf
+\fB
+"LC_ALL=\en"
+.fi \fR
+.P
+.RE
+.P
+If any arguments are specified:
+.IP " 1." 4
+If the
+.BR \(mia
+option is specified, the names of all the public locales shall be
+written, each in the following format:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIlocale\ name\fR>
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+If the
+.BR \(mic
+option is specified, the names of all selected categories shall be
+written, each in the following format:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIcategory\ name\fR>
+.fi \fR
+.P
+.RE
+.P
+If keywords are also selected for writing (see following items), the
+category name output shall precede the keyword output for that
+category.
+.P
+If the
+.BR \(mic
+option is not specified, the names of the categories shall not be
+written; only the keywords, as selected by the <\fIname\fP> operand,
+shall be written.
+.RE
+.IP " 3." 4
+If the
+.BR \(mik
+option is specified, the names and values of selected keywords shall be
+written. If a value is non-numeric and is not a compound keyword
+value, it shall be written in the following format:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+"%s=\e"%s\e"\en", <\fIkeyword name\fR>, <\fIkeyword value\fR>
+.fi \fR
+.P
+.RE
+.P
+If a value is a non-numeric compound keyword value, it shall either be
+written in the format:
+.sp
+.RS 4
+.nf
+\fB
+"%s=\e"%s\e"\en", <\fIkeyword name\fR>, <\fIkeyword value\fR>
+.fi \fR
+.P
+.RE
+.P
+where the <\fIkeyword value\fR> is a single string of values separated by
+<semicolon>
+characters, or it shall be written in the format:
+.sp
+.RS 4
+.nf
+\fB
+"%s=%s\en", <\fIkeyword name\fR>, <\fIkeyword value\fR>
+.fi \fR
+.P
+.RE
+.P
+where the <\fIkeyword value\fP> is encoded as a set of strings, each
+enclosed in double-quotation-marks, separated by
+<semicolon>
+characters.
+.P
+If the keyword was
+.BR charmap ,
+the name of the charmap (if any) that was specified via the
+.IR localedef
+.BR \(mif
+option when the locale was created shall be written, with the word
+.BR charmap
+as <\fIkeyword\ name\fP>.
+.P
+If a value is numeric, it shall be written in one of the following
+formats:
+.sp
+.RS 4
+.nf
+\fB
+"%s=%d\en", <\fIkeyword name\fR>, <\fIkeyword value\fR>
+.P
+"%s=%c%o\en", <\fIkeyword name\fR>, <\fIescape character\fR>, <\fIkeyword value\fR>
+.P
+"%s=%cx%x\en", <\fIkeyword name\fR>, <\fIescape character\fR>, <\fIkeyword value\fR>
+.fi \fR
+.P
+.RE
+.P
+where the <\fIescape\ character\fP> is that identified by the
+.BR escape_char
+keyword in the current locale; see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 7.3" ", " "Locale Definition".
+.P
+Compound keyword values (list entries) shall be separated in the output by
+<semicolon>
+characters. When included in keyword values, the
+<semicolon>,
+<backslash>,
+double-quote, and any control character shall be preceded (escaped)
+with the escape character.
+.RE
+.IP " 4." 4
+If the
+.BR \(mik
+option is not specified, selected keyword values shall be written, each
+in the following format:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIkeyword value\fR>
+.fi \fR
+.P
+.RE
+.P
+If the keyword was
+.BR charmap ,
+the name of the charmap (if any) that was specified via the
+.IR localedef
+.BR \(mif
+option when the locale was created shall be written.
+.RE
+.IP " 5." 4
+If the
+.BR \(mim
+option is specified, then a list of all available charmaps shall be
+written, each in the format:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIcharmap\fR>
+.fi \fR
+.P
+.RE
+.P
+where <\fIcharmap\fP> is in a format suitable for use as the
+option-argument to the
+.IR localedef
+.BR \(mif
+option.
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All the requested information was found and output successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+If the
+.IR LANG
+environment variable is not set or set to an empty value, or one of the
+.IR LC_*
+environment variables is set to an unrecognized value, the actual
+locales assumed (if any) are implementation-defined as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables".
+.P
+Implementations are not required to write out the actual values for
+keywords in the categories
+.IR LC_CTYPE
+and
+.IR LC_COLLATE ;
+however, they must write out the categories (allowing an application to
+determine, for example, which character classes are available).
+.SH EXAMPLES
+In the following examples, the assumption is that locale environment
+variables are set as follows:
+.sp
+.RS 4
+.nf
+\fB
+LANG=locale_x
+LC_COLLATE=locale_y
+.fi \fR
+.P
+.RE
+.P
+The command
+.IR locale
+would result in the following output:
+.sp
+.RS 4
+.nf
+\fB
+LANG=locale_x
+LC_CTYPE="locale_x"
+LC_COLLATE=locale_y
+LC_TIME="locale_x"
+LC_NUMERIC="locale_x"
+LC_MONETARY="locale_x"
+LC_MESSAGES="locale_x"
+LC_ALL=
+.fi \fR
+.P
+.RE
+.P
+The order of presentation of the categories is not specified by this volume of POSIX.1\(hy2008.
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+LC_ALL=POSIX locale \(mick decimal_point
+.fi \fR
+.P
+.RE
+.P
+would produce:
+.sp
+.RS 4
+.nf
+\fB
+LC_NUMERIC
+decimal_point="."
+.fi \fR
+.P
+.RE
+.P
+The following command shows an application of
+.IR locale
+to determine whether a user-supplied response is affirmative:
+.sp
+.RS 4
+.nf
+\fB
+if printf "%s\en$response" | grep \(miEq "$(locale yesexpr)"
+then
+    affirmative processing goes here
+else
+    non-affirmative processing goes here
+fi
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The output for categories
+.IR LC_CTYPE
+and
+.IR LC_COLLATE
+has been made implementation-defined because there is a questionable
+value in having a shell script receive an entire array of characters.
+It is also difficult to return a logical collation description, short
+of returning a complete
+.IR localedef
+source.
+.P
+The
+.BR \(mim
+option was included to allow applications to query for the existence of
+charmaps.
+The output is a list of the charmaps (implementation-supplied and
+user-supplied, if any) on the system.
+.P
+The
+.BR \(mic
+option was included for readability when more than one category is
+selected (for example, via more than one keyword name or via a category
+name). It is valid both with and without the
+.BR \(mik
+option.
+.P
+The
+.BR charmap
+keyword, which returns the name of the charmap (if any) that was used
+when the current locale was created, was included to allow applications
+needing the information to retrieve it.
+.P
+According to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.1" ", " "Portable Character Set",
+the standard requires that all supported locales must have the same
+encoding for
+<period>
+and
+<slash>,
+because these two characters are used within the locale-independent
+pathname resolution sequence. Therefore, it would be an error if
+.IR locale
+.BR \(mia
+listed both ASCII and EBCDIC-based locales, since those two encodings
+do not share the same representation for either
+<period>
+or
+<slash>.
+Any system that supports both environments would be expected to provide two
+POSIX locales, one in either codeset, where only the locales appropriate
+to the current environment can be visible at a time. In an XSI-compliant
+implementation, the
+.IR dd
+utility is the only portable means for performing conversions between
+the two character sets.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIlocaledef\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.1" ", " "Portable Character Set",
+.IR "Chapter 7" ", " "Locale",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,268 @@
+'\" et
+.TH DLOPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+dlopen
+\(em open a symbol table handle
+.SH SYNOPSIS
+.LP
+.nf
+#include <dlfcn.h>
+.P
+void *dlopen(const char *\fIfile\fP, int \fImode\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIdlopen\fR()
+function shall make the symbols (function identifiers and data object
+identifiers) in the executable object file specified by
+.IR file
+available to the calling program.
+.P
+The class of executable object files eligible for this operation and
+the manner of their construction are implementation-defined, though
+typically such files are shared libraries or programs.
+.P
+Implementations may permit the construction of embedded dependencies in
+executable object files. In such cases, a
+\fIdlopen\fR()
+operation shall load those dependencies in addition to the executable
+object file specified by
+.IR file .
+Implementations may also impose specific constraints on the construction
+of programs that can employ
+\fIdlopen\fR()
+and its related services.
+.P
+A successful
+\fIdlopen\fR()
+shall return a symbol table handle which the caller may use on subsequent
+calls to
+\fIdlsym\fR()
+and
+\fIdlclose\fR().
+.P
+The value of this symbol table handle should not be interpreted in any
+way by the caller.
+.P
+The
+.IR file
+argument is used to construct a pathname to the executable object file. If
+.IR file
+contains a
+<slash>
+character, the
+.IR file
+argument is used as the pathname for the file. Otherwise,
+.IR file
+is used in an implementation-defined manner to yield a pathname.
+.P
+If
+.IR file
+is a null pointer,
+\fIdlopen\fR()
+shall return a global symbol table handle for the currently running
+process image. This symbol table handle shall provide access to the
+symbols from an ordered set of executable object files consisting of
+the original program image file, any executable object files loaded
+at program start-up as specified by that process file (for example,
+shared libraries), and the set of executable object files loaded using
+\fIdlopen\fR()
+operations with the RTLD_GLOBAL flag. As the latter set of executable
+object files can change during execution, the set of symbols made
+available by this symbol table handle can also change dynamically.
+.P
+Only a single copy of an executable object file shall be brought into
+the address space, even if
+\fIdlopen\fR()
+is invoked multiple times in reference to the executable object file,
+and even if different pathnames are used to reference the executable
+object file.
+.P
+The
+.IR mode
+parameter describes how
+\fIdlopen\fR()
+shall operate upon
+.IR file
+with respect to the processing of relocations and the scope of visibility
+of the symbols provided within
+.IR file .
+When an executable object file is brought into the address space of a
+process, it may contain references to symbols whose addresses are not
+known until the executable object file is loaded.
+.P
+These references shall be relocated before the symbols can be accessed. The
+.IR mode
+parameter governs when these relocations take place and may have the
+following values:
+.IP RTLD_LAZY 12
+Relocations shall be performed at an implementation-defined time,
+ranging from the time of the
+\fIdlopen\fR()
+call until the first reference to a given symbol occurs. Specifying
+RTLD_LAZY should improve performance on implementations supporting dynamic
+symbol binding since a process might not reference all of the symbols
+in an executable object file. And, for systems supporting dynamic symbol
+resolution for normal process execution, this behavior mimics the normal
+handling of process execution.
+.IP RTLD_NOW 12
+All necessary relocations shall be performed when the executable object
+file is first loaded. This may waste some processing if relocations are
+performed for symbols that are never referenced. This behavior may be
+useful for applications that need to know that all symbols referenced
+during execution will be available before
+\fIdlopen\fR()
+returns.
+.P
+Any executable object file loaded by
+\fIdlopen\fR()
+that requires relocations against global symbols can reference the symbols
+in the original process image file, any executable object files loaded
+at program start-up, from the initial process image itself, from any
+other executable object file included in the same
+\fIdlopen\fR()
+invocation, and any executable object files that were loaded in any
+\fIdlopen\fR()
+invocation and which specified the RTLD_GLOBAL flag. To determine the
+scope of visibility for the symbols loaded with a
+\fIdlopen\fR()
+invocation, the
+.IR mode
+parameter should be a bitwise-inclusive OR with one of the following
+values:
+.IP RTLD_GLOBAL 12
+The executable object file's symbols shall be made available for
+relocation processing of any other executable object file. In addition,
+symbol lookup using
+.IR dlopen (NULL, mode )
+and an associated
+\fIdlsym\fR()
+allows executable object files loaded with this mode to be searched.
+.IP RTLD_LOCAL 12
+The executable object file's symbols shall not be made available for
+relocation processing of any other executable object file.
+.P
+If neither RTLD_GLOBAL nor RTLD_LOCAL is specified, the default behavior
+is unspecified.
+.P
+If an executable object file is specified in multiple
+\fIdlopen\fR()
+invocations,
+.IR mode
+is interpreted at each invocation.
+.P
+If RTLD_NOW has been specified, all relocations shall have been completed
+rendering further RTLD_NOW operations redundant and any further RTLD_LAZY
+operations irrelevant.
+.P
+If RTLD_GLOBAL has been specified, the executable object file shall
+maintain the RTLD_GLOBAL status regardless of any previous or future
+specification of RTLD_LOCAL, as long as the executable object file
+remains in the address space (see
+.IR "\fIdlclose\fR\^(\|)").
+.P
+Symbols introduced into the process image through calls to
+\fIdlopen\fR()
+may be used in relocation activities. Symbols so introduced may duplicate
+symbols already defined by the program or previous
+\fIdlopen\fR()
+operations. To resolve the ambiguities such a situation might present,
+the resolution of a symbol reference to symbol definition is based on a
+symbol resolution order. Two such resolution orders are defined: load
+order and dependency order. Load order establishes an ordering among
+symbol definitions, such that the first definition loaded (including
+definitions from the process image file and any dependent executable
+object files loaded with it) has priority over executable object files
+added later (by
+\fIdlopen\fR()).
+Load ordering is used in relocation processing. Dependency ordering uses
+a breadth-first order starting with a given executable object file,
+then all of its dependencies, then any dependents of those, iterating
+until all dependencies are satisfied. With the exception of the global
+symbol table handle obtained via a
+\fIdlopen\fR()
+operation with a null pointer as the
+.IR file
+argument, dependency ordering is used by the
+\fIdlsym\fR()
+function. Load ordering is used in
+\fIdlsym\fR()
+operations upon the global symbol table handle.
+.P
+When an executable object file is first made accessible via
+\fIdlopen\fR(),
+it and its dependent executable object files are added in dependency
+order. Once all the executable object files are added, relocations are
+performed using load order. Note that if an executable object file or
+its dependencies had been previously loaded, the load and dependency
+orders may yield different resolutions.
+.P
+The symbols introduced by
+\fIdlopen\fR()
+operations and available through
+\fIdlsym\fR()
+are at a minimum those which are exported as identifiers of global
+scope by the executable object file. Typically, such identifiers shall
+be those that were specified in (for example) C source code as having
+.BR extern
+linkage. The precise manner in which an implementation constructs
+the set of exported symbols for an executable object file is
+implementation-defined.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIdlopen\fR()
+shall return a symbol table handle. If
+.IR file
+cannot be found, cannot be opened for reading, is not of an appropriate
+executable object file format for processing by
+\fIdlopen\fR(),
+or if an error occurs during the process of loading
+.IR file
+or relocating its symbolic references,
+\fIdlopen\fR()
+shall return a null pointer. More detailed diagnostic information shall
+be available through
+\fIdlerror\fR().
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+Refer to
+.IR "\fIdlsym\fR\^(\|)".
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIdlclose\fR\^(\|)",
+.IR "\fIdlerror\fR\^(\|)",
+.IR "\fIdlsym\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<dlfcn.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

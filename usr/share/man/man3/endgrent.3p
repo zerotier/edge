@@ -1,0 +1,132 @@
+'\" et
+.TH ENDGRENT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+endgrent,
+getgrent,
+setgrent
+\(em group database entry functions
+.SH SYNOPSIS
+.LP
+.nf
+#include <grp.h>
+.P
+void endgrent(void);
+struct group *getgrent(void);
+void setgrent(void);
+.fi
+.SH DESCRIPTION
+The
+\fIgetgrent\fR()
+function shall return a pointer to a structure containing the broken-out
+fields of an entry in the group database. When first called,
+\fIgetgrent\fR()
+shall return a pointer to a
+.BR group
+structure containing the first entry in the group database. Thereafter,
+it shall return a pointer to a
+.BR group
+structure containing the next group structure in the group database, so
+successive calls may be used to search the entire database.
+.P
+An implementation that provides extended security controls may impose
+further implementation-defined restrictions on accessing the group
+database. In particular, the system may deny the existence of some or
+all of the group database entries associated with groups other than
+those groups associated with the caller and may omit users other than
+the caller from the list of members of groups in database entries that
+are returned.
+.P
+The
+\fIsetgrent\fR()
+function shall rewind the group database to allow repeated searches.
+.P
+The
+\fIendgrent\fR()
+function may be called to close the group database when processing is
+complete.
+.P
+These functions need not be thread-safe.
+.SH "RETURN VALUE"
+When first called,
+\fIgetgrent\fR()
+shall return a pointer to the first group structure in the group
+database. Upon subsequent calls it shall return the next group
+structure in the group database. The
+\fIgetgrent\fR()
+function shall return a null pointer on end-of-file or an error and
+.IR errno
+may be set to indicate the error.
+.P
+The application shall not modify the structure to which the return
+value points, nor any storage areas pointed to by pointers within the
+structure. The returned pointer, and pointers within the structure,
+might be invalidated or the structure or the storage areas might be
+overwritten by a subsequent call to
+\fIgetgrgid\fR(),
+\fIgetgrnam\fR(),
+or
+\fIgetgrent\fR().
+.SH ERRORS
+The
+\fIgetgrent\fR()
+function may fail if:
+.TP
+.BR EINTR
+A signal was caught during the operation.
+.TP
+.BR EIO
+An I/O error has occurred.
+.TP
+.BR EMFILE
+All file descriptors available to the process are currently open.
+.TP
+.BR ENFILE
+The maximum allowable number of files is currently open in the system.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+These functions are provided due to their historical usage.
+Applications should avoid dependencies on fields in the group database,
+whether the database is a single file, or where in the file system
+name space the database resides. Applications should use
+\fIgetgrnam\fR()
+and
+\fIgetgrgid\fR()
+whenever possible because it avoids these dependencies.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIendpwent\fR\^(\|)",
+.IR "\fIgetgrgid\fR\^(\|)",
+.IR "\fIgetgrnam\fR\^(\|)",
+.IR "\fIgetlogin\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<grp.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

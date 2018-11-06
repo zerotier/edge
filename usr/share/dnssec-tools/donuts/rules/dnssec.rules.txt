@@ -1,0 +1,446 @@
+# -*- mmm-classes: donuts-perl -*-
+# Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+#
+# This file implements rules to check DNSSEC record validity
+#
+
+name: DNSSEC_RRSIG_TTL_MATCH_ORGTTL
+desc: Checks to see if the TTL of an RRSIG record matches the original record. [XXX: quote RFC here]
+level: 3
+type:  RRSIG
+<test>
+  if ($record->ttl ne $record->orgttl &&
+      # err...  NSEC3PARAM output by bind lists a TTL of 0, but the
+      # RRSIG is the default.
+      $record->typecovered ne 'NSEC3PARAM') {
+    donuts_error("RRSIG ORGTTL must match TTL name=" . $record->name .
+    ", type=" . $record->typecovered . " (" . $record->ttl . " ne "
+    . $record->orgttl . ")");
+  }
+</test>
+
+#
+# NSEC is present?
+#
+name: DNSSEC_MISSING_NSEC_RECORD1
+desc: checks to see if a given name is missing an NSEC record, which is require for dnssec to prove non-existence.
+level: 3
+ruletype: name
+<test>
+    if (!exists($records->{'NSEC'}) &&
+        !defined(donuts_records_by_name_and_type($recordname, 'NS')) &&
+        !defined(donuts_records_by_name_and_type($recordname, 'NSEC3PARAM'))) {
+	donuts_error("name $recordname does not have an NSEC record, which is required for secure domains.");
+    }
+</test>
+
+#
+# RRSIG is present?
+#
+name: DNSSEC_MISSING_RRSIG_RECORD1
+desc: Checks to see if a name contains a RRSIG record.
+level: 3
+ruletype: name
+<test>
+    # this ensures that sub-domain NS records aren't marked with errors
+    # (NS records for sub domains aren't signed)
+    if (!exists($records->{'RRSIG'}) &&
+        !defined(donuts_records_by_name_and_type($recordname, 'NS'))) {
+	donuts_error("name $recordname does not have a RRSIG record, which is required for secure domains.");
+    }
+</test>
+
+#
+# RRSIG signs itself???
+#
+name: DNSSEC_RRSIG_NOT_SIGNING_RRSIG
+level: 7
+type: RRSIG
+desc: RFC4035: Section 2.2: An RRSIG RR itself MUST NOT be signed, as signing an RRSIG RR would add no value and would create an infinite loop in the signing process.
+<test>
+  if ($record->typecovered eq 'RRSIG') {
+      donuts_error("RRSIG records must not be signed but a signature for a RRSIG on $record{name} is.");
+  }
+</test>
+
+#
+# RRSIG is present but shouldn't be?
+#
+name: DNSSEC_RRSIG_FOR_NS_GLUE_RECORD
+level: 3
+ruletype: name
+desc: Checks to see if an NS record exists with glue data but also a RRSIG covers the glue data, which should not happen since the zone is not authoritative over the glue data.
+<test>
+  my $suffix = $recordname;
+  $suffix =~ s/^[^\.]+\.//;
+  if (exists($records->{'RRSIG'}) &&    # has an RRSIG at point
+      $current_domain ne $recordname && # not the top level
+      $current_domain ne $suffix &&     # contains at least one sub-label more
+      # has NS records at point
+      defined(donuts_records_by_name_and_type($recordname, 'NS'))) {
+      donuts_error("name $recordname is pointed to by an NS record and thus should be a glue record.  But it also has an RRSIG record which should not be present for glue records.");
+  }
+</test>
+
+#
+# NSEC is present but shouldn't be?
+#
+name: DNSSEC_NSEC_FOR_NS_GLUE_RECORD
+level: 3
+desc: Checks to see if an NS record exists with glue data but also a NSEC covers the glue data, which should not happen since the zone is not authoritative over the glue data.
+ruletype: name
+<test>
+  my $suffix = $recordname;
+  $suffix =~ s/^[^\.]+\.//;
+  if (exists($records->{'RRSIG'}) &&    # has an RRSIG at point
+      $current_domain ne $recordname && # not the top level
+      $current_domain ne $suffix &&     # contains at least one sub-label more
+      # has NS records at point
+      defined(donuts_records_by_name_and_type($recordname, 'NS'))) {
+      donuts_error("name $recordname is pointed to by an NS record and thus should be a glue record.  But it also has an NSEC record which should not be present for glue records.")
+  }
+</test>
+
+#
+# check signature expiration
+#
+name: DNSSEC_RRSIG_SIGEXP
+level: 1
+type:  RRSIG
+warntime:  604800
+desc: Checks signature expiration time and warns or signals an error if the time is near or past.
+<init>
+  use Date::Parse;
+  $donuts::time = time();
+</init>
+<test>
+  my $date = $record->sigexpiration;
+  $date =~ s/(....)(..)(..)(..)(..)(..)/$2-$3-$1 $4:$5:$6/;
+  my $extime = str2time($date);
+  if ($extime < $donuts::time) {
+    donuts_error("RRSIG record for " . $record->name . " has expired");
+  } elsif ($extime - $donuts::time < $rule->{'warntime'}) {
+    donuts_error("RRSIG is nearing its expiration time");
+  }
+</test>
+
+# Note: this only works if the SOA has already been seen 
+# (should have been first anyway)
+#
+level: 5
+name: DNSSEC_NSEC_TTL
+desc: RFC3845: The NSEC RR SHOULD have the same TTL value as the SOA minimum TTL field.  This is in the spirit of negative caching [RFC2308].
+type: NSEC
+<test>
+  # skip the current record if it's not within our current zone
+  # (happens with glue especially)
+  return if ($record->name !~ /$current_domain$/);
+  return if ($#{$nrecs{$current_domain}{'SOA'}} == -1);
+
+  if ($record->ttl ne $nrecs{$current_domain}{'SOA'}[0]->minimum) {
+      donuts_error("NSEC TTL for " . $record->name . " (" . $record->ttl . 
+		   ") does not match SOA MIN TTL (" . 
+		   $nrecs{$current_domain}{'SOA'}[0]->minimum . ")");
+  }
+</test>
+
+# Note: this only works if the SOA has already been seen 
+# (should have been first anyway)
+#
+level: 5
+name: DNSSEC_NSEC3_TTL
+desc: RFC5155: The TTL value for any NSEC3 RR SHOULD be the same as the minimum TTL value field in the zone SOA RR.
+type: NSEC3
+<test>
+  # skip the current record if it's not within our current zone
+  # (happens with glue especially)
+  return if ($record->name !~ /$current_domain$/);
+
+  if ($record->ttl ne $nrecs{$current_domain}{'SOA'}[0]->minimum) {
+      donuts_error("NSEC3 TTL for " . $record->name . " (" . $record->ttl . 
+		   ") does not match SOA MIN TTL (" . 
+		   $nrecs{$current_domain}{'SOA'}[0]->minimum . ")");
+  }
+</test>
+
+name: DNSSEC_DNSKEY_MUST_HAVE_SAME_NAME
+level: 4
+type: DNSKEY
+desc: RFC4034 section 2.1.1: If bit 7 has value 1, then the DNSKEY record holds a DNS zone key, and the DNSKEY RR owner name MUST be the name of a zone.
+<test>
+  if ($record->flags & 0x100 && $current_domain ne $record->name) {
+    donuts_error("DNSKEY record found for '$record->{name}' in wrong domain: '$current_domain'.");
+  }
+</test>
+
+name: DNSSEC_DNSKEY_PROTOCOL_MUST_BE_3
+level: 4
+type: DNSKEY
+desc: RFC4934 section 2.1.2: The Protocol Field MUST have value 3, and the DNSKEY RR MUST be treated as invalid during signature verification if it is found to be some value other than 3.
+<test>
+  if ($record->protocol != 3) {
+    donuts_error("DNSKEY record found for '$record->{name}' with protocol other than '3'.");
+  }
+</test>
+
+name: DNSSEC_BOGUS_NS_MEMORIZE
+level: 1
+internal: yes
+type: NS
+<test>
+  if ($current_domain ne $record->{name}) {
+    # remember the name so we can also ignore glue records later
+    $DONUTS::gluerecs{$record->{nsdname}} = $record->{name};
+  }
+  return;
+</test>
+
+name: DNSSEC_MISSING_RRSIG_RECORD2
+level: 3
+ruletype: name
+desc: RRSIG records signed by the zones key are required for all records in order for the domain to be secure, with the exception of the NS and glue records for children.
+<test>
+  my %rrsigs;
+  foreach my $rec (@{$records->{'RRSIG'}}) {
+    # memorize RRSIG records
+    push @{$rrsigs{$rec->typecovered}{$rec->name}},$rec;
+  }
+  #
+  # for each record type for a given name
+  # reverse sort these so NS records are seen before the glue records
+  foreach my $type (sort { $b cmp $a } keys(%$records)) {
+    # RRSIGs themselves (obviously) aren't signed
+    next if ($type eq 'RRSIG');
+    foreach my $rec (@{$records->{$type}}) {
+      # NS records for children aren't signed
+      if ($type eq 'NS' && $current_domain ne $rec->{name}) {
+        if (exists($rrsigs{$type}{$rec->name})) {
+          donuts_error("$rec->{name} is a child NS record but is signed and shouldn't be");
+        }
+        next;
+      }
+      if ($current_domain eq $rec->name && $type eq 'DS') {
+	    # in case they passed in parent zone data, skip this signature as its outside the zone
+	    next;
+      }
+      # NS glue records for children aren't signed.
+      if (exists($rrsigs{$type}{$rec->name}) &&
+          exists($DONUTS::gluerecs{$rec->name}) &&
+          # make exception for stuff directly in our zone
+          $rec->{name} !~ /^\w+\.$current_domain$/) {
+	  donuts_error("$rec->{name} is a glue record for $DONUTS::gluerecs{$rec->{name}} and is signed and shouldn't be.");
+        next;
+      }
+      if (!exists($rrsigs{$type}{$rec->name}) &&
+          !exists($DONUTS::gluerecs{$rec->name})) {
+	  next; # this error caught by DNSSEC_MISSING_RRSIG_RECORD
+      }
+      if (exists($rrsigs{$type}{$rec->name})) {
+         my $gotone = 0;
+         for(my $i = 0; $i <= $#{$rrsigs{$type}{$rec->name}} && !$gotone; $i++){
+           $gotone = 1 if ($rrsigs{$type}{$rec->name}[$i]->signame eq 
+                           $current_domain . "." ||
+			   $rrsigs{$type}{$rec->name}[$i]->signame eq 
+                           $current_domain);
+         }
+         if (!$gotone) {
+	     donuts_error("$type:$rec->{name} is not signed by a key owned by the zone");
+         }
+      }
+    }
+  }
+</test>
+
+name: DNSSEC_RRSIG_TTL_MUST_MATCH_RECORD
+level: 3
+ruletype: name
+desc: RFC4034 section 3.0: The TTL value of an RRSIG RR MUST match the TTL value of the RRset it covers.
+<test>
+  my %rrsigs;
+  foreach my $rec (@{$records->{'RRSIG'}}) {
+    # memorize RRSIG records
+      push @{$rrsigs{$rec->typecovered}{$rec->name}}, $rec;
+  }
+  #
+  # for each record type for a given name
+  # reverse sort these so NS records are seen before the glue records
+  foreach my $type (sort { $b cmp $a } keys(%{$records})) {
+    # RRSIGs themselves (obviously) aren't signed
+    next if ($type eq 'RRSIG');
+    foreach my $rec (@{$records->{$type}}) {
+      foreach my $rrsig (@{$rrsigs{$type}{$rec->name}}) {
+        if ($rrsig->ttl ne $rec->ttl) {
+	    donuts_error("RRSIG's TTL ($rrsig->{ttl}) for $rec->{name}:$type doesn't match original record's TTL ($rec->{ttl})");
+        }
+      }
+    }
+  }
+</test>
+
+name: DNSSEC_MISSING_NSEC_RECORD2
+level: 3
+ruletype: name
+desc: NSEC records are required for all names except child glue records in order for the domain to be secure from denial-of-existence attacks.
+<test>
+  # make sure an nsec record exists
+  if ((!exists($records->{'NSEC'}) || $#{$records->{'NSEC'}} == -1) &&
+      # ignore glue records
+      !exists($DONUTS::gluerecs{$recordname})) {
+      return; # this error is caught by DNSSEC_MISSING_NSEC_RECORD
+  }
+  return if (exists($DONUTS::gluerecs{$recordname}));
+  if ($#{$records->{'NSEC'}} != 0) {
+    return donuts_error("odd error with NSEC record for $recordname.  number of records = " . (1 + $#{$records->{'NSEC'}}));
+  }
+  my $types = $records->{'NSEC'}[0]->typelist;
+  my @types = split(/ /,$types);
+  my %types;
+  # if it does exist, make sure it doesn't cover types that don't exist
+  foreach my $t (@types) {
+    if (!exists($records->{$t})) {
+        donuts_error("NSEC record for $recordname has coverage for type $t but the domain doesn't have a correspending record for that type");
+    }
+    $types{$t} = 1;
+  }
+  # and that it covers all the types that do
+  foreach my $k (keys(%{$records})) {
+    if (!exists($types{$k})) {
+	donuts_error("NSEC record for $recordname doesn't cover type $k but there are records for that name of that type");
+    }
+  }
+</test>
+
+name: DNSSEC_RRSIG_SIGNER_NAME_MATCHES
+type: RRSIG
+desc: RFC4034: section 3.1.7: The Signers Name field MUST contain the name of the zone of the covered RRset
+<test>
+  if ($current_domain eq $record->name && $record->typecovered eq 'DS') {
+      # in case they passed in parent zone data, skip this signature as its outside the zone
+      # XXX: check to make sure the parent's name is correct
+      next;
+  }
+  if ($record->signame ne $current_domain . "." &&
+      $record->signame ne $current_domain) {
+      donuts_error("signer name for $record->{name} is $record->{signame} but it should match the zone name ($current_domain)");
+  }
+</test>
+
+name: DNSSEC_NSEC_RRSEC_MUST_NOT_BE_ALONE
+ruletype: name
+level: 5
+desc: RFC4035: section 2.3: An NSEC record (and its associated RRSIG RRset) MUST NOT be the only RRset at any particular owner name.
+<test>
+  my @keys = sort keys(%{$records});
+  return if ($#keys != 1);
+  return if ($recordname eq '');
+  if ($keys[0] eq 'NSEC' && $keys[1] eq 'RRSIG') {
+    donuts_error("$recordname only contains NSEC and RRSIG records");
+  }
+</test>
+
+name: DNSSEC_RRSIGS_VERIFY
+type: RRSIG
+level: 1
+desc: RRSIGs must cryptographically verify the records they are signing.
+ruletype: name
+<test>
+  my $count = 0;
+  foreach my $sig (@{$records->{'RRSIG'}}) {
+    if ($current_domain eq $recordname && $sig->typecovered eq 'DS') {
+    	# in case they passed in parent zone data, skip this signature as its outside the zone
+	# XXX: we should see if we have parent keys and test it
+    	next;
+    }
+    $count++;
+    # find the right matching key
+    my $dhkey;
+    if ($sig->keytag eq '') {
+      donuts_error("keytag not found on a RRSIG for $recordname");
+      next;
+    }
+    foreach my $key (@{donuts_records_by_name_and_type($current_domain, 'DNSKEY')}) {
+       if ($key->keytag eq $sig->keytag) {
+         $dhkey = $key;
+         last;
+       }
+    }
+    if (!$dhkey) {
+      donuts_error("Cannot find a matching DNSKEY (tag:" .
+      $sig->keytag. ") for an RRSIG for $recordname/" . $sig->typecovered);
+      next;
+    }
+    if (! $sig->verify($records->{$sig->typecovered}, $dhkey)) {
+       donuts_error("RRSIG on name: $recordname type: " . $sig->typecovered . 
+                    " failed to verify: $sig->{vrfyerrstr}");
+    }
+  }
+</test>
+
+name: DNSSEC_TWO_ZSKS
+ruletype: name
+level: 7
+desc: In order to facilitate future rolling of your zone signing keys (ZSKs) it is recommended that you publish two (but sign with only one).
+<test>
+  return if ($current_domain ne $recordname);
+  return donuts_error("No DNSKEY records associated with $current_domain")
+   if ($#{$records->{'DNSKEY'}} == -1);
+  my ($zskcount, $kskcount) = (0,0);
+  foreach my $key (@{$records->{'DNSKEY'}}) {
+    if ($key->flags & 0x01) {
+       $kskcount++;
+    } else {
+      $zskcount++;
+    }
+  }
+ if ($zskcount < 2) {
+   donuts_error("Only $zskcount ZSKs found for the zone; more than one ZSK is recommended to be in a zone at any given time to provide forfuture proper ZSK rollevers (one 'current' and one 'published').");
+ }
+
+ if ($kskcount < 1) {
+   donuts_error("Only $kskcount KSKs found for the zone; At least one KSK should be published in the zone (and used to sign the DNSKEY record).");
+  }
+</test>
+
+name: DNSSEC_OPENSSL_KEY_ISSUES
+type: DNSKEY
+desc: Tests to make sure that the vulnerability found in OpenSSL does not affect current keys within a zone.
+level: 1
+<test>
+  my $algorithm = $record->algorithm();
+  if ($algorithm == 1 || $algorithm == 5) {
+    my $base64 = $record->key();
+    if ($base64 =~ /^(AQM|AQN|AQO|AQP)/) {
+      donuts_error("An DNSKEY was generated with a broken version of OpenSSL.  Upgrade to a new version of bind and generate a new key.  See this web page for details:  http://marc.info/?l=bind-announce&m=116253119512445");
+    }
+  } 
+</test>
+
+
+# XXX: nsec next order is proper
+# XXX: check all sigs?
+#
+# XXX: records-11.txt section 3.1.3 talks about labels requirements.  testable?
+#
+# XXX: check if no RRSIGs exist for the *current* time period (eg,
+# start time is later than now)
+#
+# XXX: records-11.txt: 3.1.8.1 has a bunch of MUSTs that are sort of
+# tested by other rules...
+#
+# XXX: last sentence of 4.1.2...  hard to test.
+
+# XXX: section 6.3 Paragraph 2 says no identical RR sets should exist.  check for this?
+
+# XXX: protocol:2.2 zone apex NS record MUST be signed
+# XXX: protocol 2.2: There MUST be an RRSIG for each RRset using at least one DNSKEY of each algorithm in the zone apex DNSKEY RRset. (currently we don't check each alg must be used)
+
+
+# XXX: prococol 2.2: The apex DNSKEY RRset itself MUST be signed by each algorithm appearing in the DS RRset located at the delegating parent (if any).
+
+
+
+
+# XXX: check NSEC types to make sure each type at a name is covered (exactly)
+
+# stopped in protocol: 2.3

@@ -1,0 +1,201 @@
+'\" et
+.TH PTHREAD_ATTR_GETSTACK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_attr_getstack,
+pthread_attr_setstack
+\(em get and set stack attributes
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_attr_getstack(const pthread_attr_t *restrict \fIattr\fP,
+    void **restrict \fIstackaddr\fP, size_t *restrict \fIstacksize\fP);
+int pthread_attr_setstack(pthread_attr_t *\fIattr\fP, void *\fIstackaddr\fP,
+    size_t \fIstacksize\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_attr_getstack\fR()
+and
+\fIpthread_attr_setstack\fR()
+functions, respectively, shall get and set the thread creation stack
+attributes
+.IR stackaddr
+and
+.IR stacksize
+in the
+.IR attr
+object.
+.P
+The stack attributes specify the area of storage to be used for the
+created thread's stack. The base (lowest addressable byte) of the
+storage shall be
+.IR stackaddr ,
+and the size of the storage shall be
+.IR stacksize
+bytes. The
+.IR stacksize
+shall be at least
+{PTHREAD_STACK_MIN}.
+The
+\fIpthread_attr_setstack\fR()
+function may fail with
+.BR [EINVAL] 
+if
+.IR stackaddr
+does not meet implementation-defined alignment requirements.
+All pages within the stack described by
+.IR stackaddr
+and
+.IR stacksize
+shall be both readable and writable by the thread.
+.P
+If the
+\fIpthread_attr_getstack\fR()
+function is called before the
+.IR stackaddr
+attribute has been set, the behavior is unspecified.
+.P
+The behavior is undefined if the value specified by the
+.IR attr
+argument to
+\fIpthread_attr_getstack\fR()
+or
+\fIpthread_attr_setstack\fR()
+does not refer to an initialized thread attributes object.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return a value of 0;
+otherwise, an error number shall be returned to indicate the error.
+.P
+The
+\fIpthread_attr_getstack\fR()
+function shall store the stack attribute values in
+.IR stackaddr
+and
+.IR stacksize
+if successful.
+.SH ERRORS
+.P
+The
+\fIpthread_attr_setstack\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value of
+.IR stacksize
+is less than
+{PTHREAD_STACK_MIN}
+or exceeds an implementation-defined limit.
+.P
+The
+\fIpthread_attr_setstack\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of
+.IR stackaddr
+does not have proper alignment to be used as a stack, or ((\c
+.BR "char *" )\c
+.IR stackaddr
++
+.IR stacksize )
+lacks proper alignment.
+.TP
+.BR EACCES
+The stack page(s) described by
+.IR stackaddr
+and
+.IR stacksize
+are not both readable and writable by the thread.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+These functions are appropriate for use by applications in an
+environment where the stack for a thread must be placed in some
+particular region of memory.
+.P
+While it might seem that an application could detect stack overflow by
+providing a protected page outside the specified stack region, this
+cannot be done portably. Implementations are free to place the thread's
+initial stack pointer anywhere within the specified region to
+accommodate the machine's stack pointer behavior and allocation
+requirements. Furthermore, on some architectures, such as the IA\(hy64,
+``overflow'' might mean that two separate stack pointers allocated
+within the region will overlap somewhere in the middle of the region.
+.P
+After a successful call to
+\fIpthread_attr_setstack\fR(),
+the storage area specified by the
+.IR stackaddr
+parameter is under the control of the implementation, as described in
+.IR "Section 2.9.8" ", " "Use of Application-Managed Thread Stacks".
+.P
+The specification of the
+.IR stackaddr
+attribute presents several ambiguities that make portable use of these
+functions impossible. For example, the standard allows implementations
+to impose arbitrary alignment requirements on
+.IR stackaddr .
+Applications cannot assume that a buffer obtained from
+\fImalloc\fR()
+is suitably aligned. Note that although the
+.IR stacksize
+value passed to
+\fIpthread_attr_setstack\fR()
+must satisfy alignment requirements, the same is not true for
+\fIpthread_attr_setstacksize\fR()
+where the implementation must increase the specified size if
+necessary to achieve the proper alignment.
+.SH RATIONALE
+If an implementation detects that the value specified by the
+.IR attr
+argument to
+\fIpthread_attr_getstack\fR()
+or
+\fIpthread_attr_setstack\fR()
+does not refer to an initialized thread attributes object, it is
+recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIpthread_attr_destroy\fR\^(\|)",
+.IR "\fIpthread_attr_getdetachstate\fR\^(\|)",
+.IR "\fIpthread_attr_getstacksize\fR\^(\|)",
+.IR "\fIpthread_create\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<limits.h>\fP",
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

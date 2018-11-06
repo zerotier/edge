@@ -1,0 +1,295 @@
+#!/usr/bin/perl
+#
+# Copyright 2008-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+#
+
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::TrustAnchor;
+use Net::DNS::SEC::Tools::QWPrimitives;
+use strict;
+
+my %opts;
+
+#
+# Perform some housekeeping if we're running packed.
+#	- use the packed DNSSEC-Tools config file
+#	- make sure the packed ParserDetails.ini file is where XML::SAX expects
+#
+if (runpacked()) {
+
+    #
+    # Use the packed config file.
+    #
+    setconffile("$ENV{'PAR_TEMP'}/inc/dnssec-tools.conf");
+
+    #
+    # Move the ParserDetails.ini file to its required location.
+    #
+    if (! -e "$ENV{'PAR_TEMP'}/SAX") {
+	use Cwd;
+
+	my $cwd = getcwd;
+
+	chdir($ENV{'PAR_TEMP'});
+
+	if (-e "inc/SAX") {
+	    rename("inc/SAX", "SAX");
+	}
+
+	chdir($cwd);
+    }
+}
+
+
+DTGetOptions(\%opts,
+	     ['GUI:VERSION',"DNSSEC-Tools Version: 2.1"],
+
+	     ["i|input-file=s",  "Input file(s)"],
+	     ["o|output-file=s", "Output file(s)"],
+	    ) || exit 1;
+
+# get the drequested file specifications
+my $input_file = $opts{'i'} || shift @ARGV;
+my $output_file = $opts{'o'} || shift @ARGV;
+
+# split them into multiple comma-separated pieces
+my @input_files = split(/,\s*/, $input_file);
+my @output_files = split(/,\s*/, $output_file);
+
+if ($#input_files == -1) {
+    print STDERR "No input files given\n";
+    exit 1;
+}
+
+# load in each of the input components:
+my $alltars;
+foreach $input_file (@input_files) {
+    my ($mod, $file, $options) = parse_component($input_file);
+
+    if (! $mod) {
+	print STDERR "Failed to load the $input_file specification.  Skipping.\n";
+	next;
+    }
+
+    my $tar = $mod->read();
+    die "reading tar from $input_file failed\n" if (!$tar);
+
+    if (!$alltars) {
+	$alltars = $tar;
+    } else {
+	$alltars->merge($tar);
+    }
+}
+
+# write out the results to each of the output components:
+if ($#output_files > -1) {
+    foreach $output_file (@output_files) {
+	my ($mod, $file, $options) = parse_component($output_file);
+	return if (!$mod);
+	$mod->write($alltars, $file);
+    }
+} else {
+    print "No output specification(s) were given.  Writing nothing out.\n";
+    print "  (but all files were successfully read in).\n";
+}
+
+=pod
+
+=head1 NAME
+
+B<convertar> - Converts trust anchor repositories from one format to another
+
+=head1 DESCRIPTION
+
+B<convertar> operates on input and output files of different Trust
+Anchor Repository (TAR) formats.  B<convertar> decides what type of
+file format is being referred to by a "type:filename" specification.
+Options can be passed to the convertar module by using a '/' delimited
+specifier in the I<type> identifier.  Such as
+"type/option=value/other=othervalue:filename".  See below for a list
+of different input and output formats that B<convertar> understands by
+default and what options they take.
+
+See the I<Net::DNS::SEC::Tools::TrustAnchor> module and its
+documentation for writing new plugins to allow B<convertar> to understand
+other TAR formats.
+
+=head1 EXAMPLES
+
+This command will read in an B<itar.xml> file (available from
+https://itar.iana.org/) and convert it to a file that can be read in
+by BIND's B<named> application:
+
+  # convertar -i itar:itar.xml -o bind:bind.conf
+
+Read in multiple files, merge them together and write them out to two
+different output file formats (the libval format is printed to stdout):
+
+  # convertar -i itar:itar.xml,csv:local.csv -o bind:bind.conf,libval:-
+
+=head1 FILE SPECIFICATION CONVENTIONS
+
+Types and files (e.g. for the -i and -o switches) are specificied
+using the following format:
+
+  type:/path/to/file
+
+The I<type> portion of the specification dictates what internal module
+will attempt to read in the file.  The file portion of the
+specification may or may not be required (but the ':' always is) and
+may or may not point to a real file, depending on the module in charge
+of the content.  Some modules may, for exmaple, load content from the
+network.  For types that can read and write to a file, a '-' may be
+specified as a file to print to or read from standard output.
+
+File formats MAY be infered from a trailing suffix, if the trailing
+suffix.  EG, if a referenced file is foo.csv then internally convertar
+will translate this to "csv:foo.csv".
+
+=head1 FILE FORMATS
+
+The following file formats are known by default to B<convertar>:
+
+=over
+
+=item bind
+
+A BIND name server (B<named>) compatible trust anchor configuration file.
+This can be included within a master B<named.conf> file using the
+"include" directive.
+
+The I<bind> option can also take a I</write_expectations=1> flag when
+writing to write an options {} section that will turn on dnssec and
+require validation for zones from all the imported data.
+
+E.G. bind/write_expectations=1:named.conf
+
+=item secspider
+
+This is merely an alias that fetches the specspider
+(http://secspider.cs.ucla.edu/) bind configuration file and then parse
+it using the bind file format.
+
+WARNING: The PGP signature on the downloaded file is NOT checked.
+
+=item csv
+
+A comma-separated list format.
+
+=item dump
+
+A Perl hash I<dump> format.  This should be used mostly for debugging of
+newly developed modules as it shows the internal hash structure that is
+passed between modules.
+
+=item itar
+
+IANA's I<itar> format, which is an XML-based format of trust anchor
+keys.  IANA's file is available from https://itar.iana.org/.
+
+Specifying only 'itar:' line only (or itar:URL), B<convertar> will
+attempt to retrieve the current remote ITAR respository file directly.
+
+WARNING: The PGP signature on the downloaded file is NOT checked.
+
+NOTE: support for downloading the ITAR repository over the network
+requires the LWP::UserAgent module to be installed.
+
+=item libval
+
+The I<libval> format is the configuration file format that
+DNSSEC-Tool's I<libval> library uses.
+
+The I<libval> option can also take a I</write_expectations=1> flag
+when writing to specify that the default (:)
+zone-security-expectation's should be populated to require validation
+of all the zones with imported data.  All other zones will have a
+policy set to 'ignore.
+
+E.G. libval/write_expectations=1:dnsval.conf
+
+=item mf
+
+The master file (I<mf>) format is also available from the I<itar> web
+site.
+
+=item dns
+
+The I<dns> format performs live queries of records attached to a
+domain name to request either DS or DNSKEY records.  By default,
+DNSKEY records will be queried.  The specific type to be queried can
+be specified by preceeding the zone name with a "ds/" or "dnskey/"
+prefix.  Example valid 'dns:' type specifications:
+
+  dns:dnssec-tools.org
+  dns:ds/dnssec-tools.org
+  dns:dnskey/dnssec-tools.org
+
+Also, if you want to read dnskeys from the network but convert
+them to ds records, you can use the /tods flag:
+
+  dns/tods=1:dnssec-tools.org
+
+The DNS type can not output records and is only useful for reading in
+information.
+
+WARNING: The keys and data being retrieved are not internally
+validated and thus should not be trusted unless a secured resolver is
+being used.
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item B<-i STRING>
+
+=item B<--input-file=STRING>
+
+Input file(s) to process.
+
+B<convertar> will read in the specified file(s).  Multiple files can
+be separated by commas.
+
+=item B<-o STRING>
+
+=item B<--output-file=STRING>
+
+Output file(s) to write.
+
+B<convertar> will write out these specified file(s) in the requested
+output formats.  Multiple files can be separated by commas.
+
+=item B<-h>
+
+=item B<--help>
+
+=item B<--help-full>
+
+Displays command line help information.
+
+=item B<--gui>
+
+=item B<--no-gui>
+
+Controls the use of the optional GUI.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2009-2013 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wes Hardaker < hardaker AT users DOT sourceforge DOT net >
+
+=head1 SEE ALSO
+
+I<Net::DNS::SEC::Tools::TrustAnchor>(3)
+
+=cut
+

@@ -1,0 +1,267 @@
+'\" et
+.TH RMDIR "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+rmdir
+\(em remove a directory
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int rmdir(const char *\fIpath\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIrmdir\fR()
+function shall remove a directory whose name is given by
+.IR path .
+The directory shall be removed only if it is an empty directory.
+.P
+If the directory is the root directory or the current working directory
+of any process, it is unspecified whether the function succeeds, or
+whether it shall fail and set
+.IR errno
+to
+.BR [EBUSY] .
+.P
+If
+.IR path
+names a symbolic link, then
+\fIrmdir\fR()
+shall fail and set
+.IR errno
+to
+.BR [ENOTDIR] .
+.P
+If the
+.IR path
+argument refers to a path whose final component is either dot or
+dot-dot,
+\fIrmdir\fR()
+shall fail.
+.P
+If the directory's link count becomes 0 and no process has the
+directory open, the space occupied by the directory shall be freed and
+the directory shall no longer be accessible. If one or more processes
+have the directory open when the last link is removed, the dot and
+dot-dot entries, if present, shall be removed before
+\fIrmdir\fR()
+returns and no new entries may be created in the directory, but the
+directory shall not be removed until all references to the directory
+are closed.
+.P
+If the directory is not an empty directory,
+\fIrmdir\fR()
+shall fail and set
+.IR errno
+to
+.BR [EEXIST] 
+or
+.BR [ENOTEMPTY] .
+.P
+Upon successful completion,
+\fIrmdir\fR()
+shall mark for update the last data modification and last file status
+change timestamps of the parent directory.
+.SH "RETURN VALUE"
+Upon successful completion, the function
+\fIrmdir\fR()
+shall return 0. Otherwise, \(mi1 shall be returned, and
+.IR errno
+set to indicate the error. If \(mi1 is returned, the named
+directory shall not be changed.
+.SH ERRORS
+The
+\fIrmdir\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Search permission is denied on a component of the path prefix, or write
+permission is denied on the parent directory of the directory to be
+removed.
+.TP
+.BR EBUSY
+The directory to be removed is currently in use by the system or
+some process and the implementation considers this to be an error.
+.IP "[EEXIST]\ or\ [ENOTEMPTY]" 12
+.br
+The
+.IR path
+argument names a directory that is not an empty directory, or there are
+hard links to the directory other than dot or a single entry in
+dot-dot.
+.TP
+.BR EINVAL
+The
+.IR path
+argument contains a last component that is dot.
+.TP
+.BR EIO
+A physical I/O error has occurred.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file, or the
+.IR path
+argument names a nonexistent directory or points to an empty string.
+.TP
+.BR ENOTDIR
+A component of
+.IR path
+names an existing file that is neither a directory nor a symbolic link
+to a directory.
+.IP "[EPERM]\ or\ [EACCES]" 12
+.br
+The S_ISVTX flag is set on the directory containing the file referred
+to by the
+.IR path
+argument and the process does not satisfy the criteria specified in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.2" ", " "Directory Protection".
+.TP
+.BR EROFS
+The directory entry to be removed resides on a read-only file system.
+.P
+The
+\fIrmdir\fR()
+function may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Removing a Directory"
+.P
+The following example shows how to remove a directory named
+.BR /home/cnd/mod1 .
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+.P
+int status;
+\&...
+status = rmdir("/home/cnd/mod1");
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The
+\fIrmdir\fR()
+and
+\fIrename\fR()
+functions originated in 4.2 BSD, and they used
+.BR [ENOTEMPTY] 
+for the condition when the directory to be removed does not exist or
+.IR new
+already exists. When the 1984 /usr/group standard was published, it contained
+.BR [EEXIST] 
+instead. When these functions were adopted into System V, the
+1984 /usr/group standard was used as a reference. Therefore, several existing applications
+and implementations support/use both forms, and no agreement could be
+reached on either value. All implementations are required to supply
+both
+.BR [EEXIST] 
+and
+.BR [ENOTEMPTY] 
+in
+.IR <errno.h> 
+with distinct values, so that applications can use both values in
+C-language
+.BR case
+statements.
+.P
+The meaning of deleting
+.IR pathname \c
+.BR /dot
+is unclear, because the name of the file (directory) in the parent
+directory to be removed is not clear, particularly in the presence of
+multiple links to a directory.
+.P
+The POSIX.1\(hy1990 standard was silent with regard to the behavior of
+\fIrmdir\fR()
+when there are multiple hard links to the directory being removed. The
+requirement to set
+.IR errno
+to
+.BR [EEXIST] 
+or
+.BR [ENOTEMPTY] 
+clarifies the behavior in this case.
+.P
+If the current working directory of the process is being removed, that
+should be an allowed error.
+.P
+Virtually all existing implementations detect
+.BR [ENOTEMPTY] 
+or the case of dot-dot. The text in
+.IR "Section 2.3" ", " "Error Numbers"
+about returning any one of the possible errors permits that behavior to
+continue. The
+.BR [ELOOP] 
+error may be returned if more than
+{SYMLOOP_MAX}
+symbolic links are encountered during resolution of the
+.IR path
+argument.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.3" ", " "Error Numbers",
+.IR "\fImkdir\fR\^(\|)",
+.IR "\fIremove\fR\^(\|)",
+.IR "\fIrename\fR\^(\|)",
+.IR "\fIunlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.2" ", " "Directory Protection",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

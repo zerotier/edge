@@ -1,0 +1,361 @@
+'\" et
+.TH FREOPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+freopen
+\(em open a stream
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+FILE *freopen(const char *restrict \fIpathname\fP, const char *restrict \fImode\fP,
+    FILE *restrict \fIstream\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIfreopen\fR()
+function shall first attempt to flush the stream associated with
+.IR stream
+as if by a call to
+.IR fflush ( stream ).
+Failure to flush the stream successfully shall be ignored. If
+.IR pathname
+is not a null pointer,
+\fIfreopen\fR()
+shall close any file descriptor associated with
+.IR stream .
+Failure to close the file descriptor successfully shall be ignored.
+The error and end-of-file indicators for the stream shall be
+cleared.
+.P
+The
+\fIfreopen\fR()
+function shall open the file whose pathname is the string pointed to by
+.IR pathname
+and associate the stream pointed to by
+.IR stream
+with it. The
+.IR mode
+argument shall be used just as in
+\fIfopen\fR().
+.P
+The original stream shall be closed regardless of whether the
+subsequent open succeeds.
+.P
+If
+.IR pathname
+is a null pointer, the
+\fIfreopen\fR()
+function shall attempt to change the mode of the stream to that
+specified by
+.IR mode ,
+as if the name of the file currently associated with the stream had
+been used. In this case, the file descriptor associated with the stream
+need not be closed if the call to
+\fIfreopen\fR()
+succeeds. It is implementation-defined which changes of mode are
+permitted (if any), and under what circumstances.
+.P
+After a successful call to the
+\fIfreopen\fR()
+function, the orientation of the stream shall be cleared,
+the encoding rule shall be cleared,
+and the associated
+.BR mbstate_t
+object shall be set to describe an initial conversion state.
+.P
+If
+.IR pathname
+is not a null pointer, or if
+.IR pathname
+is a null pointer and the specified mode change necessitates the file
+descriptor associated with the stream to be closed and reopened, the
+file descriptor associated with the reopened stream shall be allocated
+and opened as if by a call to
+\fIopen\fR()
+with the following flags:
+.TS
+center box tab(!);
+cB | cB
+l | l.
+\fIfreopen\fP(\^) Mode!\fIopen\fP(\^) Flags
+_
+\fIr\fR or \fIrb\fR!O_RDONLY
+\fIw\fR or \fIwb\fR!O_WRONLY|O_CREAT|O_TRUNC
+\fIa\fR or \fIab\fR!O_WRONLY|O_CREAT|O_APPEND
+\fIr+\fR or \fIrb+\fR or \fIr+b\fR!O_RDWR
+\fIw+\fR or \fIwb+\fR or \fIw+b\fR!O_RDWR|O_CREAT|O_TRUNC
+\fIa+\fR or \fIab+\fR or \fIa+b\fR!O_RDWR|O_CREAT|O_APPEND
+.TE
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIfreopen\fR()
+shall return the value of
+.IR stream .
+Otherwise, a null pointer shall be returned,
+and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fIfreopen\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Search permission is denied on a component of the path prefix, or the
+file exists and the permissions specified by
+.IR mode
+are denied, or the file does not exist and write permission is denied
+for the parent directory of the file to be created.
+.TP
+.BR EBADF
+The file descriptor underlying the stream is not a valid file
+descriptor when
+.IR pathname
+is a null pointer.
+.TP
+.BR EINTR
+A signal was caught during
+\fIfreopen\fR().
+.TP
+.BR EISDIR
+The named file is a directory and
+.IR mode
+requires write access.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR EMFILE
+All file descriptors available to the process are currently open.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENFILE
+The maximum allowable number of files is currently open in the system.
+.TP
+.BR ENOENT
+The
+.IR mode
+string begins with
+.BR 'r' 
+and a component of
+.IR pathname
+does not name an existing file, or
+.IR mode
+begins with
+.BR 'w' 
+or
+.BR 'a' 
+and a component of the path prefix of
+.IR pathname
+does not name an existing file, or
+.IR pathname
+is an empty string.
+.TP
+.BR ENOENT " or " ENOTDIR
+.br
+The
+.IR pathname
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters. If
+.IR pathname
+names an existing file, an
+.BR [ENOENT] 
+error shall not occur.
+.TP
+.BR ENOSPC
+The directory or file system that would contain the new file cannot be
+expanded, the file does not exist, and it was to be created.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR pathname
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file that
+is neither a directory nor a symbolic link to a directory.
+.TP
+.BR ENXIO
+The named file is a character special or block special file, and the
+device associated with this special file does not exist.
+.TP
+.BR EOVERFLOW
+The named file is a regular file and the size of the file cannot be
+represented correctly in an object of type
+.BR off_t .
+.TP
+.BR EROFS
+The named file resides on a read-only file system and
+.IR mode
+requires write access.
+.P
+The
+\fIfreopen\fR()
+function may fail if:
+.TP
+.BR EBADF
+The mode with which the file descriptor underlying the stream was
+opened does not support the requested mode when
+.IR pathname
+is a null pointer.
+.TP
+.BR EINVAL
+The value of the
+.IR mode
+argument is not valid.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.TP
+.BR ENXIO
+A request was made of a nonexistent device, or the request was outside
+the capabilities of the device.
+.TP
+.BR ETXTBSY
+The file is a pure procedure (shared text) file that is being executed
+and
+.IR mode
+requires write access.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Directing Standard Output to a File"
+.P
+The following example logs all standard output to the
+.BR /tmp/logfile
+file.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+\&...
+FILE *fp;
+\&...
+fp = freopen ("/tmp/logfile", "a+", stdout);
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIfreopen\fR()
+function is typically used to attach the pre-opened
+.IR streams
+associated with
+.IR stdin ,
+.IR stdout ,
+and
+.IR stderr
+to other files.
+.P
+Since implementations are not required to support any stream mode changes
+when the
+.IR pathname
+argument is NULL, portable applications cannot rely on the use of
+\fIfreopen\fR()
+to change the stream mode, and use of this feature is discouraged. The
+feature was originally added to the ISO\ C standard in order to facilitate changing
+.IR stdin
+and
+.IR stdout
+to binary mode. Since a
+.BR 'b' 
+character in the mode has no effect on POSIX systems, this use of the
+feature is unnecessary in POSIX applications. However, even though the
+.BR 'b' 
+is ignored, a successful call to
+.IR freopen \c
+(NULL, "\fIwb\fR", \fIstdout\fR) does have an effect. In particular,
+for regular files it truncates the file and sets the file-position
+indicator for the stream to the start of the file. It is possible that
+these side-effects are an unintended consequence of the way the feature
+is specified in the ISO/IEC\ 9899:\|1999 standard, but unless or until the ISO\ C standard is changed,
+applications which successfully call
+.IR freopen \c
+(NULL, "\fIwb\fR", \fIstdout\fR) will behave in unexpected ways on
+conforming systems in situations such as:
+.sp
+.RS 4
+.nf
+\fB
+{ appl file1; appl file2; } > file3
+.fi \fR
+.P
+.RE
+.P
+which will result in
+.BR file3
+containing only the output from the second invocation of
+.IR appl .
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIfclose\fR\^(\|)",
+.IR "\fIfdopen\fR\^(\|)",
+.IR "\fIfflush\fR\^(\|)",
+.IR "\fIfmemopen\fR\^(\|)",
+.IR "\fIfopen\fR\^(\|)",
+.IR "\fImbsinit\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIopen_memstream\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

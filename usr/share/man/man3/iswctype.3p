@@ -1,0 +1,188 @@
+'\" et
+.TH ISWCTYPE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+iswctype,
+iswctype_l
+\(em test character for a specified class
+.SH SYNOPSIS
+.LP
+.nf
+#include <wctype.h>
+.P
+int iswctype(wint_t \fIwc\fP, wctype_t \fIcharclass\fP);
+int iswctype_l(wint_t \fIwc\fP, wctype_t \fIcharclass\fP,
+    locale_t \fIlocale\fP);
+.fi
+.SH DESCRIPTION
+For
+\fIiswctype\fR():
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIiswctype\fR()
+and
+\fIiswctype_l\fR()
+functions shall determine whether the wide-character code
+.IR wc
+has the character class
+.IR charclass ,
+returning true or false. The
+\fIiswctype\fR()
+and
+\fIiswctype_l\fR()
+functions are defined on WEOF and wide-character codes corresponding to
+the valid character encodings in the current locale, or
+in the locale represented by
+.IR locale ,
+respectively. If the
+.IR wc
+argument is not in the domain of the function, the result is undefined.
+If the value of
+.IR charclass
+is invalid (that is, not obtained by a call to
+\fIwctype\fR()
+or
+.IR charclass
+is invalidated by a subsequent call to
+\fIsetlocale\fR()
+that has affected category
+.IR LC_CTYPE )
+the result is unspecified.
+.P
+The behavior is undefined if the
+.IR locale
+argument to
+\fIiswctype_l\fR()
+is the special locale object LC_GLOBAL_LOCALE or is not a valid locale
+object handle.
+.SH "RETURN VALUE"
+The
+\fIiswctype\fR()
+and
+\fIiswctype_l\fR()
+functions shall return non-zero (true) if and only if
+.IR wc
+has the property described by
+.IR charclass .
+If
+.IR charclass
+is 0, these functions shall return 0.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Testing for a Valid Character"
+.sp
+.RS 4
+.nf
+\fB
+#include <wctype.h>
+\&...
+int yes_or_no;
+wint_t wc;
+wctype_t valid_class;
+\&...
+if ((valid_class=wctype("vowel")) == (wctype_t)0)
+    /* Invalid character class. */
+yes_or_no=iswctype(wc,valid_class);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The twelve strings
+.BR \(dqalnum\(dq ,
+.BR \(dqalpha\(dq ,
+.BR \(dqblank\(dq ,
+.BR \(dqcntrl\(dq ,
+.BR \(dqdigit\(dq ,
+.BR \(dqgraph\(dq ,
+.BR \(dqlower\(dq ,
+.BR \(dqprint\(dq ,
+.BR \(dqpunct\(dq ,
+.BR \(dqspace\(dq ,
+.BR \(dqupper\(dq ,
+and
+.BR \(dqxdigit\(dq 
+are reserved for the standard character classes. In the table below,
+the functions in the left column are equivalent to the functions in the
+right column.
+.sp
+.RS 4
+.nf
+\fB
+iswalnum(\fIwc\fP)            iswctype(\fIwc\fP, wctype("alnum"))
+iswalnum_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("alnum"), \fIlocale\fP)
+iswalpha(\fIwc\fP)            iswctype(\fIwc\fP, wctype("alpha"))
+iswalpha_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("alpha"), \fIlocale\fP)
+iswblank(\fIwc\fP)            iswctype(\fIwc\fP, wctype("blank"))
+iswblank_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("blank"), \fIlocale\fP)
+iswcntrl(\fIwc\fP)            iswctype(\fIwc\fP, wctype("cntrl"))
+iswcntrl_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("cntrl"), \fIlocale\fP)
+iswdigit(\fIwc\fP)            iswctype(\fIwc\fP, wctype("digit"))
+iswdigit_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("digit"), \fIlocale\fP)
+iswgraph(\fIwc\fP)            iswctype(\fIwc\fP, wctype("graph"))
+iswgraph_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("graph"), \fIlocale\fP)
+iswlower(\fIwc\fP)            iswctype(\fIwc\fP, wctype("lower"))
+iswlower_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("lower"), \fIlocale\fP)
+iswprint(\fIwc\fP)            iswctype(\fIwc\fP, wctype("print"))
+iswprint_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("print"), \fIlocale\fP)
+iswpunct(\fIwc\fP)            iswctype(\fIwc\fP, wctype("punct"))
+iswpunct_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("punct"), \fIlocale\fP)
+iswspace(\fIwc\fP)            iswctype(\fIwc\fP, wctype("space"))
+iswspace_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("space"), \fIlocale\fP)
+iswupper(\fIwc\fP)            iswctype(\fIwc\fP, wctype("upper"))
+iswupper_l(\fIwc\fP, \fIlocale\fP)  iswctype_l(\fIwc\fP, wctype("upper"), \fIlocale\fP)
+iswxdigit(\fIwc\fP)           iswctype(\fIwc\fP, wctype("xdigit"))
+iswxdigit_l(\fIwc\fP, \fIlocale\fP) iswctype_l(\fIwc\fP, wctype("xdigit"), \fIlocale\fP)
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIiswalnum\fR\^(\|)",
+.IR "\fIiswalpha\fR\^(\|)",
+.IR "\fIiswcntrl\fR\^(\|)",
+.IR "\fIiswdigit\fR\^(\|)",
+.IR "\fIiswgraph\fR\^(\|)",
+.IR "\fIiswlower\fR\^(\|)",
+.IR "\fIiswprint\fR\^(\|)",
+.IR "\fIiswpunct\fR\^(\|)",
+.IR "\fIiswspace\fR\^(\|)",
+.IR "\fIiswupper\fR\^(\|)",
+.IR "\fIiswxdigit\fR\^(\|)",
+.IR "\fIsetlocale\fR\^(\|)",
+.IR "\fIuselocale\fR\^(\|)",
+.IR "\fIwctype\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<locale.h>\fP",
+.IR "\fB<wctype.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

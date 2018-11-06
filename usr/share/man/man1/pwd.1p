@@ -1,0 +1,210 @@
+'\" et
+.TH PWD "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pwd
+\(em return working directory name
+.SH SYNOPSIS
+.LP
+.nf
+pwd \fB[\fR\(miL|\(miP\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR pwd
+utility shall write to standard output an absolute pathname of the
+current working directory, which does not contain the filenames dot or
+dot-dot.
+.SH OPTIONS
+The
+.IR pwd
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported by the implementation:
+.IP "\fB\(miL\fP" 10
+If the
+.IR PWD
+environment variable contains an absolute pathname of the current
+directory that does not contain the filenames dot or dot-dot,
+.IR pwd
+shall write this pathname to standard output. Otherwise, if the
+.IR PWD
+environment variable contains a pathname of the current directory
+that is longer than
+{PATH_MAX}
+bytes including the terminating null, and the pathname does not contain
+any components that are dot or dot-dot, it is unspecified whether
+.IR pwd
+writes this pathname to standard output or behaves as if the
+.BR \(miP
+option had been specified. Otherwise, the
+.BR \(miL
+option shall behave as the
+.BR \(miP
+option.
+.IP "\fB\(miP\fP" 10
+The pathname written to standard output shall not contain any components
+that refer to files of type symbolic link. If there are multiple pathnames
+that the
+.IR pwd
+utility could write to standard output, one beginning with a single
+<slash>
+character and one or more beginning with two
+<slash>
+characters, then it shall write the pathname beginning with a single
+<slash>
+character. The pathname shall not contain any unnecessary
+<slash>
+characters after the leading one or two
+<slash>
+characters.
+.P
+If both
+.BR \(miL
+and
+.BR \(miP
+are specified, the last one shall apply. If neither
+.BR \(miL
+nor
+.BR \(miP
+is specified, the
+.IR pwd
+utility shall behave as if
+.BR \(miL
+had been specified.
+.SH OPERANDS
+None.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR pwd :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+the precedence of internationalization variables used to determine the
+values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fIPWD\fP" 10
+An absolute pathname of the current working directory. If an
+application sets or unsets the value of
+.IR PWD ,
+the behavior of
+.IR pwd
+is unspecified.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR pwd
+utility output is an absolute pathname of the current working
+directory:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIdirectory pathname\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+If an error is detected, output shall not be written to standard
+output, a diagnostic message shall be written to standard error, and
+the exit status is not zero.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+If the pathname obtained from
+.IR pwd
+is longer than
+{PATH_MAX}
+bytes, it could produce an error if passed to
+.IR cd .
+Therefore, in order to return to that directory it may be necessary to
+break the pathname into sections shorter than
+{PATH_MAX}
+and call
+.IR cd
+on each section in turn (the first section being an absolute pathname
+and subsequent sections being relative pathnames).
+.SH EXAMPLES
+None.
+.SH RATIONALE
+Some implementations have historically provided
+.IR pwd
+as a shell special built-in command.
+.P
+In most utilities, if an error occurs, partial output may be written to
+standard output. This does not happen in historical implementations of
+.IR pwd .
+Because
+.IR pwd
+is frequently used in historical shell scripts without checking the
+exit status, it is important that the historical behavior is required
+here; therefore, the CONSEQUENCES OF ERRORS section specifically
+disallows any partial output being written to standard output.
+.P
+An earlier version of this standard stated that the
+.IR PWD
+environment variable was affected when the
+.BR \(miP
+option was in effect. This was incorrect; conforming implementations
+do not do this.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIcd\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIgetcwd\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

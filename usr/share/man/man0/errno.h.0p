@@ -1,0 +1,333 @@
+'\" et
+.TH errno.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+errno.h
+\(em system error numbers
+.SH SYNOPSIS
+.LP
+.nf
+#include <errno.h>
+.fi
+.SH DESCRIPTION
+Some of the functionality described on this reference page extends
+the ISO\ C standard. Any conflict between the requirements described here
+and the ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The ISO\ C standard only requires the symbols
+.BR [EDOM] ,
+.BR [EILSEQ] ,
+and
+.BR [ERANGE] 
+to be defined.
+.P
+The
+.IR <errno.h> 
+header shall provide a declaration or definition for
+.IR errno .
+The symbol
+.IR errno
+shall expand to a modifiable lvalue of type
+.BR int .
+It is unspecified whether
+.IR errno
+is a macro or an identifier declared with external linkage. If a macro
+definition is suppressed in order to access an actual object, or a
+program defines an identifier with the name
+.IR errno ,
+the behavior is undefined.
+.P
+The
+.IR <errno.h> 
+header shall define the following macros which shall expand to
+integer constant expressions with type
+.BR int ,
+distinct positive values (except as noted below), and which shall be
+suitable for use in
+.BR #if
+preprocessing directives:
+.TP
+.BR E2BIG
+Argument list too long.
+.TP
+.BR EACCES
+Permission denied.
+.TP
+.BR EADDRINUSE
+Address in use.
+.TP
+.BR EADDRNOTAVAIL
+Address not available.
+.TP
+.BR EAFNOSUPPORT
+Address family not supported.
+.TP
+.BR EAGAIN
+Resource unavailable, try again (may be the same value as
+.BR [EWOULDBLOCK] ).
+.TP
+.BR EALREADY
+Connection already in progress.
+.TP
+.BR EBADF
+Bad file descriptor.
+.TP
+.BR EBADMSG
+Bad message.
+.TP
+.BR EBUSY
+Device or resource busy.
+.TP
+.BR ECANCELED
+Operation canceled.
+.TP
+.BR ECHILD
+No child processes.
+.TP
+.BR ECONNABORTED
+Connection aborted.
+.TP
+.BR ECONNREFUSED
+Connection refused.
+.TP
+.BR ECONNRESET
+Connection reset.
+.TP
+.BR EDEADLK
+Resource deadlock would occur.
+.TP
+.BR EDESTADDRREQ
+Destination address required.
+.TP
+.BR EDOM
+Mathematics argument out of domain of function.
+.TP
+.BR EDQUOT
+Reserved.
+.TP
+.BR EEXIST
+File exists.
+.TP
+.BR EFAULT
+Bad address.
+.TP
+.BR EFBIG
+File too large.
+.TP
+.BR EHOSTUNREACH
+Host is unreachable.
+.TP
+.BR EIDRM
+Identifier removed.
+.TP
+.BR EILSEQ
+Illegal byte sequence.
+.TP
+.BR EINPROGRESS
+Operation in progress.
+.TP
+.BR EINTR
+Interrupted function.
+.TP
+.BR EINVAL
+Invalid argument.
+.TP
+.BR EIO
+I/O error.
+.TP
+.BR EISCONN
+Socket is connected.
+.TP
+.BR EISDIR
+Is a directory.
+.TP
+.BR ELOOP
+Too many levels of symbolic links.
+.TP
+.BR EMFILE
+File descriptor value too large.
+.TP
+.BR EMLINK
+Too many links.
+.TP
+.BR EMSGSIZE
+Message too large.
+.TP
+.BR EMULTIHOP
+Reserved.
+.TP
+.BR ENAMETOOLONG
+Filename too long.
+.TP
+.BR ENETDOWN
+Network is down.
+.TP
+.BR ENETRESET
+Connection aborted by network.
+.TP
+.BR ENETUNREACH
+Network unreachable.
+.TP
+.BR ENFILE
+Too many files open in system.
+.TP
+.BR ENOBUFS
+No buffer space available.
+.TP
+.BR ENODATA
+No message is available on the STREAM head read queue.
+.TP
+.BR ENODEV
+No such device.
+.TP
+.BR ENOENT
+No such file or directory.
+.TP
+.BR ENOEXEC
+Executable file format error.
+.TP
+.BR ENOLCK
+No locks available.
+.TP
+.BR ENOLINK
+Reserved.
+.TP
+.BR ENOMEM
+Not enough space.
+.TP
+.BR ENOMSG
+No message of the desired type.
+.TP
+.BR ENOPROTOOPT
+Protocol not available.
+.TP
+.BR ENOSPC
+No space left on device.
+.TP
+.BR ENOSR
+No STREAM resources.
+.TP
+.BR ENOSTR
+Not a STREAM.
+.TP
+.BR ENOSYS
+Function not supported.
+.TP
+.BR ENOTCONN
+The socket is not connected.
+.TP
+.BR ENOTDIR
+Not a directory or a symbolic link to a directory.
+.TP
+.BR ENOTEMPTY
+Directory not empty.
+.TP
+.BR ENOTRECOVERABLE
+.br
+State not recoverable.
+.TP
+.BR ENOTSOCK
+Not a socket.
+.TP
+.BR ENOTSUP
+Not supported (may be the same value as
+.BR [EOPNOTSUPP] ).
+.TP
+.BR ENOTTY
+Inappropriate I/O control operation.
+.TP
+.BR ENXIO
+No such device or address.
+.TP
+.BR EOPNOTSUPP
+Operation not supported on socket (may be the same value as
+.BR [ENOTSUP] ).
+.TP
+.BR EOVERFLOW
+Value too large to be stored in data type.
+.TP
+.BR EOWNERDEAD
+Previous owner died.
+.TP
+.BR EPERM
+Operation not permitted.
+.TP
+.BR EPIPE
+Broken pipe.
+.TP
+.BR EPROTO
+Protocol error.
+.TP
+.BR EPROTONOSUPPORT
+.br
+Protocol not supported.
+.TP
+.BR EPROTOTYPE
+Protocol wrong type for socket.
+.TP
+.BR ERANGE
+Result too large.
+.TP
+.BR EROFS
+Read-only file system.
+.TP
+.BR ESPIPE
+Invalid seek.
+.TP
+.BR ESRCH
+No such process.
+.TP
+.BR ESTALE
+Reserved.
+.TP
+.BR ETIME
+Stream
+\fIioctl\fR()
+timeout.
+.TP
+.BR ETIMEDOUT
+Connection timed out.
+.TP
+.BR ETXTBSY
+Text file busy.
+.TP
+.BR EWOULDBLOCK
+Operation would block (may be the same value as
+.BR [EAGAIN] ).
+.TP
+.BR EXDEV
+Cross-device link.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Additional error numbers may be defined on conforming systems; see
+the System Interfaces volume of POSIX.1\(hy2008.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.3" ", " "Error Numbers"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

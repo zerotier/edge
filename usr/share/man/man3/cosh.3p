@@ -1,0 +1,124 @@
+'\" et
+.TH COSH "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cosh,
+coshf,
+coshl
+\(em hyperbolic cosine functions
+.SH SYNOPSIS
+.LP
+.nf
+#include <math.h>
+.P
+double cosh(double \fIx\fP);
+float coshf(float \fIx\fP);
+long double coshl(long double \fIx\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+These functions shall compute the hyperbolic cosine of their argument
+.IR x .
+.P
+An application wishing to check for error situations should set
+.IR errno
+to zero and call
+.IR feclearexcept (FE_ALL_EXCEPT)
+before calling these functions. On return, if
+.IR errno
+is non-zero or \fIfetestexcept\fR(FE_INVALID | FE_DIVBYZERO |
+FE_OVERFLOW | FE_UNDERFLOW) is non-zero, an error has occurred.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return the hyperbolic
+cosine of
+.IR x .
+.P
+If the correct value would cause overflow, a range error shall occur
+and
+\fIcosh\fR(),
+\fIcoshf\fR(),
+and
+\fIcoshl\fR()
+shall return the value of the macro HUGE_VAL, HUGE_VALF, and HUGE_VALL,
+respectively.
+.P
+If
+.IR x
+is NaN, a NaN shall be returned.
+.P
+If
+.IR x
+is \(+-0, the value 1.0 shall be returned.
+.P
+If
+.IR x
+is \(+-Inf, +Inf shall be returned.
+.SH ERRORS
+These functions shall fail if:
+.IP "Range\ Error" 12
+The result would cause an overflow.
+.RS 12 
+.P
+If the integer expression (\fImath_errhandling\fR & MATH_ERRNO) is
+non-zero, then
+.IR errno
+shall be set to
+.BR [ERANGE] .
+If the integer expression (\fImath_errhandling\fR & MATH_ERREXCEPT) is
+non-zero, then the overflow floating-point exception shall be raised.
+.RE
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+On error, the expressions (\fImath_errhandling\fR & MATH_ERRNO) and
+(\fImath_errhandling\fR & MATH_ERREXCEPT) are independent of each
+other, but at least one of them must be non-zero.
+.P
+For IEEE\ Std\ 754\(hy1985
+.BR double ,
+710.5 < |\fIx\fP| implies that
+.IR cosh (\c
+.IR x )
+has overflowed.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIacosh\fR\^(\|)",
+.IR "\fIfeclearexcept\fR\^(\|)",
+.IR "\fIfetestexcept\fR\^(\|)",
+.IR "\fIisnan\fR\^(\|)",
+.IR "\fIsinh\fR\^(\|)",
+.IR "\fItanh\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.19" ", " "Treatment of Error Conditions for Mathematical Functions",
+.IR "\fB<math.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

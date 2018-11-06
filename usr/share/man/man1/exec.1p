@@ -1,0 +1,184 @@
+'\" et
+.TH EXEC "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+exec
+\(em execute commands and open, close, or copy file descriptors
+.SH SYNOPSIS
+.LP
+.nf
+exec \fB[\fIcommand \fB[\fIargument\fR...\fB]]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR exec
+utility shall open, close, and/or copy file descriptors as specified by
+any redirections as part of the command.
+.P
+If
+.IR exec
+is specified without
+.IR command
+or
+.IR argument s,
+and any file descriptors with numbers greater than 2 are opened with
+associated redirection statements, it is unspecified whether those file
+descriptors remain open when the shell invokes another utility.
+Scripts concerned that child shells could misuse open file descriptors
+can always close them explicitly, as shown in one of the following
+examples.
+.P
+If
+.IR exec
+is specified with
+.IR command ,
+it shall replace the shell with
+.IR command
+without creating a new process. If
+.IR argument s
+are specified, they shall be arguments to
+.IR command .
+Redirection affects the current shell execution environment.
+.SH OPTIONS
+None.
+.SH OPERANDS
+See the DESCRIPTION.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+None.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+If
+.IR command
+is specified,
+.IR exec
+shall not return to the shell; rather, the exit status of the process
+shall be the exit status of the program implementing
+.IR command ,
+which overlaid the shell. If
+.IR command
+is not found, the exit status shall be 127. If
+.IR command
+is found, but it is not an executable utility, the exit status shall be
+126. If a redirection error occurs (see
+.IR "Section 2.8.1" ", " "Consequences of Shell Errors"),
+the shell shall exit with a value in the range 1\(mi125. Otherwise,
+.IR exec
+shall return a zero exit status.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+Open
+.IR readfile
+as file descriptor 3 for reading:
+.sp
+.RS 4
+.nf
+\fB
+exec 3< readfile
+.fi \fR
+.P
+.RE
+.P
+Open
+.IR writefile
+as file descriptor 4 for writing:
+.sp
+.RS 4
+.nf
+\fB
+exec 4> writefile
+.fi \fR
+.P
+.RE
+.P
+Make file descriptor 5 a copy of file descriptor 0:
+.sp
+.RS 4
+.nf
+\fB
+exec 5<&0
+.fi \fR
+.P
+.RE
+.P
+Close file descriptor 3:
+.sp
+.RS 4
+.nf
+\fB
+exec 3<&\(mi
+.fi \fR
+.P
+.RE
+.P
+Cat the file
+.BR maggie
+by replacing the current shell with the
+.IR cat
+utility:
+.sp
+.RS 4
+.nf
+\fB
+exec cat maggie
+.fi \fR
+.P
+.RE
+.SH "RATIONALE"
+Most historical implementations were not conformant in that:
+.sp
+.RS 4
+.nf
+\fB
+foo=bar exec cmd
+.fi \fR
+.P
+.RE
+.P
+did not pass
+.BR foo
+to
+.BR cmd .
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.14" ", " "Special Built-In Utilities"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

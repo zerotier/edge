@@ -1,0 +1,312 @@
+'\" et
+.TH POPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+popen
+\(em initiate pipe streams to or from a process
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+FILE *popen(const char *\fIcommand\fP, const char *\fImode\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpopen\fR()
+function shall execute the command specified by the string
+.IR command .
+It shall create a pipe between the calling program and the executed
+command, and shall return a pointer to a stream that can be used to
+either read from or write to the pipe.
+.P
+The environment of the executed command shall be as if a child process
+were created within the
+\fIpopen\fR()
+call using the
+\fIfork\fR()
+function, and the child invoked the
+.IR sh
+utility using the call:
+.sp
+.RS 4
+.nf
+\fB
+execl(\fIshell path\fP, "sh", "-c", \fIcommand\fP, (char *)0);
+.fi \fR
+.P
+.RE
+.P
+where
+.IR "shell path"
+is an unspecified pathname for the
+.IR sh
+utility.
+.P
+The
+\fIpopen\fR()
+function shall ensure that any streams from previous
+\fIpopen\fR()
+calls that remain open in the parent process are closed in the new
+child process.
+.P
+The
+.IR mode
+argument to
+\fIpopen\fR()
+is a string that specifies I/O mode:
+.IP " 1." 4
+If
+.IR mode
+is
+.IR r ,
+when the child process is started, its file descriptor STDOUT_FILENO
+shall be the writable end of the pipe, and the file descriptor
+\fIfileno\fR(\fIstream\fR) in the calling process, where
+.IR stream
+is the stream pointer returned by
+\fIpopen\fR(),
+shall be the readable end of the pipe.
+.IP " 2." 4
+If
+.IR mode
+is
+.IR w ,
+when the child process is started its file descriptor STDIN_FILENO
+shall be the readable end of the pipe, and the file descriptor
+\fIfileno\fR(\fIstream\fR) in the calling process, where
+.IR stream
+is the stream pointer returned by
+\fIpopen\fR(),
+shall be the writable end of the pipe.
+.IP " 3." 4
+If
+.IR mode
+is any other value, the result is unspecified.
+.P
+After
+\fIpopen\fR(),
+both the parent and the child process shall be capable of executing
+independently before either terminates.
+.P
+Pipe streams are byte-oriented.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIpopen\fR()
+shall return a pointer to an open stream that can be used to read
+or write to the pipe. Otherwise, it shall return a null pointer and
+may set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIpopen\fR()
+function shall fail if:
+.TP
+.BR EMFILE
+{STREAM_MAX}
+streams are currently open in the calling process.
+.P
+The
+\fIpopen\fR()
+function may fail if:
+.TP
+.BR EMFILE
+{FOPEN_MAX}
+streams are currently open in the calling process.
+.TP
+.BR EINVAL
+The
+.IR mode
+argument is invalid.
+.P
+The
+\fIpopen\fR()
+function may also set
+.IR errno
+values as described by
+.IR "\fIfork\fR\^(\|)"
+or
+.IR "\fIpipe\fR\^(\|)".
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Using popen(\|) to Obtain a List of Files from the ls Utility"
+.P
+The following example demonstrates the use of
+\fIpopen\fR()
+and
+\fIpclose\fR()
+to execute the command
+.IR ls *
+in order to obtain a list of files in the current directory:
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+\&...
+.P
+FILE *fp;
+int status;
+char path[PATH_MAX];
+.P
+fp = popen("ls *", "r");
+if (fp == NULL)
+    /* Handle error */;
+.P
+while (fgets(path, PATH_MAX, fp) != NULL)
+    printf("%s", path);
+.P
+status = pclose(fp);
+if (status == \(mi1) {
+    /* Error reported by pclose() */
+    ...
+} else {
+    /* Use macros described under wait() to inspect `status' in order
+       to determine success/failure of command executed by popen() */
+    ...
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Since open files are shared, a mode
+.IR r
+command can be used as an input filter and a mode
+.IR w
+command as an output filter.
+.P
+Buffered reading before opening an input filter may leave the standard
+input of that filter mispositioned. Similar problems with an output
+filter may be prevented by careful buffer flushing; for example, with
+.IR "\fIfflush\fR\^(\|)".
+.P
+A stream opened by
+\fIpopen\fR()
+should be closed by
+\fIpclose\fR().
+.P
+The behavior of
+\fIpopen\fR()
+is specified for values of
+.IR mode
+of
+.IR r
+and
+.IR w .
+Other modes such as
+.IR rb
+and
+.IR wb
+might be supported by specific implementations, but these would not be
+portable features. Note that historical implementations of
+\fIpopen\fR()
+only check to see if the first character of
+.IR mode
+is
+.IR r .
+Thus, a
+.IR mode
+of
+.IR "robert the robot"
+would be treated as
+.IR mode
+.IR r ,
+and a
+.IR mode
+of
+.IR "anything else"
+would be treated as
+.IR mode
+.IR w .
+.P
+If the application calls
+\fIwaitpid\fR()
+or
+\fIwaitid\fR()
+with a
+.IR pid
+argument greater than 0, and it still has a stream that was called with
+\fIpopen\fR()
+open, it must ensure that
+.IR pid
+does not refer to the process started by
+\fIpopen\fR().
+.P
+To determine whether or not the environment specified in the Shell and Utilities volume of POSIX.1\(hy2008 is
+present, use the function call:
+.sp
+.RS 4
+.nf
+\fB
+sysconf(_SC_2_VERSION)
+.fi \fR
+.P
+.RE
+.P
+(See
+.IR "\fIsysconf\fR\^(\|)").
+.SH RATIONALE
+The
+\fIpopen\fR()
+function should not be used by programs that have set user (or group)
+ID privileges. The
+\fIfork\fR()
+and
+.IR exec
+family of functions (except
+\fIexeclp\fR()
+and
+\fIexecvp\fR()),
+should be used instead. This prevents any unforeseen manipulation of
+the environment of the user that could cause execution of commands not
+anticipated by the calling program.
+.P
+If the original and
+\fIpopen\fR()ed
+processes both intend to read or write or read and write a common file,
+and either will be using FILE-type C functions (\c
+\fIfread\fR(),
+\fIfwrite\fR(),
+and so on), the rules for sharing file handles must be observed (see
+.IR "Section 2.5.1" ", " "Interaction of File Descriptors and Standard I/O Streams").
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIfork\fR\^(\|)",
+.IR "\fIpclose\fR\^(\|)",
+.IR "\fIpipe\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)",
+.IR "\fIsystem\fR\^(\|)",
+.IR "\fIwait\fR\^(\|)",
+.IR "\fIwaitid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIsh\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

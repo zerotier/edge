@@ -1,0 +1,169 @@
+'\" et
+.TH PIPE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pipe
+\(em create an interprocess channel
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int pipe(int \fIfildes\fP[2]);
+.fi
+.SH DESCRIPTION
+The
+\fIpipe\fR()
+function shall create a pipe and place two file descriptors, one
+each into the arguments
+.IR fildes [0]
+and
+.IR fildes [1],
+that refer to the open file descriptions for the read and write ends of
+the pipe. Their integer values shall be the two lowest available at the
+time of the
+\fIpipe\fR()
+call. The O_NONBLOCK and FD_CLOEXEC flags shall be clear on both file
+descriptors. (The
+\fIfcntl\fR()
+function can be used to set both these flags.)
+.P
+Data can be written to the file descriptor
+.IR fildes [1]
+and read from the file descriptor
+.IR fildes [0].
+A read on the file descriptor
+.IR fildes [0]
+shall access data written to the file descriptor
+.IR fildes [1]
+on a first-in-first-out basis. It is unspecified whether
+.IR fildes [0]
+is also open for writing and whether
+.IR fildes [1]
+is also open for reading.
+.P
+A process has the pipe open for reading (correspondingly writing) if it
+has a file descriptor open that refers to the read end,
+.IR fildes [0]
+(write end,
+.IR fildes [1]).
+.P
+The pipe's user ID shall be set to the effective user ID of the
+calling process.
+.P
+The pipe's group ID shall be set to the effective group ID of the
+calling process.
+.P
+Upon successful completion,
+\fIpipe\fR()
+shall mark for update the last data access, last data modification,
+and last file status change timestamps of the pipe.
+.SH "RETURN VALUE"
+Upon successful completion, 0 shall be returned; otherwise, \(mi1 shall
+be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIpipe\fR()
+function shall fail if:
+.TP
+.BR EMFILE
+All, or all but one, of the file descriptors available to the process
+are currently open.
+.TP
+.BR ENFILE
+The number of simultaneously open files in the system would exceed a
+system-imposed limit.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Using a Pipe to Pass Data Between a Parent Process and a Child Process"
+.P
+The following example demonstrates the use of a pipe to transfer data
+between a parent process and a child process. Error handling is
+excluded, but otherwise this code demonstrates good practice when using
+pipes: after the
+\fIfork\fR()
+the two processes close the unused ends of the pipe before they
+commence transferring data.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdlib.h>
+#include <unistd.h>
+\&...
+.P
+int fildes[2];
+const int BSIZE = 100;
+char buf[BSIZE];
+ssize_t nbytes;
+int status;
+.P
+status = pipe(fildes);
+if (status == \(mi1 ) {
+    /* an error occurred */
+    ...
+}
+.P
+switch (fork()) {
+case \(mi1: /* Handle error */
+    break;
+.P
+case 0:  /* Child - reads from pipe */
+    close(fildes[1]);                       /* Write end is unused */
+    nbytes = read(fildes[0], buf, BSIZE);   /* Get data from pipe */
+    /* At this point, a further read would see end of file ... */
+    close(fildes[0]);                       /* Finished with pipe */
+    exit(EXIT_SUCCESS);
+.P
+default:  /* Parent - writes to pipe */
+    close(fildes[0]);                       /* Read end is unused */
+    write(fildes[1], "Hello world\en", 12);  /* Write data on pipe */
+    close(fildes[1]);                       /* Child will see EOF */
+    exit(EXIT_SUCCESS);
+}
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The wording carefully avoids using the verb ``to open'' in order to
+avoid any implication of use of
+\fIopen\fR();
+see also
+\fIwrite\fR().
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

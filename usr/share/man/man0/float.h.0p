@@ -1,0 +1,364 @@
+'\" et
+.TH float.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.EQ
+delim $$
+.EN
+.SH NAME
+float.h
+\(em floating types
+.SH SYNOPSIS
+.LP
+.nf
+#include <float.h>
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The characteristics of floating types are defined in terms of a model
+that describes a representation of floating-point numbers and values
+that provide information about an implementation's floating-point
+arithmetic.
+.P
+The following parameters are used to define the model for each
+floating-point type:
+.IP "\fIs\fP" 6
+Sign (\(+-1).
+.IP "\fIb\fP" 6
+Base or radix of exponent representation (an integer >1).
+.IP "\fIe\fP" 6
+Exponent (an integer between a minimum $e_ min$ and a maximum
+$e_ max$).
+.IP "\fIp\fP" 6
+Precision (the number of base\(mi\fIb\fP digits in the significand).
+.IP "$f_ k$" 6
+Non-negative integers less than
+.IR b
+(the significand digits).
+.P
+A floating-point number
+.IR x
+is defined by the following model:
+.P
+.EQ
+x  " "  =  " "  sb"^" e" "  " "  sum from k=1 to p^  " "  f_ k" "  " "  b"^" " "-k ,
+     " "  e_ min" "  " "  <=  " "  e  " "  <=  " "  e_ max" "
+.EN
+.P
+In addition to normalized floating-point numbers ($f_ 1$>0 if
+.IR x \(!=0),
+floating types may be able to contain other kinds of floating-point
+numbers, such as subnormal floating-point numbers (\c
+.IR x \(!=0,
+.IR e =\c
+$e_ min$, $f_ 1$=0) and unnormalized floating-point numbers (\c
+.IR x \(!=0,
+.IR e >\c
+$e_ min$, $f_ 1$=0), and values that are not floating-point
+numbers, such as infinities and NaNs. A
+.IR NaN
+is an encoding signifying Not-a-Number. A
+.IR "quiet NaN"
+propagates through almost every arithmetic operation without raising a
+floating-point exception; a
+.IR "signaling NaN"
+generally raises a floating-point exception when occurring as an
+arithmetic operand.
+.P
+An implementation may give zero and non-numeric values, such as
+infinities and NaNs, a sign, or may leave them unsigned. Wherever such
+values are unsigned, any requirement in POSIX.1\(hy2008 to retrieve the
+sign shall produce an unspecified sign and any requirement to set the
+sign shall be ignored.
+.P
+The accuracy of the floating-point operations (\c
+.BR '+' ,
+.BR '\(mi' ,
+.BR '*' ,
+.BR '/' )
+and of the functions in
+.IR <math.h> 
+and
+.IR <complex.h> 
+that return floating-point results is implementation-defined, as is the
+accuracy of the conversion between floating-point internal
+representations and string representations performed by the functions
+in
+.IR <stdio.h> ,
+.IR <stdlib.h> ,
+and
+.IR <wchar.h> .
+The implementation may state that the accuracy is unknown.
+.P
+All integer values in the
+.IR <float.h> 
+header, except FLT_ROUNDS, shall be constant expressions suitable for
+use in
+.BR #if
+preprocessing directives; all floating values shall be constant
+expressions. All except DECIMAL_DIG, FLT_EVAL_METHOD, FLT_RADIX, and
+FLT_ROUNDS have separate names for all three floating-point types. The
+floating-point model representation is provided for all values except
+FLT_EVAL_METHOD and FLT_ROUNDS.
+.P
+The rounding mode for floating-point addition is characterized by the
+implementation-defined value of FLT_ROUNDS:
+.IP "\(mi1" 6
+Indeterminable.
+.IP "\00" 6
+Toward zero.
+.IP "\01" 6
+To nearest.
+.IP "\02" 6
+Toward positive infinity.
+.IP "\03" 6
+Toward negative infinity.
+.P
+All other values for FLT_ROUNDS characterize implementation-defined
+rounding behavior.
+.P
+The values of operations with floating operands and values subject to
+the usual arithmetic conversions and of floating constants are
+evaluated to a format whose range and precision may be greater than
+required by the type. The use of evaluation formats is characterized by
+the implementation-defined value of FLT_EVAL_METHOD:
+.IP "\(mi1" 6
+Indeterminable.
+.IP "\00" 6
+Evaluate all operations and constants just to the range and
+precision of the type.
+.IP "\01" 6
+Evaluate operations and constants of type
+.BR float
+and
+.BR double
+to the range and precision of the
+.BR double
+type; evaluate
+.BR "long double"
+operations and constants to the range and precision of the
+.BR "long double"
+type.
+.IP "\02" 6
+Evaluate all operations and constants to the range and precision of the
+.BR "long double"
+type.
+.P
+All other negative values for FLT_EVAL_METHOD characterize
+implementation-defined behavior.
+.P
+The
+.IR <float.h> 
+header shall define the following values as constant expressions with
+implementation-defined values that are greater or equal in magnitude
+(absolute value) to those shown, with the same sign.
+.IP " *" 4
+Radix of exponent representation,
+.IR b .
+.RS 4 
+.IP FLT_RADIX 14
+2
+.RE
+.IP " *" 4
+Number of base-FLT_RADIX digits in the floating-point significand,
+.IR p .
+.RS 4 
+.IP FLT_MANT_DIG 14
+.IP DBL_MANT_DIG 14
+.IP LDBL_MANT_DIG 14
+.RE
+.IP " *" 4
+Number of decimal digits,
+.IR n ,
+such that any floating-point number in the widest supported floating
+type with $p_ max$ radix
+.IR b
+digits can be rounded to a floating-point number with
+.IR n
+decimal digits and back again without change to the value.
+.RS 4 
+.P
+.EQ
+lpile { p_ max" "  " "  log_ 10" "  " "  b above
+left ceiling  " "  1  " "  +  " "  p_ max" "  " "  log_ 10" "  " "  b right ceiling }
+ " "   " "  lpile {if " " b " " is " " a " " power " " of " " 10 above otherwise}
+.EN
+.IP DECIMAL_DIG 14
+10
+.RE
+.br
+.RE
+.IP " *" 4
+Number of decimal digits,
+.IR q ,
+such that any floating-point number with
+.IR q
+decimal digits can be rounded into a floating-point number with
+.IR p
+radix
+.IR b
+digits and back again without change to the
+.IR q
+decimal digits.
+.RS 4 
+.P
+.EQ
+lpile { p  " "  log_ 10" "  " "  b above
+left floor  " "  (p  " "  -  " "  1)  " "  log_ 10" "  " "  b  " "  right floor }
+ " "   " "  lpile {if " " b " " is " " a " " power " " of " " 10 above otherwise}
+.EN
+.IP FLT_DIG 14
+6
+.IP DBL_DIG 14
+10
+.IP LDBL_DIG 14
+10
+.RE
+.IP " *" 4
+Minimum negative integer such that FLT_RADIX raised to that power
+minus 1 is a normalized floating-point number, $e_ min$.
+.RS 4 
+.IP FLT_MIN_EXP 14
+.IP DBL_MIN_EXP 14
+.IP LDBL_MIN_EXP 14
+.RE
+.IP " *" 4
+Minimum negative integer such that 10 raised to that power is in
+the range of normalized floating-point numbers.
+.RS 4 
+.P
+.EQ
+left ceiling  " "  log_ 10" "  " "  b"^" " "{ e_ min" "  " " "^" " "-1 } ^  " "  right ceiling
+.EN
+.IP FLT_MIN_10_EXP 14
+\(mi37
+.IP DBL_MIN_10_EXP 14
+\(mi37
+.IP LDBL_MIN_10_EXP 14
+\(mi37
+.RE
+.IP " *" 4
+Maximum integer such that FLT_RADIX raised to that power
+minus 1 is a representable finite floating-point number, $e_ max$.
+.RS 4 
+.IP FLT_MAX_EXP 14
+.IP DBL_MAX_EXP 14
+.IP LDBL_MAX_EXP 14
+.P
+Additionally, FLT_MAX_EXP shall be at least as large as FLT_MANT_DIG,
+DBL_MAX_EXP shall be at least as large as DBL_MANT_DIG, and LDBL_MAX_EXP
+shall be at least as large as LDBL_MANT_DIG; which has the effect that
+FLT_MAX, DBL_MAX, and LDBL_MAX are integral.
+.RE
+.IP " *" 4
+Maximum integer such that 10 raised to that power is in the range
+of representable finite floating-point numbers.
+.RS 4 
+.P
+.EQ
+left floor  " "  log_ 10" " ( ( 1  " "  -  " "  b"^" " "-p )  " " 
+    b"^" e" "_ max" "^ )  " "  right floor
+.EN
+.IP FLT_MAX_10_EXP 14
++37
+.IP DBL_MAX_10_EXP 14
++37
+.IP LDBL_MAX_10_EXP 14
++37
+.RE
+.P
+The
+.IR <float.h> 
+header shall define the following values as constant expressions with
+implementation-defined values that are greater than or equal to those
+shown:
+.IP " *" 4
+Maximum representable finite floating-point number.
+.RS 4 
+.P
+.EQ
+(1  " "  -  " "  b"^" " "-p^)  " "  b"^" e" "_ max" "
+.EN
+.IP FLT_MAX 14
+1E+37
+.IP DBL_MAX 14
+1E+37
+.IP LDBL_MAX 14
+1E+37
+.RE
+.P
+The
+.IR <float.h> 
+header shall define the following values as constant expressions with
+implementation-defined (positive) values that are less than or equal to
+those shown:
+.IP " *" 4
+The difference between 1 and the least value greater than 1
+that is representable in the given floating-point type, $b"^" " "{1 " " - " " p}$.
+.RS 4 
+.IP FLT_EPSILON 14
+1E\(mi5
+.IP DBL_EPSILON 14
+1E\(mi9
+.IP LDBL_EPSILON 14
+1E\(mi9
+.RE
+.IP " *" 4
+Minimum normalized positive floating-point number,
+$b"^" " "{ e_ min" "  " " "^" " "-1 }$.
+.RS 4 
+.IP FLT_MIN 14
+1E\(mi37
+.IP DBL_MIN 14
+1E\(mi37
+.IP LDBL_MIN 14
+1E\(mi37
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+All known hardware floating-point formats satisfy the property that the
+exponent range is larger than the number of mantissa digits. The ISO\ C standard
+permits a floating-point format where this property is not true, such that
+the largest finite value would not be integral; however, it is unlikely
+that there will ever be hardware support for such a floating-point format,
+and it introduces boundary cases that portable programs should not have
+to be concerned with (for example, a non-integral DBL_MAX means that
+\fIceil\fR()
+would have to worry about overflow). Therefore, this standard imposes
+an additional requirement that the largest representable finite value
+is integral.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<complex.h>\fP",
+.IR "\fB<math.h>\fP",
+.IR "\fB<stdio.h>\fP",
+.IR "\fB<stdlib.h>\fP",
+.IR "\fB<wchar.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,263 @@
+'\" et
+.TH TIMER_CREATE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+timer_create
+\(em create a per-process timer
+.SH SYNOPSIS
+.LP
+.nf
+#include <signal.h>
+#include <time.h>
+.P
+int timer_create(clockid_t \fIclockid\fP, struct sigevent *restrict \fIevp\fP,
+    timer_t *restrict \fItimerid\fP);
+.fi
+.SH DESCRIPTION
+The
+\fItimer_create\fR()
+function shall create a per-process timer using the specified clock,
+.IR clock_id ,
+as the timing base. The
+\fItimer_create\fR()
+function shall return, in the location referenced by
+.IR timerid ,
+a timer ID of type
+.BR timer_t
+used to identify the timer in timer requests. This timer ID shall be
+unique within the calling process until the timer is deleted. The
+particular clock,
+.IR clock_id ,
+is defined in
+.IR <time.h> .
+The timer whose ID is returned shall be in a disarmed state upon return
+from
+\fItimer_create\fR().
+.P
+The
+.IR evp
+argument, if non-NULL, points to a
+.BR sigevent
+structure. This structure, allocated by the application, defines the
+asynchronous notification to occur as specified in
+.IR "Section 2.4.1" ", " "Signal Generation and Delivery"
+when the timer expires. If the
+.IR evp
+argument is NULL, the effect is as if the
+.IR evp
+argument pointed to a
+.BR sigevent
+structure with the
+.IR sigev_notify
+member having the value SIGEV_SIGNAL, the
+.IR sigev_signo
+having a default signal number, and the
+.IR sigev_value
+member having the value of the timer ID.
+.P
+Each implementation shall define a set of clocks that can be used as
+timing bases for per-process timers. All implementations shall support a
+.IR clock_id
+of CLOCK_REALTIME.
+If the Monotonic Clock option is supported, implementations shall
+support a
+.IR clock_id
+of CLOCK_MONOTONIC.
+.P
+Per-process timers shall not be inherited by a child process across a
+\fIfork\fR()
+and shall be disarmed and deleted by an
+.IR exec .
+.P
+If _POSIX_CPUTIME is defined, implementations shall support
+.IR clock_id
+values representing the CPU-time clock of the calling process.
+.P
+If _POSIX_THREAD_CPUTIME is defined, implementations shall support
+.IR clock_id
+values representing the CPU-time clock of the calling thread.
+.P
+It is implementation-defined whether a
+\fItimer_create\fR()
+function will succeed if the value defined by
+.IR clock_id
+corresponds to the CPU-time clock of a process or thread different from
+the process or thread invoking the function.
+.P
+If \fIevp\fR\->\fIsigev_sigev_notify\fR is SIGEV_THREAD and
+\fIsev\fR\->\fIsigev_notify_attributes\fR is not NULL, if the attribute
+pointed to by \fIsev\fR\->\fIsigev_notify_attributes\fR has a thread
+stack address specified by a call to
+\fIpthread_attr_setstack\fR(),
+the results are unspecified if the signal is generated more than once.
+.SH "RETURN VALUE"
+If the call succeeds,
+\fItimer_create\fR()
+shall return zero and update the location referenced by
+.IR timerid
+to a
+.BR timer_t ,
+which can be passed to the per-process timer calls. If an error
+occurs, the function shall return a value of \(mi1 and set
+.IR errno
+to indicate the error. The value of
+.IR timerid
+is undefined if an error occurs.
+.SH ERRORS
+The
+\fItimer_create\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The system lacks sufficient signal queuing resources to honor the
+request.
+.TP
+.BR EAGAIN
+The calling process has already created all of the timers it is allowed
+by this implementation.
+.TP
+.BR EINVAL
+The specified clock ID is not defined.
+.TP
+.BR ENOTSUP
+The implementation does not support the creation of a timer attached to
+the CPU-time clock that is specified by
+.IR clock_id
+and associated with a process or thread different from the process or
+thread invoking
+\fItimer_create\fR().
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+If a timer is created which has \fIevp\fR\->\fIsigev_sigev_notify\fR
+set to SIGEV_THREAD and the attribute pointed to by
+\fIevp\fR\->\fIsigev_notify_attributes\fR has a thread stack address
+specified by a call to
+\fIpthread_attr_setstack\fR(),
+the memory dedicated as a thread stack cannot be recovered. The reason
+for this is that the threads created in response to a timer expiration
+are created detached, or in an unspecified way if the thread
+attribute's
+.IR detachstate
+is PTHREAD_CREATE_JOINABLE. In neither case is it valid to call
+\fIpthread_join\fR(),
+which makes it impossible to determine the lifetime of the created
+thread which thus means the stack memory cannot be reused.
+.br
+.SH RATIONALE
+.SS "Periodic Timer Overrun and Resource Allocation"
+.P
+The specified timer facilities may deliver realtime signals (that is,
+queued signals) on implementations that support this option. Since
+realtime applications cannot afford to lose notifications of
+asynchronous events, like timer expirations or asynchronous I/O
+completions, it must be possible to ensure that sufficient resources
+exist to deliver the signal when the event occurs. In general, this is
+not a difficulty because there is a one-to-one correspondence between a
+request and a subsequent signal generation. If the request cannot
+allocate the signal delivery resources, it can fail the call with an
+.BR [EAGAIN] 
+error.
+.P
+Periodic timers are a special case. A single request can generate an
+unspecified number of signals. This is not a problem if the
+requesting process can service the signals as fast as they are
+generated, thus making the signal delivery resources available for
+delivery of subsequent periodic timer expiration signals. But, in
+general, this cannot be assured\(emprocessing of periodic timer signals
+may ``overrun''; that is, subsequent periodic timer expirations may
+occur before the currently pending signal has been delivered.
+.P
+Also, for signals, according to the POSIX.1\(hy1990 standard, if subsequent occurrences of
+a pending signal are generated, it is implementation-defined whether
+a signal is delivered for each occurrence. This is not adequate for
+some realtime applications. So a mechanism is required to allow
+applications to detect how many timer expirations were delayed without
+requiring an indefinite amount of system resources to store the delayed
+expirations.
+.P
+The specified facilities provide for an overrun count. The overrun
+count is defined as the number of extra timer expirations that occurred
+between the time a timer expiration signal is generated and the time
+the signal is delivered. The signal-catching function, if it is
+concerned with overruns, can retrieve this count on entry. With this
+method, a periodic timer only needs one ``signal queuing resource''
+that can be allocated at the time of the
+\fItimer_create\fR()
+function call.
+.P
+A function is defined to retrieve the overrun count so that an
+application need not allocate static storage to contain the count, and
+an implementation need not update this storage asynchronously on timer
+expirations. But, for some high-frequency periodic applications, the
+overhead of an additional system call on each timer expiration may be
+prohibitive. The functions, as defined, permit an implementation to
+maintain the overrun count in user space, associated with the
+.IR timerid .
+The
+\fItimer_getoverrun\fR()
+function can then be implemented as a macro that uses the
+.IR timerid
+argument (which may just be a pointer to a user space structure
+containing the counter) to locate the overrun count with no system call
+overhead. Other implementations, less concerned with this class of
+applications, can avoid the asynchronous update of user space by
+maintaining the count in a system structure at the cost of the extra
+system call to obtain it.
+.SS "Timer Expiration Signal Parameters"
+.P
+The Realtime Signals Extension option supports an application-specific
+datum that is delivered to the extended signal handler. This value is
+explicitly specified by the application, along with the signal number
+to be delivered, in a
+.BR sigevent
+structure. The type of the application-defined value can be either an
+integer constant or a pointer. This explicit specification of the
+value, as opposed to always sending the
+timer ID, was selected based on existing practice.
+.P
+It is common practice for realtime applications (on non-POSIX systems
+or realtime extended POSIX systems) to use the parameters of event
+handlers as the case label of a switch statement or as a pointer to an
+application-defined data structure. Since
+.IR timer_id s
+are dynamically allocated by the
+\fItimer_create\fR()
+function, they can be used for neither of these functions without
+additional application overhead in the signal handler; for example, to
+search an array of saved timer IDs to associate the ID with a constant
+or application data structure.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIclock_getres\fR\^(\|)",
+.IR "\fItimer_delete\fR\^(\|)",
+.IR "\fItimer_getoverrun\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<signal.h>\fP",
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

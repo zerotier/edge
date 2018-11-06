@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Insert the ZeroTier Edge remote access key for factory access. This can
+# be removed by the user and will be removed once the beta period is over
+# (though we might include an option to selectively re-add it for help).
+if [ ! -s /root/.ssh/authorized_keys ]; then
+	mkdir -p /root/.ssh
+	chmod 0700 /root/.ssh
+	echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAEAQC+XEU2KBIYUJal0hyEpO/nelv9J2vATMYbn5sTYlwhBr4K8qorUfhCcspyTAQAzl2CyV7VMezJ+6xurDoVd9vH1jDoJiqAGlbx3LVc3zaVZQvzr0X6/KEerAMQLoHg8hBnSb92OqS5/48f3ms/dgMBRzK0XB1qjS3iASOFDUTir2pi18Igq2EDS/0xpF3hXpJrKbNtBNW3AQjdnn/v1AraTIli3kpC1ToQbo4/6/60MBdhY/SEHHHA1San4lbddWQU59DdmVVMIfOdc6OJKi0xwRIE2Jt7kY9KpE2t2ya0Ux5F5mTXTniPet2GhVa5A2p/MvbJ38nASEIlsKmZ8oDAzNW+6+3Wd8tsewerd7HwGxAWDY30P3waOC79WO2w5OpKhTGLsowI6GRHW6MGQp/Iv91D9TTdYT5dt3eWxdQouey19R/I7CoI7oOb+yD1diaGmfmM1ILWivwM36PtgBR+LT6iB+YGmbItnhS+q+qlNwJrSADveyPXmcVYZxeq7MKHbtDZUU9edlXhSK7mYrvGL7+PZDufHvTP6IsBWnrBikFmmM+AjyGliLCT25IBmi/qcmgn+NrsteDG0ejQUrd/iT31dje6UnHkxlPygSmQxjr64bodLROAY1FpUYZqjWIQp/dkzU6x/S4BQllUY/OwQwiquzZPnhMIwxcVHhlMwKNaYjwiP8b5NFpI1hzgapgm24TS70dH9iClfcyYIXfMdYeA9ZA9GZGYqNQliJKMJfV4+Z1WaXhcq5156vV2n1X8YIPLf3CHDM/trWfBTx8AqLysu+nTXPKEuugpuRH13+5td9/i36EuRJ+1cgc4dOCK8LjwB4xhi3varevV+TkFrhFluXgnPNJdyq/JNRWgPZ60lmfGzyHodsOwIzeW5rPU2OfhoqzwE8d53dgpMn/lh91zp5KTYl0NKtMLkOT9q78v+VZBvx3y+IkSOE5zLO8sBWSlzcbrpbvmrEky/yshPBMVxtW7bUzGiN09TvNVuohXBYq8OW3JV4hVdPneno9xmR8F1vP7DPDGoVtzDTKck5OX1hazroOReEfVqwM7AYd2XsX3pLeOJt6wt/eNA6JVZTwNrrU6RrPzjIqxduduwyTQO7XDAyrjn3m+ErqR8AWRWFD+SR4VeOImEfcRmJmbh54OLLwfPYt+B/uOnhvHzokWlIyfunUge8Ow0Y3NLoTP/yj+JCGJYwYGAlw2C4m8L50AMfWuUulZaLf8LSOmGw/k0gx0JD9T0tq8ZdRrez4JPXIIdF/kV+pqCn2JWHeerXGZu5YIpmwunkzf1sU9oIkiathCE/ON1gjcdJFeLP0kqe1pCn8vQyUrR21U/A9wJTsbMG7A9P6Zc9xmzddh ssh-edge-factory@zerotier.com' >/root/.ssh/authorized_keys
+	chmod 0600 /root/.ssh/authorized_keys
+fi
+
+# Ping edge-update-server to allow us to see edges (in beta mode) online.
+ping6 -i 30 edge-update-server >>/dev/null 2>&1 &
+
+exit 0

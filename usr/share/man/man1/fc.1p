@@ -1,0 +1,593 @@
+'\" et
+.TH FC "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fc
+\(em process the command history list
+.SH SYNOPSIS
+.LP
+.nf
+fc \fB[\fR\(mir\fB] [\fR\(mie \fIeditor\fB] [\fIfirst \fB[\fIlast\fB]]\fR
+.P
+fc \(mil\fB [\fR\(minr\fB] [\fIfirst \fB[\fIlast\fB]]\fR
+.P
+fc \(mis\fB [\fIold\fR=\fInew\fB] [\fIfirst\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR fc
+utility shall list, or shall edit and re-execute, commands previously
+entered to an interactive
+.IR sh .
+.P
+The command history list shall reference commands by number. The first
+number in the list is selected arbitrarily. The relationship of a
+number to its command shall not change except when the user logs in and
+no other process is accessing the list, at which time the system may
+reset the numbering to start the oldest retained command at another
+number (usually 1). When the number reaches an
+implementation-defined upper limit, which shall be no smaller than
+the value in
+.IR HISTSIZE
+or 32\|767 (whichever is greater), the shell may wrap the numbers,
+starting the next command with a lower number (usually 1). However,
+despite this optional wrapping of numbers,
+.IR fc
+shall maintain the time-ordering sequence of the commands. For
+example, if four commands in sequence are given the numbers 32\|766,
+32\|767, 1 (wrapped), and 2 as they are executed, command 32\|767 is
+considered the command previous to 1, even though its number is
+higher.
+.P
+When commands are edited (when the
+.BR \(mil
+option is not specified), the resulting lines shall be entered at the
+end of the history list and then re-executed by
+.IR sh .
+The
+.IR fc
+command that caused the editing shall not be entered into the history
+list. If the editor returns a non-zero exit status, this shall
+suppress the entry into the history list and the command re-execution.
+Any command line variable assignments or redirection operators used
+with
+.IR fc
+shall affect both the
+.IR fc
+command itself as well as the command that results; for example:
+.sp
+.RS 4
+.nf
+\fB
+fc \(mis \(mi\|\(mi \(mi1 2>/dev/null
+.fi \fR
+.P
+.RE
+.P
+reinvokes the previous command, suppressing standard error for both
+.IR fc
+and the previous command.
+.SH OPTIONS
+The
+.IR fc
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mie\ \fIeditor\fR" 10
+Use the editor named by
+.IR editor
+to edit the commands. The
+.IR editor
+string is a utility name, subject to search via the
+.IR PATH
+variable (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables").
+The value in the
+.IR FCEDIT
+variable shall be used as a default when
+.BR \(mie
+is not specified. If
+.IR FCEDIT
+is null or unset,
+.IR ed
+shall be used as the editor.
+.IP "\fB\(mil\fP" 10
+(The letter ell.) List the commands rather than invoking an editor on
+them. The commands shall be written in the sequence indicated by the
+.IR first
+and
+.IR last
+operands, as affected by
+.BR \(mir ,
+with each command preceded by the command number.
+.IP "\fB\(min\fP" 10
+Suppress command numbers when listing with
+.BR \(mil .
+.IP "\fB\(mir\fP" 10
+Reverse the order of the commands listed (with
+.BR \(mil )
+or edited (with neither
+.BR \(mil
+nor
+.BR \(mis ).
+.IP "\fB\(mis\fP" 10
+Re-execute the command without invoking an editor.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIfirst\fR,\ \fIlast\fR" 10
+Select the commands to list or edit. The number of previous commands
+that can be accessed shall be determined by the value of the
+.IR HISTSIZE
+variable. The value of
+.IR first
+or
+.IR last
+or both shall be one of the following:
+.RS 10 
+.IP "\fB[+]\fInumber\fR" 10
+A positive number representing a command number; command numbers can be
+displayed with the
+.BR \(mil
+option.
+.IP "\fB\(mi\fInumber\fR" 10
+A negative decimal number representing the command that was executed
+.IR number
+of commands previously. For example, \(mi1 is the immediately previous
+command.
+.IP "\fIstring\fR" 10
+A string indicating the most recently entered command that begins with
+that string. If the
+.IR old =\c
+.IR new
+operand is not also specified with
+.BR \(mis ,
+the string form of the
+.IR first
+operand cannot contain an embedded
+<equals-sign>.
+.P
+When the synopsis form with
+.BR \(mis
+is used:
+.IP " *" 4
+If
+.IR first
+is omitted, the previous command shall be used.
+.P
+For the synopsis forms without
+.BR \(mis :
+.IP " *" 4
+If
+.IR last
+is omitted,
+.IR last
+shall default to the previous command when
+.BR \(mil
+is specified; otherwise, it shall default to
+.IR first .
+.IP " *" 4
+If
+.IR first
+and
+.IR last
+are both omitted, the previous 16 commands shall be listed or the
+previous single command shall be edited (based on the
+.BR \(mil
+option).
+.IP " *" 4
+If
+.IR first
+and
+.IR last
+are both present, all of the commands from
+.IR first
+to
+.IR last
+shall be edited (without
+.BR \(mil )
+or listed (with
+.BR \(mil ).
+Editing multiple commands shall be accomplished by presenting to the
+editor all of the commands at one time, each command starting on a new
+line. If
+.IR first
+represents a newer command than
+.IR last ,
+the commands shall be listed or edited in reverse sequence, equivalent
+to using
+.BR \(mir .
+For example, the following commands on the first line are equivalent to
+the corresponding commands on the second:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+fc \(mir 10 20    fc    30 40
+fc    20 10    fc \(mir 40 30
+.fi \fR
+.P
+.RE
+.RE
+.IP " *" 4
+When a range of commands is used, it shall not be an error to specify
+.IR first
+or
+.IR last
+values that are not in the history list;
+.IR fc
+shall substitute the value representing the oldest or newest command in
+the list, as appropriate. For example, if there are only ten commands
+in the history list, numbered 1 to 10:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+fc \(mil
+fc 1 99
+.fi \fR
+.P
+.RE
+.P
+shall list and edit, respectively, all ten commands.
+.RE
+.RE
+.IP "\fIold\fP=\fInew\fR" 10
+Replace the first occurrence of string
+.IR old
+in the commands to be re-executed by the string
+.IR new .
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR fc :
+.IP "\fIFCEDIT\fP" 10
+This variable, when expanded by the shell, shall determine the default
+value for the
+.BR \(mie
+.IR editor
+option's
+.IR editor
+option-argument. If
+.IR FCEDIT
+is null or unset,
+.IR ed
+shall be used as the editor.
+.IP "\fIHISTFILE\fP" 10
+Determine a pathname naming a command history file. If the
+.IR HISTFILE
+variable is not set, the shell may attempt to access or create a file
+.BR .sh_history
+in the directory referred to by the
+.IR HOME
+environment variable. If the shell cannot obtain both read and write
+access to, or create, the history file, it shall use an unspecified
+mechanism that allows the history to operate properly. (References to
+history ``file'' in this section shall be understood to mean this
+unspecified mechanism in such cases.) An implementation may choose to
+access this variable only when initializing the history file; this
+initialization shall occur when
+.IR fc
+or
+.IR sh
+first attempt to retrieve entries from, or add entries to, the file, as
+the result of commands issued by the user, the file named by the
+.IR ENV
+variable, or implementation-defined system start-up files. In some
+historical shells, the history file is initialized just after the
+.IR ENV
+file has been processed. Therefore, it is implementation-defined
+whether changes made to
+.IR HISTFILE
+after the history file has been initialized are effective.
+Implementations may choose to disable the history list mechanism for
+users with appropriate privileges who do not set
+.IR HISTFILE ;
+the specific circumstances under which this occurs are
+implementation-defined. If more than one instance of the shell is
+using the same history file, it is unspecified how updates to the
+history file from those shells interact. As entries are deleted from
+the history file, they shall be deleted oldest first. It is
+unspecified when history file entries are physically removed from the
+history file.
+.IP "\fIHISTSIZE\fP" 10
+Determine a decimal number representing the limit to the number of
+previous commands that are accessible. If this variable is unset, an
+unspecified default greater than or equal to 128 shall be used. The
+maximum number of commands in the history list is unspecified, but
+shall be at least 128. An implementation may choose to access this
+variable only when initializing the history file, as described under
+.IR HISTFILE .
+Therefore, it is unspecified whether changes made to
+.IR HISTSIZE
+after the history file has been initialized are effective.
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+When the
+.BR \(mil
+option is used to list commands, the format of each command in the list
+shall be as follows:
+.sp
+.RS 4
+.nf
+\fB
+"%d\et%s\en", <\fIline number\fR>, <\fIcommand\fR>
+.fi \fR
+.P
+.RE
+.P
+If both the
+.BR \(mil
+and
+.BR \(min
+options are specified, the format of each command shall be:
+.sp
+.RS 4
+.nf
+\fB
+"\et%s\en", <\fIcommand\fR>
+.fi \fR
+.P
+.RE
+.P
+If the <\fIcommand\fP> consists of more than one line, the lines after
+the first shall be displayed as:
+.sp
+.RS 4
+.nf
+\fB
+"\et%s\en", <\fIcontinued-command\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion of the listing.
+.IP >0 6
+An error occurred.
+.P
+Otherwise, the exit status shall be that of the commands executed by
+.IR fc .
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Since editors sometimes use file descriptors as integral parts of their
+editing, redirecting their file descriptors as part of the
+.IR fc
+command can produce unexpected results. For example, if
+.IR vi
+is the
+.IR FCEDIT
+editor, the command:
+.sp
+.RS 4
+.nf
+\fB
+fc \(mis | more
+.fi \fR
+.P
+.RE
+.P
+does not work correctly on many systems.
+.P
+Users on windowing systems may want to have separate history files for
+each window by setting
+.IR HISTFILE
+as follows:
+.sp
+.RS 4
+.nf
+\fB
+HISTFILE=$HOME/.sh_hist$$
+.fi \fR
+.P
+.RE
+.SH "EXAMPLES"
+None.
+.SH RATIONALE
+This utility is based on the
+.IR fc
+built-in of the KornShell.
+.P
+An early proposal specified the
+.BR \(mie
+option as
+.BR [\(mie
+.IR editor
+.BR [ \c
+.IR old \c
+=
+.IR new
+.BR ]\|] ,
+which is not historical practice. Historical practice in
+.IR fc
+of either
+.BR [\(mie
+.IR editor \c
+.BR ]
+or
+.BR "[\(mie \(mi ["
+.IR old \c
+=
+.IR new
+.BR ]\|]
+is acceptable, but not both together. To clarify this, a new option
+.BR \(mis
+was introduced replacing the
+.BR "[\(mie \(mi]" .
+This resolves the conflict and makes
+.IR fc
+conform to the Utility Syntax Guidelines.
+.IP "\fIHISTFILE\fP" 10
+Some implementations of the KornShell check for the superuser
+and do not create a history file unless
+.IR HISTFILE
+is set. This is done primarily to avoid creating unlinked files in the
+root file system when logging in during single-user mode.
+.IR HISTFILE
+must be set for the superuser to have history.
+.IP "\fIHISTSIZE\fP" 10
+Needed to limit the size of history files. It is the intent of the
+standard developers that when two shells share the same history file,
+commands that are entered in one shell shall be accessible by the other
+shell. Because of the difficulties of synchronization over a network,
+the exact nature of the interaction is unspecified.
+.P
+The initialization process for the history file can be dependent on the
+system start-up files, in that they may contain commands that
+effectively preempt the settings the user has for
+.IR HISTFILE
+and
+.IR HISTSIZE .
+For example, function definition commands are recorded in the history
+file. If the system administrator includes function definitions in some
+system start-up file called before the
+.IR ENV
+file, the history file is initialized before the user can influence its
+characteristics. In some historical shells, the history file is
+initialized just after the
+.IR ENV
+file has been processed. Because of these situations, the text requires
+the initialization process to be implementation-defined.
+.P
+Consideration was given to omitting the
+.IR fc
+utility in favor of the command line editing feature in
+.IR sh .
+For example, in
+.IR vi
+editing mode, typing
+.BR \(dq<ESC> v\(dq 
+is equivalent to:
+.sp
+.RS 4
+.nf
+\fB
+EDITOR=vi fc
+.fi \fR
+.P
+.RE
+.P
+However, the
+.IR fc
+utility allows the user the flexibility to edit multiple commands
+simultaneously (such as
+.IR fc
+10 20) and to use editors other than those supported by
+.IR sh
+for command line editing.
+.P
+In the KornShell, the alias
+.BR r
+(``re-do'') is preset to
+.IR fc
+.BR "\(mie \(mi"
+(equivalent to the POSIX
+.IR fc
+.BR \(mis ).
+This is probably an easier command name to remember than
+.IR fc
+(``fix command''), but it does not meet the Utility Syntax Guidelines.
+Renaming
+.IR fc
+to
+.IR hist
+or
+.IR redo
+was considered, but since this description closely matches historical
+KornShell practice already, such a renaming was seen as gratuitous.
+Users are free to create aliases whenever odd historical names such as
+.IR fc ,
+.IR awk ,
+.IR cat ,
+.IR grep ,
+or
+.IR yacc
+are standardized by POSIX.
+.P
+Command numbers have no ordering effects; they are like serial numbers.
+The
+.BR \(mir
+option and \(mi\fInumber\fP operand address the sequence of command
+execution, regardless of serial numbers. So, for example, if the
+command number wrapped back to 1 at some arbitrary point, there would
+be no ambiguity associated with traversing the wrap point. For example,
+if the command history were:
+.sp
+.RS 4
+.nf
+\fB
+32766: echo 1
+32767: echo 2
+1: echo 3
+.fi \fR
+.P
+.RE
+.P
+the number \(mi2 refers to command 32\|767 because it is the second
+previous command, regardless of serial number.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIsh\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

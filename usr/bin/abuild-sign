@@ -1,0 +1,108 @@
+#!/bin/sh
+
+# abuild-sign - sign indexes
+# Copyright (c) 2009 Natanael Copa <ncopa@alpinelinux.org>
+#
+# Distributed under GPL-2
+#
+
+program_version=3.3.0_pre1-r1
+datadir=/usr/share/abuild
+
+if ! [ -f "$datadir/functions.sh" ]; then
+	echo "$datadir/functions.sh: not found" >&2
+	exit 1
+fi
+. "$datadir/functions.sh"
+
+do_sign() {
+	local f i keyname repo
+
+	# we are actually only interested in the name, not the file itself
+	keyname=${pubkey##*/}
+
+	for f; do
+		i=$(readlink -f $f)
+		[ -d "$i" ] && i="$i/APKINDEX.tar.gz"
+		repo="${i%/*}"
+		(
+		set -e
+		cd "$repo"
+		sig=".SIGN.RSA.$keyname"
+		openssl dgst -sha1 -sign "$privkey" -out "$sig" "$i"
+		tmptargz=$(mktemp)
+		tar -f - -c "$sig" | abuild-tar --cut | gzip -9 > "$tmptargz"
+		tmpsigned=$(mktemp)
+		cat "$tmptargz" "$i" > "$tmpsigned"
+		rm -f "$tmptargz" "$sig"
+		chmod 644 "$tmpsigned"
+		mv "$tmpsigned" "$i"
+		msg "Signed $i"
+		) || die "failed to sign $i"
+	done
+}
+
+usage() {
+	cat >&2 <<-__EOF__
+		$program $program_version - sign indexes
+		Usage: $program [-k PRIVKEY] [-p PUBKEY] INDEXFILE...
+		       $program -e
+		Options:
+		  -e, --installed    Check only of there exist a private key for signing
+		  -k, --private KEY  The private key to use for signing
+		  -p, --public KEY   The name of public key. apk add will look for
+		                     /etc/apk/keys/KEY
+		  -q, --quiet
+		  -h, --help         Show this help
+
+	__EOF__
+}
+
+check_installed=false
+privkey="$PACKAGER_PRIVKEY"
+pubkey=
+quiet=
+
+args=$(getopt -o ek:p:qh --long installed,private:,public:,quiet,help -n "$program" -- "$@")
+if [ $? -ne 0 ]; then
+	usage
+	exit 2
+fi
+eval set -- "$args"
+while true; do
+	case $1 in
+		-e|--installed) check_installed=true;;
+		-k|--private) privkey=$2; shift;;
+		-p|--public) pubkey=$2; shift;;
+		-q|--quiet) quiet=1;; # suppresses msg
+		-h|--help) usage; exit;;
+		--) shift; break;;
+		*) exit 1;; # getopt error
+	esac
+	shift
+done
+if [ $# -eq 0 ] && ! $check_installed; then
+	usage
+	exit 2
+fi
+
+if [ -z "$privkey" ]; then
+	cat >&2 <<-__EOF__
+		No private key found. Use 'abuild-keygen' to generate the keys.
+		Then you can either:
+		  * set the PACKAGER_PRIVKEY in $ABUILD_USERCONF
+		    ('abuild-keygen -a' does this for you)
+		  * set the PACKAGER_PRIVKEY in $ABUILD_CONF
+		  * specify the key with the -k option to $program
+
+	__EOF__
+	exit 1
+fi
+
+if [ -z "$pubkey" ]; then
+	pubkey=${PACKAGER_PUBKEY:-"${privkey}.pub"}
+fi
+
+if ! $check_installed; then
+	do_sign "$@"
+fi

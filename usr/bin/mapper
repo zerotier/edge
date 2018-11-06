@@ -1,0 +1,694 @@
+#!/usr/bin/perl
+# Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+
+######################################################################
+#
+# If we're executing from a packed environment, make sure we've got the
+# library path for the packed modules.
+#
+BEGIN {
+    if($ENV{'PAR_TEMP'}) {
+	unshift @INC, ("$ENV{'PAR_TEMP'}/inc/lib");
+    }
+}
+
+
+
+use Net::DNS::SEC::Tools::QWPrimitives;
+use Net::DNS::SEC::Tools::BootStrap;
+use Net::DNS::SEC::Tools::conf;
+use Net::DNS::SEC::Tools::dnssectools;
+use Data::Dumper;
+use strict;
+
+######################################################################
+#
+# Use a local config file if we're running as part of a packed configuration.
+#
+if(runpacked()) {
+    setconffile("$ENV{'PAR_TEMP'}/inc/dnssec-tools.conf");
+}
+
+######################################################################
+# detect basic needed module requirements
+#
+dnssec_tools_load_mods('GraphViz'    => "",
+		       'Date::Parse' => "",
+		       'GraphViz::Small' => "noerror",
+		       'GraphViz::No'    => "noerror");
+
+my %nodes;
+my %nodesonce;
+my %rtypes;
+my %edges;
+my %edgesonce;
+my %edgelabels;
+my %extras;
+my %opts = ( o => 'map.png', l => 'neato', w => 7*24*60*60,
+	     s => 'NSEC,RRSIG', a => 0, e => 1, f => 10);
+my ($zfile, $dname, $from, $to, $color);
+my $seccolor = "green2";
+my %dnames;
+my ($dorecords, %dorecords);
+my $mapinwindow;
+
+my $time = time();
+
+my %primes = dnssec_tools_get_qwprimitives();
+
+DTGetOptions(\%opts,
+		['GUI:screen','Basic Options'],
+		['GUI:VERSION',"DNSSEC-Tools Version: 2.1"],
+		['GUI:separator', 'Map Output Style Options:'],
+		['l|layout-style=s','Layout style',
+		 question => { type => 'menu',
+			       values => [qw(dot neato twopi circo fdp)] }],
+		['L|legend','Add a legend to the map'],
+	        ['node-size=s', "Reduce node size to 'small' or 'none'"],
+		['GUI:guionly', { type => 'checkbox',
+				  values => [1,0],
+				  default => 0,
+				  text => 'Show advanced GUI options',
+				  name => 'advancedoptions'}],
+
+		['GUI:separator', 'DNS Specific Map Style Options:'],
+		['r|resource-records','Show resource record types labels'],
+		['t|add-type-data=s','Show data for comma-sep types'],
+		['g|group-nodes','Group nodes around a domain name'],
+
+		['GUI:separator', 'DNS Record Selection Options:'],
+		['s|skip-types=s','Do not look at records of comma-sep. types'],
+		['T|show-types=s','Show only records with comma-sep types'],
+		['i|ignore-records=s',
+		 'Regex pattern of record names to ignore'],
+
+		['GUI:separator', 'Output options:'],
+		['o|output-file=s','Output File Name',
+		 question => { type => 'fileupload'}],
+		['W|show-in-window',
+		 'Show map in a window (requires QWizard and Gtk2 or Tk)',
+		 {default => 1}],
+		['q|quiet-dnssec',
+		 'Do not show expired or near-expired record warnings'],
+		['w|warn-time=i',
+		 'Time in seconds ahead to warn about expiring records'],
+
+		['GUI:separator', 'Help information:'],
+		['h|help','Show command line help'],
+
+		['GUI:nootherargs',1],
+		['GUI:submodules','getzonefiles','getzonenames'],
+		['GUI:otherargs_text',"FILE DOMAIN [FILE DOMAIN...]"],
+		['GUI:otherargs_required',1],
+		['GUI:actions', sub { require QWizard;
+				      import QWizard;
+				      $mapinwindow = qwparam('mapinwindow')}],
+		['GUI:otherprimaries',%primes],
+
+		['GUI:screen', 'Advanced Map Style Options:',
+		 introduction =>
+		 'These options affect the GraphViz layout engine.',
+		 doif => 'advancedoptions'],
+		['a|allow-overlap', 
+		 'Allow overlap of map nodes (makes tighter maps)'],
+		['e|edge-weight=i', 
+		 'Weight of lines.  >1 means shorter, <1 means longer'],
+		['f|font-size=i',
+		 'Font Size.  (default is 10)'],
+		['x|map-width=i', 'Maximum width of the map in pixels'],
+		['y|map-height=i', 'Maximum height of the map in pixels'],
+
+		['edge-style=s','Additional style parameters for edges; major tokens are comma-separated and minor are colon separated'],
+		['node-style=s','Additional style parameters for edges; major tokens are comma-separated and minor are colon separated'],
+                ['dump-styles', 'Dump the current style formats'],
+) || exit();
+
+exit() if (exists($opts{'h'}));
+
+my %edgeparameters =
+  (
+#   CNAME => '.2275,.5412,1',
+   CNAME => {color => '.9875,.8412,1'},
+   NSEC => {color => 'brown', style => 'dashed'},
+   NS => {style => 'bold'},
+   RRSIG => { color => 'green4' },
+   DS => {color => $seccolor},
+   default => {color => "black"},
+  );
+
+# must be ordered by priority of importance in the results
+my @edgetypes = qw(CNAME RRSIG NSEC NS DS);
+my $edgecount = 1;
+my %edgetypes;
+map { $edgetypes{$_} = $edgecount++; } @edgetypes;
+
+my %nodeparameters =
+  (
+   CNAME => { fillcolor => '.9875,.4,1' },
+   NS => { fillcolor => '.0510,.4196,1' },
+   RRSIG => { color => $seccolor },
+   RRSIGWARN => { color => 'yellow3', style => 'bold' },
+   RRSIGERR => { color => 'red', style => 'bold' },
+#   RRSIGWARN => { fontcolor => 'yellow3' },
+#   RRSIGERR => { fontcolor => 'red' },
+   AAAA => { fillcolor => ".2,.4,1" },
+   MX => { fillcolor => ".8,.4,1" },
+   default => { fillcolor => ".5137,.3804,1" },
+   root => { fillcolor => '.5765,.6902,1'},
+  );
+
+# read in the command line style options
+if ($opts{'edge-style'}) {
+    foreach my $edgestyle (split(/\s*\/\s*/, $opts{'edge-style'})) {
+	$edgestyle =~ s/^(\w+)://;
+	my $major = $1;
+	foreach my $edgeparm (split(/\s*:\s*/, $edgestyle)) {
+	    my ($left, $right) = split(/\s*=\s*/,$edgeparm);
+	    $edgeparameters{$major}{$left} = $right;
+	}
+    }
+}
+
+if ($opts{'node-style'}) {
+    foreach my $nodestyle (split(/\s*\/\s*/, $opts{'node-style'})) {
+	$nodestyle =~ s/^(\w+)://;
+	my $major = $1;
+	foreach my $nodeparm (split(/\s*:\s*/, $nodestyle)) {
+	    my ($left, $right) = split(/\s*=\s*/,$nodeparm);
+	    $nodeparameters{$major}{$left} = $right;
+	}
+    }
+}
+
+if ($opts{'dump-styles'}) {
+    print "node styles:\n";
+    foreach my $label (sort keys(%nodeparameters)) {
+	print "  $label:\n";
+	foreach my $key (sort keys(%{$nodeparameters{$label}})) {
+	    print "    $key=$nodeparameters{$label}{$key}\n";
+	}
+    }
+    print "edge styles:\n";
+    foreach my $label (sort keys(%edgeparameters)) {
+	print "  $label:\n";
+	foreach my $key (sort keys(%{$edgeparameters{$label}})) {
+	    print "    $key=$edgeparameters{$label}{$key}\n";
+	}
+    }
+}
+
+# must be ordered by priority of importance in the results
+my @nodetypes = qw(AAAA MX NS CNAME RRSIG RRSIGWARN RRSIGERR root);
+my $nodecount = 1;
+my %nodetypes;
+map { $nodetypes{$_} = $nodecount++; } @nodetypes;
+
+
+#
+# figure out which record types to ignore
+#
+my %skiprecords;
+
+if ($opts{'s'}) {
+    my @recs = split(/\s*,\s*/,$opts{'s'});
+    map { $skiprecords{uc($_)} = 1 } @recs;
+}
+
+#
+# Collect record types we want to see, if specified, into an array.
+#
+if ($opts{'T'}) {
+    $dorecords = 1;
+    my @recs = split(/\s*,\s*/,$opts{'s'});
+    map { $dorecords{uc($_)} = 1 } @recs;
+}
+
+#
+# optionall print specific type data
+#
+my @labtypes;
+if ($opts{'t'}) {
+    @labtypes = split(/\s*,\s*/,$opts{'t'});
+    print join(",",@labtypes) . "here: $opts{t}\n";
+    map { $_ = uc($_) } @labtypes;
+    print join(",",@labtypes) . "here: $opts{t}\n";
+}
+
+
+#
+# Create the graphviz module that will eventually create the display
+#
+my @graphopts;
+push @graphopts, 'width', ($opts{'x'}/96) if ($opts{'x'});
+push @graphopts, 'height', ($opts{'y'}/96) if ($opts{'y'});
+my @fulloptions = (layout => $opts{'l'},
+		   node => {'fontsize' => $opts{'f'}},
+		   edge => {'fontsize' => $opts{'f'}},
+		   overlap => ($opts{'a'})?'true':'false',
+		   @graphopts);
+my $g;
+if (exists($opts{'node-size'})) {
+    # newer graphviz modules have 'small' and 'no' node styles
+    if ($opts{'node-size'} eq 'small') {
+	require GraphViz::Small;
+	$g = GraphViz::Small->new(@fulloptions);
+    } elsif ($opts{'node-size'} eq 'none') {
+	require GraphViz::Small;
+	$g = GraphViz::No->new(@fulloptions);
+    } else {
+	print STDERR "The graphviz --node-style $opts{'node-size'} is not legal.\n";
+	print STDERR "  please use option values of 'no' or 'small' instead.\n";
+	exit 1;
+    }
+} else {
+    $g = GraphViz->new(@fulloptions);
+}
+
+#
+# Loop through each file and zone name and collect information
+#
+while ($#ARGV > -1) {
+
+    $zfile = shift;
+    $dname = shift;
+
+#    print "loading file $zfile\n";
+
+    #
+    # Parse the file into an array
+    #
+    my $rrset = dt_parse_zonefile(file => $zfile,
+				  origin => "$dname.",
+				  soft_errors => 1,
+				  on_error => \&my_err);
+#    print "loaded file $zfile\n";
+
+    #
+    # collect record types for each node
+    #
+    foreach my $rr (@$rrset) {
+	# collect record types
+	$rtypes{$rr->name}{$rr->type} = $rr->rdatastr;
+    }
+
+    #
+    # add the root domain name
+    #
+    do_node($dname, 'root');
+
+    #
+    # for each node, add it and any necessary lines
+    #
+    foreach my $rr (@$rrset) {
+#	    print $rr->string, "\n";
+#	    print "  ",join(" -> ", $rr->name, $rr->class, $rr->type),"\n";
+
+	# skip any records we've been asked to skip in some way
+	next if ($opts{'i'} && $rr->name =~ /$opts{'i'}/);
+	next if ($skiprecords{$rr->type});
+	next if ($dorecords && !$dorecords{$rr->type});
+	my $name = $rr->name;
+
+	#
+	# add an edge from either:
+	#     - the record name to what it points to if CNAME or NSEC
+	#     - else the subdomain to the record name
+	#
+	if ($rr->type eq 'CNAME') {
+	    $from = $name;
+	    $to = $rr->cname;
+	    do_node($from, $rr->type);
+	} elsif ($rr->type eq 'MX') {
+	    $from = $dname;
+	    $to = $rr->exchange;
+	    do_node($to, $rr->type);
+	} elsif ($rr->type eq 'NSEC' && $rr->nxtdname) {
+	    $from = $name;
+	    $to = $rr->nxtdname;
+	    $to =~ s/\.$//;
+	} else {
+	    $from = $dname;
+	    $to = $name;
+	    do_node($to, $rr->type);
+	}
+
+	# Process DNSsec keys specially to check for lifetime validity.
+	if ($rr->type eq 'RRSIG') {
+	    my $date = $rr->sigexpiration;
+	    $date =~ s/(....)(..)(..)(..)(..)(..)/$2-$3-$1 $4:$5:$6/;
+	    my $extime = str2time($date);
+	    if ($extime < $time) {
+		print "error: $to\n" if (!$opts{'q'});
+		do_node($to, 'RRSIGERR');
+	    } elsif ($extime - $time < $opts{'w'}) {
+		my $days = int(($extime-$time)/60/60/24);
+		my $hours = int(($extime-$time-$days*60*60*24)/60/60);
+		print "warn: $to in ${days}d ${hours}h\n" if (!$opts{'q'});
+		do_node($to, 'RRSIGWARN',
+			$rr->typecovered . ": ${days}d ${hours}h");
+	    }
+	}
+
+	if ($rr->type eq 'NS') {
+	    do_node($to, $rr->type);
+	}
+
+	#
+	# add the edge (line)
+	#
+	do_edge($from, $to, $rr->type);
+
+    }
+}
+
+#
+# add nodes and edges
+#
+my ($k, $v, $parms, %edgecombohash, %nodetypesused);
+foreach my $e1 (keys(%edges)) {
+    add_once($g, $e1);
+    foreach my $e2 (keys(%{$edges{$e1}})) {
+	add_once($g, $e2);
+	$parms = get_parms($edges{$e1}{$e2}, \%edgeparameters, \%edgecombohash);
+	my $label = $edgelabels{$e1}{$e2};
+	$g->add_edge($e1, $e2, label => $label, %$parms, weight => $opts{e});
+    }
+}
+
+#
+# add legend
+#
+if ($opts{'L'}) {
+
+    add_once($g, 'Legend');
+    my @tmpntypes = keys(%nodetypesused);
+    foreach my $k (@tmpntypes) {
+	my @types = split(/,/, $k);
+	$parms = get_parms(\@types, \%nodeparameters);
+	my $l = $k;
+	$l =~ s/,/\n/g;
+	add_once($g, $k, label => $l, %{$parms});
+	$g->add_edge('Legend',$k);
+    }
+
+    my @tmpnodes = (@nodetypes, 'default');
+    foreach my $k (keys(%edgecombohash)) {
+	my @types = split(/,/, $k);
+	$parms = get_parms(\@types, \%edgeparameters);
+	my $type = shift @tmpnodes;
+	$g->add_edge('Legend', $type, label => $k, %$parms);
+    }
+}
+
+#
+# write the final resulting file
+#
+my $img;
+$g->as_png(\$img);
+
+if ($opts{'o'}) {
+    open (O, ">" . $opts{'o'});
+    print O $img;
+    close(O);
+}
+if ($opts{'W'}) {
+    require QWizard;
+    my $qw = new QWizard(primaries =>
+			 {
+			  mapout =>
+			  {
+			   title => 'Map',
+			   questions => 
+			   [{
+			     addscalebuttons => 1,
+			     type => 'image',
+			     imgdata => [$img]
+			    }]
+			  }});
+    $qw->magic('mapout');
+}
+
+sub get_parms {
+    my ($array, $hash, $combohash) = @_;
+    my ($parms, %used);
+    my $lab;
+    foreach my $et ('default', @$array) {
+	next if (!$et);
+	
+	while (($k, $v) = each %{$hash->{$et}}) {
+	    $parms->{$k} = $v;
+	    $used{$k} = $et if ($et ne 'default');
+	}
+    }
+    if ($combohash) {
+	$lab = join(",",sort values(%used));
+	$combohash->{$lab} = 1 if ($lab);
+    }
+    return $parms;
+}
+
+sub my_err {
+    print "error: ", join(",",@_), "\n";
+    #    die join(",",@_);
+}
+
+sub add_once {
+    my ($g, $node, @opts) = @_;
+    my $parms;
+
+    if ($opts{'g'}) {
+	push @opts, cluster => $dname;
+    }
+
+    if (!$nodesonce{$node}) {
+	my $l = get_label($node);
+	$parms = get_parms($nodes{$node}, \%nodeparameters, \%nodetypesused);
+	$g->add_node($node, label => $l, style => 'filled', %$parms, @opts);
+	$nodesonce{$node} = 1;
+    }
+}
+
+sub do_edge {
+    my ($to, $from, $type, $label) = @_;
+    # remember that the edge has this type
+    $edges{$to}{$from}[$edgetypes{$type}] = $type;
+    $edgelabels{$to}{$from} = $label if ($label);
+}
+
+sub do_node {
+    my ($name, $type, $extra, $dn) = @_;
+    # remember that the node has this type
+    $nodes{$name}[$nodetypes{$type}] = $type;
+    $dnames{$name} = $dn || $dname;
+    push @{$extras{$name}}, $extra if ($extra);
+}
+
+sub add_edge_once {
+    my ($g, $node1, $node2, @opts) = @_;
+
+    add_once($g, $node1);
+    add_once($g, $node2);
+
+    if (!$edgesonce{$node1}{$node2}) {
+	$g->add_edge($node1, $node2, @opts);
+	$edgesonce{$node1}{$node2} = 1;
+    }
+}
+
+sub get_label {
+    my $name = $_[0];
+    my $label = $_[0];
+    my $dname = $dnames{$name};
+    $label =~ s/\.$dname$//;
+    if ($opts{'r'}) {
+	$label .= "\n" . join(" ",sort keys(%{$rtypes{$name}}));
+    }
+    if ($extras{$name}) {
+	$label .= "\n" . join("\n", @{$extras{$name}});
+    }
+    if ($#labtypes > -1) {
+	foreach my $l (@labtypes) {
+	    $label .= "\n$l: " . $rtypes{$name}{$l} if ($rtypes{$name}{$l});
+	}
+    }
+    return $label;
+}
+
+=pod
+
+=head1 NAME
+
+    mapper - Create graphical maps of DNS zone data
+
+=head1 SYNOPSIS
+
+    mapper [options] zonefile1 domainname1 ... zonefileN domainnameN
+
+=head1 DESCRIPTION
+
+This application creates a graphical map of one or more zone files.  The
+output gives a graphical representation of a DNS zone or zones.  The output
+is written in the PNG format.  The result can be useful for getting a more
+intuitive view of a zone or set of zones.  It is extremely useful for
+visualizing DNSSEC deployment within a given zone as well as to help discover
+problem spots.
+
+=head1 OPTIONS
+
+=over
+
+=item -h
+
+Prints a help summary.
+
+=item -o OUTFILE.png
+
+Saves the results to a given filename.  If this option is not given, the map
+will be saved to B<map.png>.
+
+=item -r
+
+Lists resource records assigned to each node within the map.
+
+=item -t TYPE,TYPE...
+
+Adds the data portion of a resource record to the displayed node
+information.  Data types passed will be automatically converted to
+upper-case for ease of use.
+
+Example usage: I<-t A> will add IPv4 addresses to
+all displayed nodes that have A records.
+
+=item -L
+
+Adds a legend to the map.
+
+=item -l (neato|dot|twopi|circo|fdp)
+
+Selects a layout format.  The default is I<neato>, which is circular in
+pattern.  See the documentation on the B<GraphViz> package and the
+B<GraphViz> Perl module for further details.
+
+=item --node-size=(none|small)
+
+If the map size is too large, it is possible to either greatly reduce
+the node size (and the text) using I<--node-size=small> or eliminate
+the circles entirely, leaving only the arrows using
+I<--node-size=none>.  This can make for better visual diagrams of very
+complex node sets, although all labeling is lost.
+
+=item -a
+
+Allows overlapping of nodes.  This makes much tighter maps with the
+downside being that they are somewhat cluttered.  Maps of extremely
+large zones will be difficult to decipher if this option is not used.
+
+=item -e WEIGHT
+
+Assigns an edge weight to edges.  In theory, >1 means shorter and <1 means
+longer, although, it may not have any effect as implemented.
+This should work better in the future.
+
+=item -f INTEGER
+
+Uses the INTEGER value for the font size to print node names with.
+The default value is 10.
+
+=item -w WARNTIME
+
+Specifies how far in advance expiration warnings are enabled for signed 
+resource records.  The default is 7 days.  The warning time is measured
+in seconds.
+
+=item -i REGEX
+
+Ignores record types matching a I<REGEX> regular expression.
+
+=item -s TYPE,TYPE...
+
+Specifies a list of record types that will not be analyzed or displayed
+in the map.  By default, this is set to NSEC and CNAME in order to reduce
+clutter.  Setting it to "" will display these results again.
+
+=item -T TYPE,TYPE...
+
+Restrict record types that will be processed to those of type I<TYPE>.
+This is the converse of the I<-s> option.  It is not meaningful to use both
+I<-s> and I<-t> in the same invocation.  They will both work at once, however,
+so if I<-T> specifies a type which I<-s> excludes, it will not be shown.
+
+=item -g
+
+Attempts to cluster nodes around the domain name.  For "dot" layouts,
+this actually means drawing a box around the cluster.  For the other
+types, it makes very little difference, if any.
+
+=item -q
+
+Prevents output of warnings or errors about records that have DNSSEC
+signatures that are near or beyond their signature lifetimes.
+
+=item --dump-styles
+
+Dumps the current style settings for both nodes and edges.
+
+=item --node-style=FORMATS
+
+=item --edge-style=FORMATS
+
+Allows specific style settings to be used when drawing nodes and
+edges.  Major format specifications are delimited by '/'s and pairs
+within that are delimited by ':'s.  The first token in a ':' list is
+expected to be the record name.
+
+For example, to make all A address records appear as a red box and all
+MX records to appear as a triangle use this specification:
+
+  --node-style=A:shape=box:fillcolor=red/MX:shape=triangle
+
+Run mapper with --dump-styles to show its default settings and/or how
+you've modified it the options have been used.
+
+=back
+
+=head1 EXAMPLE INVOCATIONS
+
+=over
+
+=item I<mapper -s cname,nsec -i dhcp -L zonefile zone.com>
+
+Writes to the default file (B<map.png>) of a I<zone.com> zone
+stored in I<zonefile>.  It excludes any hosts with a name containing
+I<dhcp> and ignores any record of type I<CNAME> or I<NSEC>.  A legend
+is included in the output.
+
+=item I<mapper -s txt,hinfo,cname,nsec,a,aaaa,mx,rrsig -L zonefile zone.com zonefile2 sub.zone.com ...>
+
+Removes a lot of records from the display in order to primarily display
+a map of a zone hierarchy.
+
+=item I<mapper -l dot -s txt,hinfo,cname,nsec,a,aaaa,mx,rrsig -L zonefile zone.com zonefile2 sub.zone.com ...>
+
+As the previous example, but this command draws a more vertical tree-style
+graph of the zone.  This works well for fairly deep but narrow hierarchies.
+Tree-style diagrams rarely look as nice for full zones.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wes Hardaker <hardaker@users.sourceforge.net>
+
+=head1 SEE ALSO
+
+B<Net::DNS>
+
+http://dnssec-tools.sourceforge.net
+
+=cut

@@ -1,0 +1,118 @@
+'\" et
+.TH SIGEMPTYSET "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sigemptyset
+\(em initialize and empty a signal set
+.SH SYNOPSIS
+.LP
+.nf
+#include <signal.h>
+.P
+int sigemptyset(sigset_t *\fIset\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsigemptyset\fR()
+function initializes the signal set pointed to by
+.IR set ,
+such that all signals defined in POSIX.1\(hy2008 are excluded.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIsigemptyset\fR()
+shall return 0; otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The implementation of the
+\fIsigemptyset\fR()
+(or
+\fIsigfillset\fR())
+function could quite trivially clear (or set) all the bits in the
+signal set. Alternatively, it would be reasonable to initialize part
+of the structure, such as a version field, to permit
+binary-compatibility between releases where the size of the set
+varies. For such reasons, either
+\fIsigemptyset\fR()
+or
+\fIsigfillset\fR()
+must be called prior to any other use of the signal set, even if such
+use is read-only (for example, as an argument to
+\fIsigpending\fR()).
+This function is not intended for dynamic allocation.
+.P
+The
+\fIsigfillset\fR()
+and
+\fIsigemptyset\fR()
+functions require that the resulting signal set include (or exclude)
+all the signals defined in this volume of POSIX.1\(hy2008. Although it is outside the scope of
+\&this volume of POSIX.1\(hy2008 to place this requirement on signals that are implemented as
+extensions, it is recommended that implementation-defined signals
+also be affected by these functions. However, there may be a good
+reason for a particular signal not to be affected. For example,
+blocking or ignoring an implementation-defined signal may have
+undesirable side-effects, whereas the default action for that signal is
+harmless. In such a case, it would be preferable for such a signal to
+be excluded from the signal set returned by
+\fIsigfillset\fR().
+.P
+In early proposals there was no distinction between invalid and
+unsupported signals (the names of optional signals that were not
+supported by an implementation were not defined by that
+implementation). The
+.BR [EINVAL] 
+error was thus specified as a required error for invalid signals. With
+that distinction, it is not necessary to require implementations of
+these functions to determine whether an optional signal is actually
+supported, as that could have a significant performance impact for
+little value. The error could have been required for invalid signals
+and optional for unsupported signals, but this seemed unnecessarily
+complex. Thus, the error is optional in both cases.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "Section 2.4" ", " "Signal Concepts",
+.IR "\fIpthread_sigmask\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)",
+.IR "\fIsigaddset\fR\^(\|)",
+.IR "\fIsigdelset\fR\^(\|)",
+.IR "\fIsigfillset\fR\^(\|)",
+.IR "\fIsigismember\fR\^(\|)",
+.IR "\fIsigpending\fR\^(\|)",
+.IR "\fIsigsuspend\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<signal.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

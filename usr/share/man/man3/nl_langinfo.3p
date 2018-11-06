@@ -1,0 +1,205 @@
+'\" et
+.TH NL_LANGINFO "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+nl_langinfo,
+nl_langinfo_l
+\(em language information
+.SH SYNOPSIS
+.LP
+.nf
+#include <langinfo.h>
+.P
+char *nl_langinfo(nl_item \fIitem\fP);
+char *nl_langinfo_l(nl_item \fIitem\fP, locale_t \fIlocale\fP);
+.fi
+.SH DESCRIPTION
+The
+\fInl_langinfo\fR()
+and
+\fInl_langinfo_l\fR()
+functions shall return a pointer to a string containing information
+relevant to the particular language or cultural area defined in the
+current locale, or in the locale represented by
+.IR locale ,
+respectively (see
+.IR <langinfo.h> ).
+The manifest constant names and values of
+.IR item
+are defined in
+.IR <langinfo.h> .
+For example:
+.sp
+.RS 4
+.nf
+\fB
+nl_langinfo(ABDAY_1)
+.fi \fR
+.P
+.RE
+.P
+would return a pointer to the string
+.BR \(dqDom\(dq 
+if the identified language was Portuguese, and
+.BR \(dqSun\(dq 
+if the identified language was English.
+.sp
+.RS 4
+.nf
+\fB
+nl_langinfo_l(ABDAY_1, loc)
+.fi \fR
+.P
+.RE
+.P
+would return a pointer to the string
+.BR \(dqDom\(dq 
+if the identified language of the locale represented by
+.IR loc
+was Portuguese, and
+.BR \(dqSun\(dq 
+if the identified language of the locale represented by
+.IR loc
+was English.
+.P
+The
+\fInl_langinfo\fR()
+function need not be thread-safe.
+.P
+The behavior is undefined if the
+.IR locale
+argument to
+\fInl_langinfo_l\fR()
+is the special locale object LC_GLOBAL_LOCALE or is not a valid locale
+object handle.
+.SH "RETURN VALUE"
+In a locale where
+.IR langinfo
+data is not defined, these functions shall return a pointer to the
+corresponding string in the POSIX locale. In all locales, these functions
+shall return a pointer to an empty string if
+.IR item
+contains an invalid setting.
+.P
+The application shall not modify the string returned. The pointer
+returned by
+\fInl_langinfo\fR()
+might be invalidated or the string content might be overwritten by a
+subsequent call to
+\fInl_langinfo\fR()
+in any thread or to
+\fInl_langinfo_l\fR()
+in the same thread or the initial thread, by subsequent calls to
+\fIsetlocale\fR()
+with a category corresponding to the category of
+.IR item
+(see
+.IR <langinfo.h> )
+or the category LC_ALL, or by subsequent calls to
+\fIuselocale\fR()
+which change the category corresponding to the category of
+.IR item .
+The pointer returned by
+\fInl_langinfo_l\fR()
+might be invalidated or the string content might be overwritten by a
+subsequent call to
+\fInl_langinfo_l\fR()
+in the same thread or to
+\fInl_langinfo\fR()
+in any thread, or by subsequent calls to
+\fIfreelocale\fR()
+or
+\fInewlocale\fR()
+which free or modify the locale object that was passed to
+\fInl_langinfo_l\fR().
+.SH "ERRORS"
+No errors are defined.
+.br
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Getting Date and Time Formatting Information"
+.P
+The following example returns a pointer to a string containing date and
+time formatting information, as defined in the
+.IR LC_TIME
+category of the current locale.
+.sp
+.RS 4
+.nf
+\fB
+#include <time.h>
+#include <langinfo.h>
+\&...
+strftime(datestring, sizeof(datestring), nl_langinfo(D_T_FMT), tm);
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The array pointed to by the return value should not be modified by the
+program, but may be modified by further calls to these functions.
+.SH RATIONALE
+The possible interactions between internal data used by
+\fInl_langinfo\fR()
+and
+\fInl_langinfo_l\fR()
+are complicated by the fact that
+\fInl_langinfo_l\fR()
+must be thread-safe but
+\fInl_langinfo\fR()
+need not be. The various implementation choices are:
+.IP " 1." 4
+\fInl_langinfo_l\fR()
+and
+\fInl_langinfo\fR()
+use separate buffers, or at least one of them does not use an internal
+string buffer. In this case there are no interactions.
+.IP " 2." 4
+\fInl_langinfo_l\fR()
+and
+\fInl_langinfo\fR()
+share an internal per-thread buffer. There can be interactions, but
+only in the same thread.
+.IP " 3." 4
+\fInl_langinfo_l\fR()
+uses an internal per-thread buffer, and
+\fInl_langinfo\fR()
+uses (in all threads) the same buffer that
+\fInl_langinfo_l\fR()
+uses in the initial thread. There can be interactions, but only when
+\fInl_langinfo_l\fR()
+is called in the initial thread.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIsetlocale\fR\^(\|)",
+.IR "\fIuselocale\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+.IR "\fB<langinfo.h>\fP",
+.IR "\fB<locale.h>\fP",
+.IR "\fB<nl_types.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

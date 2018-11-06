@@ -1,0 +1,779 @@
+'\" et
+.TH OPEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+open, openat
+\(em open file relative to directory file descriptor
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/stat.h>
+#include <fcntl.h>
+.P
+int open(const char *\fIpath\fP, int \fIoflag\fP, ...);
+int openat(int \fIfd\fP, const char *\fIpath\fP, int \fIoflag\fP, ...);
+.fi
+.SH DESCRIPTION
+The
+\fIopen\fR()
+function shall establish the connection between a file and a file
+descriptor. It shall create an open file description that refers to a
+file and a file descriptor that refers to that open file description.
+The file descriptor is used by other I/O functions to refer to that
+file. The
+.IR path
+argument points to a pathname naming the file.
+.P
+The
+\fIopen\fR()
+function shall return a file descriptor for the named file that is the
+lowest file descriptor not currently open for that process. The open
+file description is new, and therefore the file descriptor shall not
+share it with any other process in the
+system. The FD_CLOEXEC file descriptor flag associated with the new
+file descriptor shall be cleared unless the O_CLOEXEC flag is set in
+.IR oflag .
+.P
+The file offset used to mark the current position within the file shall
+be set to the beginning of the file.
+.P
+The file status flags and file access modes of the open file
+description shall be set according to the value of
+.IR oflag .
+.P
+Values for
+.IR oflag
+are constructed by a bitwise-inclusive OR of flags from the following
+list, defined in
+.IR <fcntl.h> .
+Applications shall specify exactly one of the first five values
+(file access modes) below in the value of
+.IR oflag :
+.IP O_EXEC 14
+Open for execute only (non-directory files). The result is unspecified
+if this flag is applied to a directory.
+.IP O_RDONLY 14
+Open for reading only.
+.IP O_RDWR 14
+Open for reading and writing. The result is undefined if this flag is
+applied to a FIFO.
+.IP O_SEARCH 14
+Open directory for search only. The result is unspecified if this flag
+is applied to a non-directory file.
+.IP O_WRONLY 14
+Open for writing only.
+.P
+Any combination of the following may be used:
+.IP O_APPEND 14
+If set, the file offset shall be set to the end of the file prior
+to each write.
+.IP O_CLOEXEC 14
+If set, the FD_CLOEXEC flag for the new file descriptor shall be set.
+.IP O_CREAT 14
+If the file exists, this flag has no effect except as noted under O_EXCL
+below. Otherwise, the file shall be created; the user ID of the file shall
+be set to the effective user ID of the process; the group ID of the file
+shall be set to the group ID of the file's parent directory or to the
+effective group ID of the process; and the access permission bits (see
+.IR <sys/stat.h> )
+of the file mode shall be set to the value of the argument following the
+.IR oflag
+argument taken as type
+.BR mode_t
+modified as follows: a bitwise AND is performed on the file-mode bits
+and the corresponding bits in the complement of the process' file mode
+creation mask. Thus, all bits in the file mode whose corresponding bit
+in the file mode creation mask is set are cleared. When bits other than
+the file permission bits are set, the effect is unspecified. The argument
+following the
+.IR oflag
+argument does not affect whether the file is open for reading, writing,
+or for both. Implementations shall provide a way to initialize the file's
+group ID to the group ID of the parent directory. Implementations may,
+but need not, provide an implementation-defined way to initialize the
+file's group ID to the effective group ID of the calling process.
+.IP O_DIRECTORY 14
+If
+.IR path
+resolves to a non-directory file, fail and set
+.IR errno
+to
+.BR [ENOTDIR] .
+.IP O_DSYNC 14
+Write I/O operations on the file descriptor shall complete as defined
+by synchronized I/O data integrity completion.
+.IP O_EXCL 14
+If O_CREAT and O_EXCL are set,
+\fIopen\fR()
+shall fail if the file exists. The check for the existence of the file
+and the creation of the file if it does not exist shall be atomic with
+respect to other threads executing
+\fIopen\fR()
+naming the same filename in the same directory with O_EXCL and O_CREAT
+set. If O_EXCL and O_CREAT are set, and
+.IR path
+names a symbolic link,
+\fIopen\fR()
+shall fail and set
+.IR errno
+to
+.BR [EEXIST] ,
+regardless of the contents of the symbolic link. If O_EXCL is set and
+O_CREAT is not set, the result is undefined.
+.IP O_NOCTTY 14
+If set and
+.IR path
+identifies a terminal device,
+\fIopen\fR()
+shall not cause the terminal device to become the controlling terminal
+for the process. If
+.IR path
+does not identify a terminal device, O_NOCTTY shall be ignored.
+.IP O_NOFOLLOW 14
+If
+.IR path
+names a symbolic link, fail and set
+.IR errno
+to
+.BR [ELOOP] .
+.IP O_NONBLOCK 14
+When opening a FIFO with O_RDONLY or O_WRONLY set:
+.RS 14 
+.IP " *" 4
+If O_NONBLOCK is set, an
+\fIopen\fR()
+for reading-only shall return without delay. An
+\fIopen\fR()
+for writing-only shall return an error if no process currently has the
+file open for reading.
+.IP " *" 4
+If O_NONBLOCK is clear, an
+\fIopen\fR()
+for reading-only shall block the calling thread until a thread opens
+the file for writing. An
+\fIopen\fR()
+for writing-only shall block the calling thread until a thread opens
+the file for reading.
+.P
+When opening a block special or character special file that supports
+non-blocking opens:
+.IP " *" 4
+If O_NONBLOCK is set, the
+\fIopen\fR()
+function shall return without blocking for the device to be ready or
+available. Subsequent behavior of the device is device-specific.
+.IP " *" 4
+If O_NONBLOCK is clear, the
+\fIopen\fR()
+function shall block the calling thread until the device is ready or
+available before returning.
+.P
+Otherwise, the O_NONBLOCK flag shall not cause an error, but it is
+unspecified whether the file status flags will include the O_NONBLOCK
+flag.
+.RE
+.IP O_RSYNC 14
+Read I/O operations on the file descriptor shall complete at the same
+level of integrity as specified by the O_DSYNC and
+O_SYNC flags. If both O_DSYNC and O_RSYNC are set in
+.IR oflag ,
+all I/O operations on the file descriptor shall complete as defined by
+synchronized I/O data integrity completion. If both O_SYNC and O_RSYNC
+are set in flags, all I/O operations on the file descriptor shall
+complete as defined by synchronized I/O file integrity completion.
+.IP O_SYNC 14
+Write I/O operations on the file descriptor shall complete as defined
+by synchronized I/O file integrity completion.
+.RS 14 
+.P
+The O_SYNC flag shall be supported for regular files, even if the
+Synchronized Input and Output option is not supported.
+.RE
+.IP O_TRUNC 14
+If the file exists and is a regular file, and the file is successfully
+opened O_RDWR or O_WRONLY, its length shall be truncated to 0, and
+the mode and owner shall be unchanged. It shall have no effect on FIFO
+special files or terminal device files. Its effect on other file types
+is implementation-defined. The result of using O_TRUNC without either
+O_RDWR or O_WRONLY is undefined.
+.IP O_TTY_INIT 14
+If
+.IR path
+identifies a terminal device other than a pseudo-terminal, the device
+is not already open in any process, and either O_TTY_INIT is set in
+.IR oflag
+or O_TTY_INIT has the value zero,
+\fIopen\fR()
+shall set any non-standard
+.BR termios
+structure terminal parameters to a state that provides conforming
+behavior; see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 11.2" ", " "Parameters that Can be Set".
+It is unspecified whether O_TTY_INIT has any effect if the device is
+already open in any process. If
+.IR path
+identifies the slave side of a pseudo-terminal that is not already open
+in any process,
+\fIopen\fR()
+shall set any non-standard
+.BR termios
+structure terminal parameters to a state that provides conforming
+behavior, regardless of whether O_TTY_INIT is set. If
+.IR path
+does not identify a terminal device, O_TTY_INIT shall be ignored.
+.P
+If O_CREAT is set and the file did not previously exist, upon successful
+completion,
+\fIopen\fR()
+shall mark for update the last data access, last data modification,
+and last file status change timestamps of the file and the last data
+modification and last file status change timestamps of the parent
+directory.
+.P
+If O_TRUNC is set and the file did previously exist, upon successful
+completion,
+\fIopen\fR()
+shall mark for update the last data modification and last file status
+change timestamps of the file.
+.P
+If both the O_SYNC and O_DSYNC flags are set, the effect is as if only
+the O_SYNC flag was set.
+.P
+If
+.IR path
+refers to a STREAMS file,
+.IR oflag
+may be constructed from O_NONBLOCK OR'ed with either O_RDONLY, O_WRONLY,
+or O_RDWR. Other flag values are not applicable to STREAMS devices and
+shall have no effect on them. The value O_NONBLOCK affects the operation
+of STREAMS drivers and certain functions applied to file descriptors
+associated with STREAMS files. For STREAMS drivers, the implementation
+of O_NONBLOCK is device-specific.
+.P
+The application shall ensure that it specifies the O_TTY_INIT flag on the
+first open of a terminal device since system boot or since the device
+was closed by the process that last had it open. The application need
+not specify the O_TTY_INIT flag when opening pseudo-terminals.
+If
+.IR path
+names the master side of a pseudo-terminal device, then it is unspecified
+whether
+\fIopen\fR()
+locks the slave side so that it cannot be opened. Conforming applications
+shall call
+\fIunlockpt\fR()
+before opening the slave side.
+.P
+The largest value that can be represented correctly in an object of type
+.BR off_t
+shall be established as the offset maximum in the open file description.
+.P
+The
+\fIopenat\fR()
+function shall be equivalent to the
+\fIopen\fR()
+function except in the case where
+.IR path
+specifies a relative path. In this case the file to be opened is
+determined relative to the directory associated with the file descriptor
+.IR fd
+instead of the current working directory. If the file descriptor was
+opened without O_SEARCH, the function shall check whether directory
+searches are permitted using the current permissions of the directory
+underlying the file descriptor. If the file descriptor was opened with
+O_SEARCH, the function shall not perform the check.
+.P
+The
+.IR oflag
+parameter and the optional fourth parameter correspond exactly to the
+parameters of
+\fIopen\fR().
+.P
+If
+\fIopenat\fR()
+is passed the special value AT_FDCWD in the
+.IR fd
+parameter, the current working directory shall be used and the behavior
+shall be identical to a call to
+\fIopen\fR().
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall open the file and
+return a non-negative integer representing the lowest numbered unused
+file descriptor. Otherwise, these functions shall return \(mi1 and set
+.IR errno
+to indicate the error. If \(mi1 is returned, no files shall be created
+or modified.
+.br
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EACCES
+Search permission is denied on a component of the path prefix, or the
+file exists and the permissions specified by
+.IR oflag
+are denied, or the file does not exist and write permission is denied
+for the parent directory of the file to be created, or O_TRUNC is
+specified and write permission is denied.
+.TP
+.BR EEXIST
+O_CREAT and O_EXCL are set, and the named file exists.
+.TP
+.BR EINTR
+A signal was caught during
+\fIopen\fR().
+.TP
+.BR EINVAL
+The implementation does not support synchronized I/O for this file.
+.TP
+.BR EIO
+The
+.IR path
+argument names a STREAMS file and a hangup or error occurred during the
+\fIopen\fR().
+.TP
+.BR EISDIR
+The named file is a directory and
+.IR oflag
+includes O_WRONLY or O_RDWR.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument, or O_NOFOLLOW was specified and the
+.IR path
+argument names a symbolic link.
+.TP
+.BR EMFILE
+All file descriptors available to the process are currently open.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENFILE
+The maximum allowable number of files is currently open in the system.
+.TP
+.BR ENOENT
+O_CREAT is not set and a component of
+.IR path
+does not name an existing file, or O_CREAT is set and a component of
+the path prefix of
+.IR path
+does not name an existing file, or
+.IR path
+points to an empty string.
+.TP
+.BR ENOENT " or " ENOTDIR
+.br
+O_CREAT is set, and the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters. If
+.IR path
+names an existing file, an
+.BR [ENOENT] 
+error shall not occur.
+.TP
+.BR ENOSR
+The
+.IR path
+argument names a STREAMS-based file and the system is unable to
+allocate a STREAM.
+.TP
+.BR ENOSPC
+The directory or file system that would contain the new file cannot be
+expanded, the file does not exist, and O_CREAT is specified.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory; or O_CREAT and O_EXCL
+are not specified, the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters, and the last pathname component names an existing file that
+is neither a directory nor a symbolic link to a directory; or O_DIRECTORY
+was specified and the
+.IR path
+argument resolves to a non-directory file.
+.TP
+.BR ENXIO
+O_NONBLOCK is set, the named file is a FIFO, O_WRONLY is set, and no
+process has the file open for reading.
+.TP
+.BR ENXIO
+The named file is a character special or block special file, and the
+device associated with this special file does not exist.
+.TP
+.BR EOVERFLOW
+The named file is a regular file and the size of the file cannot be
+represented correctly in an object of type
+.BR off_t .
+.TP
+.BR EROFS
+The named file resides on a read-only file system and either O_WRONLY,
+O_RDWR, O_CREAT (if the file does not exist), or O_TRUNC is set in the
+.IR oflag
+argument.
+.P
+The
+\fIopenat\fR()
+function shall fail if:
+.TP
+.BR EACCES
+.IR fd
+was not opened with O_SEARCH and the permissions of the directory
+underlying
+.IR fd
+do not permit directory searches.
+.TP
+.BR EBADF
+The
+.IR path
+argument does not specify an absolute path and the
+.IR fd
+argument is neither AT_FDCWD nor a valid file descriptor open for
+reading or searching.
+.TP
+.BR ENOTDIR
+The
+.IR path
+argument is not an absolute path and
+.IR fd
+is a file descriptor associated with a non-directory file.
+.P
+These functions may fail if:
+.TP
+.BR EAGAIN
+The
+.IR path
+argument names the slave side of a pseudo-terminal device that is locked.
+.TP
+.BR EINVAL
+The value of the
+.IR oflag
+argument is not valid.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR ENOMEM
+The
+.IR path
+argument names a STREAMS file and the system is unable to allocate
+resources.
+.TP
+.BR ETXTBSY
+The file is a pure procedure (shared text) file that is being executed
+and
+.IR oflag
+is O_WRONLY or O_RDWR.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Opening a File for Writing by the Owner"
+.P
+The following example opens the file
+.BR /tmp/file ,
+either by creating it (if it does not already exist), or by truncating
+its length to 0 (if it does exist). In the former case, if the call
+creates a new file, the access permission bits in the file mode of the
+file are set to permit reading and writing by the owner, and to permit
+reading only by group members and others.
+.P
+If the call to
+\fIopen\fR()
+is successful, the file is opened for writing.
+.sp
+.RS 4
+.nf
+\fB
+#include <fcntl.h>
+\&...
+int fd;
+mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+char *pathname = "/tmp/file";
+\&...
+fd = open(pathname, O_WRONLY | O_CREAT | O_TRUNC, mode);
+\&...
+.fi \fR
+.P
+.RE
+.SS "Opening a File Using an Existence Check"
+.P
+The following example uses the
+\fIopen\fR()
+function to try to create the
+.BR LOCKFILE
+file and open it for writing. Since the
+\fIopen\fR()
+function specifies the O_EXCL flag, the call fails if the file already
+exists. In that case, the program assumes that someone else is updating
+the password file and exits.
+.sp
+.RS 4
+.nf
+\fB
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+.P
+#define LOCKFILE "/etc/ptmp"
+\&...
+int pfd; /* Integer for file descriptor returned by open() call. */
+\&...
+if ((pfd = open(LOCKFILE, O_WRONLY | O_CREAT | O_EXCL,
+    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
+{
+    fprintf(stderr, "Cannot open /etc/ptmp. Try again later.\en");
+    exit(1);
+}
+\&...
+.fi \fR
+.P
+.RE
+.SS "Opening a File for Writing"
+.P
+The following example opens a file for writing, creating the file if it
+does not already exist. If the file does exist, the system truncates
+the file to zero bytes.
+.sp
+.RS 4
+.nf
+\fB
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+.P
+#define LOCKFILE "/etc/ptmp"
+\&...
+int pfd;
+char pathname[PATH_MAX+1];
+\&...
+if ((pfd = open(pathname, O_WRONLY | O_CREAT | O_TRUNC,
+    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
+{
+    perror("Cannot open output file\en"); exit(1);
+}
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+POSIX.1\(hy2008 does not require that terminal parameters be automatically set to
+any state on first open, nor that they be reset after the last close. It
+is possible for a non-conforming application to leave a terminal device
+in a state where the next process to use that device finds it in a
+non-conforming state, but has no way of determining this. To ensure
+that the device is set to a conforming initial state, applications which
+perform a first open of a terminal (other than a pseudo-terminal) should
+do so using the O_TTY_INIT flag to set the parameters associated with
+the terminal to a conforming state.
+.P
+Except as specified in this volume of POSIX.1\(hy2008, the flags allowed in
+.IR oflag
+are not mutually-exclusive and any number of them may be used
+simultaneously. Not all combinations of flags make sense. For example,
+using O_SEARCH | O_CREAT will successfully open a pre-existing directory
+for searching, but if there is no existing file by that name, then
+it is unspecified whether a regular file will be created. Likewise,
+if a non-directory file descriptor is successfully returned, it is
+unspecified whether that descriptor will have execute permissions as if
+by O_EXEC (note that it is unspecified whether O_EXEC and O_SEARCH have
+the same value).
+.SH RATIONALE
+Some implementations permit opening FIFOs with O_RDWR. Since FIFOs could
+be implemented in other ways, and since two file descriptors can be used
+to the same effect, this possibility is left as undefined.
+.P
+See
+.IR "\fIgetgroups\fR\^(\|)"
+about the group of a newly created file.
+.P
+The use of
+\fIopen\fR()
+to create a regular file is preferable to the use of
+\fIcreat\fR(),
+because the latter is redundant and included only for historical
+reasons.
+.P
+The use of the O_TRUNC flag on FIFOs and directories (pipes cannot be
+\fIopen\fR()-ed)
+must be permissible without unexpected side-effects (for example,
+\fIcreat\fR()
+on a FIFO must not remove data). Since terminal special files might have
+type-ahead data stored in the buffer, O_TRUNC should not affect their
+content, particularly if a program that normally opens a regular file
+should open the current controlling terminal instead. Other file types,
+particularly implementation-defined ones, are left implementation-defined.
+.P
+POSIX.1\(hy2008 permits
+.BR [EACCES] 
+to be returned for conditions other than those explicitly listed.
+.P
+The O_NOCTTY flag was added to allow applications to avoid unintentionally
+acquiring a controlling terminal as a side-effect of opening a terminal
+file. This volume of POSIX.1\(hy2008 does not specify how a controlling terminal is acquired,
+but it allows an implementation to provide this on
+\fIopen\fR()
+if the O_NOCTTY flag is not set and other conditions specified in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface"
+are met.
+.P
+In historical implementations the value of O_RDONLY is zero. Because of
+that, it is not possible to detect the presence of O_RDONLY and another
+option. Future implementations should encode O_RDONLY and O_WRONLY as
+bit flags so that:
+.sp
+.RS 4
+.nf
+\fB
+O_RDONLY | O_WRONLY == O_RDWR
+.fi \fR
+.P
+.RE
+.P
+O_EXEC and O_SEARCH are specified as two of the five file access modes.
+Since O_EXEC does not apply to directories, and O_SEARCH only applies
+to directories, their values need not be distinct. Since O_RDONLY
+has historically had the value zero, implementations are not able to
+distinguish between O_SEARCH and O_SEARCH | O_RDONLY, and similarly
+for O_EXEC.
+.P
+In general, the
+\fIopen\fR()
+function follows the symbolic link if
+.IR path
+names a symbolic link. However, the
+\fIopen\fR()
+function, when called with O_CREAT and O_EXCL, is required to fail with
+.BR [EEXIST] 
+if
+.IR path
+names an existing symbolic link, even if the symbolic link refers
+to a nonexistent file. This behavior is required so that privileged
+applications can create a new file in a known location without the
+possibility that a symbolic link might cause the file to be created in
+a different location.
+.P
+For example, a privileged application that must create a file with a
+predictable name in a user-writable directory, such as the user's home
+directory, could be compromised if the user creates a symbolic link
+with that name that refers to a nonexistent file in a system
+directory. If the user can influence the contents of a file, the user
+could compromise the system by creating a new system configuration or
+spool file that would then be interpreted by the system. The test for a
+symbolic link which refers to a nonexisting file must be atomic with
+the creation of a new file.
+.P
+In addition, the
+\fIopen\fR()
+function refuses to open non-directories if the O_DIRECTORY flag is
+set. This avoids race conditions whereby a user might compromise the
+system by substituting a hard link to a sensitive file (e.g., a device
+or a FIFO) while a privileged application is running, where opening a
+file even for read access might have undesirable side-effects.
+.P
+In addition, the
+\fIopen\fR()
+function does not follow symbolic links if the O_NOFOLLOW flag is set.
+This avoids race conditions whereby a user might compromise the system
+by substituting a symbolic link to a sensitive file (e.g., a device)
+while a privileged application is running, where opening a file even
+for read access might have undesirable side-effects.
+.P
+The POSIX.1\(hy1990 standard required that the group ID of a newly created file be set to
+the group ID of its parent directory or to the effective group ID of
+the creating process. FIPS 151\(hy2 required that implementations provide a way
+to have the group ID be set to the group ID of the containing
+directory, but did not prohibit implementations also supporting a way
+to set the group ID to the effective group ID of the creating process.
+Conforming applications should not assume which group ID will be used. If
+it matters, an application can use
+\fIchown\fR()
+to set the group ID after the file is created, or determine under what
+conditions the implementation will set the desired group ID.
+.P
+The purpose of the
+\fIopenat\fR()
+function is to enable opening files in directories other than the
+current working directory without exposure to race conditions. Any part
+of the path of a file could be changed in parallel to a call to
+\fIopen\fR(),
+resulting in unspecified behavior. By opening a file descriptor for
+the target directory and using the
+\fIopenat\fR()
+function it can be guaranteed that the opened file is located relative
+to the desired directory. Some implementations use the
+\fIopenat\fR()
+function for other purposes as well. In some cases, if the
+.IR oflag
+parameter has the O_XATTR bit set, the returned file descriptor provides
+access to extended attributes. This functionality is not standardized
+here.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIchmod\fR\^(\|)",
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIcreat\fR\^(\|)",
+.IR "\fIdirfd\fR\^(\|)",
+.IR "\fIdup\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIfdopendir\fR\^(\|)",
+.IR "\fIlink\fR\^(\|)",
+.IR "\fIlseek\fR\^(\|)",
+.IR "\fImkdtemp\fR\^(\|)",
+.IR "\fImknod\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIsymlink\fR\^(\|)",
+.IR "\fIumask\fR\^(\|)",
+.IR "\fIunlockpt\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<sys_stat.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,175 @@
+'\" et
+.TH FGETC "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fgetc
+\(em get a byte from a stream
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+.P
+int fgetc(FILE *\fIstream\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+If the end-of-file indicator for the input stream pointed to by
+.IR stream
+is not set and a next byte is present, the
+\fIfgetc\fR()
+function shall obtain the next byte as an
+.BR "unsigned char"
+converted to an
+.BR int ,
+from the input stream pointed to by
+.IR stream ,
+and advance the associated file position indicator for the stream (if
+defined). Since
+\fIfgetc\fR()
+operates on bytes, reading a character consisting of multiple bytes (or
+``a multi-byte character'') may require multiple calls to
+\fIfgetc\fR().
+.P
+The
+\fIfgetc\fR()
+function may mark the last data access timestamp of the file
+associated with
+.IR stream
+for update. The last data access timestamp shall be marked for
+update by the first successful execution of
+\fIfgetc\fR(),
+\fIfgets\fR(),
+\fIfread\fR(),
+\fIfscanf\fR(),
+\fIgetc\fR(),
+\fIgetchar\fR(),
+\fIgetdelim\fR(),
+\fIgetline\fR(),
+\fIgets\fR(),
+or
+\fIscanf\fR()
+using
+.IR stream
+that returns data not supplied by a prior call to
+\fIungetc\fR().
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIfgetc\fR()
+shall return the next byte from the input stream pointed to by
+.IR stream .
+If the end-of-file indicator for the stream is set, or if the
+stream is at end-of-file, the end-of-file indicator for the
+stream shall be set and
+\fIfgetc\fR()
+shall return EOF. If a read error occurs, the error indicator for the
+stream shall be set,
+\fIfgetc\fR()
+shall return EOF,
+and shall set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIfgetc\fR()
+function shall fail if data needs to be read and:
+.TP
+.BR EAGAIN
+The O_NONBLOCK flag is set for the file descriptor underlying
+.IR stream
+and the thread would be delayed in the
+\fIfgetc\fR()
+operation.
+.TP
+.BR EBADF
+The file descriptor underlying
+.IR stream
+is not a valid file descriptor open for reading.
+.TP
+.BR EINTR
+The read operation was terminated due to the receipt of a signal, and
+no data was transferred.
+.TP
+.BR EIO
+A physical I/O error has occurred, or the process is in a background
+process group attempting to read from its controlling terminal, and
+either the calling thread is blocking SIGTTIN or the process is ignoring
+SIGTTIN or the process group of the process is orphaned.
+This error may also be generated for implementation-defined reasons.
+.TP
+.BR EOVERFLOW
+The file is a regular file and an attempt was made to read at or beyond
+the offset maximum associated with the corresponding stream.
+.P
+The
+\fIfgetc\fR()
+function may fail if:
+.TP
+.BR ENOMEM
+Insufficient storage space is available.
+.TP
+.BR ENXIO
+A request was made of a nonexistent device, or the request was outside
+the capabilities of the device.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+If the integer value returned by
+\fIfgetc\fR()
+is stored into a variable of type
+.BR char
+and then compared against the integer constant EOF, the comparison may
+never succeed, because sign-extension of a variable of type
+.BR char
+on widening to integer is implementation-defined.
+.P
+The
+\fIferror\fR()
+or
+\fIfeof\fR()
+functions must be used to distinguish between an error condition and an
+end-of-file condition.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Standard I/O Streams",
+.IR "\fIfeof\fR\^(\|)",
+.IR "\fIferror\fR\^(\|)",
+.IR "\fIfgets\fR\^(\|)",
+.IR "\fIfread\fR\^(\|)",
+.IR "\fIfscanf\fR\^(\|)",
+.IR "\fIgetchar\fR\^(\|)",
+.IR "\fIgetc\fR\^(\|)",
+.IR "\fIgets\fR\^(\|)",
+.IR "\fIungetc\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdio.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,92 @@
+'\" et
+.TH ASSERT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+assert
+\(em insert program diagnostics
+.SH SYNOPSIS
+.LP
+.nf
+#include <assert.h>
+.P
+void assert(scalar \fIexpression\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIassert\fR()
+macro shall insert diagnostics into programs; it shall expand to a
+.BR void
+expression. When it is executed, if
+.IR expression
+(which shall have a
+.BR scalar
+type) is false (that is, compares equal to 0),
+\fIassert\fR()
+shall write information about the particular call that failed on
+.IR stderr
+and shall call
+\fIabort\fR().
+.P
+The information written about the call that failed shall include the
+text of the argument, the name of the source file, the source file line
+number, and the name of the enclosing function; the latter are,
+respectively, the values of the preprocessing macros _\|_FILE_\|_ and
+_\|_LINE_\|_
+and of the identifier _\|_func_\|_.
+.P
+Forcing a definition of the name NDEBUG,
+either from the compiler command line or with the preprocessor control
+statement
+.BR #define
+NDEBUG ahead of the
+.BR #include
+.IR <assert.h> 
+statement, shall stop assertions from being compiled into the program.
+.SH "RETURN VALUE"
+The
+\fIassert\fR()
+macro shall not return a value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIabort\fR\^(\|)",
+.IR "\fIstdin\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<assert.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,679 @@
+'\" et
+.TH CHMOD "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+chmod
+\(em change the file modes
+.SH SYNOPSIS
+.LP
+.nf
+chmod \fB[\fR\(miR\fB] \fImode file\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR chmod
+utility shall change any or all of the file mode bits of the file named
+by each
+.IR file
+operand in the way specified by the
+.IR mode
+operand.
+.P
+It is implementation-defined whether and how the
+.IR chmod
+utility affects any alternate or additional file access control
+mechanism (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.4" ", " "File Access Permissions")
+being used for the specified file.
+.P
+Only a process whose effective user ID matches the user ID of the file,
+or a process with appropriate privileges, shall be permitted to
+change the file mode bits of a file.
+.P
+Upon successfully changing the file mode bits of a file, the
+.IR chmod
+utility shall mark for update the last file status change timestamp
+of the file.
+.SH OPTIONS
+The
+.IR chmod
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(miR\fP" 10
+Recursively change file mode bits. For each
+.IR file
+operand that names a directory,
+.IR chmod
+shall change the file mode bits of the directory and all files in the
+file hierarchy below it.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fImode\fR" 10
+Represents the change to be made to the file mode bits of each
+file named by one of the
+.IR file
+operands; see the EXTENDED DESCRIPTION section.
+.IP "\fIfile\fR" 10
+A pathname of a file whose file mode bits shall be modified.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR chmod :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+The
+.IR mode
+operand shall be either a
+.IR symbolic_mode
+expression or a non-negative octal integer. The
+.IR symbolic_mode
+form is described by the grammar later in this section.
+.P
+Each
+.BR clause
+shall specify an operation to be performed on the current file mode
+bits of each
+.IR file .
+The operations shall be performed on each
+.IR file
+in the order in which the
+.BR clause s
+are specified.
+.P
+The
+.BR who
+symbols
+.BR u ,
+.BR g ,
+and
+.BR o
+shall specify the
+.IR user ,
+.IR group ,
+and
+.IR other
+parts of the file mode bits, respectively. A
+.BR who
+consisting of the symbol
+.BR a
+shall be equivalent to
+.BR ugo .
+.P
+The
+.BR perm
+symbols
+.BR r ,
+.BR w ,
+and
+.BR x
+represent the
+.IR read ,
+.IR write ,
+and
+.IR execute /\c
+.IR search
+portions of file mode bits, respectively. The
+.BR perm
+symbol
+.BR s
+shall represent the
+.IR "set-user-ID-on-execution"
+(when
+.BR who
+contains or implies
+.BR u )
+and
+.IR "set-group-ID-on-execution"
+(when
+.BR who
+contains or implies
+.BR g )
+bits.
+.P
+The
+.BR perm
+symbol
+.BR X
+shall represent the execute/search portion of the file mode bits if the
+file is a directory or if the current (unmodified) file mode bits have
+at least one of the execute bits (S_IXUSR, S_IXGRP, or S_IXOTH) set. It
+shall be ignored if the file is not a directory and none of the execute
+bits are set in the current file mode bits.
+.P
+The
+.BR permcopy
+symbols
+.BR u ,
+.BR g ,
+and
+.BR o
+shall represent the current permissions associated with the user,
+group, and other parts of the file mode bits, respectively. For the
+remainder of this section,
+.BR perm
+refers to the non-terminals
+.BR perm
+and
+.BR permcopy
+in the grammar.
+.P
+If multiple
+.BR actionlist s
+are grouped with a single
+.BR wholist
+in the grammar, each
+.BR actionlist
+shall be applied in the order specified with that
+.BR wholist .
+The
+.IR op
+symbols shall represent the operation performed, as follows:
+.IP "\fR+\fP" 6
+If
+.BR perm
+is not specified, the
+.BR '\(pl' 
+operation shall not change the file mode bits.
+.RS 6 
+.P
+If
+.BR who
+is not specified, the file mode bits represented by
+.BR perm
+for the owner, group, and other permissions, except for those with
+corresponding bits in the file mode creation mask of the invoking
+process, shall be set.
+.P
+Otherwise, the file mode bits represented by the specified
+.BR who
+and
+.BR perm
+values shall be set.
+.RE
+.IP "\fR\(mi\fP" 6
+If
+.BR perm
+is not specified, the
+.BR '\(mi' 
+operation shall not change the file mode bits.
+.RS 6 
+.P
+If
+.BR who
+is not specified, the file mode bits represented by
+.BR perm
+for the owner, group, and other permissions, except for those with
+corresponding bits in the file mode creation mask of the invoking
+process, shall be cleared.
+.P
+Otherwise, the file mode bits represented by the specified
+.BR who
+and
+.BR perm
+values shall be cleared.
+.RE
+.IP "\fR=\fP" 6
+Clear the file mode bits specified by the
+.BR who
+value, or, if no
+.BR who
+value is specified, all of the file mode bits specified in this volume of POSIX.1\(hy2008.
+.RS 6 
+.P
+If
+.BR perm
+is not specified, the
+.BR '=' 
+operation shall make no further modifications to the file mode bits.
+.P
+If
+.BR who
+is not specified, the file mode bits represented by
+.BR perm
+for the owner, group, and other permissions, except for those with
+corresponding bits in the file mode creation mask of the invoking
+process, shall be set.
+.P
+Otherwise, the file mode bits represented by the specified
+.BR who
+and
+.BR perm
+values shall be set.
+.RE
+.P
+When using the symbolic mode form on a regular file, it is
+implementation-defined whether or not:
+.IP " *" 4
+Requests to set the set-user-ID-on-execution or
+set-group-ID-on-execution bit when all execute bits are currently clear
+and none are being set are ignored.
+.IP " *" 4
+Requests to clear all execute bits also clear the
+set-user-ID-on-execution and set-group-ID-on-execution bits.
+.IP " *" 4
+Requests to clear the set-user-ID-on-execution or
+set-group-ID-on-execution bits when all execute bits are currently
+clear are ignored. However, if the command
+.IR ls
+.BR \(mil
+.IR file
+writes an
+.IR s
+in the position indicating that the set-user-ID-on-execution or
+set-group-ID-on-execution is set, the commands
+.IR chmod
+.BR u\(mis
+.IR file
+or
+.IR chmod
+.BR g\(mis
+.IR file ,
+respectively, shall not be ignored.
+.P
+When using the symbolic mode form on other file types, it is
+implementation-defined whether or not requests to set or clear the
+set-user-ID-on-execution or set-group-ID-on-execution bits are
+honored.
+.P
+If the
+.BR who
+symbol
+.BR o
+is used in conjunction with the
+.BR perm
+symbol
+.BR s
+with no other
+.BR who
+symbols being specified, the set-user-ID-on-execution and
+set-group-ID-on-execution bits shall not be modified. It shall not be
+an error to specify the
+.BR who
+symbol
+.BR o
+in conjunction with the
+.BR perm
+symbol
+.BR s .
+.P
+The
+.BR perm
+symbol
+.BR t
+shall specify the S_ISVTX bit. When used with a file of type
+directory, it can be used with the
+.BR who
+symbol
+.BR a ,
+or with no
+.BR who
+symbol. It shall not be an error to specify a
+.BR who
+symbol of
+.BR u ,
+.BR g ,
+or
+.BR o
+in conjunction with the
+.BR perm
+symbol
+.BR t ,
+but the meaning of these combinations is unspecified. The effect when
+using the
+.BR perm
+symbol
+.BR t
+with any file type other than directory is unspecified.
+.P
+For an octal integer
+.IR mode
+operand, the file mode bits shall be set absolutely.
+.P
+For each bit set in the octal number, the corresponding file permission
+bit shown in the following table shall be set; all other file
+permission bits shall be cleared. For regular files, for each bit set
+in the octal number corresponding to the set-user-ID-on-execution or
+the set-group-ID-on-execution, bits shown in the following table shall
+be set; if these bits are not set in the octal number, they are
+cleared. For other file types, it is implementation-defined whether
+or not requests to set or clear the set-user-ID-on-execution or
+set-group-ID-on-execution bits are honored.
+.TS
+center tab(@) box;
+cB cB | cB cB | cB cB | cB cB
+nB l | nB l | nB l | nB l.
+Octal@Mode Bit@Octal@Mode Bit@Octal@Mode Bit@Octal@Mode Bit
+_
+4000@S_ISUID@0400@S_IRUSR@0040@S_IRGRP@0004@S_IROTH
+_
+2000@S_ISGID@0200@S_IWUSR@0020@S_IWGRP@0002@S_IWOTH
+_
+1000@S_ISVTX@0100@S_IXUSR@0010@S_IXGRP@0001@S_IXOTH
+.TE
+.P
+When bits are set in the octal number other than those listed in the
+table above, the behavior is unspecified.
+.SS "Grammar for chmod"
+.P
+The grammar and lexical conventions in this section describe the syntax
+for the
+.IR symbolic_mode
+operand. The general conventions for this style of grammar are
+described in
+.IR "Section 1.3" ", " "Grammar Conventions".
+A valid
+.IR symbolic_mode
+can be represented as the non-terminal symbol
+.IR symbolic_mode
+in the grammar. This formal syntax shall take precedence over the
+preceding text syntax description.
+.P
+The lexical processing is based entirely on single characters.
+Implementations need not allow
+<blank>
+characters within the single argument being processed.
+.sp
+.RS 4
+.nf
+\fB
+%start    symbolic_mode
+%%
+.P
+symbolic_mode    : clause
+                 | symbolic_mode ',' clause
+                 ;
+.P
+clause           : actionlist
+                 | wholist actionlist
+                 ;
+.P
+wholist          : who
+                 | wholist who
+                 ;
+.P
+who              : 'u' | 'g' | 'o' | 'a'
+                 ;
+.P
+actionlist       : action
+                 | actionlist action
+                 ;
+.P
+action           : op
+                 | op permlist
+                 | op permcopy
+                 ;
+.P
+permcopy         : 'u' | 'g' | 'o'
+                 ;
+.P
+op               : '+' | '\(mi' | '='
+                 ;
+.P
+permlist         : perm
+                 | perm permlist
+                 ;
+.P
+perm             : 'r' | 'w' | 'x' | 'X' | 's' | 't'  
+                 ;
+.fi \fR
+.P
+.RE
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The utility executed successfully and all requested changes were made.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Some implementations of the
+.IR chmod
+utility change the mode of a directory before the files in the
+directory when performing a recursive (\c
+.BR \(miR
+option) change; others change the directory mode after the files in the
+directory. If an application tries to remove read or search permission
+for a file hierarchy, the removal attempt fails if the directory is
+changed first; on the other hand, trying to re-enable permissions to a
+restricted hierarchy fails if directories are changed last. Users
+should not try to make a hierarchy inaccessible to themselves.
+.P
+Some implementations of
+.IR chmod
+never used the
+.IR umask
+of the process when changing modes; systems conformant with this volume of POSIX.1\(hy2008
+do so when
+.BR who
+is not specified. Note the difference between:
+.sp
+.RS 4
+.nf
+\fB
+chmod a\(miw file
+.fi \fR
+.P
+.RE
+.P
+which removes all write permissions, and:
+.sp
+.RS 4
+.nf
+\fB
+chmod \(mi\|\(mi \(miw file
+.fi \fR
+.P
+.RE
+.P
+which removes write permissions that would be allowed if
+.BR file
+was created with the same
+.IR umask .
+.P
+Conforming applications should never assume that they know how the
+set-user-ID and set-group-ID bits on directories are interpreted.
+.SH EXAMPLES
+.ad l
+.TS
+center tab(@) box;
+cB | cB
+l | lw(3i).
+Mode@Results
+_
+\fIa\fP+=@T{
+Equivalent to
+.IR a +,\c
+.IR a =;
+clears all file mode bits.
+T}
+\fIgo\fP+\(miw@T{
+Equivalent to
+.IR go +,\c
+.IR go \(mi\c
+.IR w ;
+clears group and other write bits.
+T}
+\fIg\fR=\fIo\fR\(mi\fIw\fR@T{
+Equivalent to
+.IR g =\c
+.IR o ,\c
+.IR g \(mi\c
+.IR w ;
+sets group bit to match other bits and then clears group write bit.
+T}
+\fIg\fR\(mi\fIr\fR+\fIw\fR@T{
+Equivalent to
+.IR g \(mi\c
+.IR r ,\c
+.IR g +\c
+.IR w ;
+clears group read bit and sets group write bit.
+T}
+\fIuo\fR=\fIg\fR@T{
+Sets owner bits to match group bits and sets other bits to
+match group bits.
+T}
+.TE
+.ad b
+.SH RATIONALE
+The functionality of
+.IR chmod
+is described substantially through references to concepts defined in
+the System Interfaces volume of POSIX.1\(hy2008. In this way, there is less duplication of effort required
+for describing the interactions of permissions. However, the behavior
+of this utility is not described in terms of the
+\fIchmod\fR()
+function from the System Interfaces volume of POSIX.1\(hy2008 because that specification requires certain
+side-effects upon alternate file access control mechanisms that might
+not be appropriate, depending on the implementation.
+.P
+Implementations that support mandatory file and record locking as
+specified
+by the 1984 /usr/group standard historically used the combination of set-group-ID bit set
+and group execute bit clear to indicate mandatory locking. This
+condition is usually set or cleared with the symbolic mode
+.BR perm
+symbol
+.BR l
+instead of the
+.BR perm
+symbols
+.BR s
+and
+.BR x
+so that the mandatory locking mode is not changed without explicit
+indication that that was what the user intended. Therefore, the details
+on how the implementation treats these conditions must be defined in
+the documentation. This volume of POSIX.1\(hy2008 does not require mandatory locking (nor does
+the System Interfaces volume of POSIX.1\(hy2008), but does allow it as an extension. However, this volume of POSIX.1\(hy2008 does
+require that the
+.IR ls
+and
+.IR chmod
+utilities work consistently in this area. If
+.IR ls
+.BR \(mil
+.IR file
+indicates that the set-group-ID bit is set,
+.IR chmod
+.BR g\(mis
+.IR file
+must clear it (assuming appropriate privileges exist to change modes).
+.P
+The System V and BSD versions use different exit status codes. Some
+implementations used the exit status as a count of the number of errors
+that occurred; this practice is unworkable since it can overflow the
+range of valid exit status values. This problem is avoided here by
+specifying only 0 and >0 as exit values.
+.P
+The System Interfaces volume of POSIX.1\(hy2008 indicates that implementation-defined restrictions may cause
+the S_ISUID and S_ISGID bits to be ignored. This volume of POSIX.1\(hy2008 allows the
+.IR chmod
+utility to choose to modify these bits before calling
+\fIchmod\fR()
+(or some function providing equivalent capabilities) for non-regular
+files. Among other things, this allows implementations that use the
+set-user-ID and set-group-ID bits on directories to enable extended
+features to
+handle these extensions in an intelligent manner.
+.P
+The
+.BR X
+.BR perm
+symbol was adopted from BSD-based systems because it provides commonly
+desired functionality when doing recursive (\c
+.BR \(miR
+option) modifications. Similar functionality is not provided by the
+.IR find
+utility. Historical BSD versions of
+.IR chmod ,
+however, only supported
+.BR X
+with
+.IR op +;
+it has been extended in this volume of POSIX.1\(hy2008 because it is also useful with
+.IR op =.
+(It has also been added for
+.IR op \(mi
+even though it duplicates
+.BR x ,
+in this case, because it is intuitive and easier to explain.)
+.P
+The grammar was extended with the
+.IR permcopy
+non-terminal to allow historical-practice forms of symbolic modes like
+.BR o =\c
+.BR u
+.BR \(mig
+(that is, set the ``other'' permissions to the permissions of ``owner''
+minus the permissions of ``group'').
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIls\fR\^",
+.IR "\fIumask\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.4" ", " "File Access Permissions",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIchmod\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

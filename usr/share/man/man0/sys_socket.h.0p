@@ -1,0 +1,563 @@
+'\" et
+.TH sys_socket.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/socket.h
+\(em main sockets header
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR socklen_t
+type, which is an integer type of width of at least 32 bits;
+see APPLICATION USAGE.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR sa_family_t
+unsigned integer type.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR sockaddr
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+sa_family_t  sa_family  \fRAddress family.\fR
+char         sa_data[]  \fRSocket address (variable-length data).\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.BR sockaddr
+structure is used to define a socket address which is used
+in the
+\fIbind\fR(),
+\fIconnect\fR(),
+\fIgetpeername\fR(),
+\fIgetsockname\fR(),
+\fIrecvfrom\fR(),
+and
+\fIsendto\fR()
+functions.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR sockaddr_storage
+structure, which shall be:
+.IP " *" 4
+Large enough to accommodate all supported protocol-specific address
+structures
+.IP " *" 4
+Aligned at an appropriate boundary so that pointers to it can be cast
+as pointers to protocol-specific address structures and used to access
+the fields of those structures without alignment problems
+.P
+The
+.BR sockaddr_storage
+structure shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+sa_family_t   ss_family
+.fi \fR
+.P
+.RE
+.P
+When a pointer to a
+.BR sockaddr_storage
+structure is cast as a pointer to a
+.BR sockaddr
+structure, the
+.IR ss_family
+field of the
+.BR sockaddr_storage
+structure shall map onto the
+.IR sa_family
+field of the
+.BR sockaddr
+structure. When a pointer to a
+.BR sockaddr_storage
+structure is cast as a pointer to a protocol-specific address structure,
+the
+.IR ss_family
+field shall map onto
+a field of that structure that is of type
+.BR sa_family_t
+and that identifies the protocol's address family.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR msghdr
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+void          *msg_name        \fROptional address.\fR
+socklen_t      msg_namelen     \fRSize of address.\fR
+struct iovec  *msg_iov         \fRScatter/gather array.\fR
+int            msg_iovlen      \fRMembers in \fImsg_iov\fR.\fR
+void          *msg_control     \fRAncillary data; see below.\fR
+socklen_t      msg_controllen  \fRAncillary data buffer \fIlen\fR.\fR
+int            msg_flags       \fRFlags on received message.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.BR msghdr
+structure is used to minimize the number of directly supplied
+parameters to the
+\fIrecvmsg\fR()
+and
+\fIsendmsg\fR()
+functions. This structure is used as a
+.IR value \(hy\c
+.IR result
+parameter in the
+\fIrecvmsg\fR()
+function and
+.IR value
+only for the
+\fIsendmsg\fR()
+function.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR iovec
+structure as described in
+.IR <sys/uio.h> .
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR cmsghdr
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+socklen_t  cmsg_len    \fRData byte count, including the \fBcmsghdr\fR.\fR
+int        cmsg_level  \fROriginating protocol.\fR
+int        cmsg_type   \fRProtocol-specific type.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.BR cmsghdr
+structure is used for storage of ancillary data object information.
+.P
+Ancillary data consists of a sequence of pairs, each consisting of a
+.BR cmsghdr
+structure followed by a data array. The data array contains the
+ancillary data message, and the
+.BR cmsghdr
+structure contains descriptive information that allows an application
+to correctly parse the data.
+.P
+The values for
+.IR cmsg_level
+shall be legal values for the
+.IR level
+argument to the
+\fIgetsockopt\fR()
+and
+\fIsetsockopt\fR()
+functions. The system documentation shall specify the
+.IR cmsg_type
+definitions for the supported protocols.
+.P
+Ancillary data is also possible at the socket level. The
+.IR <sys/socket.h> 
+header shall define the following symbolic constant for use as the
+.IR cmsg_type
+value when
+.IR cmsg_level
+is SOL_SOCKET:
+.IP SCM_RIGHTS 14
+Indicates that the data array contains the access rights to be sent or
+received.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following macros to gain access to the data
+arrays in the ancillary data associated with a message header:
+.IP "CMSG_DATA(\fIcmsg\fP)" 6
+.br
+If the argument is a pointer to a
+.BR cmsghdr
+structure, this macro shall return an unsigned character pointer
+to the data array associated with the
+.BR cmsghdr
+structure.
+.IP "CMSG_NXTHDR(\fImhdr,cmsg\fP)" 6
+.br
+If the first argument is a pointer to a
+.BR msghdr
+structure and the second argument is a pointer to a
+.BR cmsghdr
+structure in the ancillary data pointed to by the
+.IR msg_control
+field of that
+.BR msghdr
+structure, this macro shall return a pointer to the next
+.BR cmsghdr
+structure, or a null pointer if this structure is the last
+.BR cmsghdr
+in the ancillary data.
+.IP "CMSG_FIRSTHDR(\fImhdr\fP)" 6
+.br
+If the argument is a pointer to a
+.BR msghdr
+structure, this macro shall return a pointer to the first
+.BR cmsghdr
+structure in the ancillary data associated with this
+.BR msghdr
+structure, or a null pointer if there is no ancillary data associated
+with the
+.BR msghdr
+structure.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR linger
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+int  l_onoff   \fRIndicates whether linger option is enabled.\fR
+int  l_linger  \fRLinger time, in seconds.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following symbolic constants with distinct values:
+.IP SOCK_DGRAM 14
+Datagram socket.
+.IP SOCK_RAW 14
+Raw Protocol Interface.
+.IP SOCK_SEQPACKET 14
+Sequenced-packet socket.
+.IP SOCK_STREAM 14
+Byte-stream socket.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following symbolic constant for use as the
+.IR level
+argument of
+\fIsetsockopt\fR()
+and
+\fIgetsockopt\fR().
+.IP SOL_SOCKET 14
+Options to be accessed at socket level, not protocol level.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following symbolic constants with distinct values
+for use as the
+.IR option_name
+argument in
+\fIgetsockopt\fR()
+or
+\fIsetsockopt\fR()
+calls (see the System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.10.16" ", " "Use of Options"):
+.IP SO_ACCEPTCONN 14
+Socket is accepting connections.
+.IP SO_BROADCAST 14
+Transmission of broadcast messages is supported.
+.IP SO_DEBUG 14
+Debugging information is being recorded.
+.IP SO_DONTROUTE 14
+Bypass normal routing.
+.IP SO_ERROR 14
+Socket error status.
+.IP SO_KEEPALIVE 14
+Connections are kept alive with periodic messages.
+.IP SO_LINGER 14
+Socket lingers on close.
+.IP SO_OOBINLINE 14
+Out-of-band data is transmitted in line.
+.IP SO_RCVBUF 14
+Receive buffer size.
+.IP SO_RCVLOWAT 14
+Receive ``low water mark''.
+.IP SO_RCVTIMEO 14
+Receive timeout.
+.IP SO_REUSEADDR 14
+Reuse of local addresses is supported.
+.IP SO_SNDBUF 14
+Send buffer size.
+.IP SO_SNDLOWAT 14
+Send ``low water mark''.
+.IP SO_SNDTIMEO 14
+Send timeout.
+.IP SO_TYPE 14
+Socket type.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following symbolic constant for use as the maximum
+.IR backlog
+queue length which may be specified by the
+.IR backlog
+field of the
+\fIlisten\fR()
+function:
+.IP SOMAXCONN 14
+The maximum
+.IR backlog
+queue length.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following symbolic constants with distinct values
+for use as the valid values for the
+.IR msg_flags
+field in the
+.BR msghdr
+structure, or the
+.IR flags
+parameter in
+\fIrecv\fR(),
+\fIrecvfrom\fR(),
+\fIrecvmsg\fR(),
+\fIsend\fR(),
+\fIsendmsg\fR(),
+or
+\fIsendto\fR()
+calls:
+.IP MSG_CTRUNC 14
+Control data truncated.
+.IP MSG_DONTROUTE 14
+Send without using routing tables.
+.IP MSG_EOR 14
+Terminates a record (if supported by the protocol).
+.IP MSG_OOB 14
+Out-of-band data.
+.IP MSG_NOSIGNAL 14
+No SIGPIPE generated when an attempt to send is made on a
+stream-oriented socket that is no longer connected.
+.IP MSG_PEEK 14
+Leave received data in queue.
+.IP MSG_TRUNC 14
+Normal data truncated.
+.IP MSG_WAITALL 14
+Attempt to fill the read buffer.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following symbolic constants with distinct values:
+.IP AF_INET 14
+Internet domain sockets for use with IPv4 addresses.
+.IP AF_INET6 14
+Internet domain sockets for use with IPv6 addresses.
+.IP AF_UNIX 14
+UNIX domain sockets.
+.IP AF_UNSPEC 14
+Unspecified.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the following symbolic constants with distinct values:
+.IP SHUT_RD 14
+Disables further receive operations.
+.IP SHUT_RDWR 14
+Disables further send and receive operations.
+.IP SHUT_WR 14
+Disables further send operations.
+.P
+The
+.IR <sys/socket.h> 
+header shall define the
+.BR size_t
+and
+.BR ssize_t
+types as described in
+.IR <sys/types.h> .
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int     accept(int, struct sockaddr *restrict, socklen_t *restrict);
+int     bind(int, const struct sockaddr *, socklen_t);
+int     connect(int, const struct sockaddr *, socklen_t);
+int     getpeername(int, struct sockaddr *restrict, socklen_t *restrict);
+int     getsockname(int, struct sockaddr *restrict, socklen_t *restrict);
+int     getsockopt(int, int, int, void *restrict, socklen_t *restrict);
+int     listen(int, int);
+ssize_t recv(int, void *, size_t, int);
+ssize_t recvfrom(int, void *restrict, size_t, int,
+        struct sockaddr *restrict, socklen_t *restrict);
+ssize_t recvmsg(int, struct msghdr *, int);
+ssize_t send(int, const void *, size_t, int);
+ssize_t sendmsg(int, const struct msghdr *, int);
+ssize_t sendto(int, const void *, size_t, int, const struct sockaddr *,
+        socklen_t);
+int     setsockopt(int, int, int, const void *, socklen_t);
+int     shutdown(int, int);
+int     sockatmark(int);
+int     socket(int, int, int);
+int     socketpair(int, int, int, int [2]);
+.fi \fR
+.P
+.RE
+.P
+Inclusion of
+.IR <sys/socket.h> 
+may also make visible all symbols from
+.IR <sys/uio.h> .
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+To forestall portability problems, it is recommended that applications
+not use values larger than 2\u\s-331\s+3\d \(mi1 for the
+.BR socklen_t
+type.
+.P
+The
+.BR sockaddr_storage
+structure solves the problem of declaring storage for automatic
+variables which is both large enough and aligned enough for storing the
+socket address data structure of any family. For example, code with a
+file descriptor and without the context of the address family can pass
+a pointer to a variable of this type, where a pointer to a socket
+address structure is expected in calls such as
+\fIgetpeername\fR(),
+and determine the address family by accessing the received content
+after the call.
+.P
+The example below illustrates a data structure which aligns on a 64-bit
+boundary. An implementation-defined field
+.IR _ss_align
+following
+.IR _ss_pad1
+is used to force a 64-bit alignment which covers proper alignment good
+enough for needs of at least
+.BR sockaddr_in6
+(IPv6) and
+.BR sockaddr_in
+(IPv4) address data structures. The size of padding field
+.IR _ss_pad1
+depends on the chosen alignment boundary. The size of padding field
+.IR _ss_pad2
+depends on the value of overall size chosen for the total size of the
+structure. This size and alignment are represented in the above example
+by implementation-defined (not required) constants _SS_MAXSIZE
+(chosen value 128) and _SS_ALIGNMENT (with chosen value 8). Constants
+_SS_PAD1SIZE (derived value 6) and _SS_PAD2SIZE (derived value 112) are
+also for illustration and not required. The implementation-defined
+definitions and structure field names above start with an
+<underscore>
+to denote implementation private name space. Portable code is not expected
+to access or reference those fields or constants.
+.sp
+.RS 4
+.nf
+\fB
+/*
+ *  Desired design of maximum size and alignment.
+ */
+#define _SS_MAXSIZE 128
+    /* Implementation-defined maximum size. */
+#define _SS_ALIGNSIZE (sizeof(int64_t))
+    /* Implementation-defined desired alignment. */
+.P
+/*
+ *  Definitions used for sockaddr_storage structure paddings design.
+ */
+#define _SS_PAD1SIZE (_SS_ALIGNSIZE \(mi sizeof(sa_family_t))
+#define _SS_PAD2SIZE (_SS_MAXSIZE \(mi (sizeof(sa_family_t)+ \e
+                      _SS_PAD1SIZE + _SS_ALIGNSIZE))
+struct sockaddr_storage {
+    sa_family_t  ss_family;  /* Address family. */
+/*
+ *  Following fields are implementation-defined.
+ */
+    char _ss_pad1[_SS_PAD1SIZE];
+        /* 6-byte pad; this is to make implementation-defined
+           pad up to alignment field that follows explicit in
+           the data structure. */
+    int64_t _ss_align;  /* Field to force desired structure
+                           storage alignment. */
+    char _ss_pad2[_SS_PAD2SIZE];
+        /* 112-byte pad to achieve desired size,
+           _SS_MAXSIZE value minus size of ss_family
+           __ss_pad1, __ss_align fields is 112. */
+};
+.fi \fR
+.P
+.RE
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<sys_uio.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIaccept\fR\^(\|)",
+.IR "\fIbind\fR\^(\|)",
+.IR "\fIconnect\fR\^(\|)",
+.IR "\fIgetpeername\fR\^(\|)",
+.IR "\fIgetsockname\fR\^(\|)",
+.IR "\fIgetsockopt\fR\^(\|)",
+.IR "\fIlisten\fR\^(\|)",
+.IR "\fIrecv\fR\^(\|)",
+.IR "\fIrecvfrom\fR\^(\|)",
+.IR "\fIrecvmsg\fR\^(\|)",
+.IR "\fIsend\fR\^(\|)",
+.IR "\fIsendmsg\fR\^(\|)",
+.IR "\fIsendto\fR\^(\|)",
+.IR "\fIsetsockopt\fR\^(\|)",
+.IR "\fIshutdown\fR\^(\|)",
+.IR "\fIsockatmark\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)",
+.IR "\fIsocketpair\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

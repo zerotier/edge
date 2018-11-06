@@ -1,0 +1,104 @@
+'\" et
+.TH stddef.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+stddef.h
+\(em standard type definitions
+.SH SYNOPSIS
+.LP
+.nf
+#include <stddef.h>
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+.IR <stddef.h> 
+header shall define the following macros:
+.IP NULL 10
+Null pointer constant.
+The macro shall expand to an integer constant expression with the
+value 0 cast to type
+.BR "void *" .
+.IP "offsetof(\fItype\fP, \fImember-designator\fP)" 10
+.br
+Integer constant expression of type
+.BR size_t ,
+the value of which is the offset in bytes to the structure member
+(\fImember-designator\fP), from the beginning of its structure
+(\fItype\fP).
+.P
+The
+.IR <stddef.h> 
+header shall define the following types:
+.IP "\fBptrdiff_t\fP" 10
+Signed integer type of the result of subtracting two pointers.
+.IP "\fBwchar_t\fP" 10
+Integer type whose range of values can represent distinct codes for
+all members of the largest extended character set specified among the
+supported locales; the null character shall have the code value zero. Each
+member of the basic character set shall have a code value equal to its
+value when used as the lone character in an integer character constant
+if an implementation does not define _\|_STDC_MB_MIGHT_NEQ_WC_\|_.
+.IP "\fBsize_t\fP" 10
+Unsigned integer type of the result of the
+.IR sizeof
+operator.
+.P
+The implementation shall support one or more programming environments
+in which the widths of
+.BR ptrdiff_t ,
+.BR size_t ,
+and
+.BR wchar_t
+are no greater than the width of type
+.BR long .
+The names of these programming environments can be obtained using the
+\fIconfstr\fR()
+function or the
+.IR getconf
+utility.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The ISO\ C standard does not require the NULL macro to include the cast to type
+.BR "void *"
+and specifies that the NULL macro be implementation-defined. POSIX.1\(hy2008
+requires the cast and therefore need not be implementation-defined.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<wchar.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIconfstr\fR\^(\|)"
+.P
+The Shell and Utilities volume of POSIX.1\(hy2008,
+.IR "\fIgetconf\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

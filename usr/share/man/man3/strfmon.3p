@@ -1,0 +1,326 @@
+'\" et
+.TH STRFMON "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+strfmon,
+strfmon_l
+\(em convert monetary value to a string
+.SH SYNOPSIS
+.LP
+.nf
+#include <monetary.h>
+.P
+ssize_t strfmon(char *restrict \fIs\fP, size_t \fImaxsize\fP,
+    const char *restrict \fIformat\fP, ...);
+ssize_t strfmon_l(char *restrict \fIs\fP, size_t \fImaxsize\fP,
+    locale_t \fIlocale\fP, const char *restrict \fIformat\fP, ...);
+.fi
+.SH DESCRIPTION
+The
+\fIstrfmon\fR()
+function shall place characters into the array pointed to by
+.IR s
+as controlled by the string pointed to by
+.IR format .
+No more than
+.IR maxsize
+bytes are placed into the array.
+.P
+The format is a character string, beginning and ending in its
+initial state, if any, that contains two types of objects:
+\fIplain characters\fP,
+which are simply copied to the output stream, and \fIconversion
+specifications\fP,
+each of which shall result in the fetching of zero or more arguments
+which are converted and formatted. The results are undefined if there
+are insufficient arguments for the format. If the format is exhausted
+while arguments remain, the excess arguments are simply ignored.
+.P
+The application shall ensure that a conversion specification consists
+of the following sequence:
+.IP " *" 4
+A
+.BR '%' 
+character
+.IP " *" 4
+Optional flags
+.IP " *" 4
+Optional field width
+.IP " *" 4
+Optional left precision
+.IP " *" 4
+Optional right precision
+.IP " *" 4
+A required conversion specifier character that determines the
+conversion to be performed
+.P
+The
+\fIstrfmon_l\fR()
+function shall be equivalent to the
+\fIstrfmon\fR()
+function, except that the locale data used is from the
+locale represented by
+.IR locale .
+.SS Flags
+.P
+One or more of the following optional flags can be specified to control
+the conversion:
+.IP "\fR=\fIf\fR" 8
+An
+.BR '=' 
+followed by a single character
+.IR f
+which is used as the numeric fill character. In order to work with
+precision or width counts, the fill character shall be a single byte
+character; if not, the behavior is undefined. The default numeric fill
+character is the
+<space>.
+This flag does not affect field width filling which always uses the
+<space>.
+This flag is ignored unless a left precision (see below) is specified.
+.IP "\fR^\fR" 8
+Do not format the currency amount with grouping characters. The
+default is to insert the grouping characters if defined for the current
+locale.
+.IP "\fR+\fR\ or\ \fR(\fR" 8
+Specify the style of representing positive and negative currency
+amounts. Only one of
+.BR '+' 
+or
+.BR '(' 
+may be specified. If
+.BR '+' 
+is specified, the locale's equivalent of
+.BR '+' 
+and
+.BR '\(mi' 
+are used (for example, in many locales, the empty string if positive and
+.BR '\(mi' 
+if negative). If
+.BR '(' 
+is specified, negative amounts are enclosed within parentheses. If
+neither flag is specified, the
+.BR '+' 
+style is used.
+.IP "\fR!\fR" 8
+Suppress the currency symbol from the output conversion.
+.IP "\fR\(mi\fR" 8
+Specify the alignment. If this flag is present the result of the
+conversion is left-justified (padded to the right) rather than
+right-justified. This flag shall be ignored unless a field width (see
+below) is specified.
+.SS "Field Width"
+.IP "\fIw\fP" 8
+A decimal digit string
+.IR w
+specifying a minimum field width in bytes in which the result of the
+conversion is right-justified (or left-justified if the flag
+.BR '\(mi' 
+is specified). The default is 0.
+.SS "Left Precision"
+.IP "\fR#\fIn\fR" 8
+A
+.BR '#' 
+followed by a decimal digit string
+.IR n
+specifying a maximum number of digits expected to be formatted to the
+left of the radix character. This option can be used to keep the
+formatted output from multiple calls to the
+\fIstrfmon\fR()
+function aligned in the same columns. It can also be used to fill
+unused positions with a special character as in
+.BR \(dq$***123.45\(dq .
+This option causes an amount to be formatted as if it has the number of
+digits specified by
+.IR n .
+If more than
+.IR n
+digit positions are required, this conversion specification is ignored.
+Digit positions in excess of those actually required are filled with
+the numeric fill character (see the \fR=\fIf\fR flag above).
+.RS 8 
+.P
+If grouping has not been suppressed with the
+.BR '^' 
+flag, and it is defined for the current locale, grouping separators are
+inserted before the fill characters (if any) are added. Grouping
+separators are not applied to fill characters even if the fill
+character is a digit.
+.P
+To ensure alignment, any characters appearing before or after the
+number in the formatted output such as currency or sign symbols are
+padded as necessary with
+<space>
+characters to make their positive and negative formats an equal length.
+.RE
+.SS "Right Precision"
+.IP "\fR.\fIp\fR" 8
+A
+<period>
+followed by a decimal digit string
+.IR p
+specifying the number of digits after the radix character. If the
+value of the right precision
+.IR p
+is 0, no radix character appears. If a right precision is not
+included, a default specified by the current locale is used. The
+amount being formatted is rounded to the specified number of digits
+prior to formatting.
+.SS "Conversion Specifier Characters"
+.P
+The conversion specifier characters and their meanings are:
+.IP "\fRi\fP" 8
+The
+.BR double
+argument is formatted according to the locale's international currency
+format (for example, in the US: USD 1,234.56). If the argument is
+\(+-Inf or NaN, the result of the conversion is unspecified.
+.IP "\fRn\fP" 8
+The
+.BR double
+argument is formatted according to the locale's national currency
+format (for example, in the US: $1,234.56). If the argument is
+\(+-Inf or NaN, the result of the conversion is unspecified.
+.IP "\fR%\fP" 8
+Convert to a
+.BR '%' ;
+no argument is converted. The entire conversion specification shall be
+.BR %% .
+.SS "Locale Information"
+.P
+The
+.IR LC_MONETARY
+category of the current locale affects the behavior of this function
+including the monetary radix character (which may be different from the
+numeric radix character affected by the
+.IR LC_NUMERIC
+category), the grouping separator, the currency symbols, and formats.
+The international currency symbol should be conformant with the ISO\ 4217:\|2001 standard.
+.P
+If the value of
+.IR maxsize
+is greater than
+{SSIZE_MAX},
+the result is implementation-defined.
+.P
+The behavior is undefined if the
+.IR locale
+argument to
+\fIstrfmon_l\fR()
+is the special locale object LC_GLOBAL_LOCALE or is not a valid locale
+object handle.
+.SH "RETURN VALUE"
+If the total number of resulting bytes including the terminating null
+byte is not more than
+.IR maxsize ,
+these functions shall return the number of bytes placed into the array
+pointed to by
+.IR s ,
+not including the terminating NUL character. Otherwise, \(mi1 shall be
+returned, the contents of the array are unspecified, and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR E2BIG
+Conversion stopped due to lack of space in the buffer.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+Given a locale for the US and the values 123.45, \(mi123.45, and
+3456.781, the following output might be produced. Square brackets (\c
+.BR \(dq[\|]\(dq )
+are used in this example to delimit the output.
+.sp
+.RS 4
+.nf
+\fB
+%n         [$123.45]         \fRDefault formatting\fP
+           [-$123.45]
+           [$3,456.78]
+.P
+%11n       [    $123.45]     \fRRight align within an 11-character field\fP
+           [   -$123.45]
+           [  $3,456.78]
+.P
+%#5n       [ $   123.45]     \fRAligned columns for values up to 99\|999\fP
+           [-$   123.45]
+           [ $ 3,456.78]
+.P
+%=*#5n     [ $***123.45]     \fRSpecify a fill character\fP
+           [-$***123.45]
+           [ $*3,456.78]
+.P
+%=0#5n     [ $000123.45]     \fRFill characters do not use grouping\fP
+           [-$000123.45]     \fReven if the fill character is a digit\fP
+           [ $03,456.78]
+.P
+%^#5n      [ $  123.45]      \fRDisable the grouping separator\fP
+           [-$  123.45]
+           [ $ 3456.78]
+.P
+%^#5.0n    [ $  123]         \fRRound off to whole units\fP
+           [-$  123]
+           [ $ 3457]
+.P
+%^#5.4n    [ $  123.4500]    \fRIncrease the precision\fP
+           [-$  123.4500]
+           [ $ 3456.7810]
+.P
+%(#5n      [ $   123.45 ]    \fRUse an alternative pos/neg style\fP
+           [($   123.45)]
+           [ $ 3,456.78 ]
+.P
+%!(#5n     [    123.45 ]     \fRDisable the currency symbol\fP
+           [(   123.45)]
+           [  3,456.78 ]
+.P
+%-14#5.4n  [ $   123.4500 ]  \fRLeft-justify the output\fP
+           [-$   123.4500 ]
+           [ $ 3,456.7810 ]
+.P
+%14#5.4n   [  $   123.4500]  \fRCorresponding right-justified output\fP
+           [ -$   123.4500]
+           [  $ 3,456.7810]
+.fi \fR
+.P
+.RE
+.P
+See also the EXAMPLES section in
+\fIfprintf\fR().
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+Lowercase conversion characters are reserved for future standards use
+and uppercase for implementation-defined use.
+.SH "SEE ALSO"
+.IR "\fIfprintf\fR\^(\|)",
+.IR "\fIlocaleconv\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<monetary.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

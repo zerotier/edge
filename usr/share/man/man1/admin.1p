@@ -1,0 +1,510 @@
+'\" et
+.TH ADMIN "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+admin
+\(em create and administer SCCS files (\fBDEVELOPMENT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+admin \(mii\fB[\fIname\fB] [\fR\(min\fB] [\fR\(mia \fIlogin\fB] [\fR\(mid \fIflag\fB] [\fR\(mie \fIlogin\fB] [\fR\(mif \fIflag\fB]
+    [\fR\(mim \fImrlist\fB] [\fR\(mir \fIrel\fB] [\fR\(mit\fB[\fIname\fB] [\fR\(miy\fB[\fIcomment\fB]] \fInewfile\fR
+.P
+admin \(min\fB [\fR\(mia \fIlogin\fB] [\fR\(mid \fIflag\fB] [\fR\(mie \fIlogin\fB] [\fR\(mif \fIflag\fB] [\fR\(mim \fImrlist\fB]
+    [\fR\(mit\fB[\fIname\fB]] [\fR\(miy\fB[\fIcomment\fB]] \fInewfile\fR...
+.P
+admin \fB[\fR\(mia \fIlogin\fB] [\fR\(mid \fIflag\fB] [\fR\(mim \fImrlist\fB] [\fR\(mir \fIrel\fB] [\fR\(mit\fB[\fIname\fB]]\fR \fIfile\fR...
+.P
+admin \(mih \fIfile\fR...
+.P
+admin \(miz \fIfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR admin
+utility shall create new SCCS files or change parameters of existing
+ones. If a named file does not exist, it shall be created, and its
+parameters shall be initialized according to the specified options.
+Parameters not initialized by an option shall be assigned a default
+value. If a named file does exist, parameters corresponding to
+specified options shall be changed, and other parameters shall be left
+as is.
+.P
+All SCCS filenames supplied by the application shall be of the form
+s.\fIfilename\fP. New SCCS files shall be given read-only permission
+mode. Write permission in the parent directory is required to create a
+file. All writing done by
+.IR admin
+shall be to a temporary
+.IR x-file ,
+named x.\fIfilename\fP (see
+.IR "\fIget\fR\^")
+created with read-only mode if
+.IR admin
+is creating a new SCCS file, or created with the same mode as that of
+the SCCS file if the file already exists. After successful execution of
+.IR admin ,
+the SCCS file shall be removed (if it exists), and the
+.IR x-file
+shall be renamed with the name of the SCCS file. This ensures that
+changes are made to the SCCS file only if no errors occur.
+.P
+The
+.IR admin
+utility shall also use a transient lock file (named z.\fIfilename\fP),
+which is used to prevent simultaneous updates to the SCCS file; see
+.IR "\fIget\fR\^".
+.SH OPTIONS
+The
+.IR admin
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that the
+.BR \(mii ,
+.BR \(mit ,
+and
+.BR \(miy
+options have optional option-arguments. These optional option-arguments
+shall not be presented as separate arguments. The following options are
+supported:
+.IP "\fB\(min\fP" 10
+Create a new SCCS file. When
+.BR \(min
+is used without
+.BR \(mii ,
+the SCCS file shall be created with control information but without any
+file data.
+.IP "\fB\(mii[\fIname\fB]\fR" 10
+Specify the
+.IR name
+of a file from which the text for a new SCCS file shall be taken. The
+text constitutes the first delta of the file (see the
+.BR \(mir
+option for the delta numbering scheme). If the
+.BR \(mii
+option is used, but the
+.IR name
+option-argument is omitted, the text shall be obtained by reading the
+standard input. If this option is omitted, the SCCS file shall be
+created with control information but without any file data. The
+.BR \(mii
+option implies the
+.BR \(min
+option.
+.IP "\fB\(mir\ \fISID\fR" 10
+Specify the SID of the initial delta to be inserted. This SID shall be
+a trunk SID; that is, the branch and sequence numbers shall be zero or
+missing. The level number is optional, and defaults to 1.
+.IP "\fB\(mit[\fIname\fB]\fR" 10
+Specify the
+.IR name
+of a file from which descriptive text for the SCCS file shall be taken.
+In the case of existing SCCS files (neither
+.BR \(mii
+nor
+.BR \(min
+is specified):
+.RS 10 
+.IP " *" 4
+A
+.BR \(mit
+option without a
+.IR name
+option-argument shall cause the removal of descriptive text (if any)
+currently in the SCCS file.
+.IP " *" 4
+A
+.BR \(mit
+option with a
+.IR name
+option-argument shall cause the text (if any) in the named file to
+replace the descriptive text (if any) currently in the SCCS file.
+.RE
+.IP "\fB\(mif\ \fIflag\fR" 10
+Specify a
+.IR flag ,
+and, possibly, a value for the
+.IR flag ,
+to be placed in the SCCS file. Several
+.BR \(mif
+options may be supplied on a single
+.IR admin
+command line. Implementations shall recognize the following flags
+and associated values:
+.RS 10 
+.IP "\fBb\fP" 8
+Allow use of the
+.BR \(mib
+option on a
+.IR get
+command to create branch deltas.
+.IP "\fBc\fIceil\fR" 8
+Specify the highest release (that is, ceiling), a number less than or
+equal to 9\|999, which may be retrieved by a
+.IR get
+command for editing. The default value for an unspecified
+.BR c
+flag shall be 9\|999.
+.IP "\fBf\fIfloor\fR" 8
+Specify the lowest release (that is, floor), a number greater than 0
+but less than 9\|999, which may be retrieved by a
+.IR get
+command for editing. The default value for an unspecified
+.BR f
+flag shall be 1.
+.IP "\fBd\fISID\fR" 8
+Specify the default delta number (SID) to be used by a
+.IR get
+command.
+.IP "\fBi\fIstr\fR" 8
+Treat the ``No ID keywords'' message issued by
+.IR get
+or
+.IR delta
+as a fatal error. In the absence of this flag, the message is only a
+warning. The message is issued if no SCCS identification keywords (see
+.IR "\fIget\fR\^")
+are found in the text retrieved or stored in the SCCS file. If a value
+is supplied, the application shall ensure that the keywords exactly
+match the given string; however, the string shall contain a keyword,
+and no embedded
+<newline>
+characters.
+.IP "\fBj\fP" 8
+Allow concurrent
+.IR get
+commands for editing on the same SID of an SCCS file. This allows
+multiple concurrent updates to the same version of the SCCS file.
+.IP "\fBl\fIlist\fR" 8
+Specify a
+.IR list
+of releases to which deltas can no longer be made (that is,
+.IR get
+.BR \(mie
+against one of these locked releases fails). Conforming applications
+shall use the following syntax to specify a
+.IR list .
+Implementations may accept additional forms as an extension:
+.RS 8 
+.sp
+.RS 4
+.nf
+\fB
+<list> ::= a | <range-list>
+<range-list> ::= <range> | <range-list>, <range>
+<range> ::= <SID>
+.fi \fR
+.P
+.RE
+.P
+The character
+.IR a
+in the
+.IR list
+shall be equivalent to specifying all releases for the named SCCS file.
+The non-terminal <\fISID\fP> in range shall be the delta number of an
+existing delta associated with the SCCS file.
+.RE
+.IP "\fBn\fP" 8
+Cause
+.IR delta
+to create a null delta in each of those releases (if any) being skipped
+when a delta is made in a new release (for example, in making delta 5.1
+after delta 2.7, releases 3 and 4 are skipped). These null deltas shall
+serve as anchor points so that branch deltas may later be created from
+them. The absence of this flag shall cause skipped releases to be
+nonexistent in the SCCS file, preventing branch deltas from being
+created from them in the future. During the initial creation of an SCCS
+file, the
+.BR n
+flag may be ignored; that is, if the
+.BR \(mir
+option is used to set the release number of the initial SID to a value
+greater than 1, null deltas need not be created for the ``skipped''
+releases.
+.IP "\fBq\fItext\fR" 8
+Substitute user-definable
+.IR text
+for all occurrences of the %\fBQ\fP% keyword in the SCCS file text
+retrieved by
+.IR get .
+.IP "\fBm\fImod\fR" 8
+Specify the module name of the SCCS file substituted for all
+occurrences of the %\fBM\fP% keyword in the SCCS file text retrieved by
+.IR get .
+If the
+.BR m
+flag is not specified, the value assigned shall be the name of the SCCS
+file with the leading
+.BR '.' 
+removed.
+.IP "\fBt\fItype\fR" 8
+Specify the
+.IR type
+of module in the SCCS file substituted for all occurrences of the
+%\fBY\fP% keyword in the SCCS file text retrieved by
+.IR get .
+.IP "\fBv\fIpgm\fR" 8
+Cause
+.IR delta
+to prompt for modification request (MR) numbers as the reason for
+creating a delta. The optional value specifies the name of an MR
+number validation program. (If this flag is set when creating an SCCS
+file, the application shall ensure that the
+.BR m
+option is also used even if its value is null.)
+.RE
+.IP "\fB\(mid\ \fIflag\fR" 10
+Remove (delete) the specified
+.IR flag
+from an SCCS file. Several
+.BR \(mid
+options may be supplied on a single
+.IR admin
+command. See the
+.BR \(mif
+option for allowable
+.IR flag
+names. (The
+.BR l \c
+.IR list
+flag gives a
+.IR list
+of releases to be unlocked. See the
+.BR \(mif
+option for further description of the
+.BR l
+flag and the syntax of a
+.IR list .)
+.IP "\fB\(mia\ \fIlogin\fR" 10
+Specify a
+.IR login
+name, or numerical group ID, to be added to the list of users who may
+make deltas (changes) to the SCCS file. A group ID shall be equivalent
+to specifying all
+.IR login
+names common to that group ID. Several
+.BR \(mia
+options may be used on a single
+.IR admin
+command line. As many
+.IR login s,
+or numerical group IDs, as desired may be on the list simultaneously.
+If the list of users is empty, then anyone may add deltas. If
+.IR login
+or group ID is preceded by a
+.BR '!' ,
+the users so specified shall be denied permission to make deltas.
+.IP "\fB\(mie\ \fIlogin\fR" 10
+Specify a
+.IR login
+name, or numerical group ID, to be erased from the list of users
+allowed to make deltas (changes) to the SCCS file. Specifying a group
+ID is equivalent to specifying all
+.IR login
+names common to that group ID. Several
+.BR \(mie
+options may be used on a single
+.IR admin
+command line.
+.IP "\fB\(miy[\fIcomment\fB]\fR" 10
+Insert the
+.IR comment
+text into the SCCS file as a comment for the initial delta in a manner
+identical to that of
+.IR delta .
+In the POSIX locale, omission of the
+.BR \(miy
+option shall result in a default comment line being inserted in
+the form:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+"date and time created %s %s by %s", <\fIdate\fR>, <\fItime\fR>, <\fIlogin\fR>
+.fi \fR
+.P
+.RE
+.P
+where <\fIdate\fP> is expressed in the format of the
+.IR date
+utility's
+.BR %y /\c
+.BR %m /\c
+.BR %d
+conversion specification, <\fItime\fP> in the format of the
+.IR date
+utility's
+.BR %T
+conversion specification format, and <\fIlogin\fP> is the login name of
+the user creating the file.
+.RE
+.IP "\fB\(mim\ \fImrlist\fR" 10
+Insert the list of modification request (MR) numbers into the SCCS
+file as the reason for creating the initial delta in a manner identical to
+.IR delta .
+The application shall ensure that the
+.BR v
+flag is set and the MR numbers are validated if the
+.BR v
+flag has a value (the name of an MR number validation program).
+A diagnostic message shall be written if the
+.BR v
+flag is not set or MR validation fails.
+.IP "\fB\(mih\fP" 10
+Check the structure of the SCCS file and compare the newly computed
+checksum with the checksum that is stored in the SCCS file. If the
+newly computed checksum does not match the checksum in the SCCS file, a
+diagnostic message shall be written.
+.IP "\fB\(miz\fR" 10
+Recompute the SCCS file checksum and store it in the first line of the
+SCCS file (see the
+.BR \(mih
+option above). Note that use of this option on a truly corrupted
+file may prevent future detection of the corruption.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an existing SCCS file or a directory. If
+.IR file
+is a directory, the
+.IR admin
+utility shall behave as though each file in the directory were
+specified as a named file, except that non-SCCS files (last component
+of the pathname does not begin with
+.BR s. )
+and unreadable files shall be silently ignored.
+.IP "\fInewfile\fR" 10
+A pathname of an SCCS file to be created.
+.P
+If exactly one
+.IR file
+or
+.IR newfile
+operand appears, and it is
+.BR '\(mi' ,
+the standard input shall be read; each line of the standard input shall
+be taken to be the name of an SCCS file to be processed. Non-SCCS files
+and unreadable files shall be silently ignored.
+.SH STDIN
+The standard input shall be a text file used only if
+.BR \(mii
+is specified without an option-argument or if a
+.IR file
+or
+.IR newfile
+operand is specified as
+.BR '\(mi' .
+If the first character of any standard input line is
+<SOH>
+in the POSIX locale, the results are unspecified.
+.SH "INPUT FILES"
+The existing SCCS files shall be text files of an unspecified format.
+.P
+The application shall ensure that the file named by the
+.BR \(mii
+option's
+.IR name
+option-argument shall be a text file; if the first character of any
+line in this file is
+<SOH>
+in the POSIX locale, the results are unspecified. If this file contains
+more than 99\|999 lines, the number of lines recorded in the header for
+this file shall be 99\|999 for this delta.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR admin :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and the
+contents of the default
+.BR \(miy
+comment.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+Any SCCS files created shall be text files of an unspecified format.
+During processing of a
+.IR file ,
+a locking
+.IR z-file ,
+as described in
+.IR "\fIget\fR\^",
+may be created and deleted.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+It is recommended that directories containing SCCS files be writable by
+the owner only, and that SCCS files themselves be read-only. The mode
+of the directories should allow only the owner to modify SCCS files
+contained in the directories. The mode of the SCCS files prevents any
+modification at all except by SCCS commands.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIdelta\fR\^",
+.IR "\fIget\fR\^",
+.IR "\fIprs\fR\^",
+.IR "\fIwhat\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

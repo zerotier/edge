@@ -1,0 +1,288 @@
+'\" et
+.TH BASENAME "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+basename
+\(em return non-directory portion of a pathname
+.SH SYNOPSIS
+.LP
+.nf
+basename \fIstring \fB[\fIsuffix\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR string
+operand shall be treated as a pathname, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.267" ", " "Pathname".
+The string
+.IR string
+shall be converted to the filename corresponding to the last pathname
+component in
+.IR string
+and then the suffix string
+.IR suffix ,
+if present, shall be removed. This shall be done by performing actions
+equivalent to the following steps in order:
+.IP " 1." 4
+If
+.IR string
+is a null string, it is unspecified whether the resulting string is
+.BR '.' 
+or a null string. In either case, skip steps 2 through 6.
+.IP " 2." 4
+If
+.IR string
+is
+.BR \(dq//\(dq ,
+it is implementation-defined whether steps 3 to 6 are skipped or
+processed.
+.IP " 3." 4
+If
+.IR string
+consists entirely of
+<slash>
+characters,
+.IR string
+shall be set to a single
+<slash>
+character. In this case, skip steps 4 to 6.
+.IP " 4." 4
+If there are any trailing
+<slash>
+characters in
+.IR string ,
+they shall be removed.
+.IP " 5." 4
+If there are any
+<slash>
+characters remaining in
+.IR string ,
+the prefix of
+.IR string
+up to and including the last
+<slash>
+character in
+.IR string
+shall be removed.
+.IP " 6." 4
+If the
+.IR suffix
+operand is present, is not identical to the characters remaining in
+.IR string ,
+and is identical to a suffix of the characters remaining in
+.IR string ,
+the suffix
+.IR suffix
+shall be removed from
+.IR string .
+Otherwise,
+.IR string
+is not modified by this step. It shall not be considered an error if
+.IR suffix
+is not found in
+.IR string .
+.P
+The resulting string shall be written to standard output.
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIstring\fR" 10
+A string.
+.IP "\fIsuffix\fR" 10
+A string.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR basename :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR basename
+utility shall write a line to the standard output in the following
+format:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIresulting string\fP>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The definition of
+.IR pathname
+specifies implementation-defined behavior for pathnames starting with
+two
+<slash>
+characters. Therefore, applications shall not arbitrarily add
+<slash>
+characters to the beginning of a pathname unless they can ensure
+that there are more or less than two or are prepared to deal with the
+implementation-defined consequences.
+.SH EXAMPLES
+If the string
+.IR string
+is a valid pathname:
+.sp
+.RS 4
+.nf
+\fB
+$(basename -- "\fIstring\fP")
+.fi \fR
+.P
+.RE
+.P
+produces a filename that could be used to open the file named by
+.IR string
+in the directory returned by:
+.sp
+.RS 4
+.nf
+\fB
+$(dirname -- "\fIstring\fP")
+.fi \fR
+.P
+.RE
+.P
+If the string
+.IR string
+is not a valid pathname, the same algorithm is used, but the result
+need not be a valid filename. The
+.IR basename
+utility is not expected to make any judgements about the validity of
+.IR string
+as a pathname; it just follows the specified algorithm to produce a
+result string.
+.P
+The following shell script compiles
+.BR /usr/src/cmd/cat.c
+and moves the output to a file named
+.BR cat
+in the current directory when invoked with the argument
+.BR /usr/src/cmd/cat
+or with the argument
+.BR /usr/src/cmd/cat.c :
+.sp
+.RS 4
+.nf
+\fB
+c99 -- "$(dirname -- "$1")/$(basename -- "$1" .c).c" &&
+mv a.out "$(basename -- "$1" .c)"
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The behaviors of
+.IR basename
+and
+.IR dirname
+have been coordinated so that when
+.IR string
+is a valid pathname:
+.sp
+.RS 4
+.nf
+\fB
+$(basename -- "\fIstring\fP")
+.fi \fR
+.P
+.RE
+.P
+would be a valid filename for the file in the directory:
+.sp
+.RS 4
+.nf
+\fB
+$(dirname -- "\fIstring\fP")
+.fi \fR
+.P
+.RE
+.P
+This would not work for the early proposal versions of these utilities due
+to the way it specified handling of trailing
+<slash>
+characters.
+.P
+Since the definition of
+.IR pathname
+specifies implementation-defined behavior for pathnames starting with
+two
+<slash>
+characters, this volume of POSIX.1\(hy2008 specifies similar implementation-defined behavior
+for the
+.IR basename
+and
+.IR dirname
+utilities.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Parameters and Variables",
+.IR "\fIdirname\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.267" ", " "Pathname",
+.IR "Chapter 8" ", " "Environment Variables"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

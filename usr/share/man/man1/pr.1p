@@ -1,0 +1,569 @@
+'\" et
+.TH PR "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pr
+\(em print files
+.SH SYNOPSIS
+.LP
+.nf
+pr \fB[\fR+\fIpage\fB] [\fR\(mi\fIcolumn\fB] [\fR\(miadFmrt\fB] [\fR\(mie\fB[\fIchar\fB][\fIgap\fB]] [\fR\(mih \fIheader\fB] [\fR\(mii\fB[\fIchar\fB][\fIgap\fB]]
+    [\fR\(mil \fIlines\fB] [\fR\(min\fB[\fIchar\fB][\fIwidth\fB]] [\fR\(mio \fIoffset\fB] [\fR\(mis\fB[\fIchar\fB]] [\fR\(miw \fIwidth\fB] [\fR\(mifp\fB]
+    [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR pr
+utility is a printing and pagination filter. If multiple input files
+are specified, each shall be read, formatted, and written to standard
+output. By default, the input shall be separated into 66-line pages,
+each with:
+.IP " *" 4
+A 5-line header that includes the page number, date, time, and
+the pathname of the file
+.IP " *" 4
+A 5-line trailer consisting of blank lines
+.P
+If standard output is associated with a terminal, diagnostic messages
+shall be deferred until the
+.IR pr
+utility has completed processing.
+.P
+When options specifying multi-column output are specified, output text
+columns shall be of equal width; input lines that do not fit into a
+text column shall be truncated. By default, text columns shall be
+separated with at least one
+<blank>.
+.SH OPTIONS
+The
+.IR pr
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that: the
+.IR page
+option has a
+.BR '\(pl' 
+delimiter;
+.IR page
+and
+.IR column
+can be multi-digit numbers; some of the option-arguments are optional;
+and some of the option-arguments cannot be specified as separate
+arguments from the preceding option letter. In particular, the
+.BR \(mis
+option does not allow the option letter to be separated from its
+argument, and the options
+.BR \(mie ,
+.BR \(mii ,
+and
+.BR \(min
+require that both arguments, if present, not be separated from the
+option letter.
+.P
+The following options shall be supported. In the following option
+descriptions,
+.IR column ,
+.IR lines ,
+.IR offset ,
+.IR page ,
+and
+.IR width
+are positive decimal integers;
+.IR gap
+is a non-negative decimal integer.
+.IP "\fB+\fIpage\fR" 10
+Begin output at page number
+.IR page
+of the formatted input.
+.IP "\fB\(mi\fIcolumn\fR" 10
+Produce multi-column output that is arranged in
+.IR column
+columns (the default shall be 1) and is written down each column in the
+order in which the text is received from the input file. This option
+should not be used with
+.BR \(mim .
+The options
+.BR \(mie
+and
+.BR \(mii
+shall be assumed for multiple text-column output. Whether or not text
+columns are produced with identical vertical lengths is unspecified,
+but a text column shall never exceed the length of the page (see the
+.BR \(mil
+option). When used with
+.BR \(mit ,
+use the minimum number of lines to write the output.
+.IP "\fB\(mia\fP" 10
+Modify the effect of the
+.BR \(mi \c
+.IR column
+option so that the columns are filled across the page in a round-robin
+order (for example, when
+.IR column
+is 2, the first input line heads column 1, the second heads column 2,
+the third is the second line in column 1, and so on).
+.IP "\fB\(mid\fP" 10
+Produce output that is double-spaced; append an extra
+<newline>
+following every
+<newline>
+found in the input.
+.IP "\fB\(mie[\fIchar\fB][\fIgap\fB]\fR" 10
+.br
+Expand each input
+<tab>
+to the next greater column position specified by the formula
+.IR n *\c
+.IR gap +1,
+where
+.IR n
+is an integer > 0. If
+.IR gap
+is zero or is omitted, it shall default to 8. All
+<tab>
+characters in the input shall be expanded into the appropriate number of
+<space>
+characters. If any non-digit character,
+.IR char ,
+is specified, it shall be used as the input
+<tab>.
+If the first character of the
+.BR \(mie
+option-argument is a digit, the entire option-argument shall be assumed
+to be
+.IR gap .
+.IP "\fB\(mif\fP" 10
+Use a
+<form-feed>
+for new pages, instead of the default behavior that uses a sequence of
+<newline>
+characters. Pause before beginning the first page if the standard output
+is associated with a terminal.
+.IP "\fB\(miF\fP" 10
+Use a
+<form-feed>
+for new pages, instead of the default behavior that uses a sequence of
+<newline>
+characters.
+.IP "\fB\(mih\ \fIheader\fR" 10
+Use the string
+.IR header
+to replace the contents of the
+.IR file
+operand in the page header.
+.IP "\fB\(mii[\fIchar\fB][\fIgap\fB]\fR" 10
+In output, replace
+<space>
+characters with
+<tab>
+characters wherever one or more adjacent
+<space>
+characters reach column positions
+.IR gap +1,
+2*
+.IR gap +1,
+3*
+.IR gap +1,
+and so on. If
+.IR gap
+is zero or is omitted, default tab settings at every eighth column
+position shall be assumed. If any non-digit character,
+.IR char ,
+is specified, it shall be used as the output
+<tab>.
+If the first character of the
+.BR \(mii
+option-argument is a digit, the entire option-argument shall be assumed
+to be
+.IR gap .
+.IP "\fB\(mil\ \fIlines\fR" 10
+Override the 66-line default and reset the page length to
+.IR lines .
+If
+.IR lines
+is not greater than the sum of both the header and trailer depths (in
+lines), the
+.IR pr
+utility shall suppress both the header and trailer, as if the
+.BR \(mit
+option were in effect.
+.IP "\fB\(mim\fP" 10
+Merge files. Standard output shall be formatted so the
+.IR pr
+utility writes one line from each file specified by a
+.IR file
+operand, side by side into text columns of equal fixed widths, in terms
+of the number of column positions. Implementations shall support
+merging of at least nine
+.IR file
+operands.
+.IP "\fB\(min[\fIchar\fB][\fIwidth\fB]\fR" 10
+.br
+Provide
+.IR width -digit
+line numbering (default for
+.IR width
+shall be 5). The number shall occupy the first
+.IR width
+column positions of each text column of default output or each line of
+.BR \(mim
+output. If
+.IR char
+(any non-digit character) is given, it shall be appended to the line
+number to separate it from whatever follows (default for
+.IR char
+is a
+<tab>).
+.IP "\fB\(mio\ \fIoffset\fR" 10
+Each line of output shall be preceded by offset
+<space>
+characters. If the
+.BR \(mio
+option is not specified, the default offset shall be zero. The space
+taken is in addition to the output line width (see the
+.BR \(miw
+option below).
+.IP "\fB\(mip\fP" 10
+Pause before beginning each page if the standard output is directed to
+a terminal (\c
+.IR pr
+shall write an
+<alert>
+to standard error and wait for a
+<carriage-return>
+to be read on
+.BR /dev/tty ).
+.IP "\fB\(mir\fP" 10
+Write no diagnostic reports on failure to open files.
+.IP "\fB\(mis[\fIchar\fB]\fR" 10
+Separate text columns by the single character
+.IR char
+instead of by the appropriate number of
+<space>
+characters (default for
+.IR char
+shall be
+<tab>).
+.IP "\fB\(mit\fP" 10
+Write neither the five-line identifying header nor the five-line
+trailer usually supplied for each page. Quit writing after the last
+line of each file without spacing to the end of the page.
+.IP "\fB\(miw\ \fIwidth\fR" 10
+Set the width of the line to
+.IR width
+column positions for multiple text-column output only. If the
+.BR \(miw
+option is not specified and the
+.BR \(mis
+option is not specified, the default width shall be 72. If the
+.BR \(miw
+option is not specified and the
+.BR \(mis
+option is specified, the default width shall be 512.
+.RS 10 
+.P
+For single column output, input lines shall not be truncated.
+.RE
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a file to be written. If no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' ,
+the standard input shall be used.
+.SH STDIN
+The standard input shall be used only if no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' .
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be text files.
+.P
+The file
+.BR /dev/tty
+shall be used to read responses required by the
+.BR \(mip
+option.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR pr :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+the precedence of internationalization variables used to determine the
+values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files) and which
+characters are defined as printable (character class
+.BR print ).
+Non-printable characters are still written to standard output, but are
+not counted for the purpose for column-width and line-length
+calculations.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fILC_TIME\fP" 10
+Determine the format of the date and time for use in writing header
+lines.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fITZ\fP" 10
+Determine the timezone used to calculate date and time strings written
+in header lines. If
+.IR TZ
+is unset or null, an unspecified default timezone shall be used.
+.SH "ASYNCHRONOUS EVENTS"
+If
+.IR pr
+receives an interrupt while writing to a terminal, it shall flush all
+accumulated error messages to the screen before terminating.
+.SH STDOUT
+The
+.IR pr
+utility output shall be a paginated version of the original file (or
+files). This pagination shall be accomplished using either
+<form-feed>
+characters or a sequence of
+<newline>
+characters, as controlled by the
+.BR \(miF
+or
+.BR \(mif
+option. Page headers shall be generated unless the
+.BR \(mit
+option is specified. The page headers shall be of the form:
+.sp
+.RS 4
+.nf
+\fB
+"\en\en%s %s Page %d\en\en\en", <\fIoutput of date\fP>, <\fIfile\fR>, <\fIpage number\fR>
+.fi \fR
+.P
+.RE
+.P
+In the POSIX locale, the <\fIoutput\ of\ date\fR> field, representing
+the date and time of last modification of the input file (or the
+current date and time if the input file is standard input), shall be
+equivalent to the output of the following command as it would appear if
+executed at the given time:
+.sp
+.RS 4
+.nf
+\fB
+date "+%b %e %H:%M %Y"
+.fi \fR
+.P
+.RE
+.P
+without the trailing
+<newline>,
+if the page being written is from standard input. If the page being
+written is not from standard input, in the POSIX locale, the same
+format shall be used, but the time used shall be the modification time
+of the file corresponding to
+.IR file
+instead of the current time. When the
+.IR LC_TIME
+locale category is not set to the POSIX locale, a different format and
+order of presentation of this field may be used.
+.P
+If the standard input is used instead of a
+.IR file
+operand, the <\fIfile\fP> field shall be replaced by a null string.
+.P
+If the
+.BR \(mih
+option is specified, the <\fIfile\fP> field shall be replaced by the
+.IR header
+argument.
+.SH STDERR
+The standard error shall be used for diagnostic messages and
+for alerting the terminal when
+.BR \(mip
+is specified.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+A conforming application must protect its first operand, if it starts
+with a
+<plus-sign>,
+by preceding it with the
+.BR \(dq\(mi\|\(mi\(dq 
+argument that denotes the end of the options. For example,
+.IR pr \(pl\c
+.IR x
+could be interpreted as an invalid page number or a
+.IR file
+operand.
+.SH EXAMPLES
+.IP " 1." 4
+Print a numbered list of all files in the current directory:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+ls \(mia | pr \(min \(mih "Files in $(pwd)."
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+Print
+.BR file1
+and
+.BR file2
+as a double-spaced, three-column listing headed by ``file list'':
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+pr \(mi3d \(mih "file list" file1 file2
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+Write
+.BR file1
+on
+.BR file2 ,
+expanding tabs to columns 10, 19, 28, .\|.\|.:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+pr \(mie9 \(mit <file1 >file2
+.fi \fR
+.P
+.RE
+.RE
+.SH RATIONALE
+This utility is one of those that does not follow the Utility Syntax
+Guidelines because of its historical origins. The standard developers
+could have added new options that obeyed the guidelines (and marked the
+old options obsolescent) or devised an entirely new utility; there are
+examples of both actions in this volume of POSIX.1\(hy2008. Because of its widespread use by
+historical applications, the standard developers decided to exempt this
+version of
+.IR pr
+from many of the guidelines.
+.P
+Implementations are required to accept option-arguments to the
+.BR \(mih ,
+.BR \(mil ,
+.BR \(mio ,
+and
+.BR \(miw
+options whether presented as part of the same argument or as a separate
+argument to
+.IR pr ,
+as suggested by the Utility Syntax Guidelines. The
+.BR \(min
+and
+.BR \(mis
+options, however, are specified as in historical practice because they
+are frequently specified without their optional arguments. If a
+<blank>
+were allowed before the option-argument in these cases, a
+.IR file
+operand could mistakenly be interpreted as an option-argument in
+historical applications.
+.P
+The text about the minimum number of lines in multi-column output was
+included to ensure that a best effort is made in balancing the length
+of the columns. There are known historical implementations in which,
+for example, 60-line files are listed by
+.IR pr
+\(mi2 as one column of 56 lines and a second of 4. Although this is not
+a problem when a full page with headers and trailers is produced, it
+would be relatively useless when used with
+.BR \(mit .
+.P
+Historical implementations of the
+.IR pr
+utility have differed in the action taken for the
+.BR \(mif
+option. BSD uses it as described here for the
+.BR \(miF
+option; System V uses it to change trailing
+<newline>
+characters on each page to a
+<form-feed>
+and, if standard output is a TTY device, sends an
+<alert>
+to standard error and reads a line from
+.BR /dev/tty
+before the first page. There were strong arguments from both sides of
+this issue concerning historical practice and as a result the
+.BR \(miF
+option was added. XSI-conformant systems support the System V
+historical actions for the
+.BR \(mif
+option.
+.P
+The <\fIoutput\ of\ date\fP> field in the
+.BR \(mil
+format is specified only for the POSIX locale. As noted, the format can
+be different in other locales. No mechanism for defining this is
+present in this volume of POSIX.1\(hy2008, as the appropriate vehicle is a message catalog;
+that is, the format should be specified as a ``message''.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexpand\fR\^",
+.IR "\fIlp\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

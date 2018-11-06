@@ -1,0 +1,239 @@
+'\" et
+.TH MSGSND "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+msgsnd
+\(em XSI message send operation
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/msg.h>
+.P
+int msgsnd(int \fImsqid\fP, const void *\fImsgp\fP, size_t \fImsgsz\fP, int \fImsgflg\fP);
+.fi
+.SH DESCRIPTION
+The
+\fImsgsnd\fR()
+function operates on XSI message queues (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.225" ", " "Message Queue").
+It is unspecified whether this function interoperates with the
+realtime interprocess communication facilities defined in
+.IR "Section 2.8" ", " "Realtime".
+.P
+The
+\fImsgsnd\fR()
+function shall send a message to the queue associated with the
+message queue identifier specified by
+.IR msqid .
+.P
+The application shall ensure that the argument
+.IR msgp
+points to a user-defined buffer that contains first a field of type
+.BR long
+specifying the type of the message, and then a data portion that holds
+the data bytes of the message. The structure below is an example of
+what this user-defined buffer might look like:
+.sp
+.RS 4
+.nf
+\fB
+struct mymsg {
+    long   mtype;       /* Message type. */
+    char   mtext[1];    /* Message text. */
+}
+.fi \fR
+.P
+.RE
+.P
+The structure member
+.IR mtype
+is a non-zero positive type
+.BR long
+that can be used by the receiving process for message selection.
+.P
+The structure member
+.IR mtext
+is any text of length
+.IR msgsz
+bytes. The argument
+.IR msgsz
+can range from 0 to a system-imposed maximum.
+.P
+The argument
+.IR msgflg
+specifies the action to be taken if one or more of the following is
+true:
+.IP " *" 4
+The number of bytes already on the queue is equal to
+.BR msg_qbytes ;
+see
+.IR <sys/msg.h> .
+.IP " *" 4
+The total number of messages on all queues system-wide is equal to the
+system-imposed limit.
+.P
+These actions are as follows:
+.IP " *" 4
+If (\fImsgflg\fP & IPC_NOWAIT)
+is non-zero, the message shall not be sent and the calling thread
+shall return immediately.
+.IP " *" 4
+If (\fImsgflg\fP & IPC_NOWAIT) is 0, the calling thread shall suspend
+execution until one of the following occurs:
+.RS 4 
+.IP -- 4
+The condition responsible for the suspension no longer exists, in which
+case the message is sent.
+.IP -- 4
+The message queue identifier
+.IR msqid
+is removed from the system; when this occurs,
+.IR errno
+shall be set to
+.BR [EIDRM] 
+and \(mi1 shall be returned.
+.IP -- 4
+The calling thread receives a signal that is to be caught; in this case
+the message is not sent and the calling thread resumes execution in the
+manner prescribed in
+.IR "\fIsigaction\fR\^(\|)".
+.RE
+.br
+.P
+Upon successful completion, the following actions are taken with
+respect to the data structure associated with
+.IR msqid ;
+see
+.IR <sys/msg.h> :
+.IP " *" 4
+.BR msg_qnum
+shall be incremented by 1.
+.IP " *" 4
+.BR msg_lspid
+shall be set to the process ID of the calling process.
+.IP " *" 4
+.BR msg_stime
+shall be set to the current time, as described in
+.IR "Section 2.7.1" ", " "IPC General Description".
+.SH "RETURN VALUE"
+Upon successful completion,
+\fImsgsnd\fR()
+shall return 0; otherwise, no message shall be sent,
+\fImsgsnd\fR()
+shall return \(mi1, and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fImsgsnd\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Operation permission is denied to the calling process; see
+.IR "Section 2.7" ", " "XSI Interprocess Communication".
+.TP
+.BR EAGAIN
+The message cannot be sent for one of the reasons cited above and
+(\fImsgflg\fP & IPC_NOWAIT) is non-zero.
+.TP
+.BR EIDRM
+The message queue identifier
+.IR msqid
+is removed from the system.
+.TP
+.BR EINTR
+The
+\fImsgsnd\fR()
+function was interrupted by a signal.
+.TP
+.BR EINVAL
+The value of
+.IR msqid
+is not a valid message queue identifier, or the value of
+.IR mtype
+is less than 1; or the value of
+.IR msgsz
+is greater than the system-imposed limit.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Sending a Message"
+.P
+The following example sends a message to the queue identified by the
+.IR msqid
+argument (assuming that value has previously been set). This call
+specifies that an error should be reported if no message is available.
+The message size is calculated directly using the
+.IR sizeof
+operator.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/msg.h>
+\&...
+int result;
+int msqid;
+struct message {
+    long type;
+    char text[20];
+} msg;
+.P
+msg.type = 1;
+strcpy(msg.text, "This is message 1");
+\&...
+result = msgsnd(msqid, (void *) &msg, sizeof(msg.text), IPC_NOWAIT);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The POSIX Realtime Extension defines alternative interfaces for interprocess communication
+(IPC). Application developers who need to use IPC should design their
+applications so that modules using the IPC routines described in
+.IR "Section 2.7" ", " "XSI Interprocess Communication"
+can be easily modified to use the alternative interfaces.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.7" ", " "XSI Interprocess Communication",
+.IR "Section 2.8" ", " "Realtime",
+.IR "\fImq_close\fR\^(\|)",
+.IR "\fImq_getattr\fR\^(\|)",
+.IR "\fImq_notify\fR\^(\|)",
+.IR "\fImq_open\fR\^(\|)",
+.IR "\fImq_receive\fR\^(\|)",
+.IR "\fImq_send\fR\^(\|)",
+.IR "\fImq_setattr\fR\^(\|)",
+.IR "\fImq_unlink\fR\^(\|)",
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fImsgget\fR\^(\|)",
+.IR "\fImsgrcv\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.225" ", " "Message Queue",
+.IR "\fB<sys_msg.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

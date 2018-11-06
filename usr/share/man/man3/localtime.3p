@@ -1,0 +1,276 @@
+'\" et
+.TH LOCALTIME "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+localtime,
+localtime_r
+\(em convert a time value to a broken-down local time
+.SH SYNOPSIS
+.LP
+.nf
+#include <time.h>
+.P
+struct tm *localtime(const time_t *\fItimer\fP);
+struct tm *localtime_r(const time_t *restrict \fItimer\fP,
+    struct tm *restrict \fIresult\fP);
+.fi
+.SH DESCRIPTION
+For
+\fIlocaltime\fR():
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+The
+\fIlocaltime\fR()
+function shall convert the time in seconds since the Epoch pointed
+to by
+.IR timer
+into a broken-down time, expressed as a local time. The function
+corrects for the timezone and any seasonal time adjustments.
+Local timezone information is used as though
+\fIlocaltime\fR()
+calls
+\fItzset\fR().
+.P
+The relationship between a time in seconds since the Epoch used as an
+argument to
+\fIlocaltime\fR()
+and the
+.BR tm
+structure (defined in the
+.IR <time.h> 
+header) is that the result shall be as specified in the expression
+given in the definition of seconds since the Epoch (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.15" ", " "Seconds Since the Epoch")
+corrected for timezone and any seasonal time adjustments, where the
+names in the structure and in the expression correspond.
+.P
+The same relationship shall apply for
+\fIlocaltime_r\fR().
+.P
+The
+\fIlocaltime\fR()
+function need not be thread-safe.
+.P
+The
+\fIasctime\fR(),
+\fIctime\fR(),
+\fIgmtime\fR(),
+and
+\fIlocaltime\fR()
+functions shall return values in one of two static objects: a
+broken-down time structure and an array of type
+.BR char .
+Execution of any of the functions may overwrite the information
+returned in either of these objects by any of the other functions.
+.P
+The
+\fIlocaltime_r\fR()
+function shall convert the time in seconds since the Epoch pointed
+to by
+.IR timer
+into a broken-down time stored in the structure to which
+.IR result
+points. The
+\fIlocaltime_r\fR()
+function shall also return a pointer to that same structure.
+.P
+Unlike
+\fIlocaltime\fR(),
+the
+\fIlocaltime_r\fR()
+function is not required to set
+.IR tzname .
+If
+\fIlocaltime_r\fR()
+does not set
+.IR tzname ,
+it shall not set
+.IR daylight
+and shall not set
+.IR timezone .
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIlocaltime\fR()
+function shall return a pointer to the broken-down time structure.
+If an error is detected,
+\fIlocaltime\fR()
+shall return a null pointer
+and set
+.IR errno
+to indicate the error.
+.P
+Upon successful completion,
+\fIlocaltime_r\fR()
+shall return a pointer to the structure pointed to by the argument
+.IR result .
+If an error is detected,
+\fIlocaltime_r\fR()
+shall return a null pointer and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIlocaltime\fR()
+and
+\fIlocaltime_r\fR()
+functions shall fail if:
+.TP
+.BR EOVERFLOW
+The result cannot be represented.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Getting the Local Date and Time"
+.P
+The following example uses the
+\fItime\fR()
+function to calculate the time elapsed, in seconds, since January 1,
+1970 0:00 UTC (the Epoch),
+\fIlocaltime\fR()
+to convert that value to a broken-down time, and
+\fIasctime\fR()
+to convert the broken-down time values into a printable string.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <time.h>
+.P
+int main(void)
+{
+    time_t result;
+.P
+    result = time(NULL);
+    printf("%s%ju secs since the Epoch\en",
+        asctime(localtime(&result)),
+            (uintmax_t)result);
+    return(0);
+}
+.fi \fR
+.P
+.RE
+.P
+This example writes the current time to
+.IR stdout
+in a form like this:
+.sp
+.RS 4
+.nf
+\fB
+Wed Jun 26 10:32:15 1996
+835810335 secs since the Epoch
+.fi \fR
+.P
+.RE
+.SS "Getting the Modification Time for a File"
+.P
+The following example prints the last data modification timestamp
+in the local timezone for a given file.
+.sp
+.RS 4
+.nf
+\fB
+#include <stdio.h>
+#include <time.h>
+#include <sys/stat.h>
+.P
+int
+print_file_time(const char *pathname)
+{
+    struct stat statbuf;
+    struct tm *tm;
+    char timestr[BUFSIZ];
+.P
+    if(stat(pathname, &statbuf) =\|= \(mi1)
+        return \(mi1;
+    if((tm = localtime(&statbuf.st_mtime)) =\|= NULL)
+        return \(mi1;
+    if(strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", tm) =\|= 0)
+        return \(mi1;
+    printf("%s: %s.%09ld\en", pathname, timestr, statbuf.st_mtim.tv_nsec);
+    return 0;
+}
+.fi \fR
+.P
+.RE
+.SS "Timing an Event"
+.P
+The following example gets the current time, converts it to a string
+using
+\fIlocaltime\fR()
+and
+\fIasctime\fR(),
+and prints it to standard output using
+\fIfputs\fR().
+It then prints the number of minutes to an event being timed.
+.sp
+.RS 4
+.nf
+\fB
+#include <time.h>
+#include <stdio.h>
+\&...
+time_t now;
+int minutes_to_event;
+\&...
+time(&now);
+printf("The time is ");
+fputs(asctime(localtime(&now)), stdout);
+printf("There are still %d minutes to the event.\en",
+    minutes_to_event);
+\&...
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIlocaltime_r\fR()
+function is thread-safe and returns values in a user-supplied buffer
+instead of possibly using a static data area that may be overwritten by
+each call.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIasctime\fR\^(\|)",
+.IR "\fIclock\fR\^(\|)",
+.IR "\fIctime\fR\^(\|)",
+.IR "\fIdifftime\fR\^(\|)",
+.IR "\fIgetdate\fR\^(\|)",
+.IR "\fIgmtime\fR\^(\|)",
+.IR "\fImktime\fR\^(\|)",
+.IR "\fIstrftime\fR\^(\|)",
+.IR "\fIstrptime\fR\^(\|)",
+.IR "\fItime\fR\^(\|)",
+.IR "\fItzset\fR\^(\|)",
+.IR "\fIutime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.15" ", " "Seconds Since the Epoch",
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

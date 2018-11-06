@@ -1,0 +1,2097 @@
+'\" et
+.TH ED "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ed
+\(em edit text
+.SH SYNOPSIS
+.LP
+.nf
+ed \fB[\fR\(mip \fIstring\fB] [\fR\(mis\fB] [\fIfile\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR ed
+utility is a line-oriented text editor that uses two modes:
+.IR "command mode"
+and
+.IR "input mode" .
+In command mode the input characters shall be interpreted as commands,
+and in input mode they shall be interpreted as text. See the EXTENDED
+DESCRIPTION section.
+.P
+If an operand is
+.BR '\(mi' ,
+the results are unspecified.
+.SH OPTIONS
+The
+.IR ed
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except for the unspecified usage of
+.BR '\(mi' .
+.P
+The following options shall be supported:
+.IP "\fB\(mip\ \fIstring\fR" 10
+Use
+.IR string
+as the prompt string when in command mode. By default, there shall be
+no prompt string.
+.IP "\fB\(mis\fP" 10
+Suppress the writing of byte counts by
+.BR e ,
+.BR E ,
+.BR r ,
+and
+.BR w
+commands and of the
+.BR '!' 
+prompt after a !\fIcommand\fR.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+If the
+.IR file
+argument is given,
+.IR ed
+shall simulate an
+.BR e
+command on the file named by the pathname,
+.IR file ,
+before accepting commands from the standard input.
+.SH STDIN
+The standard input shall be a text file consisting of commands, as
+described in the EXTENDED DESCRIPTION section.
+.SH "INPUT FILES"
+The input files shall be text files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR ed :
+.IP "\fIHOME\fP" 10
+Determine the pathname of the user's home directory.
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements within regular expressions.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files) and the behavior of
+character classes within regular expressions.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+The
+.IR ed
+utility shall take the standard action for all signals (see the
+ASYNCHRONOUS EVENTS section in
+.IR "Section 1.4" ", " "Utility Description Defaults")
+with the following exceptions:
+.IP SIGINT 10
+The
+.IR ed
+utility shall interrupt its current activity, write the string
+.BR \(dq?\en\(dq 
+to standard output, and return to command mode (see the EXTENDED
+DESCRIPTION section).
+.IP SIGHUP 10
+If the buffer is not empty and has changed since the last write, the
+.IR ed
+utility shall attempt to write a copy of the buffer in a file. First,
+the file named
+.BR ed.hup
+in the current directory shall be used; if that fails, the file named
+.BR ed.hup
+in the directory named by the
+.IR HOME
+environment variable shall be used. In any case, the
+.IR ed
+utility shall exit without writing the file to the currently
+remembered pathname and without returning to command mode.
+.IP SIGQUIT 10
+The
+.IR ed
+utility shall ignore this event.
+.SH STDOUT
+Various editing commands and the prompting feature (see
+.BR \(mip )
+write to standard output, as described in the EXTENDED DESCRIPTION
+section.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The output files shall be text files whose formats are dependent on the
+editing commands given.
+.SH "EXTENDED DESCRIPTION"
+The
+.IR ed
+utility shall operate on a copy of the file it is editing; changes made
+to the copy shall have no effect on the file until a
+.BR w
+(write) command is given. The copy of the text is called the
+.IR buffer .
+.P
+Commands to
+.IR ed
+have a simple and regular structure: zero, one, or two
+.IR addresses
+followed by a single-character
+.IR command ,
+possibly followed by parameters to that command. These addresses
+specify one or more lines in the buffer. Every command that requires
+addresses has default addresses, so that the addresses very often can
+be omitted. If the
+.BR \(mip
+option is specified, the prompt string shall be written to standard
+output before each command is read.
+.P
+In general, only one command can appear on a line. Certain commands
+allow text to be input. This text is placed in the appropriate place in
+the buffer. While
+.IR ed
+is accepting text, it is said to be in \fIinput mode\fR. In this mode,
+no commands shall be recognized; all input is merely collected. Input
+mode is terminated by entering a line consisting of two characters: a
+<period>
+(\c
+.BR '.' )
+followed by a
+<newline>.
+This line is not considered part of the input text.
+.SS "Regular Expressions in ed"
+.P
+The
+.IR ed
+utility shall support basic regular expressions, as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 9.3" ", " "Basic Regular Expressions".
+Since regular expressions in
+.IR ed
+are always matched against single lines (excluding the terminating
+<newline>
+characters), never against any larger section of text, there is no way
+for a regular expression to match a
+<newline>.
+.P
+A null RE shall be equivalent to the last RE encountered.
+.P
+Regular expressions are used in addresses to specify lines, and in some
+commands (for example, the
+.BR s
+substitute command) to specify portions of a line to be substituted.
+.SS "Addresses in ed"
+.P
+Addressing in
+.IR ed
+relates to the current line. Generally, the current line is the last
+line affected by a command. The current line number is the address of
+the current line. If the edit buffer is not empty, the initial value
+for the current line shall be the last line in the edit buffer;
+otherwise, zero.
+.P
+Addresses shall be constructed as follows:
+.IP " 1." 4
+The
+<period>
+character (\c
+.BR '.' )
+shall address the current line.
+.IP " 2." 4
+The
+<dollar-sign>
+character (\c
+.BR '$' )
+shall address the last line of the edit buffer.
+.IP " 3." 4
+The positive decimal number
+.IR n
+shall address the
+.IR n th
+line of the edit buffer.
+.IP " 4." 4
+The
+<apostrophe>-x
+character pair (\c
+.BR \(dq'x\(dq )
+shall address the line marked with the mark name character
+.IR x ,
+which shall be a lowercase letter from the portable character set. It
+shall be an error if the character has not been set to mark a line or
+if the line that was marked is not currently present in the edit
+buffer.
+.IP " 5." 4
+A BRE enclosed by
+<slash>
+characters (\c
+.BR '/' )
+shall address the first line found by searching forwards from the line
+following the current line toward the end of the edit buffer and
+stopping at the first line for which the line excluding the
+terminating
+<newline>
+matches the BRE. The BRE consisting of a null BRE delimited by a pair of
+<slash>
+characters shall address the next line for which the line excluding
+the terminating
+<newline>
+matches the last BRE encountered. In addition, the second
+<slash>
+can be omitted at the end of a command line. Within the BRE, a
+<backslash>-\c
+<slash>
+pair (\c
+.BR \(dq\e/\(dq )
+shall represent a literal
+<slash>
+instead of the BRE delimiter. If necessary, the search shall wrap around
+to the beginning of the buffer and continue up to and including the
+current line, so that the entire buffer is searched.
+.IP " 6." 4
+A BRE enclosed by
+<question-mark>
+characters (\c
+.BR '?' )
+shall address the first line found by searching backwards from the line
+preceding the current line toward the beginning of the edit buffer and
+stopping at the first line for which the line excluding the terminating
+<newline>
+matches the BRE. The BRE consisting of a null BRE delimited by a pair
+of
+<question-mark>
+characters (\c
+.BR \(dq??\(dq )
+shall address the previous line for which the line excluding the
+terminating
+<newline>
+matches the last BRE encountered. In addition, the second
+<question-mark>
+can be omitted at the end of a command line. Within the
+BRE, a
+<backslash>-\c
+<question-mark>
+pair (\c
+.BR \(dq\e?\(dq )
+shall represent a literal
+<question-mark>
+instead of the BRE delimiter. If necessary, the search shall wrap around
+to the end of the buffer and continue up to and including the current
+line, so that the entire buffer is searched.
+.IP " 7." 4
+A
+<plus-sign>
+(\c
+.BR '\(pl' )
+or
+<hyphen>
+character (\c
+.BR '\(mi' )
+followed by a decimal number shall address the current line plus or
+minus the number. A
+<plus-sign>
+or
+<hyphen>
+character not followed by a decimal number shall address the current
+line plus or minus 1.
+.P
+Addresses can be followed by zero or more address offsets, optionally
+<blank>-separated.
+Address offsets are constructed as follows:
+.IP " *" 4
+A
+<plus-sign>
+or
+<hyphen>
+character followed by a decimal number shall add or subtract,
+respectively, the indicated number of lines to or from the address. A
+<plus-sign>
+or
+<hyphen>
+character not followed by a decimal number shall add or subtract 1 to
+or from the address.
+.IP " *" 4
+A decimal number shall add the indicated number of lines to the
+address.
+.P
+It shall not be an error for an intermediate address value to be less
+than zero or greater than the last line in the edit buffer. It shall be
+an error for the final address value to be less than zero or greater
+than the last line in the edit buffer. It shall be an error if a search
+for a BRE fails to find a matching line.
+.P
+Commands accept zero, one, or two addresses. If more than the required
+number of addresses are provided to a command that requires zero
+addresses, it shall be an error. Otherwise, if more than the required
+number of addresses are provided to a command, the addresses specified
+first shall be evaluated and then discarded until the maximum number of
+valid addresses remain, for the specified command.
+.P
+Addresses shall be separated from each other by a
+<comma>
+(\c
+.BR ',' )
+or
+<semicolon>
+character (\c
+.BR ';' ).
+In the case of a
+<semicolon>
+separator, the current line (\c
+.BR '.' )
+shall be set to the first address, and only then will the second
+address be calculated. This feature can be used to determine the
+starting line for forwards and backwards searches; see rules 5. and
+6.
+.P
+Addresses can be omitted on either side of the
+<comma>
+or
+<semicolon>
+separator, in which case the resulting address pairs shall be as
+follows:
+.TS
+center box tab(!);
+cB | cB
+lf5 | lf5.
+Specified!Resulting
+_
+\&,!1 , $
+\&, addr!1 , addr
+addr ,!addr , addr
+;!. ; $
+; addr!. ; addr
+addr ;!addr ; addr
+.TE
+.P
+Any
+<blank>
+characters included between addresses, address separators, or address
+offsets shall be ignored.
+.SS "Commands in ed"
+.P
+In the following list of
+.IR ed
+commands, the default addresses are shown in parentheses. The number of
+addresses shown in the default shall be the number expected by the
+command. The parentheses are not part of the address; they show that
+the given addresses are the default.
+.P
+It is generally invalid for more than one command to appear on a line.
+However, any command (except
+.BR e ,
+.BR E ,
+.BR f ,
+.BR q ,
+.BR Q ,
+.BR r ,
+.BR w ,
+and
+.BR ! )
+can be suffixed by the letter
+.BR l ,
+.BR n ,
+or
+.BR p ;
+in which case, except for the
+.BR l ,
+.BR n ,
+and
+.BR p
+commands, the command shall be executed and then the new current line
+shall be written as described below under the
+.BR l ,
+.BR n ,
+and
+.BR p
+commands. When an
+.BR l ,
+.BR n ,
+or
+.BR p
+suffix is used with an
+.BR l ,
+.BR n ,
+or
+.BR p
+command, the command shall write to standard output as described below,
+but it is unspecified whether the suffix writes the current line again
+in the requested format or whether the suffix has no effect. For
+example, the
+.BR pl
+command (base
+.BR p
+command with an
+.BR l
+suffix) shall either write just the current line or write it
+twice\(emonce as specified for
+.BR p
+and once as specified for
+.BR l .
+Also, the
+.BR g ,
+.BR G ,
+.BR v ,
+and
+.BR V
+commands shall take a command as a parameter.
+.P
+Each address component can be preceded by zero or more
+<blank>
+characters. The command letter can be preceded by zero or more
+<blank>
+characters. If a suffix letter (\c
+.BR l ,
+.BR n ,
+or
+.BR p )
+is given, the application shall ensure that it immediately follows the
+command.
+.P
+The
+.BR e ,
+.BR E ,
+.BR f ,
+.BR r ,
+and
+.BR w
+commands shall take an optional
+.IR file
+parameter, separated from the command letter by one or more
+<blank>
+characters.
+.P
+If changes have been made in the buffer since the last
+.BR w
+command that wrote the entire buffer,
+.IR ed
+shall warn the user if an attempt is made to destroy the editor buffer
+via the
+.BR e
+or
+.BR q
+commands. The
+.IR ed
+utility shall write the string:
+.sp
+.RS 4
+.nf
+\fB
+"?\en"
+.fi \fR
+.P
+.RE
+.P
+(followed by an explanatory message if
+.IR "help mode"
+has been enabled via the
+.BR H
+command) to standard output and shall continue in command mode with the
+current line number unchanged. If the
+.BR e
+or
+.BR q
+command is repeated with no intervening command, it shall take effect.
+.P
+If a terminal disconnect (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface",
+Modem Disconnect and Closing a Device Terminal), is detected:
+.IP " *" 4
+If accompanied by a SIGHUP signal, the
+.IR ed
+utility shall operate as described in the ASYNCHRONOUS EVENTS section
+for a SIGHUP signal.
+.IP " *" 4
+If not accompanied by a SIGHUP signal, the
+.IR ed
+utility shall act as if an end-of-file had been detected on standard
+input.
+.P
+If an end-of-file is detected on standard input:
+.IP " *" 4
+If the
+.IR ed
+utility is in input mode,
+.IR ed
+shall terminate input mode and return to command mode. It is
+unspecified if any partially entered lines (that is, input text without
+a terminating
+<newline>)
+are discarded from the input text.
+.IP " *" 4
+If the
+.IR ed
+utility is in command mode, it shall act as if a
+.BR q
+command had been entered.
+.P
+If the closing delimiter of an RE or of a replacement string (for
+example,
+.BR '/' )
+in a
+.BR g ,
+.BR G ,
+.BR s ,
+.BR v ,
+or
+.BR V
+command would be the last character before a
+<newline>,
+that delimiter can be omitted, in which case the addressed line shall
+be written. For example, the following pairs of commands are
+equivalent:
+.sp
+.RS 4
+.nf
+\fB
+s/s1/s2   s/s1/s2/p
+g/s1      g/s1/p
+?s1       ?s1?
+.fi \fR
+.P
+.RE
+.P
+If an invalid command is entered,
+.IR ed
+shall write the string:
+.sp
+.RS 4
+.nf
+\fB
+"?\en"
+.fi \fR
+.P
+.RE
+.P
+(followed by an explanatory message if
+.IR "help mode"
+has been enabled via the
+.BR H
+command) to standard output and shall continue in command mode with the
+current line number unchanged.
+.SS "Append Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.)a
+<\fItext\fR>
+\&.
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR a
+command shall read the given text and append it after the addressed
+line; the current line number shall become the address of the last
+inserted line or, if there were none, the addressed line. Address 0
+shall be valid for this command; it shall cause the appended text to be
+placed at the beginning of the buffer.
+.SS "Change Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)c
+<\fItext\fR>
+\&.
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR c
+command shall delete the addressed lines, then accept input text that
+replaces these lines; the current line shall be set to the address of
+the last line input; or, if there were none, at the line after the last
+line deleted; if the lines deleted were originally at the end of the
+buffer, the current line number shall be set to the address of the new
+last line; if no lines remain in the buffer, the current line number
+shall be set to zero. Address 0 shall be valid for this command; it
+shall be interpreted as if address 1 were specified.
+.SS "Delete Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)d
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR d
+command shall delete the addressed lines from the buffer. The address
+of the line after the last line deleted shall become the current line
+number; if the lines deleted were originally at the end of the buffer,
+the current line number shall be set to the address of the new last
+line; if no lines remain in the buffer, the current line number shall
+be set to zero.
+.SS "Edit Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+e \fB[\fIfile\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR e
+command shall delete the entire contents of the buffer and then read in
+the file named by the pathname
+.IR file .
+The current line number shall be set to the address of the last line of
+the buffer. If no pathname is given, the currently remembered pathname,
+if any, shall be used (see the
+.BR f
+command). The number of bytes read shall be written to standard output,
+unless the
+.BR \(mis
+option was specified, in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%d\en", <\fInumber of bytes read\fR>
+.fi \fR
+.P
+.RE
+.P
+The name \fIfile\fR shall be remembered for possible use as a default
+pathname in subsequent
+.BR e ,
+.BR E ,
+.BR r ,
+and
+.BR w
+commands. If
+.IR file
+is replaced by
+.BR '!' ,
+the rest of the line shall be taken to be a shell command line whose
+output is to be read. Such a shell command line shall not be remembered
+as the current
+.IR file .
+All marks shall be discarded upon the completion of a successful
+.BR e
+command. If the buffer has changed since the last time the entire
+buffer was written, the user shall be warned, as described previously.
+.SS "Edit Without Checking Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+E \fB[\fIfile\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR E
+command shall possess all properties and restrictions of the
+.BR e
+command except that the editor shall not check to see whether any
+changes have been made to the buffer since the last
+.BR w
+command.
+.SS "Filename Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+f \fB[\fIfile\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If
+.IR file
+is given, the
+.BR f
+command shall change the currently remembered pathname to
+.IR file ;
+whether the name is changed or not, it shall then write the (possibly
+new) currently remembered pathname to the standard output in the
+following format:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIpathname\fR>
+.fi \fR
+.P
+.RE
+.P
+The current line number shall be unchanged.
+.SS "Global Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(1,$)g/\fIRE\fR/\fIcommand list\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+In the
+.BR g
+command, the first step shall be to mark every line for which the
+line excluding the terminating
+<newline>
+matches the given RE. Then, going sequentially from the beginning of
+the file to the end of the file, the given
+.IR "command list"
+shall be executed for each marked line, with the current line number
+set to the address of that line. Any line modified by the
+.IR "command list"
+shall be unmarked. When the
+.BR g
+command completes, the current line number shall have the value
+assigned by the last command in the
+.IR "command list" .
+If there were no matching lines, the current line number shall not be
+changed. A single command or the first of a list of commands shall
+appear on the same line as the global command. All lines of a
+multi-line list except the last line shall be ended with a
+<backslash>
+preceding the terminating
+<newline>;
+the
+.BR a ,
+.BR i ,
+and
+.BR c
+commands and associated input are permitted. The
+.BR '.' 
+terminating input mode can be omitted if it would be the last line of
+the \fIcommand list\fR. An empty \fIcommand list\fR shall be equivalent
+to the
+.BR p
+command. The use of the
+.BR g ,
+.BR G ,
+.BR v ,
+.BR V ,
+and
+.BR !
+commands in the
+.IR "command list"
+produces undefined results. Any character other than
+<space>
+or
+<newline>
+can be used instead of a
+<slash>
+to delimit the RE. Within the RE, the RE delimiter itself can be used
+as a literal character if it is preceded by a
+<backslash>.
+.SS "Interactive Global Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(1,$)G/\fIRE\fR/
+.fi \fR
+.P
+.RE
+.RE
+.P
+In the
+.BR G
+command, the first step shall be to mark every line for which the line
+excluding the terminating
+<newline>
+matches the given RE. Then, for every such line, that line shall be
+written, the current line number shall be set to the address of that
+line, and any one command (other than one of the
+.BR a ,
+.BR c ,
+.BR i ,
+.BR g ,
+.BR G ,
+.BR v ,
+and
+.BR V
+commands) shall be read and executed. A
+<newline>
+shall act as a null command (causing no action to be taken on
+the current line); an
+.BR '&' 
+shall cause the re-execution of the most recent non-null command
+executed within the current invocation of
+.BR G .
+Note that the commands input as part of the execution of the
+.BR G
+command can address and affect any lines in the buffer. Any line
+modified by the command shall be unmarked. The final value
+of the current line number shall be the value set by the last command
+successfully executed. (Note that the last command successfully
+executed shall be the
+.BR G
+command itself if a command fails or the null command is specified.) If
+there were no matching lines, the current line number shall not be
+changed. The
+.BR G
+command can be terminated by a SIGINT signal. Any character other than
+<space>
+or
+<newline>
+can be used instead of a
+<slash>
+to delimit the RE and the replacement. Within the RE, the RE delimiter
+itself can be used as a literal character if it is preceded by a
+<backslash>.
+.SS "Help Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+h
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR h
+command shall write a short message to standard output that explains
+the reason for the most recent
+.BR '?' 
+notification. The current line number shall be unchanged.
+.SS "Help-Mode Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+H
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR H
+command shall cause
+.IR ed
+to enter a mode in which help messages (see the
+.BR h
+command) shall be written to standard output for all subsequent
+.BR '?' 
+notifications. The
+.BR H
+command alternately shall turn this mode on and off; it is initially
+off. If the help-mode is being turned on, the
+.BR H
+command also explains the previous
+.BR '?' 
+notification, if there was one. The current line number shall be
+unchanged.
+.SS "Insert Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.)i
+<\fItext\fR>
+\&.
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR i
+command shall insert the given text before the addressed line; the
+current line is set to the last inserted line or, if there was none, to
+the addressed line. This command differs from the
+.BR a
+command only in the placement of the input text. Address 0 shall be
+valid for this command; it shall be interpreted as if address 1 were
+specified.
+.SS "Join Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.+1)j
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR j
+command shall join contiguous lines by removing the appropriate
+<newline>
+characters. If exactly one address is given, this command shall do
+nothing. If lines are joined, the current line number shall be set to
+the address of the joined line; otherwise, the current line number shall
+be unchanged.
+.SS "Mark Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.)k\fIx\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR k
+command shall mark the addressed line with name
+.IR x ,
+which the application shall ensure is a lowercase letter from the
+portable character set. The address
+.BR \(dq'x\(dq 
+shall then refer to this line; the current line number shall be
+unchanged.
+.SS "List Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)l
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR l
+command shall write to standard output the addressed lines in a
+visually unambiguous form. The characters listed in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Table 5-1" ", " "Escape Sequences and Associated Actions"
+(\c
+.BR '\e\e' ,
+.BR '\ea' ,
+.BR '\eb' ,
+.BR '\ef' ,
+.BR '\er' ,
+.BR '\et' ,
+.BR '\ev' )
+shall be written as the corresponding escape sequence; the
+.BR '\en' 
+in that table is not applicable. Non-printable characters not in the
+table shall be written as one three-digit octal number (with a
+preceding
+<backslash>
+character) for each byte in the character (most significant byte first).
+.P
+Long lines shall be folded, with the point of folding indicated by
+<newline>
+preceded by a
+<backslash>;
+the length at which folding occurs is unspecified, but should be
+appropriate for the output device. The end of each line shall be marked
+with a
+.BR '$' ,
+and
+.BR '$' 
+characters within the text shall be written with a preceding
+<backslash>.
+An
+.BR l
+command can be appended to any other command other than
+.BR e ,
+.BR E ,
+.BR f ,
+.BR q ,
+.BR Q ,
+.BR r ,
+.BR w ,
+or
+.BR ! .
+The current line number shall be set to the address of the last line
+written.
+.SS "Move Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)m\fIaddress\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR m
+command shall reposition the addressed lines after the line addressed
+by
+.IR address .
+Address 0 shall be valid for
+.IR address
+and cause the addressed lines to be moved to the beginning of the
+buffer. It shall be an error if address
+.IR address
+falls within the range of moved lines. The current line number shall be
+set to the address of the last line moved.
+.SS "Number Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)n
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR n
+command shall write to standard output the addressed lines, preceding
+each line by its line number and a
+<tab>;
+the current line number shall be set to the address of the last line
+written. The
+.BR n
+command can be appended to any command other than
+.BR e ,
+.BR E ,
+.BR f ,
+.BR q ,
+.BR Q ,
+.BR r ,
+.BR w ,
+or
+.BR ! .
+.SS "Print Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)p
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR p
+command shall write to standard output the addressed lines; the current
+line number shall be set to the address of the last line written. The
+.BR p
+command can be appended to any command other than
+.BR e ,
+.BR E ,
+.BR f ,
+.BR q ,
+.BR Q ,
+.BR r ,
+.BR w ,
+or
+.BR ! .
+.SS "Prompt Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+P
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR P
+command shall cause
+.IR ed
+to prompt with an
+<asterisk>
+(\c
+.BR '*' )
+(or
+.IR string ,
+if
+.BR \(mip
+is specified) for all subsequent commands. The
+.BR P
+command alternatively shall turn this mode on and off; it shall be
+initially on if the
+.BR \(mip
+option is specified; otherwise, off. The current line number shall be
+unchanged.
+.SS "Quit Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+q
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR q
+command shall cause
+.IR ed
+to exit. If the buffer has changed since the last time the entire
+buffer was written, the user shall be warned, as described previously.
+.SS "Quit Without Checking Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+Q
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR Q
+command shall cause
+.IR ed
+to exit without checking whether changes have been made in the buffer
+since the last
+.BR w
+command.
+.SS "Read Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+($)r\fB [\fIfile\fB]\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR r
+command shall read in the file named by the pathname
+.IR file
+and append it after the addressed line. If no
+.IR file
+argument is given, the currently remembered pathname, if any, shall be
+used (see the
+.BR e
+and
+.BR f
+commands). The currently remembered pathname shall not be changed
+unless there is no remembered pathname. Address 0 shall be valid for
+.BR r
+and shall cause the file to be read at the beginning of the buffer. If
+the read is successful, and
+.BR \(mis
+was not specified, the number of bytes read shall be written to
+standard output in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%d\en", <\fInumber of bytes read\fR>
+.fi \fR
+.P
+.RE
+.P
+The current line number shall be set to the address of the last line
+read in. If
+.IR file
+is replaced by
+.BR '!' ,
+the rest of the line shall be taken to be a shell command line whose
+output is to be read. Such a shell command line shall not be remembered
+as the current pathname.
+.SS "Substitute Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)s/\fIRE\fR/\fIreplacement\fR/\fIflags\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR s
+command shall search each addressed line for an occurrence of the
+specified RE and replace either the first or all (non-overlapped)
+matched strings with the
+.IR replacement ;
+see the following description of the
+.BR g
+suffix. It is an error if the substitution fails on every addressed
+line. Any character other than
+<space>
+or
+<newline>
+can be used instead of a
+<slash>
+to delimit the RE and the replacement. Within the RE, the RE delimiter
+itself can be used as a literal character if it is preceded by a
+<backslash>.
+The current line shall be set to the address of the last line on which
+a substitution occurred.
+.P
+An
+<ampersand>
+(\c
+.BR '&' )
+appearing in the
+.IR replacement
+shall be replaced by the string matching the RE on the current line.
+The special meaning of
+.BR '&' 
+in this context can be suppressed by preceding it by
+<backslash>.
+As a more general feature, the characters
+.BR '\en' ,
+where
+.IR n
+is a digit, shall be replaced by the text matched by the corresponding
+back-reference expression. If the corresponding back-reference
+expression does not match, then the characters
+.BR '\en' 
+shall be replaced by the empty string. When the character
+.BR '%' 
+is the only character in the
+.IR replacement ,
+the
+.IR replacement
+used in the most recent substitute command shall be used as the
+.IR replacement
+in the current substitute command; if there was no previous substitute
+command, the use of
+.BR '%' 
+in this manner shall be an error. The
+.BR '%' 
+shall lose its special meaning when it is in a replacement string of
+more than one character or is preceded by a
+<backslash>.
+For each
+<backslash>
+encountered in scanning
+.IR replacement
+from beginning to end, the following character shall lose its special
+meaning (if any). It is unspecified what special meaning is given to
+any character other than
+<backslash>,
+.BR '&' ,
+.BR '%' ,
+or digits.
+.P
+A line can be split by substituting a
+<newline>
+into it. The application shall ensure it escapes the
+<newline>
+in the
+.IR replacement
+by preceding it by
+<backslash>.
+Such substitution cannot be done as part of a
+.BR g
+or
+.BR v
+.IR "command list" .
+The current line number shall be set to the address of the last line on
+which a substitution is performed. If no substitution is performed, the
+current line number shall be unchanged. If a line is split, a
+substitution shall be considered to have been performed on each of the
+new lines for the purpose of determining the new current line number. A
+substitution shall be considered to have been performed even if the
+replacement string is identical to the string that it replaces.
+.P
+The application shall ensure that the value of
+.IR flags
+is zero or more of:
+.IP "\fIcount\fR" 8
+Substitute for the
+.IR count th
+occurrence only of the RE found on each addressed line.
+.IP "\fBg\fR" 8
+Globally substitute for all non-overlapping instances of the RE rather
+than just the first one. If both
+.BR g
+and
+.IR count
+are specified, the results are unspecified.
+.IP "\fBl\fR" 8
+Write to standard output the final line in which a substitution was
+made. The line shall be written in the format specified for the
+.BR l
+command.
+.IP "\fBn\fR" 8
+Write to standard output the final line in which a substitution was
+made. The line shall be written in the format specified for the
+.BR n
+command.
+.IP "\fBp\fR" 8
+Write to standard output the final line in which a substitution was
+made. The line shall be written in the format specified for the
+.BR p
+command.
+.SS "Copy Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.,.)t\fIaddress\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR t
+command shall be equivalent to the
+.BR m
+command, except that a copy of the addressed lines shall be placed
+after address
+.IR address
+(which can be 0); the current line number shall be set to the address
+of the last line added.
+.SS "Undo Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+u
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR u
+command shall nullify the effect of the most recent command that
+modified anything in the buffer, namely the most recent
+.BR a ,
+.BR c ,
+.BR d ,
+.BR g ,
+.BR i ,
+.BR j ,
+.BR m ,
+.BR r ,
+.BR s ,
+.BR t ,
+.BR u ,
+.BR v ,
+.BR G ,
+or
+.BR V
+command. All changes made to the buffer by a
+.BR g ,
+.BR G ,
+.BR v ,
+or
+.BR V
+global command shall be undone as a single change; if no changes were
+made by the global command (such as with
+.BR g /RE/\c
+.BR p ),
+the
+.BR u
+command shall have no effect. The current line number shall be set to
+the value it had immediately before the command being undone started.
+.SS "Global Non-Matched Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(1,$)v\fR/\fIRE\fR/\fIcommand list\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the global command
+.BR g
+except that the lines that are marked during the first step shall be
+those for which the line excluding the terminating
+<newline>
+does not match the RE.
+.SS "Interactive Global Not-Matched Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(1,$)V\fR/\fIRE\fR/
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the interactive global command
+.BR G
+except that the lines that are marked during the first step shall be
+those for which the line excluding the terminating
+<newline>
+does not match the RE.
+.SS "Write Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(1,$)w\fB [\fIfile\fB]
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+.BR w
+command shall write the addressed lines into the file named by the
+pathname
+.IR file .
+The command shall create the file, if it does not exist, or shall
+replace the contents of the existing file. The currently remembered
+pathname shall not be changed unless there is no remembered pathname.
+If no pathname is given, the currently remembered pathname, if any,
+shall be used (see the
+.BR e
+and
+.BR f
+commands); the current line number shall be unchanged. If the command
+is successful, the number of bytes written shall be written to standard
+output, unless the
+.BR \(mis
+option was specified, in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%d\en", <\fInumber of bytes written\fR>
+.fi \fR
+.P
+.RE
+.P
+If
+.IR file
+begins with
+.BR '!' ,
+the rest of the line shall be taken to be a shell command line whose
+standard input shall be the addressed lines. Such a shell command line
+shall not be remembered as the current pathname. This usage of the
+write command with
+.BR '!' 
+shall not be considered as a ``last
+.BR w
+command that wrote the entire buffer'', as described previously; thus,
+this alone shall not prevent the warning to the user if an attempt is
+made to destroy the editor buffer via the
+.BR e
+or
+.BR q
+commands.
+.SS "Line Number Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+($)=
+.fi \fR
+.P
+.RE
+.RE
+.P
+The line number of the addressed line shall be written to standard
+output in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%d\en", <\fIline number\fR>
+.fi \fR
+.P
+.RE
+.P
+The current line number shall be unchanged by this command.
+.SS "Shell Escape Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+!\fIcommand\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+The remainder of the line after the
+.BR '!' 
+shall be sent to the command interpreter to be interpreted as a shell
+command line. Within the text of that shell command line, the unescaped
+character
+.BR '%' 
+shall be replaced with the remembered pathname; if a
+.BR '!' 
+appears as the first character of the command, it shall be replaced
+with the text of the previous shell command executed via
+.BR '!' .
+Thus,
+.BR \(dq!!\(dq 
+shall repeat the previous !\fIcommand\fP. If any replacements of
+.BR '%' 
+or
+.BR '!' 
+are performed, the modified line shall be written to the standard
+output before
+.IR command
+is executed. The
+.BR !
+command shall write:
+.sp
+.RS 4
+.nf
+\fB
+"!\en"
+.fi \fR
+.P
+.RE
+.P
+to standard output upon completion, unless the
+.BR \(mis
+option is specified. The current line number shall be unchanged.
+.SS "Null Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+(.+1)
+.fi \fR
+.P
+.RE
+.RE
+.P
+An address alone on a line shall cause the addressed line to be
+written. A
+<newline>
+alone shall be equivalent to
+.BR \(dq+1p\(dq .
+The current line number shall be set to the address of the written
+line.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion without any file or command errors.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+When an error in the input script is encountered, or when an error is
+detected that is a consequence of the data (not) present in the file or
+due to an external condition such as a read or write error:
+.IP " *" 4
+If the standard input is a terminal device file, all input shall be
+flushed, and a new command read.
+.IP " *" 4
+If the standard input is a regular file,
+.IR ed
+shall terminate with a non-zero exit status.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Because of the extremely terse nature of the default error messages,
+the prudent script writer begins the
+.IR ed
+input commands with an
+.BR H
+command, so that if any errors do occur at least some clue as to the
+cause is made available.
+.P
+In earlier versions of this standard, an obsolescent
+.BR \(mi
+option was described. This is no longer specified. Applications should
+use the
+.BR \(mis
+option. Using
+.BR \(mi
+as a
+.IR file
+operand now produces unspecified results. This allows implementations
+to continue to support the former required behavior.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The initial description of this utility was adapted from the SVID. It
+contains some features not found in Version 7 or BSD-derived systems.
+Some of the differences between the POSIX and BSD
+.IR ed
+utilities include, but need not be limited to:
+.IP " *" 4
+The BSD
+.BR \(mi
+option does not suppress the
+.BR '!' 
+prompt after a
+.BR !
+command.
+.IP " *" 4
+BSD does not support the special meanings of the
+.BR '%' 
+and
+.BR '!' 
+characters within a
+.BR !
+command.
+.IP " *" 4
+BSD does not support the
+.IR addresses
+.BR ';' 
+and
+.BR ',' .
+.IP " *" 4
+BSD allows the command/suffix pairs
+.BR pp ,
+.BR ll ,
+and so on, which are unspecified in this volume of POSIX.1\(hy2008.
+.IP " *" 4
+BSD does not support the
+.BR '!' 
+character part of the
+.BR e ,
+.BR r ,
+or
+.BR w
+commands.
+.IP " *" 4
+A failed
+.BR g
+command in BSD sets the line number to the last line searched if there
+are no matches.
+.IP " *" 4
+BSD does not default the
+.IR "command list"
+to the
+.BR p
+command.
+.IP " *" 4
+BSD does not support the
+.BR G ,
+.BR h ,
+.BR H ,
+.BR n ,
+or
+.BR V
+commands.
+.IP " *" 4
+On BSD, if there is no inserted text, the insert command changes the
+current line to the referenced line \(mi1; that is, the line before the
+specified line.
+.IP " *" 4
+On BSD, the
+.IR join
+command with only a single address changes the current line to that
+address.
+.IP " *" 4
+BSD does not support the
+.BR P
+command; moreover, in BSD it is synonymous with the
+.BR p
+command.
+.IP " *" 4
+BSD does not support the
+.IR undo
+of the commands
+.BR j ,
+.BR m ,
+.BR r ,
+.BR s ,
+or
+.BR t .
+.IP " *" 4
+The Version 7
+.IR ed
+command
+.BR W ,
+and the BSD
+.IR ed
+commands
+.BR W ,
+.BR wq ,
+and
+.BR z
+are not present in this volume of POSIX.1\(hy2008.
+.P
+The
+.BR \(mis
+option was added to allow the functionality of the removed
+.BR \(mi
+option in a manner compatible with the Utility Syntax Guidelines.
+.P
+In early proposals there was a limit,
+{ED_FILE_MAX},
+that described the historical limitations of some
+.IR ed
+utilities in their handling of large files; some of these have had
+problems with files larger than 100\|000 bytes. It was this limitation
+that prompted much of the desire to include a
+.IR split
+command in this volume of POSIX.1\(hy2008. Since this limit was removed, this volume of POSIX.1\(hy2008 requires that
+implementations document the file size limits imposed by
+.IR ed
+in the conformance document. The limit
+{ED_LINE_MAX}
+was also removed; therefore, the global limit
+{LINE_MAX}
+is used for input and output lines.
+.P
+The manner in which the
+.BR l
+command writes non-printable characters was changed to avoid
+the historical backspace-overstrike method. On video display terminals,
+the overstrike is ambiguous because most terminals simply replace
+overstruck characters, making the
+.BR l
+format not useful for its intended purpose of unambiguously
+understanding the content of the line. The historical
+<backslash>-escapes
+were also ambiguous. (The string
+.BR \(dqa\e0011\(dq 
+could represent a line containing those six characters or a line
+containing the three characters
+.BR 'a' ,
+a byte with a binary value of 1, and a 1.) In the format required here,
+a
+<backslash>
+appearing in the line is written as
+.BR \(dq\e\e\(dq 
+so that the output is truly unambiguous. The method of marking the ends
+of lines was adopted from the
+.IR ex
+editor and is required for any line ending in
+<space>
+characters; the
+.BR '$' 
+is placed on all lines so that a real
+.BR '$' 
+at the end of a line cannot be misinterpreted.
+.P
+Earlier versions of this standard allowed for implementations
+with bytes other than eight bits, but this has been modified in this
+version.
+.P
+The description of how a NUL is written was removed. The NUL character
+cannot be in text files, and this volume of POSIX.1\(hy2008 should not dictate behavior in the
+case of undefined, erroneous input.
+.P
+Unlike some of the other editing utilities, the filenames accepted by
+the
+.BR E ,
+.BR e ,
+.BR R ,
+and
+.BR r
+commands are not patterns.
+.P
+Early proposals stated that the
+.BR \(mip
+option worked only when standard input was associated with a terminal
+device. This has been changed to conform to historical implementations,
+thereby allowing applications to interpose themselves between a user
+and the
+.IR ed
+utility.
+.P
+The form of the substitute command that uses the
+.BR n
+suffix was limited in some historical documentation (where this was
+described incorrectly as ``backreferencing''). This limit has been
+omitted because there is no reason why an editor processing lines of
+{LINE_MAX}
+length should have this restriction. The command
+.BR "s/x/X/2047"
+should be able to substitute the 2\|047th occurrence of
+.BR 'x' 
+on a line.
+.P
+The use of printing commands with printing suffixes (such as
+.BR pn ,
+.BR lp ,
+and so on) was made unspecified because BSD-based systems allow this,
+whereas System V does not.
+.P
+Some BSD-based systems exit immediately upon receipt of end-of-file if
+all of the lines in the file have been deleted. Since this volume of POSIX.1\(hy2008 refers
+to the
+.BR q
+command in this instance, such behavior is not allowed.
+.P
+Some historical implementations returned exit status zero even if
+command errors had occurred; this is not allowed by this volume of POSIX.1\(hy2008.
+.P
+Some historical implementations contained a bug that allowed a single
+<period>
+to be entered in input mode as
+<backslash>
+<period>
+<newline>.
+This is not allowed by
+.IR ed
+because there is no description of escaping any of the characters in
+input mode;
+<backslash>
+characters are entered into the buffer exactly as typed. The typical
+method of entering a single
+<period>
+has been to precede it with another character and then use the substitute
+command to delete that character.
+.P
+It is difficult under some modes of some versions of historical
+operating system terminal drivers to distinguish between an end-of-file
+condition and terminal disconnect. POSIX.1\(hy2008 does not require
+implementations to distinguish between the two situations, which
+permits historical implementations of the
+.IR ed
+utility on historical platforms to conform. Implementations are
+encouraged to distinguish between the two, if possible, and take
+appropriate action on terminal disconnect.
+.P
+Historically,
+.IR ed
+accepted a zero address for the
+.BR a
+and
+.BR r
+commands in order to insert text at the start of the edit buffer. When
+the buffer was empty the command
+.BR .=
+returned zero. POSIX.1\(hy2008 requires conformance to historical practice.
+.P
+For consistency with the
+.BR a
+and
+.BR r
+commands and better user functionality, the
+.BR i
+and
+.BR c
+commands must also accept an address of 0, in which case 0\fIi\fP is
+treated as 1\fIi\fP and likewise for the
+.BR c
+command.
+.P
+All of the following are valid addresses:
+.IP "\fR+++\fP" 12
+Three lines after the current line.
+.IP "\fR/\fIpattern\fR/\(mi\fR" 12
+One line before the next occurrence of pattern.
+.IP "\fR\(mi2\fR" 12
+Two lines before the current line.
+.IP "\fR3\ \(mi\|\(mi\|\(mi\|\(mi\ 2\fR" 12
+Line one (note the intermediate negative address).
+.IP "\fR1\ 2\ 3\fR" 12
+Line six.
+.P
+Any number of addresses can be provided to commands taking addresses;
+for example,
+.BR \(dq1,2,3,4,5p\(dq 
+prints lines 4 and 5, because two is the greatest valid number of
+addresses accepted by the
+.BR print
+command. This, in combination with the
+<semicolon>
+delimiter, permits users to create commands based on ordered patterns
+in the file. For example, the command
+.BR \(dq3;/foo/;+2p\(dq 
+will display the first line after line 3 that contains the pattern
+.IR foo ,
+plus the next two lines. Note that the address
+.BR \(dq3;\(dq 
+must still be evaluated before being discarded, because the search
+origin for the
+.BR \(dq/foo/\(dq 
+command depends on this.
+.P
+Historically,
+.IR ed
+disallowed address chains, as discussed above, consisting solely of
+<comma>
+or
+<semicolon>
+separators; for example,
+.BR \(dq,,,\(dq 
+or
+.BR \(dq;;;\(dq 
+were considered an error. For consistency of address specification,
+this restriction is removed. The following table lists some of the
+address forms now possible:
+.TS
+center box tab(!);
+cB | cB | cB | cB | cB
+lf5 | nf5 | nf5 | l | l.
+Address!Addr1!Addr2!Status!Comment
+_
+7,!7!7!Historical
+7,5,!5!5!Historical
+7,5,9!5!9!Historical
+7,9!7!9!Historical
+7,+!7!8!Historical
+\&,!1!$!Historical
+\&,7!1!7!Extension
+\&,,!$!$!Extension
+\&,;!$!$!Extension
+7;!7!7!Historical
+7;5;!5!5!Historical
+7;5;9!5!9!Historical
+7;5,9!5!9!Historical
+7;$;4!$!4!Historical!Valid, but erroneous.
+7;9!7!9!Historical
+7;+!7!8!Historical
+;!.!$!Historical
+;7!.!7!Extension
+;;!$!$!Extension
+;,!$!$!Extension
+.TE
+.P
+Historically,
+.IR ed
+accepted the
+.BR '^' 
+character as an address, in which case it was identical to the
+<hyphen>
+character. POSIX.1\(hy2008 does not require or prohibit this behavior.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 1.4" ", " "Utility Description Defaults",
+.IR "\fIex\fR\^",
+.IR "\fIsed\fR\^",
+.IR "\fIsh\fR\^",
+.IR "\fIvi\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Table 5-1" ", " "Escape Sequences and Associated Actions",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 9.3" ", " "Basic Regular Expressions",
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

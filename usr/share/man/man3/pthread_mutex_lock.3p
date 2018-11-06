@@ -1,0 +1,309 @@
+'\" et
+.TH PTHREAD_MUTEX_LOCK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_mutex_lock,
+pthread_mutex_trylock,
+pthread_mutex_unlock
+\(em lock and unlock a mutex
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_mutex_lock(pthread_mutex_t *\fImutex\fP);
+int pthread_mutex_trylock(pthread_mutex_t *\fImutex\fP);
+int pthread_mutex_unlock(pthread_mutex_t *\fImutex\fP);
+.fi
+.SH DESCRIPTION
+The mutex object referenced by
+.IR mutex
+shall be locked by a call to
+\fIpthread_mutex_lock\fR()
+that returns zero or
+.BR [EOWNERDEAD] .
+If the mutex is already locked by another thread, the calling thread
+shall block until the mutex becomes available. This operation shall
+return with the mutex object referenced by
+.IR mutex
+in the locked state with the calling thread as its owner. If a thread
+attempts to relock a mutex that it has already locked,
+\fIpthread_mutex_lock\fR()
+shall behave as described in the
+.BR Relock
+column of the following table. If a thread attempts to unlock a mutex
+that it has not locked or a mutex which is unlocked,
+\fIpthread_mutex_unlock\fR()
+shall behave as described in the
+.BR "Unlock When Not Owner"
+column of the following table.
+.TS
+center box tab(!);
+cB | cB | cB | cB
+l | l | l | l.
+Mutex Type!Robustness!Relock!Unlock When Not Owner
+_
+NORMAL!non-robust!deadlock!undefined behavior
+_
+NORMAL!robust!deadlock!error returned
+_
+ERRORCHECK!either!error returned!error returned
+_
+RECURSIVE!either!recursive!error returned
+!!(see below)
+_
+DEFAULT!non-robust!undefined!undefined behavior\s-2\(dg\s+2
+!!behavior\s-2\(dg\s+2
+_
+DEFAULT!robust!undefined!error returned
+!!behavior\s-2\(dg\s+2
+.TE
+.IP "\(dg" 6
+If the mutex type is PTHREAD_MUTEX_DEFAULT, the behavior of
+\fIpthread_mutex_lock\fR()
+may correspond to one of the three other standard mutex types as described
+in the table above. If it does not correspond to one of those three,
+the behavior is undefined for the cases marked \(dg.
+.P
+Where the table indicates recursive behavior, the mutex shall maintain
+the concept of a lock count. When a thread successfully acquires a
+mutex for the first time, the lock count shall be set to one. Every
+time a thread relocks this mutex, the lock count shall be incremented
+by one. Each time the thread unlocks the mutex, the lock count shall be
+decremented by one. When the lock count reaches zero, the mutex shall
+become available for other threads to acquire.
+.P
+The
+\fIpthread_mutex_trylock\fR()
+function shall be equivalent to
+\fIpthread_mutex_lock\fR(),
+except that if the mutex object referenced by
+.IR mutex
+is currently locked (by any thread, including the current thread), the
+call shall return immediately. If the mutex type is
+PTHREAD_MUTEX_RECURSIVE and the mutex is currently owned by the
+calling thread, the mutex lock count shall be incremented by one and
+the
+\fIpthread_mutex_trylock\fR()
+function shall immediately return success.
+.P
+The
+\fIpthread_mutex_unlock\fR()
+function shall release the mutex object referenced by
+.IR mutex .
+The manner in which a mutex is released is dependent upon the mutex's type
+attribute. If there are threads blocked on the mutex object referenced by
+.IR mutex
+when
+\fIpthread_mutex_unlock\fR()
+is called, resulting in the mutex becoming available, the scheduling
+policy shall determine which thread shall acquire the mutex.
+.P
+(In the case of PTHREAD_MUTEX_RECURSIVE mutexes, the mutex shall become
+available when the count reaches zero and the calling thread no longer
+has any locks on this mutex.)
+.P
+If a signal is delivered to a thread waiting for a mutex, upon return
+from the signal handler the thread shall resume waiting for the mutex
+as if it was not interrupted.
+.P
+If
+.IR mutex
+is a robust mutex and the process containing the owning thread
+terminated while holding the mutex lock, a call to
+\fIpthread_mutex_lock\fR()
+shall return the error value
+.BR [EOWNERDEAD] .
+If
+.IR mutex
+is a robust mutex and the owning thread terminated while holding the
+mutex lock, a call to
+\fIpthread_mutex_lock\fR()
+may return the error value
+.BR [EOWNERDEAD] 
+even if the process in which the owning thread resides has not
+terminated. In these cases, the mutex is locked by the thread but the
+state it protects is marked as inconsistent. The application should
+ensure that the state is made consistent for reuse and when that is
+complete call
+\fIpthread_mutex_consistent\fR().
+If the application is unable to recover the state, it should unlock the
+mutex without a prior call to
+\fIpthread_mutex_consistent\fR(),
+after which the mutex is marked permanently unusable.
+.P
+If
+.IR mutex
+does not refer to an initialized mutex object, the behavior of
+\fIpthread_mutex_lock\fR(),
+\fIpthread_mutex_trylock\fR(),
+and
+\fIpthread_mutex_unlock\fR()
+is undefined.
+.SH "RETURN VALUE"
+If successful, the
+\fIpthread_mutex_lock\fR(),
+\fIpthread_mutex_trylock\fR(),
+and
+\fIpthread_mutex_unlock\fR()
+functions shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_mutex_lock\fR()
+and
+\fIpthread_mutex_trylock\fR()
+functions shall fail if:
+.TP
+.BR EAGAIN
+The mutex could not be acquired because the maximum number of recursive
+locks for
+.IR mutex
+has been exceeded.
+.TP
+.BR EINVAL
+The
+.IR mutex
+was created with the protocol attribute having the value
+PTHREAD_PRIO_PROTECT
+and the calling thread's priority is higher than the mutex's current
+priority ceiling.
+.TP
+.BR ENOTRECOVERABLE
+.br
+The state protected by the mutex is not recoverable.
+.TP
+.BR EOWNERDEAD
+.br
+The mutex is a robust mutex and the process containing the previous
+owning thread terminated while holding the mutex lock. The mutex lock
+shall be acquired by the calling thread and it is up to the new owner
+to make the state consistent.
+.P
+The
+\fIpthread_mutex_lock\fR()
+function shall fail if:
+.TP
+.BR EDEADLK
+The mutex type is PTHREAD_MUTEX_ERRORCHECK and the current
+thread already owns the mutex.
+.P
+The
+\fIpthread_mutex_trylock\fR()
+function shall fail if:
+.TP
+.BR EBUSY
+The
+.IR mutex
+could not be acquired because it was already locked.
+.P
+The
+\fIpthread_mutex_unlock\fR()
+function shall fail if:
+.TP
+.BR EPERM
+The mutex type is PTHREAD_MUTEX_ERRORCHECK or PTHREAD_MUTEX_RECURSIVE,
+or the mutex is a robust mutex, and the current thread does not own
+the mutex.
+.P
+The
+\fIpthread_mutex_lock\fR()
+and
+\fIpthread_mutex_trylock\fR()
+functions may fail if:
+.TP
+.BR EOWNERDEAD
+.br
+The mutex is a robust mutex and the previous owning thread terminated
+while holding the mutex lock. The mutex lock shall be acquired by the
+calling thread and it is up to the new owner to make the state consistent.
+.P
+The
+\fIpthread_mutex_lock\fR()
+function may fail if:
+.TP
+.BR EDEADLK
+A deadlock condition was detected.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Applications that have assumed that non-zero return values are errors
+will need updating for use with robust mutexes, since a valid return
+for a thread acquiring a mutex which is protecting a currently
+inconsistent state is
+.BR [EOWNERDEAD] .
+Applications that do not check the error returns, due to ruling out the
+possibility of such errors arising, should not use robust mutexes. If
+an application is supposed to work with normal and robust mutexes it
+should check all return values for error conditions and if necessary
+take appropriate action.
+.SH RATIONALE
+Mutex objects are intended to serve as a low-level primitive from which
+other thread synchronization functions can be built. As such, the
+implementation of mutexes should be as efficient as possible, and this
+has ramifications on the features available at the interface.
+.P
+The mutex functions and the particular default settings of the mutex
+attributes have been motivated by the desire to not preclude fast,
+inlined implementations of mutex locking and unlocking.
+.P
+Since most attributes only need to be checked when a thread is going to
+be blocked, the use of attributes does not slow the (common)
+mutex-locking case.
+.P
+Likewise, while being able to extract the thread ID of the owner of a
+mutex might be desirable, it would require storing the current thread
+ID when each mutex is locked, and this could incur unacceptable levels
+of overhead. Similar arguments apply to a
+.IR mutex_tryunlock
+operation.
+.P
+For further rationale on the extended mutex types, see the Rationale (Informative) volume of POSIX.1\(hy2008,
+.IR "Threads Extensions".
+.P
+If an implementation detects that the value specified by the
+.IR mutex
+argument does not refer to an initialized mutex object, it is
+recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIpthread_mutex_consistent\fR\^(\|)",
+.IR "\fIpthread_mutex_destroy\fR\^(\|)",
+.IR "\fIpthread_mutex_timedlock\fR\^(\|)",
+.IR "\fIpthread_mutexattr_getrobust\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.11" ", " "Memory Synchronization",
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

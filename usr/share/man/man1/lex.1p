@@ -1,0 +1,1374 @@
+'\" et
+.TH LEX "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+lex
+\(em generate programs for lexical tasks (\fBDEVELOPMENT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+lex \fB[\fR\(mit\fB] [\fR\(min|\(miv\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR lex
+utility shall generate C programs to be used in lexical processing of
+character input, and that can be used as an interface to
+.IR yacc .
+The C programs shall be generated from
+.IR lex
+source code and conform to the ISO\ C standard, without depending on any undefined,
+unspecified, or implementation-defined behavior, except in cases where
+the code is copied directly from the supplied source, or in cases that
+are documented by the implementation. Usually, the
+.IR lex
+utility shall write the program it generates to the file
+.BR lex.yy.c ;
+the state of this file is unspecified if
+.IR lex
+exits with a non-zero exit status. See the EXTENDED DESCRIPTION
+section for a complete description of the
+.IR lex
+input language.
+.SH OPTIONS
+The
+.IR lex
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except for Guideline 9.
+.P
+The following options shall be supported:
+.IP "\fB\(min\fP" 10
+Suppress the summary of statistics usually written with the
+.BR \(miv
+option. If no table sizes are specified in the
+.IR lex
+source code and the
+.BR \(miv
+option is not specified, then
+.BR \(min
+is implied.
+.IP "\fB\(mit\fP" 10
+Write the resulting program to standard output instead of
+.BR lex.yy.c .
+.IP "\fB\(miv\fP" 10
+Write a summary of
+.IR lex
+statistics to the standard output. (See the discussion of
+.IR lex
+table sizes in
+.IR "Definitions in lex".)
+If the
+.BR \(mit
+option is specified and
+.BR \(min
+is not specified, this report shall be written to standard error. If
+table sizes are specified in the
+.IR lex
+source code, and if the
+.BR \(min
+option is not specified, the
+.BR \(miv
+option may be enabled.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an input file. If more than one such
+.IR file
+is specified, all files shall be concatenated to produce a single
+.IR lex
+program. If no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' ,
+the standard input shall be used.
+.SH STDIN
+The standard input shall be used if no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' .
+See INPUT FILES.
+.SH "INPUT FILES"
+The input files shall be text files containing
+.IR lex
+source code, as described in the EXTENDED DESCRIPTION section.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR lex :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements within regular expressions. If
+this variable is not set to the POSIX locale, the results are
+unspecified.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files), and the behavior
+of character classes within regular expressions. If this variable is
+not set to the POSIX locale, the results are unspecified.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If the
+.BR \(mit
+option is specified, the text file of C source code output of
+.IR lex
+shall be written to standard output.
+.P
+If the
+.BR \(mit
+option is not specified:
+.IP " *" 4
+Implementation-defined informational, error, and warning messages
+concerning the contents of
+.IR lex
+source code input shall be written to either the standard output or
+standard error.
+.IP " *" 4
+If the
+.BR \(miv
+option is specified and the
+.BR \(min
+option is not specified,
+.IR lex
+statistics shall also be written to either the standard output or
+standard error, in an implementation-defined format. These
+statistics may also be generated if table sizes are specified with a
+.BR '%' 
+operator in the
+.IR Definitions
+section, as long as the
+.BR \(min
+option is not specified.
+.SH STDERR
+If the
+.BR \(mit
+option is specified, implementation-defined informational, error, and
+warning messages concerning the contents of
+.IR lex
+source code input shall be written to the standard error.
+.P
+If the
+.BR \(mit
+option is not specified:
+.IP " 1." 4
+Implementation-defined informational, error, and warning messages
+concerning the contents of
+.IR lex
+source code input shall be written to either the standard output or
+standard error.
+.IP " 2." 4
+If the
+.BR \(miv
+option is specified and the
+.BR \(min
+option is not specified,
+.IR lex
+statistics shall also be written to either the standard output or
+standard error, in an implementation-defined format. These
+statistics may also be generated if table sizes are specified with a
+.BR '%' 
+operator in the
+.IR Definitions
+section, as long as the
+.BR \(min
+option is not specified.
+.SH "OUTPUT FILES"
+A text file containing C source code shall be written to
+.BR lex.yy.c ,
+or to the standard output if the
+.BR \(mit
+option is present.
+.SH "EXTENDED DESCRIPTION"
+Each input file shall contain
+.IR lex
+source code, which is a table of regular expressions with corresponding
+actions in the form of C program fragments.
+.P
+When
+.BR lex.yy.c
+is compiled and linked with the
+.IR lex
+library (using the
+.BR "\(mil\ l"
+operand with
+.IR c99 ),
+the resulting program shall read character input from the standard
+input and shall partition it into strings that match the given
+expressions.
+.br
+.P
+When an expression is matched, these actions shall occur:
+.IP " *" 4
+The input string that was matched shall be left in
+.IR yytext
+as a null-terminated string;
+.IR yytext
+shall either be an external character array or a pointer to a
+character string. As explained in
+.IR "Definitions in lex",
+the type can be explicitly selected using the
+.BR %array
+or
+.BR %pointer
+declarations, but the default is implementation-defined.
+.IP " *" 4
+The external
+.BR int
+.IR yyleng
+shall be set to the length of the matching string.
+.IP " *" 4
+The expression's corresponding program fragment, or action, shall be
+executed.
+.P
+During pattern matching,
+.IR lex
+shall search the set of patterns for the single longest possible
+match. Among rules that match the same number of characters, the rule
+given first shall be chosen.
+.P
+The general format of
+.IR lex
+source shall be:
+.sp
+.RS
+.IR Definitions
+.BR %%
+.IR Rules
+.BR %%
+.IR User Subroutines
+.RE
+.P
+The first
+.BR \(dq%%\(dq 
+is required to mark the beginning of the rules (regular expressions and
+actions); the second
+.BR \(dq%%\(dq 
+is required only if user subroutines follow.
+.P
+Any line in the
+.IR Definitions
+section beginning with a
+<blank>
+shall be assumed to be a C program fragment and shall be copied to the
+external definition area of the
+.BR lex.yy.c
+file. Similarly, anything in the
+.IR Definitions
+section included between delimiter lines containing only
+.BR \(dq%{\(dq 
+and
+.BR \(dq%}\(dq 
+shall also be copied unchanged to the external definition area of the
+.BR lex.yy.c
+file.
+.P
+Any such input (beginning with a
+<blank>
+or within
+.BR \(dq%{\(dq 
+and
+.BR \(dq%}\(dq 
+delimiter lines) appearing at the beginning of the
+.IR Rules
+section before any rules are specified shall be written to
+.BR lex.yy.c
+after the declarations of variables for the
+\fIyylex\fR()
+function and before the first line of code in
+\fIyylex\fR().
+Thus, user variables local to
+\fIyylex\fR()
+can be declared here, as well as application code to execute upon entry
+to
+\fIyylex\fR().
+.P
+The action taken by
+.IR lex
+when encountering any input beginning with a
+<blank>
+or within
+.BR \(dq%{\(dq 
+and
+.BR \(dq%}\(dq 
+delimiter lines appearing in the
+.IR Rules
+section but coming after one or more rules is undefined. The presence
+of such input may result in an erroneous definition of the
+\fIyylex\fR()
+function.
+.P
+C-language code in the input shall not contain C-language trigraphs.
+The C-language code within
+.BR \(dq%{\(dq 
+and
+.BR \(dq%}\(dq 
+delimiter lines shall not contain any lines consisting only of
+.BR \(dq%}\(dq ,
+or only of
+.BR \(dq%%\(dq .
+.SS "Definitions in lex"
+.P
+.IR Definitions
+appear before the first
+.BR \(dq%%\(dq 
+delimiter. Any line in this section not contained between
+.BR \(dq%{\(dq 
+and
+.BR \(dq%}\(dq 
+lines and not beginning with a
+<blank>
+shall be assumed to define a
+.IR lex
+substitution string. The format of these lines shall be:
+.sp
+.RS 4
+.nf
+\fB
+\fIname substitute\fR
+.fi \fR
+.P
+.RE
+.P
+If a
+.IR name
+does not meet the requirements for identifiers in the ISO\ C standard, the result
+is undefined. The string
+.IR substitute
+shall replace the string {\c
+.IR name }
+when it is used in a rule. The
+.IR name
+string shall be recognized in this context only when the braces are
+provided and when it does not appear within a bracket expression or
+within double-quotes.
+.P
+In the
+.IR Definitions
+section, any line beginning with a
+<percent-sign>
+(\c
+.BR '%' )
+character and followed by an alphanumeric word beginning with either
+.BR 's' 
+or
+.BR 'S' 
+shall define a set of start conditions. Any line beginning with a
+.BR '%' 
+followed by a word beginning with either
+.BR 'x' 
+or
+.BR 'X' 
+shall define a set of exclusive start conditions. When the generated
+scanner is in a
+.BR %s
+state, patterns with no state specified shall be also active; in a
+.BR %x
+state, such patterns shall not be active. The rest of the line, after
+the first word, shall be considered to be one or more
+<blank>-separated
+names of start conditions. Start condition names shall be constructed
+in the same way as definition names. Start conditions can be used to
+restrict the matching of regular expressions to one or more states as
+described in
+.IR "Regular Expressions in lex".
+.P
+Implementations shall accept either of the following two
+mutually-exclusive declarations in the
+.IR Definitions
+section:
+.IP "\fB%array\fR" 10
+Declare the type of
+.IR yytext
+to be a null-terminated character array.
+.IP "\fB%pointer\fR" 10
+Declare the type of
+.IR yytext
+to be a pointer to a null-terminated character string.
+.P
+The default type of
+.IR yytext
+is implementation-defined. If an application refers to
+.IR yytext
+outside of the scanner source file (that is, via an
+.BR extern ),
+the application shall include the appropriate
+.BR %array
+or
+.BR %pointer
+declaration in the scanner source file.
+.P
+Implementations shall accept declarations in the
+.IR Definitions
+section for setting certain internal table sizes. The declarations are
+shown in the following table.
+.sp
+.ce 1
+\fBTable: Table Size Declarations in \fIlex\fP\fR
+.TS
+center tab(!) box;
+cB | cB | cB
+l | l | n.
+Declaration!Description!Minimum Value
+_
+%\fBp \fIn\fR!Number of positions!2\|500
+%\fBn \fIn\fR!Number of states!500
+%\fBa \fIn\fR!Number of transitions!2\|000
+%\fBe \fIn\fR!Number of parse tree nodes!1\|000
+%\fBk \fIn\fR!Number of packed character classes!1\|000
+%\fBo \fIn\fR!Size of the output array!3\|000
+.TE
+.P
+In the table,
+.IR n
+represents a positive decimal integer, preceded by one or more
+<blank>
+characters. The exact meaning of these table size numbers is
+implementation-defined. The implementation shall document how these
+numbers affect the
+.IR lex
+utility and how they are related to any output that may be generated by
+the implementation should limitations be encountered during the
+execution of
+.IR lex .
+It shall be possible to determine from this output which of the table
+size values needs to be modified to permit
+.IR lex
+to successfully generate tables for the input language. The values in
+the column Minimum Value represent the lowest values conforming
+implementations shall provide.
+.SS "Rules in lex"
+.P
+The rules in
+.IR lex
+source files are a table in which the left column contains regular
+expressions and the right column contains actions (C program fragments)
+to be executed when the expressions are recognized.
+.sp
+.RS 4
+.nf
+\fB
+\fIERE action
+ERE action\fP
+\&...
+.fi \fR
+.P
+.RE
+.P
+The extended regular expression (ERE) portion of a row shall be
+separated from
+.IR action
+by one or more
+<blank>
+characters. A regular expression containing
+<blank>
+characters shall be recognized under one of the following conditions:
+.IP " *" 4
+The entire expression appears within double-quotes.
+.IP " *" 4
+The
+<blank>
+characters appear within double-quotes or square brackets.
+.IP " *" 4
+Each
+<blank>
+is preceded by a
+<backslash>
+character.
+.SS "User Subroutines in lex"
+.P
+Anything in the user subroutines section shall be copied to
+.BR lex.yy.c
+following
+\fIyylex\fR().
+.SS "Regular Expressions in lex"
+.P
+The
+.IR lex
+utility shall support the set of extended regular expressions (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 9.4" ", " "Extended Regular Expressions"),
+with the following additions and exceptions to the syntax:
+.IP "\fR\&\(dq...\&\(dq\fR" 10
+Any string enclosed in double-quotes shall represent the characters
+within the double-quotes as themselves, except that
+<backslash>-escapes
+(which appear in the following table) shall be recognized. Any
+<backslash>-escape
+sequence shall be terminated by the closing quote. For example,
+.BR \(dq\e01\(dq \c
+.BR \(dq1\(dq 
+represents a single string: the octal value 1 followed by the
+character
+.BR '1' .
+.IP "<\fIstate\fR>\fIr\fR,\ <\fIstate1,state2,\fR.\|.\|.>\fIr\fR" 10
+.br
+The regular expression
+.IR r
+shall be matched only when the program is in one of the start
+conditions indicated by
+.IR state ,
+.IR state1 ,
+and so on; see
+.IR "Actions in lex".
+(As an exception to the typographical conventions of the rest of this volume of POSIX.1\(hy2008,
+in this case <\fIstate\fP> does not represent a metavariable, but the
+literal angle-bracket characters surrounding a symbol.) The start
+condition shall be recognized as such only at the beginning of a
+regular expression.
+.IP "\fIr\fP/\fIx\fP" 10
+The regular expression
+.IR r
+shall be matched only if it is followed by an occurrence of regular
+expression
+.IR x
+(\c
+.IR x
+is the instance of trailing context, further defined below). The token
+returned in
+.IR yytext
+shall only match
+.IR r .
+If the trailing portion of
+.IR r
+matches the beginning of
+.IR x ,
+the result is unspecified. The
+.IR r
+expression cannot include further trailing context or the
+.BR '$' 
+(match-end-of-line) operator;
+.IR x
+cannot include the
+.BR '^' 
+(match-beginning-of-line) operator, nor trailing context, nor the
+.BR '$' 
+operator. That is, only one occurrence of trailing context is allowed
+in a
+.IR lex
+regular expression, and the
+.BR '^' 
+operator only can be used at the beginning of such an expression.
+.IP "{\fIname\fR}" 10
+When
+.IR name
+is one of the substitution symbols from the
+.IR Definitions
+section, the string, including the enclosing braces, shall be replaced
+by the
+.IR substitute
+value. The
+.IR substitute
+value shall be treated in the extended regular expression as if it were
+enclosed in parentheses. No substitution shall occur if {\c
+.IR name }
+occurs within a bracket expression or within double-quotes.
+.P
+Within an ERE, a
+<backslash>
+character shall be considered to begin an escape sequence as specified
+in the table in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 5" ", " "File Format Notation"
+(\c
+.BR '\e\e' ,
+.BR '\ea' ,
+.BR '\eb' ,
+.BR '\ef' ,
+.BR '\en' ,
+.BR '\er' ,
+.BR '\et' ,
+.BR '\ev' ).
+In addition, the escape sequences in the following table shall be
+recognized.
+.P
+A literal
+<newline>
+cannot occur within an ERE; the escape sequence
+.BR '\en' 
+can be used to represent a
+<newline>.
+A
+<newline>
+shall not be matched by a period operator.
+.br
+.sp
+.ce 1
+\fBTable: Escape Sequences in \fIlex\fP\fR
+.ad l
+.TS
+center tab(@) box;
+cB | cB | cB
+cB | cB | cB
+lf5 | lw(2.4i) | lw(2.4i).
+Escape
+Sequence@Description@Meaning
+_
+\e\fIdigits\fP@T{
+A
+<backslash>
+character followed by the longest sequence of one, two, or three
+octal-digit characters (01234567). If all of the digits are 0 (that is,
+representation of the NUL character), the behavior is undefined.
+T}@T{
+The character whose encoding is represented by the one, two, or
+three-digit octal integer. Multi-byte characters require
+multiple, concatenated escape sequences of this type, including the
+leading
+<backslash>
+for each byte.
+T}
+_
+\ex\fIdigits\fP@T{
+A
+<backslash>
+character followed by the longest sequence of hexadecimal-digit
+characters (01234567abcdefABCDEF). If all of the digits are 0 (that is,
+representation of the NUL character), the behavior is undefined.
+T}@T{
+The character whose encoding is represented by the hexadecimal
+integer.
+T}
+_
+\ec@T{
+A
+<backslash>
+character followed by any character not described in this
+table or in the table in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 5" ", " "File Format Notation"
+(\c
+.BR '\e\e' ,
+.BR '\ea' ,
+.BR '\eb' ,
+.BR '\ef' ,
+.BR '\en' ,
+.BR '\er' ,
+.BR '\et' ,
+.BR '\ev' ).
+T}@T{
+The character
+.BR 'c' ,
+unchanged.
+T}
+.TE
+.ad b
+.TP 10
+.BR Note:
+If a
+.BR '\ex' 
+sequence needs to be immediately followed by a hexadecimal digit
+character, a sequence such as
+.BR \(dq\ex1\(dq \c
+.BR \(dq1\(dq 
+can be used, which represents a character containing the value 1,
+followed by the character
+.BR '1' .
+.P
+.P
+The order of precedence given to extended regular expressions for
+.IR lex
+differs from that specified in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 9.4" ", " "Extended Regular Expressions".
+The order of precedence for
+.IR lex
+shall be as shown in the following table, from high to low.
+.TP 10
+.BR Note:
+The escaped characters entry is not meant to imply that these are
+operators, but they are included in the table to show their
+relationships to the true operators. The start condition, trailing
+context, and anchoring notations have been omitted from the table
+because of the placement restrictions described in this section; they
+can only appear at the beginning or ending of an ERE.
+.P
+.br
+.sp
+.ce 1
+\fBTable: ERE Precedence in \fIlex\fP\fR
+.TS
+center tab(@) box;
+cB | cB
+lf2 | lf5.
+Extended Regular Expression@Precedence
+_
+collation-related bracket symbols@[= =]  [: :]  [. .]
+escaped characters@\e<\fIspecial character\fP>
+bracket expression@[ ]
+quoting@"..."
+grouping@( )
+definition@{\fIname\fP}
+single-character RE duplication@* + ?
+concatenation
+interval expression@{m,n}
+alternation@|
+.TE
+.P
+The ERE anchoring operators
+.BR '^' 
+and
+.BR '$' 
+do not appear in the table. With
+.IR lex
+regular expressions, these operators are restricted in their use: the
+.BR '^' 
+operator can only be used at the beginning of an entire regular
+expression, and the
+.BR '$' 
+operator only at the end. The operators apply to the entire regular
+expression. Thus, for example, the pattern
+.BR \(dq(^abc)|(def$)\(dq 
+is undefined; it can instead be written as two separate rules, one with
+the regular expression
+.BR \(dq^abc\(dq 
+and one with
+.BR \(dqdef$\(dq ,
+which share a common action via the special
+.BR '|' 
+action (see below). If the pattern were written
+.BR \(dq^abc|def$\(dq ,
+it would match either
+.BR \(dqabc\(dq 
+or
+.BR \(dqdef\(dq 
+on a line by itself.
+.P
+Unlike the general ERE rules, embedded anchoring is not allowed by most
+historical
+.IR lex
+implementations. An example of embedded anchoring would be for
+patterns such as
+.BR \(dq(^|\ )foo(\ |$)\(dq 
+to match
+.BR \(dqfoo\(dq 
+when it exists as a complete word. This functionality can be obtained
+using existing
+.IR lex
+features:
+.sp
+.RS 4
+.nf
+\fB
+^foo/[ \en]      |
+" foo"/[ \en]    /* Found foo as a separate word. */
+.fi \fR
+.P
+.RE
+.P
+Note also that
+.BR '$' 
+is a form of trailing context (it is equivalent to
+.BR \(dq/\en\(dq )
+and as such cannot be used with regular expressions containing another
+instance of the operator (see the preceding discussion of trailing
+context).
+.P
+The additional regular expressions trailing-context operator
+.BR '/' 
+can be used as an ordinary character if presented within double-quotes,
+.BR \(dq/\(dq ;
+preceded by a
+<backslash>,
+.BR \(dq\e/\(dq ;
+or within a bracket expression,
+.BR \(dq[/]\(dq .
+The start-condition
+.BR '<' 
+and
+.BR '>' 
+operators shall be special only in a start condition at the beginning
+of a regular expression; elsewhere in the regular expression they shall
+be treated as ordinary characters.
+.SS "Actions in lex"
+.P
+The action to be taken when an ERE is matched can be a C program
+fragment or the special actions described below; the program fragment
+can contain one or more C statements, and can also include special
+actions. The empty C statement
+.BR ';' 
+shall be a valid action; any string in the
+.BR lex.yy.c
+input that matches the pattern portion of such a rule is effectively
+ignored or skipped. However, the absence of an action shall not be
+valid, and the action
+.IR lex
+takes in such a condition is undefined.
+.P
+The specification for an action, including C statements and special
+actions, can extend across several lines if enclosed in braces:
+.sp
+.RS 4
+.nf
+\fB
+\fIERE\fP <\fIone or more blanks\fR> { \fIprogram statement
+                           program statement\fP }
+.fi \fR
+.P
+.RE
+.P
+The program statements shall not contain unbalanced curly brace
+preprocessing tokens.
+.P
+The default action when a string in the input to a
+.BR lex.yy.c
+program is not matched by any expression shall be to copy the string to
+the output. Because the default behavior of a program generated by
+.IR lex
+is to read the input and copy it to the output, a minimal
+.IR lex
+source program that has just
+.BR \(dq%%\(dq 
+shall generate a C program that simply copies the input to the output
+unchanged.
+.P
+Four special actions shall be available:
+.sp
+.RS 4
+.nf
+\fB
+|   ECHO;   REJECT;   BEGIN
+.fi \fR
+.P
+.RE
+.IP "\fR|\fR" 10
+The action
+.BR '|' 
+means that the action for the next rule is the action for this rule.
+Unlike the other three actions,
+.BR '|' 
+cannot be enclosed in braces or be
+<semicolon>-terminated;
+the application shall ensure that it is specified alone, with no other
+actions.
+.IP "\fBECHO;\fR" 10
+Write the contents of the string
+.IR yytext
+on the output.
+.IP "\fBREJECT;\fR" 10
+Usually only a single expression is matched by a given string in the
+input.
+.BR REJECT
+means ``continue to the next expression that matches the current
+input'', and shall cause whatever rule was the second choice after the
+current rule to be executed for the same input. Thus, multiple rules
+can be matched and executed for one input string or overlapping input
+strings. For example, given the regular expressions
+.BR \(dqxyz\(dq 
+and
+.BR \(dqxy\(dq 
+and the input
+.BR \(dqxyz\(dq ,
+usually only the regular expression
+.BR \(dqxyz\(dq 
+would match. The next attempted match would start after
+.BR z.
+If the last action in the
+.BR \(dqxyz\(dq 
+rule is
+.BR REJECT ,
+both this rule and the
+.BR \(dqxy\(dq 
+rule would be executed. The
+.BR REJECT
+action may be implemented in such a fashion that flow of control does
+not continue after it, as if it were equivalent to a
+.BR goto
+to another part of
+\fIyylex\fR().
+The use of
+.BR REJECT
+may result in somewhat larger and slower scanners.
+.IP "\fBBEGIN\fR" 10
+The action:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+BEGIN \fInewstate\fP;
+.fi \fR
+.P
+.RE
+.P
+switches the state (start condition) to
+.IR newstate .
+If the string
+.IR newstate
+has not been declared previously as a start condition in the
+.IR Definitions
+section, the results are unspecified. The initial state is indicated
+by the digit
+.BR '0' 
+or the token
+.BR INITIAL .
+.RE
+.P
+The functions or macros described below are accessible to user code
+included in the
+.IR lex
+input. It is unspecified whether they appear in the C code output of
+.IR lex ,
+or are accessible only through the
+.BR "\(mil\ l"
+operand to
+.IR c99
+(the
+.IR lex
+library).
+.IP "\fBint\ \fIyylex\fR(\fBvoid\fR)" 6
+.br
+Performs lexical analysis on the input; this is the primary function
+generated by the
+.IR lex
+utility. The function shall return zero when the end of input is
+reached; otherwise, it shall return non-zero values (tokens) determined
+by the actions that are selected.
+.IP "\fBint\ \fIyymore\fR(\fBvoid\fR)" 6
+.br
+When called, indicates that when the next input string is recognized,
+it is to be appended to the current value of
+.IR yytext
+rather than replacing it; the value in
+.IR yyleng
+shall be adjusted accordingly.
+.IP "\fBint\ \fIyyless\fR(\fBint\ \fIn\fR)" 6
+.br
+Retains
+.IR n
+initial characters in
+.IR yytext ,
+NUL-terminated, and treats the remaining characters as if they had not
+been read; the value in
+.IR yyleng
+shall be adjusted accordingly.
+.IP "\fBint\ \fIinput\fR(\fBvoid\fR)" 6
+.br
+Returns the next character from the input, or zero on end-of-file. It
+shall obtain input from the stream pointer
+.IR yyin ,
+although possibly via an intermediate buffer. Thus, once scanning has
+begun, the effect of altering the value of
+.IR yyin
+is undefined. The character read shall be removed from the input
+stream of the scanner without any processing by the scanner.
+.IP "\fBint\ \fIunput\fR(\fBint\ \fIc\fR)" 6
+.br
+Returns the character
+.BR 'c' 
+to the input;
+.IR yytext
+and
+.IR yyleng
+are undefined until the next expression is matched. The result of
+using
+\fIunput\fR()
+for more characters than have been input is unspecified.
+.P
+The following functions shall appear only in the
+.IR lex
+library accessible through the
+.BR "\(mil\ l"
+operand; they can therefore be redefined by a conforming application:
+.IP "\fBint\ \fIyywrap\fR(\fBvoid\fR)" 6
+.br
+Called by
+\fIyylex\fR()
+at end-of-file; the default
+\fIyywrap\fR()
+shall always return 1. If the application requires
+\fIyylex\fR()
+to continue processing with another source of input, then the
+application can include a function
+\fIyywrap\fR(),
+which associates another file with the external variable
+.BR "FILE *"
+.IR yyin
+and shall return a value of zero.
+.IP "\fBint\ \fImain\fR(\fBint\ \fIargc\fR, \fBchar *\fIargv\fR[\|])" 6
+.br
+Calls
+\fIyylex\fR()
+to perform lexical analysis, then exits. The user code can contain
+\fImain\fR()
+to perform application-specific operations, calling
+\fIyylex\fR()
+as applicable.
+.P
+Except for
+\fIinput\fR(),
+\fIunput\fR(),
+and
+\fImain\fR(),
+all external and static names generated by
+.IR lex
+shall begin with the prefix
+.BR yy
+or
+.BR YY .
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Conforming applications are warned that in the
+.IR Rules
+section, an ERE without an action is not acceptable, but need not be
+detected as erroneous by
+.IR lex .
+This may result in compilation or runtime errors.
+.P
+The purpose of
+\fIinput\fR()
+is to take characters off the input stream and discard them as far as
+the lexical analysis is concerned. A common use is to discard the body
+of a comment once the beginning of a comment is recognized.
+.P
+The
+.IR lex
+utility is not fully internationalized in its treatment of regular
+expressions in the
+.IR lex
+source code or generated lexical analyzer. It would seem desirable to
+have the lexical analyzer interpret the regular expressions given in
+the
+.IR lex
+source according to the environment specified when the lexical analyzer
+is executed, but this is not possible with the current
+.IR lex
+technology. Furthermore, the very nature of the lexical analyzers
+produced by
+.IR lex
+must be closely tied to the lexical requirements of the input language
+being described, which is frequently locale-specific anyway. (For
+example, writing an analyzer that is used for French text is not
+automatically useful for processing other languages.)
+.SH EXAMPLES
+The following is an example of a
+.IR lex
+program that implements a rudimentary scanner for a Pascal-like
+syntax:
+.sp
+.RS 4
+.nf
+\fB
+%{
+/* Need this for the call to atof() below. */
+#include <math.h>
+/* Need this for printf(), fopen(), and stdin below. */
+#include <stdio.h>
+%}
+.P
+DIGIT    [0\(mi9]
+ID       [a\(miz][a\(miz0\(mi9]*
+.P
+%%
+.P
+{DIGIT}+ {
+    printf("An integer: %s (%d)\en", yytext,
+        atoi(yytext));
+    }
+.P
+{DIGIT}+"."{DIGIT}*        {
+    printf("A float: %s (%g)\en", yytext,
+        atof(yytext));
+    }
+.P
+if|then|begin|end|procedure|function        {
+    printf("A keyword: %s\en", yytext);
+    }
+.P
+{ID}    printf("An identifier: %s\en", yytext);
+.P
+"+"|"\(mi"|"*"|"/"        printf("An operator: %s\en", yytext);
+.P
+"{"[^}\en]*"}"    /* Eat up one-line comments. */
+.P
+[ \et\en]+        /* Eat up white space. */
+.P
+\&.  printf("Unrecognized character: %s\en", yytext);
+.P
+%%
+.P
+int main(int argc, char *argv[])
+{
+    ++argv, \(mi\|\(miargc;  /* Skip over program name. */
+    if (argc > 0)
+        yyin = fopen(argv[0], "r");
+    else
+        yyin = stdin;
+.P
+    yylex();
+}
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+Even though the
+.BR \(mic
+option and references to the C language are retained in this
+description,
+.IR lex
+may be generalized to other languages, as was done at one time for EFL,
+the Extended FORTRAN Language. Since the
+.IR lex
+input specification is essentially language-independent, versions of
+this utility could be written to produce Ada, Modula-2, or Pascal code,
+and there are known historical implementations that do so.
+.P
+The current description of
+.IR lex
+bypasses the issue of dealing with internationalized EREs in the
+.IR lex
+source code or generated lexical analyzer. If it follows the model used
+by
+.IR awk
+(the source code is assumed to be presented in the POSIX locale, but
+input and output are in the locale specified by the environment
+variables), then the tables in the lexical analyzer produced by
+.IR lex
+would interpret EREs specified in the
+.IR lex
+source in terms of the environment variables specified when
+.IR lex
+was executed. The desired effect would be to have the lexical analyzer
+interpret the EREs given in the
+.IR lex
+source according to the environment specified when the lexical analyzer
+is executed, but this is not possible with the current
+.IR lex
+technology.
+.P
+The description of octal and hexadecimal-digit escape sequences agrees
+with the ISO\ C standard use of escape sequences.
+.P
+Earlier versions of this standard allowed for implementations with
+bytes other than eight bits, but this has been modified in this
+version.
+.P
+There is no detailed output format specification. The observed behavior
+of
+.IR lex
+under four different historical implementations was that none of these
+implementations consistently reported the line numbers for error and
+warning messages. Furthermore, there was a desire that
+.IR lex
+be allowed to output additional diagnostic messages. Leaving message
+formats unspecified avoids these formatting questions and problems with
+internationalization.
+.P
+Although the
+.BR %x
+specifier for
+.IR exclusive
+start conditions is not historical practice, it is believed to be a
+minor change to historical implementations and greatly enhances the
+usability of
+.IR lex
+programs since it permits an application to obtain the expected
+functionality with fewer statements.
+.P
+The
+.BR %array
+and
+.BR %pointer
+declarations were added as a compromise between historical systems.
+The System V-based
+.IR lex
+copies the matched text to a
+.IR yytext
+array. The
+.IR flex
+program, supported in BSD and GNU systems, uses a pointer. In the
+latter case, significant performance improvements are available for
+some scanners. Most historical programs should require no change in
+porting from one system to another because the string being referenced
+is null-terminated in both cases. (The method used by
+.IR flex
+in its case is to null-terminate the token in place by remembering the
+character that used to come right after the token and replacing it
+before continuing on to the next scan.) Multi-file programs with
+external references to
+.IR yytext
+outside the scanner source file should continue to operate on their
+historical systems, but would require one of the new declarations to be
+considered strictly portable.
+.P
+The description of EREs avoids unnecessary duplication of ERE details
+because their meanings within a
+.IR lex
+ERE are the same as that for the ERE in this volume of POSIX.1\(hy2008.
+.P
+The reason for the undefined condition associated with text beginning
+with a
+<blank>
+or within
+.BR \(dq%{\(dq 
+and
+.BR \(dq%}\(dq 
+delimiter lines appearing in the
+.IR Rules
+section is historical practice. Both the BSD and System V
+.IR lex
+copy the indented (or enclosed) input in the
+.IR Rules
+section (except at the beginning) to unreachable areas of the
+\fIyylex\fR()
+function (the code is written directly after a
+.IR break
+statement). In some cases, the System V
+.IR lex
+generates an error message or a syntax error, depending on the form of
+indented input.
+.P
+The intention in breaking the list of functions into those that may
+appear in
+.BR lex.yy.c
+\fIversus\fR those that only appear in
+.BR libl.a
+is that only those functions in
+.BR libl.a
+can be reliably redefined by a conforming application.
+.P
+The descriptions of standard output and standard error are somewhat
+complicated because historical
+.IR lex
+implementations chose to issue diagnostic messages to standard output
+(unless
+.BR \(mit
+was given). POSIX.1\(hy2008 allows this behavior, but leaves an opening
+for the more expected behavior of using standard error for diagnostics.
+Also, the System V behavior of writing the statistics when any table
+sizes are given is allowed, while BSD-derived systems can avoid it. The
+programmer can always precisely obtain the desired results by using
+either the
+.BR \(mit
+or
+.BR \(min
+options.
+.P
+The OPERANDS section does not mention the use of
+.BR \(mi
+as a synonym for standard input; not all historical implementations
+support such usage for any of the
+.IR file
+operands.
+.P
+A description of the
+.IR "translation table"
+was deleted from early proposals because of its relatively low usage in
+historical applications.
+.P
+The change to the definition of the
+\fIinput\fR()
+function that allows buffering of input presents the opportunity for
+major performance gains in some applications.
+.P
+The following examples clarify the differences between
+.IR lex
+regular expressions and regular expressions appearing elsewhere in
+\&this volume of POSIX.1\(hy2008. For regular expressions of the form
+.BR \(dqr/x\(dq ,
+the string matching
+.IR r
+is always returned; confusion may arise when the beginning of
+.IR x
+matches the trailing portion of
+.IR r .
+For example, given the regular expression
+.BR \(dqa*b/cc\(dq 
+and the input
+.BR \(dqaaabcc\(dq ,
+.IR yytext
+would contain the string
+.BR \(dqaaab\(dq 
+on this match. But given the regular expression
+.BR \(dqx*/xy\(dq 
+and the input
+.BR \(dqxxxy\(dq ,
+the token
+.BR xxx ,
+not
+.BR xx ,
+is returned by some implementations because
+.BR xxx
+matches
+.BR \(dqx*\(dq .
+.P
+In the rule
+.BR \(dqab*/bc\(dq ,
+the
+.BR \(dqb*\(dq 
+at the end of
+.IR r
+extends
+.IR r 's
+match into the beginning of the trailing context, so the result is
+unspecified. If this rule were
+.BR \(dqab/bc\(dq ,
+however, the rule matches the text
+.BR \(dqab\(dq 
+when it is followed by the text
+.BR \(dqbc\(dq .
+In this latter case, the matching of
+.IR r
+cannot extend into the beginning of
+.IR x ,
+so the result is specified.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIc99\fR\^",
+.IR "\fIed\fR\^",
+.IR "\fIyacc\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 5" ", " "File Format Notation",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Chapter 9" ", " "Regular Expressions",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

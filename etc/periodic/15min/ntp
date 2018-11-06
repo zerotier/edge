@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec ntpd -n -q -d -p ntp.zerotier.com >/dev/shm/ntp.out 2>&1

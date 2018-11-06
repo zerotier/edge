@@ -1,0 +1,103 @@
+'\" et
+.TH SHIFT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+shift
+\(em shift positional parameters
+.SH SYNOPSIS
+.LP
+.nf
+shift \fB[\fIn\fB]\fR
+.fi
+.SH DESCRIPTION
+The positional parameters shall be shifted. Positional parameter 1
+shall be assigned the value of parameter (1+\fIn\fP), parameter 2 shall
+be assigned the value of parameter (2+\fIn\fP), and so on. The
+parameters represented by the numbers
+.BR \(dq$#\(dq 
+down to
+.BR \(dq$#\(min+1\(dq 
+shall be unset, and the parameter
+.BR '#' 
+is updated to reflect the new number of positional parameters.
+.P
+The value
+.IR n
+shall be an unsigned decimal integer less than or equal to the value of
+the special parameter
+.BR '#' .
+If
+.IR n
+is not given, it shall be assumed to be 1. If
+.IR n
+is 0, the positional and special parameters are not changed.
+.SH OPTIONS
+None.
+.SH OPERANDS
+See the DESCRIPTION.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+None.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+If the
+.IR n
+operand is invalid or is greater than
+.BR \(dq$#\(dq ,
+this may be considered a syntax error and a non-interactive shell may
+exit; if the shell does not exit in this case, a non-zero exit status
+shall be returned. Otherwise, zero shall be returned.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+.LP
+.nf
+\fB$\fR set a b c d e
+\fB$\fR shift 2
+\fB$\fR echo $*
+\fBc d e\fR
+.fi
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.14" ", " "Special Built-In Utilities"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

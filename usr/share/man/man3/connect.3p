@@ -1,0 +1,301 @@
+'\" et
+.TH CONNECT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+connect
+\(em connect a socket
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+.P
+int connect(int \fIsocket\fP, const struct sockaddr *\fIaddress\fP,
+    socklen_t \fIaddress_len\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIconnect\fR()
+function shall attempt to make a connection on a connection-mode
+socket or to set or reset the peer address of a connectionless-mode
+socket. The function takes the following arguments:
+.IP "\fIsocket\fR" 12
+Specifies the file descriptor associated with the socket.
+.IP "\fIaddress\fR" 12
+Points to a
+.BR sockaddr
+structure containing the peer address. The length and format of the
+address depend on the address family of the socket.
+.IP "\fIaddress_len\fR" 12
+Specifies the length of the
+.BR sockaddr
+structure pointed to by the
+.IR address
+argument.
+.P
+If the socket has not already been bound to a local address,
+\fIconnect\fR()
+shall bind it to an address which, unless the socket's address family
+is AF_UNIX, is an unused local address.
+.P
+If the initiating socket is not connection-mode, then
+\fIconnect\fR()
+shall set the socket's peer address, and no connection is made. For
+SOCK_DGRAM sockets, the peer address identifies where all datagrams are
+sent on subsequent
+\fIsend\fR()
+functions, and limits the remote sender for subsequent
+\fIrecv\fR()
+functions. If the
+.IR sa_family
+member of
+.IR address
+is AF_UNSPEC, the socket's peer address shall be reset. Note that despite
+no connection being made, the term ``connected'' is used to describe a
+connectionless-mode socket for which a peer address has been set.
+.P
+If the initiating socket is connection-mode, then
+\fIconnect\fR()
+shall attempt to establish a connection to the address specified by the
+.IR address
+argument. If the connection cannot be established immediately and
+O_NONBLOCK is not set for the file descriptor for the socket,
+\fIconnect\fR()
+shall block for up to an unspecified timeout interval until the
+connection is established. If the timeout interval expires before the
+connection is established,
+\fIconnect\fR()
+shall fail and the connection attempt shall be aborted. If
+\fIconnect\fR()
+is interrupted by a signal that is caught while blocked waiting to
+establish a connection,
+\fIconnect\fR()
+shall fail and set
+.IR errno
+to
+.BR [EINTR] ,
+but the connection request shall not be aborted, and the connection
+shall be established asynchronously.
+.P
+If the connection cannot be established immediately and O_NONBLOCK is
+set for the file descriptor for the socket,
+\fIconnect\fR()
+shall fail and set
+.IR errno
+to
+.BR [EINPROGRESS] ,
+but the connection request shall not be aborted, and the connection
+shall be established asynchronously. Subsequent calls to
+\fIconnect\fR()
+for the same socket, before the connection is established, shall fail
+and set
+.IR errno
+to
+.BR [EALREADY] .
+.P
+When the connection has been established asynchronously,
+\fIpselect\fR(),
+\fIselect\fR(),
+and
+\fIpoll\fR()
+shall indicate that the file descriptor for the socket is ready for
+writing.
+.P
+The socket in use may require the process to have appropriate
+privileges to use the
+\fIconnect\fR()
+function.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIconnect\fR()
+shall return 0; otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIconnect\fR()
+function shall fail if:
+.TP
+.BR EADDRNOTAVAIL
+.br
+The specified address is not available from the local machine.
+.TP
+.BR EAFNOSUPPORT
+.br
+The specified address is not a valid address for the address family of
+the specified socket.
+.TP
+.BR EALREADY
+A connection request is already in progress for the specified socket.
+.TP
+.BR EBADF
+The
+.IR socket
+argument is not a valid file descriptor.
+.TP
+.BR ECONNREFUSED
+.br
+The target address was not listening for connections or refused the
+connection request.
+.TP
+.BR EINPROGRESS
+O_NONBLOCK is set for the file descriptor for the socket and the
+connection cannot be immediately established; the connection shall be
+established asynchronously.
+.TP
+.BR EINTR
+The attempt to establish a connection was interrupted by delivery of a
+signal that was caught; the connection shall be established
+asynchronously.
+.TP
+.BR EISCONN
+The specified socket is connection-mode and is already connected.
+.TP
+.BR ENETUNREACH
+.br
+No route to the network is present.
+.TP
+.BR ENOTSOCK
+The
+.IR socket
+argument does not refer to a socket.
+.TP
+.BR EPROTOTYPE
+The specified address has a different type than the socket bound to the
+specified peer address.
+.TP
+.BR ETIMEDOUT
+The attempt to connect timed out before a connection was made.
+.P
+If the address family of the socket is AF_UNIX, then
+\fIconnect\fR()
+shall fail if:
+.TP
+.BR EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+pathname in
+.IR address .
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of the pathname does not name an existing file or the
+pathname is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix of the pathname in
+.IR address
+names an existing file that is neither a directory nor a symbolic link
+to a directory, or the pathname in
+.IR address
+contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file that
+is neither a directory nor a symbolic link to a directory.
+.P
+The
+\fIconnect\fR()
+function may fail if:
+.TP
+.BR EACCES
+Search permission is denied for a component of the path prefix; or
+write access to the named socket is denied.
+.TP
+.BR EADDRINUSE
+Attempt to establish a connection that uses addresses that are already
+in use.
+.TP
+.BR ECONNRESET
+Remote host reset the connection request.
+.TP
+.BR EHOSTUNREACH
+.br
+The destination host cannot be reached (probably because the host is
+down or a remote router cannot reach it).
+.TP
+.BR EINVAL
+The
+.IR address_len
+argument is not a valid length for the address family; or invalid
+address family in the
+.BR sockaddr
+structure.
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the pathname in
+.IR address .
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR ENETDOWN
+The local network interface used to reach the destination is down.
+.TP
+.BR ENOBUFS
+No buffer space is available.
+.TP
+.BR EOPNOTSUPP
+The socket is listening and cannot be connected.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+If
+\fIconnect\fR()
+fails, the state of the socket is unspecified. Conforming applications
+should close the file descriptor and create a new socket before
+attempting to reconnect.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIaccept\fR\^(\|)",
+.IR "\fIbind\fR\^(\|)",
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIgetsockname\fR\^(\|)",
+.IR "\fIpoll\fR\^(\|)",
+.IR "\fIpselect\fR\^(\|)",
+.IR "\fIsend\fR\^(\|)",
+.IR "\fIshutdown\fR\^(\|)",
+.IR "\fIsocket\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_socket.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

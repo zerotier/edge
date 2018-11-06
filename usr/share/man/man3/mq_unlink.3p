@@ -1,0 +1,127 @@
+'\" et
+.TH MQ_UNLINK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mq_unlink
+\(em remove a message queue
+(\fBREALTIME\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <mqueue.h>
+.P
+int mq_unlink(const char *\fIname\fP);
+.fi
+.SH DESCRIPTION
+The
+\fImq_unlink\fR()
+function shall remove the message queue named by the string name.
+If one or more processes have the message queue open when
+\fImq_unlink\fR()
+is called, destruction of the message queue shall be postponed until
+all references to the message queue have been closed. However, the
+\fImq_unlink\fR()
+call need not block until all references have been closed; it may return
+immediately.
+.P
+After a successful call to
+\fImq_unlink\fR(),
+reuse of the name shall subsequently cause
+\fImq_open\fR()
+to behave as if no message queue of this name exists (that is,
+\fImq_open\fR()
+will fail if O_CREAT is not set, or will create a new message queue if
+O_CREAT is set).
+.SH "RETURN VALUE"
+Upon successful completion, the function shall return a value of zero.
+Otherwise, the named message queue shall be unchanged by this function
+call, and the function shall return a value of \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fImq_unlink\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Permission is denied to unlink the named message queue.
+.TP
+.BR ENOENT
+The named message queue does not exist.
+.P
+The
+\fImq_unlink\fR()
+function may fail if:
+.TP
+.BR ENAMETOOLONG
+.br
+The length of the
+.IR name
+argument exceeds
+{_POSIX_PATH_MAX}
+on systems that do not support the XSI option
+or exceeds
+{_XOPEN_PATH_MAX}
+on XSI systems,
+or has a pathname component that is longer than
+{_POSIX_NAME_MAX}
+on systems that do not support the XSI option
+or longer than
+{_XOPEN_NAME_MAX}
+on XSI systems.
+A call to
+\fImq_unlink\fR()
+with a
+.IR name
+argument that contains the same message queue name as was previously
+used in a successful
+\fImq_open\fR()
+call shall not give an
+.BR [ENAMETOOLONG] 
+error.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+A future version might require the
+\fImq_open\fR()
+and
+\fImq_unlink\fR()
+functions to have semantics similar to normal file system operations.
+.SH "SEE ALSO"
+.IR "\fImq_close\fR\^(\|)",
+.IR "\fImq_open\fR\^(\|)",
+.IR "\fImsgctl\fR\^(\|)",
+.IR "\fImsgget\fR\^(\|)",
+.IR "\fImsgrcv\fR\^(\|)",
+.IR "\fImsgsnd\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<mqueue.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

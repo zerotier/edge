@@ -1,0 +1,135 @@
+'\" et
+.TH MBLEN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+mblen
+\(em get number of bytes in a character
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdlib.h>
+.P
+int mblen(const char *\fIs\fP, size_t \fIn\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+If
+.IR s
+is not a null pointer,
+\fImblen\fR()
+shall determine the number of bytes constituting the character
+pointed to by
+.IR s .
+Except that the shift state of
+\fImbtowc\fR()
+is not affected, it shall be equivalent to:
+.sp
+.RS 4
+.nf
+\fB
+mbtowc((wchar_t *)0, \fIs\fP, \fIn\fP);
+.fi \fR
+.P
+.RE
+.P
+The implementation shall behave as if no function defined in this volume of POSIX.1\(hy2008
+calls
+\fImblen\fR().
+.P
+The behavior of this function is affected by the
+.IR LC_CTYPE
+category of the current locale. For a state-dependent encoding, this
+function shall be placed into its initial state by a call for which its
+character pointer argument,
+.IR s ,
+is a null pointer. Subsequent calls with
+.IR s
+as other than a null pointer shall cause the internal state of the
+function to be altered as necessary. A call with
+.IR s
+as a null pointer shall cause this function to return a non-zero value
+if encodings have state dependency, and 0 otherwise. If the
+implementation employs special bytes to change the shift state, these
+bytes shall not produce separate wide-character codes, but shall be
+grouped with an adjacent character. Changing the
+.IR LC_CTYPE
+category causes the shift state of this function to be unspecified.
+.P
+The
+\fImblen\fR()
+function need not be thread-safe.
+.SH "RETURN VALUE"
+If
+.IR s
+is a null pointer,
+\fImblen\fR()
+shall return a non-zero or 0 value, if character encodings,
+respectively, do or do not have state-dependent encodings. If
+.IR s
+is not a null pointer,
+\fImblen\fR()
+shall either return 0 (if
+.IR s
+points to the null byte), or return the number of bytes that
+constitute the character (if the next
+.IR n
+or fewer bytes form a valid character), or return \(mi1 (if they do
+not form a valid character)
+and may set
+.IR errno
+to indicate the error.
+In no case shall the value returned be greater than
+.IR n
+or the value of the
+{MB_CUR_MAX}
+macro.
+.SH ERRORS
+The
+\fImblen\fR()
+function may fail if:
+.TP
+.BR EILSEQ
+An invalid character sequence is detected.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImbtowc\fR\^(\|)",
+.IR "\fImbstowcs\fR\^(\|)",
+.IR "\fIwctomb\fR\^(\|)",
+.IR "\fIwcstombs\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stdlib.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

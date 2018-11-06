@@ -1,0 +1,406 @@
+'\" et
+.TH sys_stat.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/stat.h
+\(em data returned by the stat(\|) function
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/stat.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/stat.h> 
+header shall define the structure of the data returned by the
+\fIfstat\fR(),
+\fIlstat\fR(),
+and
+\fIstat\fR()
+functions.
+.P
+The
+.IR <sys/stat.h> 
+header shall define the
+.BR stat
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+dev_t st_dev            \fRDevice ID of device containing file.\fR
+ino_t st_ino            \fRFile serial number.\fR
+mode_t st_mode          \fRMode of file (see below).\fR
+nlink_t st_nlink        \fRNumber of hard links to the file.\fR
+uid_t st_uid            \fRUser ID of file.\fR
+gid_t st_gid            \fRGroup ID of file.\fR
+dev_t st_rdev           \fRDevice ID (if file is character or block special).\fR
+off_t st_size           \fRFor regular files, the file size in bytes.\fR
+                        \fRFor symbolic links, the length in bytes of the\fR
+                        \fRpathname contained in the symbolic link.\fR
+                        \fRFor a shared memory object, the length in bytes.\fR
+                        \fRFor a typed memory object, the length in bytes.\fR
+                        \fRFor other file types, the use of this field is\fR
+                        \fRunspecified.\fR
+struct timespec st_atim \fRLast data access timestamp.\fR
+struct timespec st_mtim \fRLast data modification timestamp.\fR
+struct timespec st_ctim \fRLast file status change timestamp.\fR
+blksize_t st_blksize    \fRA file system-specific preferred I/O block size\fR
+                        \fRfor this object. In some file system types, this\fR
+                        \fRmay vary from file to file.\fR
+blkcnt_t st_blocks      \fRNumber of blocks allocated for this object.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR st_ino
+and
+.IR st_dev
+fields taken together uniquely identify the file within the system.
+.P
+The
+.IR <sys/stat.h> 
+header shall define the
+.BR blkcnt_t ,
+.BR blksize_t ,
+.BR dev_t ,
+.BR ino_t ,
+.BR mode_t ,
+.BR nlink_t ,
+.BR uid_t ,
+.BR gid_t ,
+.BR off_t ,
+and
+.BR time_t
+types as described in
+.IR <sys/types.h> .
+.P
+The
+.IR <sys/stat.h> 
+header shall define the
+.BR timespec
+structure as described in
+.IR <time.h> .
+Times shall be given in seconds since the Epoch.
+.P
+Which structure members have meaningful values depends on the
+type of file. For further information, see the descriptions of
+\fIfstat\fR(),
+\fIlstat\fR(),
+and
+\fIstat\fR()
+in the System Interfaces volume of POSIX.1\(hy2008.
+.P
+For compatibility with earlier versions of this standard, the
+.IR st_atime
+macro shall be defined with the value
+.IR st_atim.tv_sec .
+Similarly,
+.IR st_ctime
+and
+.IR st_mtime
+shall be defined as macros with the values
+.IR st_ctim.tv_sec
+and
+.IR st_mtim.tv_sec ,
+respectively.
+.br
+.P
+The
+.IR <sys/stat.h> 
+header shall define the following symbolic constants for the
+file types encoded in type
+.BR mode_t .
+The values shall be suitable for use in
+.BR #if
+preprocessing directives:
+.IP S_IFMT 12
+Type of file.
+.RS 12 
+.IP S_IFBLK 12
+Block special.
+.IP S_IFCHR 12
+Character special.
+.IP S_IFIFO 12
+FIFO special.
+.IP S_IFREG 12
+Regular.
+.IP S_IFDIR 12
+Directory.
+.IP S_IFLNK 12
+Symbolic link.
+.IP S_IFSOCK 12
+Socket.
+.RE
+.P
+The
+.IR <sys/stat.h> 
+header shall define the following symbolic constants for the file mode
+bits encoded in type
+.BR mode_t ,
+with the indicated numeric values. These macros shall expand to an
+expression which has a type that allows them to be used, either singly
+or OR'ed together, as the third argument to
+\fIopen\fR()
+without the need for a
+.BR mode_t
+cast. The values shall be suitable for use in
+.BR #if
+preprocessing directives.
+.TS
+center box tab(@);
+cB | cB | cB
+l | n | l.
+Name@Numeric Value@Description
+_
+S_IRWXU@0700@Read, write, execute/search by owner.
+S_IRUSR@0400@Read permission, owner.
+S_IWUSR@0200@Write permission, owner.
+S_IXUSR@0100@Execute/search permission, owner.
+_
+S_IRWXG@070@Read, write, execute/search by group.
+S_IRGRP@040@Read permission, group.
+S_IWGRP@020@Write permission, group.
+S_IXGRP@010@Execute/search permission, group.
+_
+S_IRWXO@07@Read, write, execute/search by others.
+S_IROTH@04@Read permission, others.
+S_IWOTH@02@Write permission, others.
+S_IXOTH@01@Execute/search permission, others.
+_
+S_ISUID@04000@Set-user-ID on execution.
+S_ISGID@02000@Set-group-ID on execution.
+\*!S_ISVTX@01000@On directories, restricted deletion flag.\0\0\0\*?
+.TE
+.P
+The following macros shall be provided to test whether a file is of the
+specified type. The value
+.IR m
+supplied to the macros is the value of
+.IR st_mode
+from a
+.BR stat
+structure. The macro shall evaluate to a non-zero value if the test is
+true; 0 if the test is false.
+.IP "S_ISBLK(\fIm\fP)" 14
+Test for a block special file.
+.IP "S_ISCHR(\fIm\fP)" 14
+Test for a character special file.
+.IP "S_ISDIR(\fIm\fP)" 14
+Test for a directory.
+.IP "S_ISFIFO(\fIm\fP)" 14
+Test for a pipe or FIFO special file.
+.IP "S_ISREG(\fIm\fP)" 14
+Test for a regular file.
+.IP "S_ISLNK(\fIm\fP)" 14
+Test for a symbolic link.
+.IP "S_ISSOCK(\fIm\fP)" 14
+Test for a socket.
+.P
+The implementation may implement message queues, semaphores, or shared
+memory objects as distinct file types. The following macros shall be
+provided to test whether a file is of the specified type. The value of
+the
+.IR buf
+argument supplied to the macros is a pointer to a
+.BR stat
+structure. The macro shall evaluate to a non-zero value if the
+specified object is implemented as a distinct file type and the
+specified file type is contained in the
+.BR stat
+structure referenced by
+.IR buf .
+Otherwise, the macro shall evaluate to zero.
+.IP "S_TYPEISMQ(\fIbuf\fP)" 14
+Test for a message queue.
+.IP "S_TYPEISSEM(\fIbuf\fP)" 14
+Test for a semaphore.
+.IP "S_TYPEISSHM(\fIbuf\fP)" 14
+Test for a shared memory object.
+.P
+The implementation may implement typed memory objects as distinct
+file types, and the following macro shall test whether a file is of the
+specified type. The value of the
+.IR buf
+argument supplied to the macros is a pointer to a
+.BR stat
+structure. The macro shall evaluate to a non-zero value if the
+specified object is implemented as a distinct file type and the
+specified file type is contained in the
+.BR stat
+structure referenced by
+.IR buf .
+Otherwise, the macro shall evaluate to zero.
+.IP "S_TYPEISTMO(\fIbuf\fP)" 14
+Test macro for a typed memory object.
+.P
+The
+.IR <sys/stat.h> 
+header shall define the following symbolic constants as distinct
+integer values outside of the range [0,999\|999\|999],
+for use with the
+\fIfutimens\fR()
+and
+\fIutimensat\fR()
+functions:
+UTIME_NOW
+UTIME_OMIT
+.P
+The following shall be declared as functions and may also be defined
+as macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int    chmod(const char *, mode_t);
+int    fchmod(int, mode_t);
+int    fchmodat(int, const char *, mode_t, int);
+int    fstat(int, struct stat *);
+int    fstatat(int, const char *restrict, struct stat *restrict, int);
+int    futimens(int, const struct timespec [2]);
+int    lstat(const char *restrict, struct stat *restrict);
+int    mkdir(const char *, mode_t);
+int    mkdirat(int, const char *, mode_t);
+int    mkfifo(const char *, mode_t);
+int    mkfifoat(int, const char *, mode_t);
+int    mknod(const char *, mode_t, dev_t);
+int    mknodat(int, const char *, mode_t, dev_t);
+int    stat(const char *restrict, struct stat *restrict);
+mode_t umask(mode_t);
+int    utimensat(int, const char *, const struct timespec [2], int);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Use of the macros is recommended for determining the type of a file.
+.SH RATIONALE
+A conforming C-language application must include
+.IR <sys/stat.h> 
+for functions that have arguments or return values of type
+.BR mode_t ,
+so that symbolic values for that type can be used. An alternative
+would be to require that these constants are also defined by including
+.IR <sys/types.h> .
+.P
+The S_ISUID and S_ISGID
+bits may be cleared on any write, not just on
+\fIopen\fR(),
+as some historical implementations do.
+.P
+System calls that update the time entry fields in the
+.BR stat
+structure must be documented by the implementors. POSIX-conforming
+systems should not update the time entry fields for functions listed in
+the System Interfaces volume of POSIX.1\(hy2008 unless the standard requires that they do, except in the case
+of documented extensions to the standard.
+.P
+Upon assignment, file timestamps are immediately converted to the
+resolution of the file system by truncation (i.e., the recorded time
+can be older than the actual time). For example, if the file system
+resolution is 1 microsecond, then a conforming
+\fIstat\fR()
+must always return an
+.IR st_mtim.tv_nsec
+that is a multiple of 1000. Some older implementations returned
+higher-resolution timestamps while the
+.IR inode
+information was cached, and then spontaneously truncated the
+.IR tv_nsec
+fields when they were stored to and retrieved from disk, but this behavior
+does not conform.
+.P
+Note that
+.IR st_dev
+must be unique within a Local Area Network (LAN) in a ``system'' made
+up of multiple computers' file systems connected by a LAN.
+.P
+Networked implementations of a POSIX-conforming system must guarantee
+that all files visible within the file tree (including parts of the
+tree that may be remotely mounted from other machines on the network)
+on each individual processor are uniquely identified by the combination
+of the
+.IR st_ino
+and
+.IR st_dev
+fields.
+.P
+The unit for the
+.IR st_blocks
+member of the
+.BR stat
+structure is not defined within POSIX.1\(hy2008. In some implementations
+it is 512 bytes. It may differ on a file system basis. There is no
+correlation between values of the
+.IR st_blocks
+and
+.IR st_blksize ,
+and the
+.IR f_bsize
+(from
+.IR <sys/statvfs.h> )
+structure members.
+.P
+Traditionally, some implementations defined the multiplier for
+.IR st_blocks
+in
+.IR <sys/param.h> 
+as the symbol DEV_BSIZE.
+.P
+Some earlier versions of this standard did not specify values for the
+file mode bit macros. The expectation was that some implementors might
+choose to use a different encoding for these bits than the traditional
+one, and that new applications would use symbolic file modes instead of
+numeric. This version of the standard specifies the traditional encoding,
+in recognition that nearly 20 years after the first publication of this
+standard numeric file modes are still in widespread use by application
+developers, and that all conforming implementations still use the
+traditional encoding.
+.SH "FUTURE DIRECTIONS"
+No new S_IFMT symbolic names for the file type values of
+.BR mode_t
+will be defined by POSIX.1\(hy2008; if new file types are required, they will
+only be testable through
+.IR S_ISxx (\|)
+or
+.IR S_TYPEISxxx (\|)
+macros instead.
+.SH "SEE ALSO"
+.IR "\fB<sys_statvfs.h>\fP",
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<time.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIchmod\fR\^(\|)",
+.IR "\fIfchmod\fR\^(\|)",
+.IR "\fIfstat\fR\^(\|)",
+.IR "\fIfstatat\fR\^(\|)",
+.IR "\fIfutimens\fR\^(\|)",
+.IR "\fImkdir\fR\^(\|)",
+.IR "\fImkfifo\fR\^(\|)",
+.IR "\fImknod\fR\^(\|)",
+.IR "\fIumask\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

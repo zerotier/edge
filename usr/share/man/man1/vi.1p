@@ -1,0 +1,6469 @@
+'\" et
+.TH VI "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+vi
+\(em screen-oriented (visual) display editor
+.SH SYNOPSIS
+.LP
+.nf
+vi \fB[\fR\(mirR\fB] [\fR\(mic \fIcommand\fB] [\fR\(mit \fItagstring\fB] [\fR\(miw \fIsize\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+This utility shall be provided on systems that both support the User
+Portability Utilities option and define the POSIX2_CHAR_TERM symbol.
+On other systems it is optional.
+.P
+The
+.IR vi
+(visual) utility is a screen-oriented text editor. Only the open and
+visual modes of the editor are described in POSIX.1\(hy2008; see the line editor
+.IR ex
+for additional editing capabilities used in
+.IR vi .
+The user can switch back and forth between
+.IR vi
+and
+.IR ex
+and execute
+.IR ex
+commands from within
+.IR vi .
+.P
+This reference page uses the term
+.IR "edit buffer"
+to describe the current working text. No specific implementation is
+implied by this term. All editing changes are performed on the edit
+buffer, and no changes to it shall affect any file until an editor
+command writes the file.
+.P
+When using
+.IR vi ,
+the terminal screen acts as a window into the editing buffer. Changes
+made to the editing buffer shall be reflected in the screen display;
+the position of the cursor on the screen shall indicate the position
+within the editing buffer.
+.P
+Certain terminals do not have all the capabilities necessary to support
+the complete
+.IR vi
+definition. When these commands cannot be supported on such terminals,
+this condition shall not produce an error message such as ``not an
+editor command'' or report a syntax error. The implementation may
+either accept the commands and produce results on the screen that are
+the result of an unsuccessful attempt to meet the requirements of this volume of POSIX.1\(hy2008
+or report an error describing the terminal-related deficiency.
+.SH OPTIONS
+The
+.IR vi
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that
+.BR '\(pl' 
+may be recognized as an option delimiter as well as
+.BR '\(mi' .
+.P
+The following options shall be supported:
+.IP "\fB\(mic\ \fIcommand\fR" 10
+See the
+.IR ex
+command description of the
+.BR \(mic
+option.
+.IP "\fB\(mir\fP" 10
+See the
+.IR ex
+command description of the
+.BR \(mir
+option.
+.IP "\fB\(miR\fP" 10
+See the
+.IR ex
+command description of the
+.BR \(miR
+option.
+.IP "\fB\(mit\ \fItagstring\fR" 10
+See the
+.IR ex
+command description of the
+.BR \(mit
+option.
+.IP "\fB\(miw\ \fIsize\fR" 10
+See the
+.IR ex
+command description of the
+.BR \(miw
+option.
+.SH OPERANDS
+See the OPERANDS section of the
+.IR ex
+command for a description of the operands supported by the
+.IR vi
+command.
+.SH STDIN
+If standard input is not a terminal device, the results are undefined.
+The standard input consists of a series of commands and input text, as
+described in the EXTENDED DESCRIPTION section.
+.P
+If a read from the standard input returns an error, or if the editor
+detects an end-of-file condition from the standard input, it shall be
+equivalent to a SIGHUP asynchronous event.
+.SH "INPUT FILES"
+See the INPUT FILES section of the
+.IR ex
+command for a description of the input files supported by the
+.IR vi
+command.
+.SH "ENVIRONMENT VARIABLES"
+See the ENVIRONMENT VARIABLES section of the
+.IR ex
+command for the environment variables that affect the execution of the
+.IR vi
+command.
+.SH "ASYNCHRONOUS EVENTS"
+See the ASYNCHRONOUS EVENTS section of the
+.IR ex
+for the asynchronous events that affect the execution of the
+.IR vi
+command.
+.SH STDOUT
+If standard output is not a terminal device, undefined results occur.
+.P
+Standard output may be used for writing prompts to the user, for
+informational messages, and for writing lines from the file.
+.SH STDERR
+If standard output is not a terminal device, undefined results occur.
+.P
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+See the OUTPUT FILES section of the
+.IR ex
+command for a description of the output files supported by the
+.IR vi
+command.
+.SH "EXTENDED DESCRIPTION"
+If the terminal does not have the capabilities necessary to support an
+unspecified portion of the
+.IR vi
+definition, implementations shall start initially in
+.IR ex
+mode or open mode. Otherwise, after initialization,
+.IR vi
+shall be in command mode; text input mode can be entered by one of
+several commands used to insert or change text. In text input mode,
+<ESC>
+can be used to return to command mode; other uses of
+<ESC>
+are described later in this section; see
+.IR "Terminate Command or Input Mode".
+.SS "Initialization in ex and vi"
+.P
+See
+.IR "Initialization in ex and vi"
+for a description of
+.IR ex
+and
+.IR vi
+initialization for the
+.IR vi
+utility.
+.SS "Command Descriptions in vi"
+.P
+The following symbols are used in this reference page to represent
+arguments to commands.
+.IP "\fIbuffer\fR" 8
+See the description of
+.IR buffer
+in the EXTENDED DESCRIPTION section of the
+.IR ex
+utility; see
+.IR "Command Descriptions in ex".
+.RS 8 
+.P
+In open and visual mode, when a command synopsis shows both [\c
+.IR buffer ]
+and [\c
+.IR count ]
+preceding the command name, they can be specified in either order.
+.RE
+.IP "\fIcount\fR" 8
+A positive integer used as an optional argument to most commands,
+either to give a repeat count or as a size. This argument is optional
+and shall default to 1 unless otherwise specified.
+.RS 8 
+.P
+The Synopsis lines for the
+.IR vi
+commands
+<control>\(hyG,
+<control>\(hyL,
+<control>\(hyR,
+<control>\(hy],
+.BR % ,
+.BR & ,
+.BR ^ ,
+.BR D ,
+.BR m ,
+.BR M ,
+.BR Q ,
+.BR u ,
+.BR U ,
+and
+.BR ZZ
+do not have
+.IR count
+as an optional argument. Regardless, it shall not be an error to
+specify a
+.IR count
+to these commands, and any specified
+.IR count
+shall be ignored.
+.RE
+.IP "\fImotion\fR" 8
+An optional trailing argument used by the
+.BR ! ,
+.BR < ,
+.BR > ,
+.BR c ,
+.BR d ,
+and
+.BR y
+commands, which is used to indicate the region of text that shall be
+affected by the command. The motion can be either one of the command
+characters repeated or one of several other
+.IR vi
+commands (listed in the following table). Each of the applicable
+commands specifies the region of text matched by repeating the command;
+each command that can be used as a motion command specifies the region
+of text it affects.
+.RS 8 
+.P
+Commands that take
+.IR motion
+arguments operate on either lines or characters, depending on the
+circumstances. When operating on lines, all lines that fall partially
+or wholly within the text region specified for the command shall be
+affected. When operating on characters, only the exact characters in
+the specified text region shall be affected. Each motion command
+specifies this individually.
+.P
+When commands that may be motion commands are not used as motion
+commands, they shall set the current position to the current line and
+column as specified.
+.P
+The following commands shall be valid cursor motion commands:
+.sp
+.RS 4
+.nf
+\fB
+<apostrophe>       (    -    j    H
+<carriage-return>  )    $    k    L
+<comma>            [[   %    l    M
+<control>-H        ]]   _    n    N
+<control>-N        {    ;    t    T
+<control>-P        }    ?    w    W
+<grave-accent>     ^    b    B
+<newline>          +    e    E
+<space>            |    f    F
+<zero>             /    h    G
+.fi \fR
+.P
+.RE
+.P
+Any
+.IR count
+that is specified to a command that has an associated motion command
+shall be applied to the motion command. If a
+.IR count
+is applied to both the command and its associated motion command, the
+effect shall be multiplicative.
+.RE
+.P
+The following symbols are used in this section to specify locations
+in the edit buffer:
+.IP "\fIcurrent\ character\fP" 8
+.br
+The character that is currently indicated by the cursor.
+.IP "\fIend\ of\ a\ line\fP" 8
+.br
+The point located between the last non-\c
+<newline>
+(if any) and the terminating
+<newline>
+of a line. For an empty line, this location coincides with the
+beginning of the line.
+.IP "\fIend\ of\ the\ edit\ buffer\fP" 8
+.br
+The location corresponding to the end of the last line in the edit
+buffer.
+.P
+The following symbols are used in this section to specify command
+actions:
+.IP "\fIbigword\fP" 8
+In the POSIX locale,
+.IR vi
+shall recognize four kinds of
+.IR bigwords :
+.RS 8 
+.IP " 1." 4
+A maximal sequence of non-\c
+<blank>
+characters preceded and followed by
+<blank>
+characters or the beginning or end of a line or the edit buffer
+.IP " 2." 4
+One or more sequential blank lines
+.IP " 3." 4
+The first character in the edit buffer
+.IP " 4." 4
+The last non-\c
+<newline>
+in the edit buffer
+.RE
+.IP "\fIword\fP" 8
+In the POSIX locale,
+.IR vi
+shall recognize five kinds of words:
+.RS 8 
+.IP " 1." 4
+A maximal sequence of letters, digits, and underscores, delimited at
+both ends by:
+.RS 4 
+.IP -- 4
+Characters other than letters, digits, or underscores
+.IP -- 4
+The beginning or end of a line
+.IP -- 4
+The beginning or end of the edit buffer
+.RE
+.IP " 2." 4
+A maximal sequence of characters other than letters, digits, underscores, or
+<blank>
+characters, delimited at both ends by:
+.RS 4 
+.IP -- 4
+A letter, digit, underscore
+.IP -- 4
+<blank>
+characters
+.IP -- 4
+The beginning or end of a line
+.IP -- 4
+The beginning or end of the edit buffer
+.RE
+.IP " 3." 4
+One or more sequential blank lines
+.IP " 4." 4
+The first character in the edit buffer
+.IP " 5." 4
+The last non-\c
+<newline>
+in the edit buffer
+.RE
+.IP "\fIsection\ boundary\fR" 8
+.br
+A
+.IR "section boundary"
+is one of the following:
+.RS 8 
+.IP " 1." 4
+A line whose first character is a
+<form-feed>
+.IP " 2." 4
+A line whose first character is an open curly brace (\c
+.BR '{' )
+.IP " 3." 4
+A line whose first character is a
+<period>
+and whose second and third characters match a two-character pair in the
+.BR sections
+edit option (see
+.IR ed )
+.IP " 4." 4
+A line whose first character is a
+<period>
+and whose only other character matches the first character of a
+two-character pair in the
+.BR sections
+edit option, where the second character of the two-character pair is a
+<space>
+.IP " 5." 4
+The first line of the edit buffer
+.IP " 6." 4
+The last line of the edit buffer if the last line of the edit buffer is
+empty or if it is a
+.BR ]]
+or
+.BR }
+command; otherwise, the last non-\c
+<newline>
+of the last line of the edit buffer
+.RE
+.IP "\fIparagraph\ boundary\fR" 8
+.br
+A
+.IR "paragraph boundary"
+is one of the following:
+.RS 8 
+.IP " 1." 4
+A section boundary
+.IP " 2." 4
+A line whose first character is a
+<period>
+and whose second and third characters match a two-character pair in the
+.BR paragraphs
+edit option (see
+.IR ed )
+.IP " 3." 4
+A line whose first character is a
+<period>
+and whose only other character matches the first character of a
+two-character pair in the
+.IR paragraphs
+edit option, where the second character of the two-character pair is a
+<space>
+.IP " 4." 4
+One or more sequential blank lines
+.RE
+.IP "\fIremembered\ search\ direction\fR" 8
+.br
+See the description of \fIremembered search direction\fP in
+.IR ed .
+.IP "\fIsentence\ boundary\fR" 8
+.br
+A
+.IR "sentence boundary"
+is one of the following:
+.RS 8 
+.IP " 1." 4
+A paragraph boundary
+.IP " 2." 4
+The first non-\c
+<blank>
+that occurs after a paragraph boundary
+.IP " 3." 4
+The first non-\c
+<blank>
+that occurs after a
+<period>
+(\c
+.BR '.' ),
+<exclamation-mark>
+(\c
+.BR '!' ),
+or
+<question-mark>
+(\c
+.BR '?' ),
+followed by two
+<space>
+characters or the end of a line; any number of closing parenthesis (\c
+.BR ')' ),
+closing brackets (\c
+.BR ']' ),
+double-quote (\c
+.BR '\&"' ),
+or single-quote (\c
+<apostrophe>)
+characters can appear between the punctuation mark and the two
+<space>
+characters or end-of-line
+.RE
+.P
+In the remainder of the description of the
+.IR vi
+utility, the term ``buffer line'' refers to a line in the edit buffer
+and the term ``display line'' refers to the line or lines on the
+display screen used to display one buffer line. The term ``current
+line'' refers to a specific ``buffer line''.
+.P
+If there are display lines on the screen for which there are no
+corresponding buffer lines because they correspond to lines that would
+be after the end of the file, they shall be displayed as a single
+<tilde>
+(\c
+.BR '~' )
+character, plus the terminating
+<newline>.
+.P
+The last line of the screen shall be used to report errors or display
+informational messages. It shall also be used to display the input for
+``line-oriented commands'' (\c
+.BR / ,
+.BR ? ,
+.BR : ,
+and
+.BR ! ).
+When a line-oriented command is executed, the editor shall enter text
+input mode on the last line on the screen, using the respective command
+characters as prompt characters. (In the case of the
+.BR !
+command, the associated motion shall be entered by the user before the
+editor enters text input mode.) The line entered by the user shall be
+terminated by a
+<newline>,
+a non-\c
+<control>\(hyV-escaped
+<carriage-return>,
+or unescaped
+<ESC>.
+It is unspecified if more characters than require a display width minus
+one column number of screen columns can be entered.
+.P
+If any command is executed that overwrites a portion of the screen
+other than the last line of the screen (for example, the
+.IR ex
+.BR suspend
+or
+.BR !
+commands), other than the
+.IR ex
+.BR shell
+command, the user shall be prompted for a character before the screen
+is refreshed and the edit session continued.
+.P
+<tab>
+characters shall take up the number of columns on the screen set by the
+.BR tabstop
+edit option (see
+.IR ed ),
+unless there are less than that number of columns before the display
+margin that will cause the displayed line to be folded; in this case,
+they shall only take up the number of columns up to that boundary.
+.P
+The cursor shall be placed on the current line and relative to the
+current column as specified by each command described in the following
+sections.
+.P
+In open mode, if the current line is not already displayed, then it
+shall be displayed.
+.P
+In visual mode, if the current line is not displayed, then the lines
+that are displayed shall be expanded, scrolled, or redrawn to cause an
+unspecified portion of the current line to be displayed. If the screen
+is redrawn, no more than the number of display lines specified by the
+value of the
+.BR window
+edit option shall be displayed (unless the current line cannot be
+completely displayed in the number of display lines specified by the
+.BR window
+edit option) and the current line shall be positioned as close to the
+center of the displayed lines as possible (within the constraints
+imposed by the distance of the line from the beginning or end of the
+edit buffer). If the current line is before the first line in the
+display and the screen is scrolled, an unspecified portion of the
+current line shall be placed on the first line of the display. If the
+current line is after the last line in the display and the screen is
+scrolled, an unspecified portion of the current line shall be placed on
+the last line of the display.
+.P
+In visual mode, if a line from the edit buffer (other than the current
+line) does not entirely fit into the lines at the bottom of the display
+that are available for its presentation, the editor may choose not to
+display any portion of the line. The lines of the display that do not
+contain text from the edit buffer for this reason shall each consist of
+a single
+.BR '@' 
+character.
+.P
+In visual mode, the editor may choose for unspecified reasons to not
+update lines in the display to correspond to the underlying edit buffer
+text. The lines of the display that do not correctly correspond to text
+from the edit buffer for this reason shall consist of a single
+.BR '@' 
+character (plus the terminating
+<newline>),
+and the
+<control>\(hyR
+command shall cause the editor to update the screen to correctly
+represent the edit buffer.
+.P
+Open and visual mode commands that set the current column set it to a
+column position in the display, and not a character position in the
+line. In this case, however, the column position in the display shall
+be calculated for an infinite width display; for example, the column
+related to a character that is part of a line that has been folded onto
+additional screen lines will be offset from the display line column
+where the buffer line begins, not from the beginning of a particular
+display line.
+.P
+The display cursor column in the display is based on the value of the
+current column, as follows, with each rule applied in turn:
+.IP " 1." 4
+If the current column is after the last display line column used by the
+displayed line, the display cursor column shall be set to the last
+display line column occupied by the last non-\c
+<newline>
+in the current line; otherwise, the display cursor column shall be set
+to the current column.
+.IP " 2." 4
+If the character of which some portion is displayed in the display line
+column specified by the display cursor column requires more than a
+single display line column:
+.RS 4 
+.IP " a." 4
+If in text input mode, the display cursor column shall be adjusted to
+the first display line column in which any portion of that character is
+displayed.
+.IP " b." 4
+Otherwise, the display cursor column shall be adjusted to the last
+display line column in which any portion of that character is
+displayed.
+.RE
+.P
+The current column shall not be changed by these adjustments to the
+display cursor column.
+.P
+If an error occurs during the parsing or execution of a
+.IR vi
+command:
+.IP " *" 4
+The terminal shall be alerted. Execution of the
+.IR vi
+command shall stop, and the cursor (for example, the current line and
+column) shall not be further modified.
+.IP " *" 4
+Unless otherwise specified by the following command sections, it is
+unspecified whether an informational message shall be displayed.
+.IP " *" 4
+Any partially entered
+.IR vi
+command shall be discarded.
+.IP " *" 4
+If the
+.IR vi
+command resulted from a
+.BR map
+expansion, all characters from that
+.BR map
+expansion shall be discarded, except as otherwise specified by the
+.BR map
+command (see
+.IR ed ).
+.IP " *" 4
+If the
+.IR vi
+command resulted from the execution of a buffer, no further commands
+caused by the execution of the buffer shall be executed.
+.SS "Page Backwards"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-B
+.fi \fR
+.P
+.RE
+.RE
+.P
+If in open mode, the
+<control>\(hyB
+command shall behave identically to the
+.BR z
+command. Otherwise, if the current line is the first line of the edit
+buffer, it shall be an error.
+.P
+If the
+.BR window
+edit option is less than 3, display a screen where the last line of the
+display shall be some portion of:
+.sp
+.RS 4
+.nf
+\fB
+(\fIcurrent first line\fR) \(mi1
+.fi \fR
+.P
+.RE
+.P
+otherwise, display a screen where the first line of the display shall
+be some portion of:
+.sp
+.RS 4
+.nf
+\fB
+(\fIcurrent first line\fR) \(mi \fIcount\fR x ((window edit option) \(mi2)
+.fi \fR
+.P
+.RE
+.P
+If this calculation would result in a line that is before the first
+line of the edit buffer, the first line of the display shall display
+some portion of the first line of the edit buffer.
+.P
+.IR "Current line" :
+If no lines from the previous display remain on the screen, set to the
+last line of the display; otherwise, set to (\c
+.IR line
+\(mi the number of new lines displayed on this screen).
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Scroll Forward"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-D
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the current line is the last line of the edit buffer, it shall be an
+error.
+.P
+If no
+.IR count
+is specified,
+.IR count
+shall default to the
+.IR count
+associated with the previous
+<control>\(hyD
+or
+<control>\(hyU
+command. If there was no previous
+<control>\(hyD
+or
+<control>\(hyU
+command,
+.IR count
+shall default to the value of the
+.BR scroll
+edit option.
+.P
+If in open mode, write lines starting with the line after the current
+line, until
+.IR count
+lines or the last line of the file have been written.
+.P
+.IR "Current line" :
+If the current line +
+.IR count
+is past the last line of the edit buffer, set to the last line of the
+edit buffer; otherwise, set to the current line +
+.IR count .
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Scroll Forward by Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-E
+.fi \fR
+.P
+.RE
+.RE
+.P
+Display the line count lines after the last line currently displayed.
+.P
+If the last line of the edit buffer is displayed, it shall be an error.
+If there is no line
+.IR count
+lines after the last line currently displayed, the last line of the
+display shall display some portion of the last line of the edit
+buffer.
+.P
+.IR "Current line" :
+Unchanged if the previous current character is displayed; otherwise,
+set to the first line displayed.
+.P
+.IR "Current column" :
+Unchanged.
+.SS "Page Forward"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-F
+.fi \fR
+.P
+.RE
+.RE
+.P
+If in open mode, the
+<control>\(hyF
+command shall behave identically to the
+.BR z
+command. Otherwise, if the current line is the last line of the edit
+buffer, it shall be an error.
+.P
+If the
+.BR window
+edit option is less than 3, display a screen where the first line of
+the display shall be some portion of:
+.sp
+.RS 4
+.nf
+\fB
+(\fIcurrent last line\fR) +1
+.fi \fR
+.P
+.RE
+.P
+otherwise, display a screen where the first line of the display shall
+be some portion of:
+.sp
+.RS 4
+.nf
+\fB
+(\fIcurrent first line\fR) + \fIcount\fR x ((window edit option) \(mi2)
+.fi \fR
+.P
+.RE
+.P
+If this calculation would result in a line that is after the last line
+of the edit buffer, the last line of the display shall display some
+portion of the last line of the edit buffer.
+.P
+.IR "Current line" :
+If no lines from the previous display remain on the screen, set to the
+first line of the display; otherwise, set to (\c
+.IR line
++ the number of new lines displayed on this screen).
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Display Information"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-G
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR ex
+.BR file
+command.
+.SS "Move Cursor Backwards"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-H
+.br
+\fB[\fIcount\fB]\fR h
+.br
+the current \fIerase\fP character (see stty)
+.fi \fR
+.P
+.RE
+.RE
+.P
+If there are no characters before the current character on the current
+line, it shall be an error. If there are less than
+.IR count
+previous characters on the current line,
+.IR count
+shall be adjusted to the number of previous characters on the line.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall be from the character before the starting cursor
+up to and including the
+.IR count th
+character before the starting cursor.
+.IP " 2." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to (\c
+.IR column
+\(mi the number of columns occupied by
+.IR count
+characters ending with the previous current column).
+.SS "Move Down"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <newline>
+.br
+\fB[\fIcount\fB]\fR <control>-J
+.br
+\fB[\fIcount\fB]\fR <control>-M
+.br
+\fB[\fIcount\fB]\fR <control>-N
+.br
+\fB[\fIcount\fB]\fR j
+.br
+\fB[\fIcount\fB]\fR <carriage-return>
+.br
+\fB[\fIcount\fB]\fR +
+.fi \fR
+.P
+.RE
+.RE
+.P
+If there are less than
+.IR count
+lines after the current line in the edit buffer, it shall be an error.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall include the starting line and the next
+.IR count
+\(mi 1 lines.
+.IP " 2." 4
+Any text copied to a buffer shall be in line mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to
+.IR "current line" +
+.IR count .
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>
+for the
+<carriage-return>,
+<control>\(hyM,
+and
+.BR +
+commands; otherwise, unchanged.
+.SS "Clear and Redisplay"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-L
+.fi \fR
+.P
+.RE
+.RE
+.P
+If in open mode, clear the screen and redisplay the current line.
+Otherwise, clear and redisplay the screen.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Unchanged.
+.SS "Move Up"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-P
+.br
+\fB[\fIcount\fB]\fR k
+.br
+\fB[\fIcount\fB]\fR \(mi
+.fi \fR
+.P
+.RE
+.RE
+.P
+If there are less than
+.IR count
+lines before the current line in the edit buffer, it shall be an
+error.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall include the starting line and the previous
+.IR count
+lines.
+.IP " 2." 4
+Any text copied to a buffer shall be in line mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to
+.IR "current line"
+\(mi
+.IR count .
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>
+for the
+.BR \(mi
+command; otherwise, unchanged.
+.SS "Redraw Screen"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-R
+.fi \fR
+.P
+.RE
+.RE
+.P
+If any lines have been deleted from the display screen and flagged as
+deleted on the terminal using the
+.BR @
+convention (see the beginning of the EXTENDED DESCRIPTION section),
+they shall be redisplayed to match the contents of the edit buffer.
+.P
+It is unspecified whether lines flagged with
+.BR @
+because they do not fit on the terminal display shall be affected.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Unchanged.
+.SS "Scroll Backward"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-U
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the current line is the first line of the edit buffer, it shall be
+an error.
+.P
+If no
+.IR count
+is specified,
+.IR count
+shall default to the
+.IR count
+associated with the previous
+<control>\(hyD
+or
+<control>\(hyU
+command. If there was no previous
+<control>\(hyD
+or
+<control>\(hyU
+command,
+.IR count
+shall default to the value of the
+.BR scroll
+edit option.
+.P
+.IR "Current line" :
+If
+.IR count
+is greater than the current line, set to 1; otherwise, set to the
+current line \(mi
+.IR count .
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Scroll Backward by Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <control>-Y
+.fi \fR
+.P
+.RE
+.RE
+.P
+Display the line
+.IR count
+lines before the first line currently displayed.
+.P
+If the current line is the first line of the edit buffer, it shall be
+an error. If this calculation would result in a line that is before the
+first line of the edit buffer, the first line of the display shall
+display some portion of the first line of the edit buffer.
+.P
+.IR "Current line" :
+Unchanged if the previous current character is displayed; otherwise,
+set to the first line displayed.
+.P
+.IR "Current column" :
+Unchanged.
+.SS "Edit the Alternate File"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-^
+.fi \fR
+.P
+.RE
+.RE
+This command shall be equivalent to the
+.IR ex
+.BR edit
+command, with the alternate pathname as its argument.
+.SS "Terminate Command or Input Mode"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<ESC>
+.fi \fR
+.P
+.RE
+.RE
+.P
+If a partial
+.IR vi
+command (as defined by at least one, non-\c
+.IR count
+character) has been entered, discard the
+.IR count
+and the command character(s).
+.P
+Otherwise, if no command characters have been entered, and the
+<ESC>
+was the result of a map expansion, the terminal shall be alerted and
+the
+<ESC>
+character shall be discarded, but it shall not be an error.
+.P
+Otherwise, it shall be an error.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Unchanged.
+.SS "Search for tagstring"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-]
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the current character is not a word or
+<blank>,
+it shall be an error.
+.P
+This command shall be equivalent to the
+.IR ex
+.BR tag
+command, with the argument to that command defined as follows.
+.P
+If the current character is a
+<blank>:
+.IP " 1." 4
+Skip all
+<blank>
+characters after the cursor up to the end of the line.
+.IP " 2." 4
+If the end of the line is reached, it shall be an error.
+.P
+Then, the argument to the
+.IR ex
+.BR tag
+command shall be the current character and all subsequent characters,
+up to the first non-word character or the end of the line.
+.SS "Move Cursor Forward"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR <space>
+.br
+\fB[\fIcount\fB]\fR l\fR  (ell)\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If there are less than
+.IR count
+non-\c
+<newline>
+characters after the cursor on the current line,
+.IR count
+shall be adjusted to the number of non-\c
+<newline>
+characters after the cursor on the line.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the current or
+.IR count th
+character after the cursor is the last non-\c
+<newline>
+in the line, the text region shall be comprised of the current
+character up to and including the last non-\c
+<newline>
+in the line. Otherwise, the text region shall be from the current
+character up to, but not including, the
+.IR count th
+character after the cursor.
+.IP " 2." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+If there are no non-\c
+<newline>
+characters after the current character on the current line, it shall be
+an error.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to the last column that displays any portion of the
+.IR count th
+character after the current character.
+.SS "Replace Text with Results from Shell Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR ! \fImotion shell-commands\fR <newline>
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the motion command is the
+.BR !
+command repeated:
+.IP " 1." 4
+If the edit buffer is empty and no
+.IR count
+was supplied, the command shall be the equivalent of the
+.IR ex
+.BR :read
+.BR !
+command, with the text input, and no text shall be copied to any
+buffer.
+.IP " 2." 4
+Otherwise:
+.RS 4 
+.IP " a." 4
+If there are less than
+.IR count
+\(mi1 lines after the current line in the edit buffer, it shall be an
+error.
+.IP " b." 4
+The text region shall be from the current line up to and including the
+next
+.IR count
+\(mi1 lines.
+.RE
+.P
+Otherwise, the text region shall be the lines in which any character of
+the text region specified by the motion command appear.
+.P
+Any text copied to a buffer shall be in line mode.
+.P
+This command shall be equivalent to the
+.IR ex
+.BR !
+command for the specified lines.
+.SS "Move Cursor to End-of-Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR $
+.fi \fR
+.P
+.RE
+.RE
+.P
+It shall be an error if there are less than (\c
+.IR count
+\(mi1) lines after the current line in the edit buffer.
+.P
+If used as a motion command:
+.IP " 1." 4
+If
+.IR count
+is 1:
+.RS 4 
+.IP " a." 4
+It shall be an error if the line is empty.
+.IP " b." 4
+Otherwise, the text region shall consist of all characters from the
+starting cursor to the last non-\c
+<newline>
+in the line, inclusive, and any text copied to a buffer shall be in
+character mode.
+.RE
+.IP " 2." 4
+Otherwise, if the starting cursor position is at or before the first
+non-\c
+<blank>
+in the line, the text region shall consist of the current and the next
+.IR count
+\(mi1 lines, and any text saved to a buffer shall be in line mode.
+.IP " 3." 4
+Otherwise, the text region shall consist of all characters from the
+starting cursor to the last non-\c
+<newline>
+in the line that is
+.IR count
+\(mi1 lines forward from the current line, and any text copied to a
+buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the
+.IR "current line"
++
+.IR count \(mi1.
+.P
+.IR "Current column" :
+The current column is set to the last display line column of the last
+non-\c
+<newline>
+in the line, or column position 1 if the line is empty.
+.P
+The current column shall be adjusted to be on the last display line
+column of the last non-\c
+<newline>
+of the current line as subsequent commands change the current line,
+until a command changes the current column.
+.SS "Move to Matching Character"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+%
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the character at the current position is not a parenthesis, bracket,
+or curly brace, search forward in the line to the first one of those
+characters. If no such character is found, it shall be an error.
+.P
+The matching character shall be the parenthesis, bracket, or curly
+brace matching the parenthesis, bracket, or curly brace, respectively,
+that was at the current position or that was found on the current
+line.
+.P
+Matching shall be determined as follows, for an open parenthesis:
+.IP " 1." 4
+Set a counter to 1.
+.IP " 2." 4
+Search forwards until a parenthesis is found or the end of the edit
+buffer is reached.
+.IP " 3." 4
+If the end of the edit buffer is reached, it shall be an error.
+.IP " 4." 4
+If an open parenthesis is found, increment the counter by 1.
+.IP " 5." 4
+If a close parenthesis is found, decrement the counter by 1.
+.IP " 6." 4
+If the counter is zero, the current character is the matching
+character.
+.P
+Matching for a close parenthesis shall be equivalent, except that the
+search shall be backwards, from the starting character to the beginning
+of the buffer, a close parenthesis shall increment the counter by 1,
+and an open parenthesis shall decrement the counter by 1.
+.P
+Matching for brackets and curly braces shall be equivalent, except that
+searching shall be done for open and close brackets or open and close
+curly braces. It is implementation-defined whether other characters
+are searched for and matched as well.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the matching cursor was after the starting cursor in the edit
+buffer, and the starting cursor position was at or before the first
+non-\c
+<blank>
+non-\c
+<newline>
+in the starting line, and the matching cursor position was at or after
+the last non-\c
+<blank>
+non-\c
+<newline>
+in the matching line, the text region shall consist of the current line
+to the matching line, inclusive, and any text copied to a buffer shall
+be in line mode.
+.IP " 2." 4
+If the matching cursor was before the starting cursor in the edit
+buffer, and the starting cursor position was at or after the last
+non-\c
+<blank>
+non-\c
+<newline>
+in the starting line, and the matching cursor position was at or before
+the first non-\c
+<blank>
+non-\c
+<newline>
+in the matching line, the text region shall consist of the current line
+to the matching line, inclusive, and any text copied to a buffer shall
+be in line mode.
+.IP " 3." 4
+Otherwise, the text region shall consist of the starting character to
+the matching character, inclusive, and any text copied to a buffer
+shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the line where the matching character is located.
+.P
+.IR "Current column" :
+Set to the last column where any portion of the matching character is
+displayed.
+.SS "Repeat Substitution"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+&
+.fi \fR
+.P
+.RE
+.RE
+.P
+Repeat the previous substitution command. This command shall be
+equivalent to the
+.IR ex
+.BR &
+command with the current line as its addresses, and without
+.IR options ,
+.IR count ,
+or
+.IR flags .
+.SS "Return to Previous Context at Beginning of Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\&' \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+It shall be an error if there is no line in the edit buffer marked by
+.IR character .
+.P
+If used as a motion command:
+.IP " 1." 4
+If the starting cursor is after the marked cursor, then the locations
+of the starting cursor and the marked cursor in the edit buffer shall
+be logically swapped.
+.IP " 2." 4
+The text region shall consist of the starting line up to and including
+the marked line, and any text copied to a buffer shall be in line
+mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the line referenced by the mark.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Return to Previous Context"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\&` \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+It shall be an error if the marked line is no longer in the edit
+buffer. If the marked line no longer contains a character in the saved
+numbered character position, it shall be as if the marked position is
+the first non-\c
+<blank>.
+.P
+If used as a motion command:
+.IP " 1." 4
+It shall be an error if the marked cursor references the same character
+in the edit buffer as the starting cursor.
+.IP " 2." 4
+If the starting cursor is after the marked cursor, then the locations
+of the starting cursor and the marked cursor in the edit buffer shall
+be logically swapped.
+.IP " 3." 4
+If the starting line is empty or the starting cursor is at or before
+the first non-\c
+<blank>
+non-\c
+<newline>
+of the starting line, and the marked cursor line is empty or the marked
+cursor references the first character of the marked cursor line, the
+text region shall consist of all lines containing characters from the
+starting cursor to the line before the marked cursor line, inclusive,
+and any text copied to a buffer shall be in line mode.
+.IP " 4." 4
+Otherwise, if the marked cursor line is empty or the marked cursor
+references a character at or before the first non-\c
+<blank>
+non-\c
+<newline>
+of the marked cursor line, the region of text shall be from the
+starting cursor to the last non-\c
+<newline>
+of the line before the marked cursor line, inclusive, and any text
+copied to a buffer shall be in character mode.
+.IP " 5." 4
+Otherwise, the region of text shall be from the starting cursor
+(inclusive), to the marked cursor (exclusive), and any text copied to a
+buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the line referenced by the mark.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the character referenced
+by the mark is displayed.
+.SS "Return to Previous Section"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR [[
+.fi \fR
+.P
+.RE
+.RE
+.P
+Move the cursor backward through the edit buffer to the first character
+of the previous section boundary,
+.IR count
+times.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the starting cursor was at the first character of the starting line
+or the starting line was empty, and the first character of the boundary
+was the first character of the boundary line, the text region shall
+consist of the current line up to and including the line where the
+.IR count th
+next boundary starts, and any text copied to a buffer shall be in line
+mode.
+.IP " 2." 4
+If the boundary was the last line of the edit buffer or the last non-\c
+<newline>
+of the last line of the edit buffer, the text region shall consist of
+the last character in the edit buffer up to and including the starting
+character, and any text saved to a buffer shall be in character mode.
+.IP " 3." 4
+Otherwise, the text region shall consist of the starting character up
+to but not including the first character in the
+.IR count th
+next boundary, and any text copied to a buffer shall be in character
+mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the line where the
+.IR count th
+next boundary in the edit buffer starts.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the first character of
+the
+.IR count th
+next boundary is displayed, or column position 1 if the line is empty.
+.SS "Move to Next Section"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR ]]
+.fi \fR
+.P
+.RE
+.RE
+.P
+Move the cursor forward through the edit buffer to the first character
+of the next section boundary,
+.IR count
+times.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the starting cursor was at the first character of the starting line
+or the starting line was empty, and the first character of the boundary
+was the first character of the boundary line, the text region shall
+consist of the current line up to and including the line where the
+.IR count th
+previous boundary starts, and any text copied to a buffer shall be in
+line mode.
+.IP " 2." 4
+If the boundary was the first line of the edit buffer, the text region
+shall consist of the first character in the edit buffer up to but not
+including the starting character, and any text copied to a buffer shall
+be in character mode.
+.IP " 3." 4
+Otherwise, the text region shall consist of the first character in the
+.IR count th
+previous section boundary up to but not including the starting
+character, and any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the line where the
+.IR count th
+previous boundary in the edit buffer starts.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the first character of
+the
+.IR count th
+previous boundary is displayed, or column position 1 if the line is
+empty.
+.SS "Move to First Non-<blank> Position on Current Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\&^
+.fi \fR
+.P
+.RE
+.RE
+If used as a motion command:
+.IP " 1." 4
+If the line has no non-\c
+<blank>
+non-\c
+<newline>
+characters, or if the cursor is at the first non-\c
+<blank>
+non-\c
+<newline>
+of the line, it shall be an error.
+.IP " 2." 4
+If the cursor is before the first non-\c
+<blank>
+non-\c
+<newline>
+of the line, the text region shall be comprised of the current
+character, up to, but not including, the first non-\c
+<blank>
+non-\c
+<newline>
+of the line.
+.IP " 3." 4
+If the cursor is after the first non-\c
+<blank>
+non-\c
+<newline>
+of the line, the text region shall be from the character before the
+starting cursor up to and including the first non-\c
+<blank>
+non-\c
+<newline>
+of the line.
+.IP " 4." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Current and Line Above"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR _
+.fi \fR
+.P
+.RE
+.RE
+.P
+If there are less than
+.IR count
+\(mi1 lines after the current line in the edit buffer, it shall be an
+error.
+.P
+If used as a motion command:
+.IP " 1." 4
+If
+.IR count
+is less than 2, the text region shall be the current line.
+.IP " 2." 4
+Otherwise, the text region shall include the starting line and the next
+.IR count
+\(mi1 lines.
+.IP " 3." 4
+Any text copied to a buffer shall be in line mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to current line +
+.IR count
+\(mi1.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Move Back to Beginning of Sentence"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR (
+.fi \fR
+.P
+.RE
+.RE
+.P
+Move backward to the beginning of a sentence. This command shall be
+equivalent to the
+.BR [[
+command, with the exception that sentence boundaries shall be used
+instead of section boundaries.
+.SS "Move Forward to Beginning of Sentence"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR )
+.fi \fR
+.P
+.RE
+.RE
+.P
+Move forward to the beginning of a sentence. This command shall be
+equivalent to the
+.BR ]]
+command, with the exception that sentence boundaries shall be used
+instead of section boundaries.
+.SS "Move Back to Preceding Paragraph"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR {
+.fi \fR
+.P
+.RE
+.RE
+.P
+Move back to the beginning of the preceding paragraph. This command
+shall be equivalent to the
+.BR [[
+command, with the exception that paragraph boundaries shall be used
+instead of section boundaries.
+.SS "Move Forward to Next Paragraph"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR }
+.fi \fR
+.P
+.RE
+.RE
+.P
+Move forward to the beginning of the next paragraph. This command
+shall be equivalent to the
+.BR ]]
+command, with the exception that paragraph boundaries shall be used
+instead of section boundaries.
+.SS "Move to Specific Column Position"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR |
+.fi \fR
+.P
+.RE
+.RE
+.P
+For the purposes of this command, lines that are too long for the
+current display and that have been folded shall be treated as having a
+single, 1\(mibased, number of columns.
+.P
+If there are less than
+.IR count
+columns in which characters from the current line are displayed on the
+screen,
+.IR count
+shall be adjusted to be the last column in which any portion of the
+line is displayed on the screen.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the line is empty, or the cursor character is the same as the
+character on the
+.IR count th
+column of the line, it shall be an error.
+.IP " 2." 4
+If the cursor is before the
+.IR count th
+column of the line, the text region shall be comprised of the current
+character, up to but not including the character on the
+.IR count th
+column of the line.
+.IP " 3." 4
+If the cursor is after the
+.IR count th
+column of the line, the text region shall be from the character before
+the starting cursor up to and including the character on the
+.IR count th
+column of the line.
+.IP " 4." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the character that is
+displayed in the
+.IR count
+column of the line is displayed.
+.SS "Reverse Find Character"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR ,
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the last
+.BR F ,
+.BR f ,
+.BR T ,
+or
+.BR t
+command was
+.BR F ,
+.BR f ,
+.BR T ,
+or
+.BR t ,
+this command shall be equivalent to an
+.BR f ,
+.BR F ,
+.BR t ,
+or
+.BR T
+command, respectively, with the specified
+.IR count
+and the same search character.
+.P
+If there was no previous
+.BR F ,
+.BR f ,
+.BR T ,
+or
+.BR t
+command, it shall be an error.
+.SS "Repeat"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR .
+.fi \fR
+.P
+.RE
+.RE
+.P
+Repeat the last
+.BR ! ,
+.BR < ,
+.BR > ,
+.BR A ,
+.BR C ,
+.BR D ,
+.BR I ,
+.BR J ,
+.BR O ,
+.BR P ,
+.BR R ,
+.BR S ,
+.BR X ,
+.BR Y ,
+.BR a ,
+.BR c ,
+.BR d ,
+.BR i ,
+.BR o ,
+.BR p ,
+.BR r ,
+.BR s ,
+.BR x ,
+.BR y ,
+or
+.BR ~
+command. It shall be an error if none of these commands have been
+executed. Commands (other than commands that enter text input mode)
+executed as a result of map expansions, shall not change the value of
+the last repeatable command.
+.P
+Repeated commands with associated motion commands shall repeat the
+motion command as well; however, any specified
+.IR count
+shall replace the
+.IR count (s)
+that were originally specified to the repeated command or its
+associated motion command.
+.P
+If the motion component of the repeated command is
+.BR f ,
+.BR F ,
+.BR t ,
+or
+.BR T ,
+the repeated command shall not set the remembered search character for
+the
+.BR ;
+and
+.BR ,
+commands.
+.P
+If the repeated command is
+.BR p
+or
+.BR P ,
+and the buffer associated with that command was a numeric buffer named
+with a number less than 9, the buffer associated with the repeated
+command shall be set to be the buffer named by the name of the previous
+buffer logically incremented by 1.
+.P
+If the repeated character is a text input command, the input text
+associated with that command is repeated literally:
+.IP " *" 4
+Input characters are neither macro or abbreviation-expanded.
+.IP " *" 4
+Input characters are not interpreted in any special way with the
+exception that
+<newline>,
+<carriage-return>,
+and
+<control>\(hyT
+behave as described in
+.IR "Input Mode Commands in vi".
+.P
+.IR "Current line" :
+Set as described for the repeated command.
+.P
+.IR "Current column" :
+Set as described for the repeated command.
+.SS "Find Regular Expression"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+/
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the input line contains no non-\c
+<newline>
+characters, it shall be equivalent to a line containing only the
+last regular expression encountered. The enhanced regular expressions
+supported by
+.IR vi
+are described in
+.IR "Regular Expressions in ex".
+.P
+Otherwise, the line shall be interpreted as one or more regular
+expressions, optionally followed by an address offset or a
+.IR vi
+.BR z
+command.
+.P
+If the regular expression is not the last regular expression on the
+line, or if a line offset or
+.BR z
+command is specified, the regular expression shall be terminated by an
+unescaped
+.BR '/' 
+character, which shall not be used as part of the regular expression.
+If the regular expression is not the first regular expression on the
+line, it shall be preceded by zero or more
+<blank>
+characters, a
+<semicolon>,
+zero or more
+<blank>
+characters, and a leading
+.BR '/' 
+character, which shall not be interpreted as part of the regular
+expression. It shall be an error to precede any regular expression with
+any characters other than these.
+.P
+Each search shall begin from the character after the first character of
+the last match (or, if it is the first search, after the cursor). If
+the
+.BR wrapscan
+edit option is set, the search shall continue to the character before
+the starting cursor character; otherwise, to the end of the edit
+buffer. It shall be an error if any search fails to find a match, and
+an informational message to this effect shall be displayed.
+.P
+An optional address offset (see
+.IR "Addressing in ex")
+can be specified after the last regular expression by including a
+trailing
+.BR '/' 
+character after the regular expression and specifying the address
+offset. This offset will be from the line containing the match for the
+last regular expression specified. It shall be an error if the line
+offset would indicate a line address less than 1 or greater than the
+last line in the edit buffer. An address offset of zero shall be
+supported. It shall be an error to follow the address offset with any
+other characters than
+<blank>
+characters.
+.P
+If not used as a motion command, an optional
+.BR z
+command (see
+.IR "Redraw Window")
+can be specified after the last regular expression by including a
+trailing
+.BR '/' 
+character after the regular expression, zero or more
+<blank>
+characters, a
+.BR 'z' ,
+zero or more
+<blank>
+characters, an optional new
+.BR window
+edit option value, zero or more
+<blank>
+characters, and a location character. The effect shall be as if the
+.BR z
+command was executed after the
+.BR /
+command. It shall be an error to follow the
+.BR z
+command with any other characters than
+<blank>
+characters.
+.P
+The remembered search direction shall be set to forward.
+.P
+If used as a motion command:
+.IP " 1." 4
+It shall be an error if the last match references the same character in
+the edit buffer as the starting cursor.
+.IP " 2." 4
+If any address offset is specified, the last match shall be adjusted by
+the specified offset as described previously.
+.IP " 3." 4
+If the starting cursor is after the last match, then the locations of
+the starting cursor and the last match in the edit buffer shall be
+logically swapped.
+.IP " 4." 4
+If any address offset is specified, the text region shall consist of
+all lines containing characters from the starting cursor to the last
+match line, inclusive, and any text copied to a buffer shall be in line
+mode.
+.IP " 5." 4
+Otherwise, if the starting line is empty or the starting cursor is at
+or before the first non-\c
+<blank>
+non-\c
+<newline>
+of the starting line, and the last match line is empty or the last
+match starts at the first character of the last match line, the text
+region shall consist of all lines containing characters from the
+starting cursor to the line before the last match line, inclusive, and
+any text copied to a buffer shall be in line mode.
+.IP " 6." 4
+Otherwise, if the last match line is empty or the last match begins at
+a character at or before the first non-\c
+<blank>
+non-\c
+<newline>
+of the last match line, the region of text shall be from the current
+cursor to the last non-\c
+<newline>
+of the line before the last match line, inclusive, and any text copied
+to a buffer shall be in character mode.
+.IP " 7." 4
+Otherwise, the region of text shall be from the current cursor
+(inclusive), to the first character of the last match (exclusive), and
+any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+If a match is found, set to the last matched line plus the address
+offset, if any; otherwise, unchanged.
+.P
+.IR "Current column" :
+Set to the last column on which any portion of the first character in
+the last matched string is displayed, if a match is found; otherwise,
+unchanged.
+.SS "Move to First Character in Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+0  \fR(zero)\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Move to the first character on the current line. The character
+.BR '0' 
+shall not be interpreted as a command if it is immediately preceded by
+a digit.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the cursor character is the first character in the line, it shall be
+an error.
+.IP " 2." 4
+The text region shall be from the character before the cursor character
+up to and including the first character in the line.
+.IP " 3." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+The last column in which any portion of the first character in the line
+is displayed, or if the line is empty, unchanged.
+.SS "Execute an ex Command"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+:
+.fi \fR
+.P
+.RE
+.RE
+.P
+Execute one or more
+.IR ex
+commands.
+.P
+If any portion of the screen other than the last line of the screen was
+overwritten by any
+.IR ex
+command (except
+.BR shell ),
+.IR vi
+shall display a message indicating that it is waiting for an input from
+the user, and shall then read a character. This action may also be
+taken for other, unspecified reasons.
+.P
+If the next character entered is a
+.BR ':' ,
+another
+.IR ex
+command shall be accepted and executed. Any other character shall cause
+the screen to be refreshed and
+.IR vi
+shall return to command mode.
+.P
+.IR "Current line" :
+As specified for the
+.IR ex
+command.
+.P
+.IR "Current column" :
+As specified for the
+.IR ex
+command.
+.SS "Repeat Find"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR ;
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the last
+.BR F ,
+.BR f ,
+.BR T ,
+or
+.BR t
+command, with the specified
+.IR count ,
+and with the same search character used for the last
+.BR F ,
+.BR f ,
+.BR T ,
+or
+.BR t
+command. If there was no previous
+.BR F ,
+.BR f ,
+.BR T ,
+or
+.BR t
+command, it shall be an error.
+.SS "Shift Left"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR < \fImotion\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the motion command is the
+.BR <
+command repeated:
+.IP " 1." 4
+If there are less than
+.IR count
+\(mi1 lines after the current line in the edit buffer, it shall be an
+error.
+.IP " 2." 4
+The text region shall be from the current line, up to and including the
+next
+.IR count
+\(mi1 lines.
+.P
+Shift any line in the text region specified by the
+.IR count
+and motion command one shiftwidth (see the
+.IR ex
+.BR shiftwidth
+option) toward the start of the line, as described by the
+.IR ex
+.BR <
+command. The unshifted lines shall be copied to the unnamed buffer in
+line mode.
+.P
+.IR "Current line" :
+If the motion was from the current cursor position toward the end of
+the edit buffer, unchanged. Otherwise, set to the first line in the
+edit buffer that is part of the text region specified by the motion
+command.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Shift Right"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR > \fImotion\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the motion command is the
+.BR >
+command repeated:
+.IP " 1." 4
+If there are less than
+.IR count
+\(mi1 lines after the current line in the edit buffer, it shall be an
+error.
+.IP " 2." 4
+The text region shall be from the current line, up to and including the
+next
+.IR count
+\(mi1 lines.
+.P
+Shift any line with characters in the text region specified by the
+.IR count
+and motion command one shiftwidth (see the
+.IR ex
+.BR shiftwidth
+option) away from the start of the line, as described by the
+.IR ex
+.BR >
+command. The unshifted lines shall be copied into the unnamed buffer in
+line mode.
+.P
+.IR "Current line" :
+If the motion was from the current cursor position toward the end of
+the edit buffer, unchanged. Otherwise, set to the first line in the
+edit buffer that is part of the text region specified by the
+motion command.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Scan Backwards for Regular Expression"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+?
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scan backwards; the
+.BR ?
+command shall be equivalent to the
+.BR /
+command (see
+.IR "Find Regular Expression")
+with the following exceptions:
+.IP " 1." 4
+The input prompt shall be a
+.BR '?' .
+.IP " 2." 4
+Each search shall begin from the character before the first character
+of the last match (or, if it is the first search, the character before
+the cursor character).
+.IP " 3." 4
+The search direction shall be from the cursor toward the beginning of
+the edit buffer, and the
+.BR wrapscan
+edit option shall affect whether the search wraps to the end of the
+edit buffer and continues.
+.IP " 4." 4
+The remembered search direction shall be set to backward.
+.SS "Execute"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+@\fIbuffer\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the
+.IR buffer
+is specified as
+.BR @ ,
+the last buffer executed shall be used. If no previous buffer has been
+executed, it shall be an error.
+.P
+Behave as if the contents of the named buffer were entered as standard
+input. After each line of a line-mode buffer, and all but the last line
+of a character mode buffer, behave as if a
+<newline>
+were entered as standard input.
+.P
+If an error occurs during this process, an error message shall be
+written, and no more characters resulting from the execution of this
+command shall be processed.
+.P
+If a
+.IR count
+is specified, behave as if that count were entered as user input before
+the characters from the
+.BR @
+buffer were entered.
+.P
+.IR "Current line" :
+As specified for the individual commands.
+.P
+.IR "Current column" :
+As specified for the individual commands.
+.SS "Reverse Case"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR ~
+.fi \fR
+.P
+.RE
+.RE
+.P
+Reverse the case of the current character and the next
+.IR count
+\(mi1 characters, such that lowercase characters that have uppercase
+counterparts shall be changed to uppercase characters, and uppercase
+characters that have lowercase counterparts shall be changed to
+lowercase characters, as prescribed by the current locale. No other
+characters shall be affected by this command.
+.P
+If there are less than
+.IR count
+\(mi1 characters after the cursor in the edit buffer,
+.IR count
+shall be adjusted to the number of characters after the cursor in the
+edit buffer minus 1.
+.P
+For the purposes of this command, the next character after the last
+non-\c
+<newline>
+on the line shall be the next character in the edit buffer.
+.P
+.IR "Current line" :
+Set to the line including the (\c
+.IR count \(mi1)th
+character after the cursor.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the (\c
+.IR count \(mi1)th
+character after the cursor is displayed.
+.SS "Append"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR a
+.fi \fR
+.P
+.RE
+.RE
+.P
+Enter text input mode after the current cursor position. No characters
+already in the edit buffer shall be affected by this command. A
+.IR count
+shall cause the input text to be appended
+.IR count
+\(mi1 more times to the end of the input.
+.P
+.IR "Current line/column" :
+As specified for the text input commands (see
+.IR "Input Mode Commands in vi").
+.SS "Append at End-of-Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR A
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR vi
+command:
+.sp
+.RS 4
+.nf
+\fB
+\fR$\fB [ \fIcount \fB]\fR a
+.fi \fR
+.P
+.RE
+.P
+(see
+.IR "Append").
+.SS "Move Backward to Preceding Word"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR b
+.fi \fR
+.P
+.RE
+.RE
+.P
+With the exception that words are used as the delimiter instead of
+bigwords, this command shall be equivalent to the
+.BR B
+command.
+.SS "Move Backward to Preceding Bigword"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR B
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the edit buffer is empty or the cursor is on the first character of
+the edit buffer, it shall be an error. If less than
+.IR count
+bigwords begin between the cursor and the start of the edit buffer,
+.IR count
+shall be adjusted to the number of bigword beginnings between the
+cursor and the start of the edit buffer.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall be from the first character of the
+.IR count th
+previous bigword beginning up to but not including the cursor
+character.
+.IP " 2." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the line containing the
+.IR "current column" .
+.P
+.IR "Current column" :
+Set to the last column upon which any part of the first character of
+the
+.IR count th
+previous bigword is displayed.
+.SS "Change"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR c \fImotion\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the motion command is the
+.BR c
+command repeated:
+.IP " 1." 4
+The buffer text shall be in line mode.
+.IP " 2." 4
+If there are less than
+.IR count
+\(mi1 lines after the current line in the edit buffer, it shall be an
+error.
+.IP " 3." 4
+The text region shall be from the current line up to and including the
+next
+.IR count
+\(mi1 lines.
+.P
+Otherwise, the buffer text mode and text region shall be as specified
+by the motion command.
+.P
+The replaced text shall be copied into
+.IR buffer ,
+if specified, and into the unnamed buffer. If the text to be replaced
+contains characters from more than a single line, or the buffer text is
+in line mode, the replaced text shall be copied into the numeric
+buffers as well.
+.P
+If the buffer text is in line mode:
+.IP " 1." 4
+Any lines that contain characters in the region shall be deleted, and
+the editor shall enter text input mode at the beginning of a new line
+which shall replace the first line deleted.
+.IP " 2." 4
+If the
+.BR autoindent
+edit option is set,
+.BR autoindent
+characters equal to the
+.BR autoindent
+characters on the first line deleted shall be inserted as if entered by
+the user.
+.P
+Otherwise, if characters from more than one line are in the region of
+text:
+.IP " 1." 4
+The text shall be deleted.
+.IP " 2." 4
+Any text remaining in the last line in the text region shall be
+appended to the first line in the region, and the last line in the
+region shall be deleted.
+.IP " 3." 4
+The editor shall enter text input mode after the last character not
+deleted from the first line in the text region, if any; otherwise, on
+the first column of the first line in the region.
+.br
+.P
+Otherwise:
+.IP " 1." 4
+If the glyph for
+.BR '$' 
+is smaller than the region, the end of the region shall be marked with
+a
+.BR '$' .
+.IP " 2." 4
+The editor shall enter text input mode, overwriting the region of
+text.
+.P
+.IR "Current line/column" :
+As specified for the text input commands (see
+.IR "Input Mode Commands in vi").
+.SS "Change to End-of-Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR C
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR vi
+command:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR c$
+.fi \fR
+.P
+.RE
+.P
+See the
+.BR c
+command.
+.SS "Delete"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR d \fImotion\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the motion command is the
+.BR d
+command repeated:
+.IP " 1." 4
+The buffer text shall be in line mode.
+.IP " 2." 4
+If there are less than
+.IR count
+\(mi1 lines after the current line in the edit buffer, it shall be an
+error.
+.IP " 3." 4
+The text region shall be from the current line up to and including the
+next
+.IR count
+\(mi1 lines.
+.P
+Otherwise, the buffer text mode and text region shall be as specified
+by the motion command.
+.P
+If in open mode, and the current line is deleted, and the line remains
+on the display, an
+.BR '@' 
+character shall be displayed as the first glyph of that line.
+.P
+Delete the region of text into
+.IR buffer ,
+if specified, and into the unnamed buffer. If the text to be deleted
+contains characters from more than a single line, or the buffer text is
+in line mode, the deleted text shall be copied into the numeric
+buffers, as well.
+.P
+.IR "Current line" :
+Set to the first text region line that appears in the edit buffer,
+unless that line has been deleted, in which case it shall be set to the
+last line in the edit buffer, or line 1 if the edit buffer is empty.
+.P
+.IR "Current column" :
+.IP " 1." 4
+If the line is empty, set to column position 1.
+.IP " 2." 4
+Otherwise, if the buffer text is in line mode or the motion was from
+the cursor toward the end of the edit buffer:
+.RS 4 
+.IP " a." 4
+If a character from the current line is displayed in the current
+column, set to the last column that displays any portion of that
+character.
+.IP " b." 4
+Otherwise, set to the last column in which any portion of any character
+in the line is displayed.
+.RE
+.IP " 3." 4
+Otherwise, if a character is displayed in the column that began the
+text region, set to the last column that displays any portion of that
+character.
+.IP " 4." 4
+Otherwise, set to the last column in which any portion of any character
+in the line is displayed.
+.SS "Delete to End-of-Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB]\fR D
+.fi \fR
+.P
+.RE
+.RE
+.P
+Delete the text from the current position to the end of the current
+line; equivalent to the
+.IR vi
+command:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB]\fR d$
+.fi \fR
+.P
+.RE
+.SS "Move to End-of-Word"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR e
+.fi \fR
+.P
+.RE
+.RE
+.P
+With the exception that words are used instead of bigwords as the
+delimiter, this command shall be equivalent to the
+.BR E
+command.
+.SS "Move to End-of-Bigword"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR E
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the edit buffer is empty it shall be an error. If less than
+.IR count
+bigwords end between the cursor and the end of the edit buffer,
+.IR count
+shall be adjusted to the number of bigword endings between the cursor
+and the end of the edit buffer.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall be from the last character of the
+.IR count th
+next bigword up to and including the cursor character.
+.IP " 2." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to the line containing the current column.
+.P
+.IR "Current column" :
+Set to the last column upon which any part of the last character of the
+.IR count th
+next bigword is displayed.
+.SS "Find Character in Current Line (Forward)"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR f \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+It shall be an error if
+.IR count
+occurrences of the character do not occur after the cursor in the
+line.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text range shall be from the cursor character up to and including
+the
+.IR count th
+occurrence of the specified character after the cursor.
+.IP " 2." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the
+.IR count th
+occurrence of the specified character after the cursor appears in the
+line.
+.SS "Find Character in Current Line (Reverse)"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR F \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+It shall be an error if
+.IR count
+occurrences of the character do not occur before the cursor in the
+line.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall be from the
+.IR count th
+occurrence of the specified character before the cursor, up to, but not
+including the cursor character.
+.IP " 2." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the
+.IR count th
+occurrence of the specified character before the cursor appears in the
+line.
+.SS "Move to Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR G
+.fi \fR
+.P
+.RE
+.RE
+.P
+If
+.IR count
+is not specified, it shall default to the last line of the edit buffer.
+If
+.IR count
+is greater than the last line of the edit buffer, it shall be an
+error.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall be from the cursor line up to and including the
+specified line.
+.IP " 2." 4
+Any text copied to a buffer shall be in line mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Set to
+.IR count
+if
+.IR count
+is specified; otherwise, the last line.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Move to Top of Screen"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR H
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the beginning of the line
+.IR count
+greater than the first line of which any portion appears on the display
+does not exist, it shall be an error.
+.P
+If used as a motion command:
+.IP " 1." 4
+If in open mode, the text region shall be the current line.
+.IP " 2." 4
+Otherwise, the text region shall be from the starting line up to and
+including (the first line of the display +
+.IR count
+\(mi1).
+.IP " 3." 4
+Any text copied to a buffer shall be in line mode.
+.P
+If not used as a motion command:
+.P
+If in open mode, this command shall set the current column to non-\c
+<blank>
+and do nothing else.
+.P
+Otherwise, it shall set the current line and current column as
+follows.
+.P
+.IR "Current line" :
+Set to (the first line of the display +
+.IR count
+\(mi1).
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Insert Before Cursor"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR i
+.fi \fR
+.P
+.RE
+.RE
+.P
+Enter text input mode before the current cursor position. No characters
+already in the edit buffer shall be affected by this command. A
+.IR count
+shall cause the input text to be appended
+.IR count
+\(mi1 more times to the end of the input.
+.P
+.IR "Current line/column" :
+As specified for the text input commands (see
+.IR "Input Mode Commands in vi").
+.SS "Insert at Beginning of Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR I
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR vi
+command ^[\c
+.IR count ]\c
+.BR i .
+.SS "Join"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR J
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the current line is the last line in the edit buffer, it shall be an
+error.
+.P
+This command shall be equivalent to the
+.IR ex
+.BR join
+command with no addresses, and an
+.IR ex
+command
+.IR count
+value of 1 if
+.IR count
+was not specified or if a
+.IR count
+of 1 was specified, and an
+.IR ex
+command
+.IR count
+value of
+.IR count
+\(mi1 for any other value of
+.IR count ,
+except that the current line and column shall be set as follows.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+The last column in which any portion of the character following the
+last character in the initial line is displayed, or the last non-\c
+<newline>
+in the line if no characters were appended.
+.SS "Move to Bottom of Screen"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR L
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the beginning of the line
+.IR count
+less than the last line of which any portion appears on the display
+does not exist, it shall be an error.
+.P
+If used as a motion command:
+.IP " 1." 4
+If in open mode, the text region shall be the current line.
+.IP " 2." 4
+Otherwise, the text region shall include all lines from the starting
+cursor line to (the last line of the display \(mi(\c
+.IR count
+\(mi1)).
+.IP " 3." 4
+Any text copied to a buffer shall be in line mode.
+.P
+If not used as a motion command:
+.IP " 1." 4
+If in open mode, this command shall set the current column to non-\c
+<blank>
+and do nothing else.
+.IP " 2." 4
+Otherwise, it shall set the current line and current column as follows.
+.P
+.IR "Current line" :
+Set to (the last line of the display \(mi(\c
+.IR count
+\(mi1)).
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Mark Position"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+m \fIletter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR ex
+.BR mark
+command with the specified character as an argument.
+.SS "Move to Middle of Screen"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+M
+.fi \fR
+.P
+.RE
+.RE
+.P
+The middle line of the display shall be calculated as follows:
+.sp
+.RS 4
+.nf
+\fB
+(the top line of the display) + (((number of lines displayed) +1) /2) \(mi1
+.fi \fR
+.P
+.RE
+.P
+If used as a motion command:
+.IP " 1." 4
+If in open mode, the text region shall be the current line.
+.IP " 2." 4
+Otherwise, the text region shall include all lines from the starting
+cursor line up to and including the middle line of the display.
+.IP " 3." 4
+Any text copied to a buffer shall be in line mode.
+.P
+If not used as a motion command:
+.P
+If in open mode, this command shall set the current column to non-\c
+<blank>
+and do nothing else.
+.P
+Otherwise, it shall set the current line and current column as
+follows.
+.P
+.IR "Current line" :
+Set to the middle line of the display.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Repeat Regular Expression Find (Forward)"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+n
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the remembered search direction was forward, the
+.BR n
+command shall be equivalent to the
+.IR vi
+.BR /
+command with no characters entered by the user. Otherwise, it shall be
+equivalent to the
+.IR vi
+.BR ?
+command with no characters entered by the user.
+.P
+If the
+.BR n
+command is used as a motion command for the
+.BR !
+command, the editor shall not enter text input mode on the last line on
+the screen, and shall behave as if the user entered a single
+.BR '!' 
+character as the text input.
+.SS "Repeat Regular Expression Find (Reverse)"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+N
+.fi \fR
+.P
+.RE
+.RE
+.P
+Scan for the next match of the last pattern given to
+.BR /
+or
+.BR ? ,
+but in the reverse direction; this is the reverse of
+.BR n .
+.P
+If the remembered search direction was forward, the
+.BR N
+command shall be equivalent to the
+.IR vi
+.BR ?
+command with no characters entered by the user. Otherwise, it shall be
+equivalent to the
+.IR vi
+.BR /
+command with no characters entered by the user. If the
+.BR N
+command is used as a motion command for the
+.BR !
+command, the editor shall not enter text input mode on the last line on
+the screen, and shall behave as if the user entered a single
+.BR !
+character as the text input.
+.SS "Insert Empty Line Below"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+o
+.fi \fR
+.P
+.RE
+.RE
+.P
+Enter text input mode in a new line appended after the current line. A
+.IR count
+shall cause the input text to be appended
+.IR count
+\(mi1 more times to the end of the already added text, each time
+starting on a new, appended line.
+.P
+.IR "Current line/column" :
+As specified for the text input commands (see
+.IR "Input Mode Commands in vi").
+.SS "Insert Empty Line Above"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+O
+.fi \fR
+.P
+.RE
+.RE
+.P
+Enter text input mode in a new line inserted before the current line. A
+.IR count
+shall cause the input text to be appended
+.IR count
+\(mi1 more times to the end of the already added text, each time
+starting on a new, appended line.
+.P
+.IR "Current line/column" :
+As specified for the text input commands (see
+.IR "Input Mode Commands in vi").
+.SS "Put from Buffer Following"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB]\fR p
+.fi \fR
+.P
+.RE
+.RE
+.P
+If no
+.IR buffer
+is specified, the unnamed buffer shall be used.
+.P
+If the buffer text is in line mode, the text shall be appended below
+the current line, and each line of the buffer shall become a new line
+in the edit buffer. A
+.IR count
+shall cause the buffer text to be appended
+.IR count
+\(mi1 more times to the end of the already added text, each time
+starting on a new, appended line.
+.P
+If the buffer text is in character mode, the text shall be appended
+into the current line after the cursor, and each line of the buffer
+other than the first and last shall become a new line in the edit
+buffer. A
+.IR count
+shall cause the buffer text to be appended
+.IR count
+\(mi1 more times to the end of the already added text, each time
+starting after the last added character.
+.P
+.IR "Current line" :
+If the buffer text is in line mode, set the line to line +1; otherwise,
+unchanged.
+.P
+.IR "Current column" :
+If the buffer text is in line mode:
+.IP " 1." 4
+If there is a non-\c
+<blank>
+in the first line of the buffer, set to the last column on which any
+portion of the first non-\c
+<blank>
+in the line is displayed.
+.IP " 2." 4
+If there is no non-\c
+<blank>
+in the first line of the buffer, set to the last column on which any
+portion of the last non-\c
+<newline>
+in the first line of the buffer is displayed.
+.P
+If the buffer text is in character mode:
+.IP " 1." 4
+If the text in the buffer is from more than a single line, then set to
+the last column on which any portion of the first character from the
+buffer is displayed.
+.IP " 2." 4
+Otherwise, if the buffer is the unnamed buffer, set to the last column
+on which any portion of the last character from the buffer is
+displayed.
+.IP " 3." 4
+Otherwise, set to the first column on which any portion of the first
+character from the buffer is displayed.
+.SS "Put from Buffer Before"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB]\fR P
+.fi \fR
+.P
+.RE
+.RE
+.P
+If no
+.IR buffer
+is specified, the unnamed buffer shall be used.
+.P
+If the buffer text is in line mode, the text shall be inserted above
+the current line, and each line of the buffer shall become a new line
+in the edit buffer. A
+.IR count
+shall cause the buffer text to be appended
+.IR count
+\(mi1 more times to the end of the already added text, each time
+starting on a new, appended line.
+.P
+If the buffer text is in character mode, the text shall be inserted
+into the current line before the cursor, and each line of the buffer
+other than the first and last shall become a new line in the edit
+buffer. A
+.IR count
+shall cause the buffer text to be appended
+.IR count
+\(mi1 more times to the end of the already added text, each time
+starting after the last added character.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+If the buffer text is in line mode:
+.IP " 1." 4
+If there is a non-\c
+<blank>
+in the first line of the buffer, set to the last column on which any
+portion of that character is displayed.
+.IP " 2." 4
+If there is no non-\c
+<blank>
+in the first line of the buffer, set to the last column on which any
+portion of the last non-\c
+<newline>
+in the first line of the buffer is displayed.
+.P
+If the buffer text is in character mode:
+.IP " 1." 4
+If the text in the buffer is from more than a single line, then set to
+the last column on which any portion of the first character from the
+buffer is displayed.
+.IP " 2." 4
+Otherwise, if the buffer is the unnamed buffer, set to the last column
+on which any portion of the last character from the buffer is displayed.
+.IP " 3." 4
+Otherwise, set to the first column on which any portion of the first
+character from the buffer is displayed.
+.SS "Enter ex Mode"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+Q
+.fi \fR
+.P
+.RE
+.RE
+.P
+Leave visual or open mode and enter
+.IR ex
+command mode.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Unchanged.
+.SS "Replace Character"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR r \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Replace the
+.IR count
+characters at and after the cursor with the specified character. If
+there are less than
+.IR count
+non-\c
+<newline>
+characters at and after the cursor on the line, it shall be an error.
+.P
+If character is
+<control>\(hyV,
+any next character other than the
+<newline>
+shall be stripped of any special meaning and used as a literal
+character.
+.P
+If character is
+<ESC>,
+no replacement shall be made and the current line and current column
+shall be unchanged.
+.P
+If character is
+<carriage-return>
+or
+<newline>,
+.IR count
+new lines shall be appended to the current line. All but the last of
+these lines shall be empty.
+.IR count
+characters at and after the cursor shall be discarded, and any
+remaining characters after the cursor in the current line shall be
+moved to the last of the new lines. If the
+.BR autoindent
+edit option is set, they shall be preceded by the same number of
+.BR autoindent
+characters found on the line from which the command was executed.
+.P
+.IR "Current line" :
+Unchanged unless the replacement character is a
+<carriage-return>
+or
+<newline>,
+in which case it shall be set to line +
+.IR count .
+.P
+.IR "Current column" :
+Set to the last column position on which a portion of the last replaced
+character is displayed, or if the replacement character caused new
+lines to be created, set to non-\c
+<blank>.
+.SS "Replace Characters"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+R
+.fi \fR
+.P
+.RE
+.RE
+.P
+Enter text input mode at the current cursor position possibly
+replacing text on the current line. A
+.IR count
+shall cause the input text to be appended
+.IR count
+\(mi1 more times to the end of the input.
+.P
+.IR "Current line/column" :
+As specified for the text input commands (see
+.IR "Input Mode Commands in vi").
+.SS "Substitute Character"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR s
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR vi
+command:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR c<space>
+.fi \fR
+.P
+.RE
+.SS "Substitute Lines"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR S
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR vi
+command:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR c_
+.fi \fR
+.P
+.RE
+.SS "Move Cursor to Before Character (Forward)"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR t \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+It shall be an error if
+.IR count
+occurrences of the character do not occur after the cursor in the
+line.
+.P
+If used as a motion command:
+.IP " 1." 4
+The text region shall be from the cursor up to but not including the
+.IR count th
+occurrence of the specified character after the cursor.
+.IP " 2." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the character before the
+.IR count th
+occurrence of the specified character after the cursor appears in the
+line.
+.SS "Move Cursor to After Character (Reverse)"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR T \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+It shall be an error if
+.IR count
+occurrences of the character do not occur before the cursor in the
+line.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the character before the cursor is the specified character, it shall
+be an error.
+.IP " 2." 4
+The text region shall be from the character before the cursor up to but
+not including the
+.IR count th
+occurrence of the specified character before the cursor.
+.IP " 3." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to the last column in which any portion of the character after the
+.IR count th
+occurrence of the specified character before the cursor appears in the
+line.
+.SS "Undo"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+u
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR ex
+.BR undo
+command except that the current line and current column shall be set as
+follows:
+.P
+.IR "Current line" :
+Set to the first line added or changed if any; otherwise, move to the
+line preceding any deleted text if one exists; otherwise, move to line 1.
+.P
+.IR "Current column" :
+If undoing an
+.IR ex
+command, set to the first non-\c
+<blank>.
+.P
+Otherwise, if undoing a text input command:
+.IP " 1." 4
+If the command was a
+.BR C ,
+.BR c ,
+.BR O ,
+.BR o ,
+.BR R ,
+.BR S ,
+or
+.BR s
+command, the current column shall be set to the value it held when the
+text input command was entered.
+.IP " 2." 4
+Otherwise, set to the last column in which any portion of the first
+character after the deleted text is displayed, or, if no non-\c
+<newline>
+characters follow the text deleted from this line, set to the last column
+in which any portion of the last non-\c
+<newline>
+in the line is displayed, or 1 if the line is empty.
+.P
+Otherwise, if a single line was modified (that is, not added or
+deleted) by the
+.BR u
+command:
+.IP " 1." 4
+If text was added or changed, set to the last column in which any
+portion of the first character added or changed is displayed.
+.IP " 2." 4
+If text was deleted, set to the last column in which any portion of the
+first character after the deleted text is displayed, or, if no non-\c
+<newline>
+characters follow the deleted text, set to the last column in which any
+portion of the last non-\c
+<newline>
+in the line is displayed, or 1 if the line is empty.
+.P
+Otherwise, set to non-\c
+<blank>.
+.SS "Undo Current Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+U
+.fi \fR
+.P
+.RE
+.RE
+.P
+Restore the current line to its state immediately before the most
+recent time that it became the current line.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to the first column in the line in which any portion of the first
+character in the line is displayed.
+.SS "Move to Beginning of Word"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR w
+.fi \fR
+.P
+.RE
+.RE
+.P
+With the exception that words are used as the delimiter instead of
+bigwords, this command shall be equivalent to the
+.BR W
+command.
+.SS "Move to Beginning of Bigword"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR W
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the edit buffer is empty, it shall be an error. If there are less
+than
+.IR count
+bigwords between the cursor and the end of the edit buffer,
+.IR count
+shall be adjusted to move the cursor to the last bigword in the edit
+buffer.
+.P
+If used as a motion command:
+.IP " 1." 4
+If the associated command is
+.BR c ,
+.IR count
+is 1, and the cursor is on a
+<blank>,
+the region of text shall be the current character and no further action
+shall be taken.
+.IP " 2." 4
+If there are less than
+.IR count
+bigwords between the cursor and the end of the edit buffer, then the
+command shall succeed, and the region of text shall include the last
+character of the edit buffer.
+.IP " 3." 4
+If there are
+<blank>
+characters or an end-of-line that precede the
+.IR count th
+bigword, and the associated command is
+.BR c ,
+the region of text shall be up to and including the last character
+before the preceding
+<blank>
+characters or end-of-line.
+.IP " 4." 4
+If there are
+<blank>
+characters or an end-of-line that precede the bigword, and the associated
+command is
+.BR d
+or
+.BR y ,
+the region of text shall be up to and including the last
+<blank>
+before the start of the bigword or end-of-line.
+.IP " 5." 4
+Any text copied to a buffer shall be in character mode.
+.P
+If not used as a motion command:
+.IP " 1." 4
+If the cursor is on the last character of the edit buffer, it shall be
+an error.
+.P
+.IR "Current line" :
+Set to the line containing the current column.
+.P
+.IR "Current column" :
+Set to the last column in which any part of the first character of the
+.IR count th
+next bigword is displayed.
+.SS "Delete Character at Cursor"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR x
+.fi \fR
+.P
+.RE
+.RE
+.P
+Delete the
+.IR count
+characters at and after the current character into
+.IR buffer ,
+if specified, and into the unnamed buffer.
+.P
+If the line is empty, it shall be an error. If there are less than
+.IR count
+non-\c
+<newline>
+characters at and after the cursor on the current line,
+.IR count
+shall be adjusted to the number of non-\c
+<newline>
+characters at and after the cursor.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+If the line is empty, set to column position 1. Otherwise, if there
+were
+.IR count
+or less non-\c
+<newline>
+characters at and after the cursor on the current line, set to the last
+column that displays any part of the last non-\c
+<newline>
+of the line. Otherwise, unchanged.
+.SS "Delete Character Before Cursor"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR X
+.fi \fR
+.P
+.RE
+.RE
+.P
+Delete the
+.IR count
+characters before the current character into
+.IR buffer ,
+if specified, and into the unnamed buffer.
+.P
+If there are no characters before the current character on the current
+line, it shall be an error. If there are less than
+.IR count
+previous characters on the current line,
+.IR count
+shall be adjusted to the number of previous characters on the line.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to (current column \(mi the width of the deleted characters).
+.SS "Yank"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR y \fImotion\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+Copy (yank) the region of text into
+.IR buffer ,
+if specified, and into the unnamed buffer.
+.P
+If the motion command is the
+.BR y
+command repeated:
+.IP " 1." 4
+The buffer shall be in line mode.
+.IP " 2." 4
+If there are less than
+.IR count
+\(mi1 lines after the current line in the edit buffer, it shall be an
+error.
+.IP " 3." 4
+The text region shall be from the current line up to and including the
+next
+.IR count
+\(mi1 lines.
+.P
+Otherwise, the buffer text mode and text region shall be as specified
+by the motion command.
+.P
+.IR "Current line" :
+If the motion was from the current cursor position toward the end of
+the edit buffer, unchanged. Otherwise, set to the first line in the
+edit buffer that is part of the text region specified by the
+motion command.
+.P
+.IR "Current column" :
+.IP " 1." 4
+If the motion was from the current cursor position toward the end of
+the edit buffer, unchanged.
+.IP " 2." 4
+Otherwise, if the current line is empty, set to column position 1.
+.IP " 3." 4
+Otherwise, set to the last column that displays any part of the first
+character in the file that is part of the text region specified by the
+motion command.
+.SS "Yank Current Line"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR Y
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR vi
+command:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIbuffer\fB][\fIcount\fB]\fR y_
+.fi \fR
+.P
+.RE
+.SS "Redraw Window"
+.P
+If in open mode, the
+.BR z
+command shall have the Synopsis:
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIcount\fB]\fR z
+.fi \fR
+.P
+.RE
+.RE
+.P
+If
+.IR count
+is not specified, it shall default to the
+.BR window
+edit option \(mi1. The
+.BR z
+command shall be equivalent to the
+.IR ex
+.BR z
+command, with a type character of
+.BR =
+and a
+.IR count
+of
+.IR count
+\(mi2, except that the current line and current column shall be set as
+follows, and the
+.BR window
+edit option shall not be affected. If the calculation for the
+.IR count
+argument would result in a negative number, the
+.IR count
+argument to the
+.IR ex
+.BR z
+command shall be zero. A blank line shall be written after the last
+line is written.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Unchanged.
+.P
+If not in open mode, the
+.BR z
+command shall have the following Synopsis:
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIline\fB]\fR z \fB[\fIcount\fB] \fIcharacter\fR
+.fi \fR
+.P
+.RE
+.RE
+.P
+If
+.IR line
+is not specified, it shall default to the current line. If
+.IR line
+is specified, but is greater than the number of lines in the edit
+buffer, it shall default to the number of lines in the edit buffer.
+.P
+If
+.IR count
+is specified, the value of the
+.BR window
+edit option shall be set to
+.IR count
+(as described in the
+.IR ex
+.BR window
+command), and the screen shall be redrawn.
+.P
+.IR line
+shall be placed as specified by the following characters:
+.IP "<newline>,\ <carriage-return>" 6
+.br
+Place the beginning of the line on the first line of the display.
+.IP "\fR.\fP" 6
+Place the beginning of the line in the center of the display. The
+middle line of the display shall be calculated as described for the
+.BR M
+command.
+.IP "\fR\(mi\fP" 6
+Place an unspecified portion of the line on the last line of the
+display.
+.IP "\fR+\fP" 6
+If
+.IR line
+was specified, equivalent to the
+<newline>
+case. If
+.IR line
+was not specified, display a screen where the first line of the display
+shall be (current last line) +1. If there are no lines after the last
+line in the display, it shall be an error.
+.IP "\fR^\fP" 6
+If
+.IR line
+was specified, display a screen where the last line of the display
+shall contain an unspecified portion of the first line of a display
+that had an unspecified portion of the specified line on the last line
+of the display. If this calculation results in a line before the
+beginning of the edit buffer, display the first screen of the edit
+buffer.
+.RS 6 
+.P
+Otherwise, display a screen where the last line of the display shall
+contain an unspecified portion of (current first line \(mi1). If this
+calculation results in a line before the beginning of the edit buffer,
+it shall be an error.
+.RE
+.br
+.P
+.IR "Current line" :
+If
+.IR line
+and the
+.BR '^' 
+character were specified:
+.IP " 1." 4
+If the first screen was displayed as a result of the command attempting
+to display lines before the beginning of the edit buffer: if the first
+screen was already displayed, unchanged; otherwise, set to (current
+first line \(mi1).
+.IP " 2." 4
+Otherwise, set to the last line of the display.
+.P
+If
+.IR line
+and the
+.BR '\(pl' 
+character were specified, set to the first line of the display.
+.P
+Otherwise, if
+.IR line
+was specified, set to
+.IR line .
+.P
+Otherwise, unchanged.
+.P
+.IR "Current column" :
+Set to non-\c
+<blank>.
+.SS "Exit"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+ZZ
+.fi \fR
+.P
+.RE
+.RE
+.P
+This command shall be equivalent to the
+.IR ex
+.BR xit
+command with no addresses, trailing
+.BR ! ,
+or filename (see the
+.IR ex
+.BR xit
+command).
+.SS "Input Mode Commands in vi"
+.P
+In text input mode, the current line shall consist of zero or more of
+the following categories, plus the terminating
+<newline>:
+.IP " 1." 4
+Characters preceding the text input entry point
+.RS 4 
+.P
+Characters in this category shall not be modified during text input
+mode.
+.RE
+.IP " 2." 4
+.BR autoindent
+characters
+.RS 4 
+.P
+.BR autoindent
+characters shall be automatically inserted into each line that is
+created in text input mode, either as a result of entering a
+<newline>
+or
+<carriage-return>
+while in text input mode, or as an effect of the command itself; for
+example,
+.BR O
+or
+.BR o
+(see the
+.IR ex
+.BR autoindent
+command), as if entered by the user.
+.P
+It shall be possible to erase
+.BR autoindent
+characters with the
+<control>\(hyD
+command; it is unspecified whether they can be erased by
+<control>\(hyH,
+<control>\(hyU,
+and
+<control>\(hyW
+characters. Erasing any
+.BR autoindent
+character turns the glyph into erase-columns and deletes the character
+from the edit buffer, but does not change its representation on the
+screen.
+.RE
+.IP " 3." 4
+Text input characters
+.RS 4 
+.P
+Text input characters are the characters entered by the user. Erasing
+any text input character turns the glyph into erase-columns and deletes
+the character from the edit buffer, but does not change its
+representation on the screen.
+.P
+Each text input character entered by the user (that does not have a
+special meaning) shall be treated as follows:
+.IP " a." 4
+The text input character shall be appended to the last character in the
+edit buffer from the first, second, or third categories.
+.IP " b." 4
+If there are no erase-columns on the screen, the text input command was
+the
+.BR R
+command, and characters in the fifth category from the original line
+follow the cursor, the next such character shall be deleted from the
+edit buffer. If the
+.BR slowopen
+edit option is not set, the corresponding glyph on the screen shall
+become erase-columns.
+.IP " c." 4
+If there are erase-columns on the screen, as many columns as they
+occupy, or as are necessary, shall be overwritten to display the text
+input character. (If only part of a multi-column glyph is overwritten,
+the remainder shall be left on the screen, and continue to be treated
+as erase-columns; it is unspecified whether the remainder of the glyph
+is modified in any way.)
+.IP " d." 4
+If additional display line columns are needed to display the text input
+character:
+.RS 4 
+.IP " i." 5
+If the
+.BR slowopen
+edit option is set, the text input characters shall be displayed on
+subsequent display line columns, overwriting any characters displayed
+in those columns.
+.IP ii. 5
+Otherwise, any characters currently displayed on or after the column on
+the display line where the text input character is to be displayed
+shall be pushed ahead the number of display line columns necessary to
+display the rest of the text input character.
+.RE
+.RE
+.IP " 4." 4
+Erase-columns
+.RS 4 
+.P
+Erase-columns are not logically part of the edit buffer, appearing only
+on the screen, and may be overwritten on the screen by subsequent text
+input characters. When text input mode ends, all erase-columns shall no
+longer appear on the screen.
+.P
+Erase-columns are initially the region of text specified by the
+.BR c
+command (see
+.IR "Change");
+however, erasing
+.BR autoindent
+or text input characters causes the glyphs of the erased characters to
+be treated as erase-columns.
+.RE
+.IP " 5." 4
+Characters following the text region for the
+.BR c
+command, or the text input entry point for all other commands
+.RS 4 
+.P
+Characters in this category shall not be modified during text input
+mode, except as specified in category 3.b. for the
+.BR R
+text input command, or as
+<blank>
+characters deleted when a
+<newline>
+or
+<carriage-return>
+is entered.
+.RE
+.P
+It is unspecified whether it is an error to attempt to erase past the
+beginning of a line that was created by the entry of a
+<newline>
+or
+<carriage-return>
+during text input mode. If it is not an error, the editor shall behave
+as if the erasing character was entered immediately after the last text
+input character entered on the previous line, and all of the non-\c
+<newline>
+characters on the current line shall be treated as erase-columns.
+.P
+When text input mode is entered, or after a text input mode character
+is entered (except as specified for the special characters below), the
+cursor shall be positioned as follows:
+.IP " 1." 4
+On the first column that displays any part of the first erase-column,
+if one exists
+.IP " 2." 4
+Otherwise, if the
+.BR slowopen
+edit option is set, on the first display line column after the last
+character in the first, second, or third categories, if one exists
+.IP " 3." 4
+Otherwise, the first column that displays any part of the first
+character in the fifth category, if one exists
+.IP " 4." 4
+Otherwise, the display line column after the last character in the
+first, second, or third categories, if one exists
+.IP " 5." 4
+Otherwise, on column position 1
+.P
+The characters that are updated on the screen during text input mode
+are unspecified, other than that the last text input character shall
+always be updated, and, if the
+.BR slowopen
+edit option is not set, the current cursor character shall always be
+updated.
+.P
+The following specifications are for command characters entered during
+text input mode.
+.SS "NUL"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+NUL
+.fi \fR
+.P
+.RE
+.RE
+.P
+If the first character of the text input is a NUL, the most recently
+input text shall be input as if entered by the user, and then text
+input mode shall be exited. The text shall be input literally; that is,
+characters are neither macro or abbreviation expanded, nor are any
+characters interpreted in any special manner. It is unspecified whether
+implementations shall support more than 256 bytes of remembered input
+text.
+.SS "<control>-D"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-D
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+<control>\(hyD
+character shall have no special meaning when in text input
+mode for a line-oriented command (see
+.IR "Command Descriptions in vi").
+.P
+This command need not be supported on block-mode terminals.
+.P
+If the cursor does not follow an
+.BR autoindent
+character, or an
+.BR autoindent
+character and a
+.BR '0' 
+or
+.BR '^' 
+character:
+.IP " 1." 4
+If the cursor is in column position 1, the
+<control>\(hyD
+character shall be discarded and no further action taken.
+.IP " 2." 4
+Otherwise, the
+<control>\(hyD
+character shall have no special meaning.
+.P
+If the last input character was a
+.BR '0' ,
+the cursor shall be moved to column position 1.
+.P
+Otherwise, if the last input character was a
+.BR '^' ,
+the cursor shall be moved to column position 1. In addition, the
+.BR autoindent
+level for the next input line shall be derived from the same line from
+which the
+.BR autoindent
+level for the current input line was derived.
+.P
+Otherwise, the cursor shall be moved back to the column after the
+previous shiftwidth (see the
+.IR ex
+.BR shiftwidth
+command) boundary.
+.P
+All of the glyphs on columns between the starting cursor position and
+(inclusively) the ending cursor position shall become erase-columns as
+described in
+.IR "Input Mode Commands in vi".
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to 1 if the
+<control>\(hyD
+was preceded by a
+.BR '^' 
+or
+.BR '0' ;
+otherwise, set to (column \(mi1) \(mi((column \(mi2) %
+.BR shiftwidth ).
+.SS "<control>-H"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-H
+.fi \fR
+.P
+.RE
+.RE
+.P
+If in text input mode for a line-oriented command, and there are no
+characters to erase, text input mode shall be terminated, no further
+action shall be done for this command, and the current line and column
+shall be unchanged.
+.P
+If there are characters other than
+.BR autoindent
+characters that have been input on the current line before the cursor,
+the cursor shall move back one character.
+.P
+Otherwise, if there are
+.BR autoindent
+characters on the current line before the cursor, it is
+implementation-defined whether the
+<control>\(hyH
+command is an error or if the cursor moves back one
+.BR autoindent
+character.
+.P
+Otherwise, if the cursor is in column position 1 and there are previous
+lines that have been input, it is implementation-defined whether the
+<control>\(hyH
+command is an error or if it is equivalent to entering
+<control>\(hyH
+after the last input character on the previous input line.
+.P
+Otherwise, it shall be an error.
+.P
+All of the glyphs on columns between the starting cursor position and
+(inclusively) the ending cursor position shall become erase-columns as
+described in
+.IR "Input Mode Commands in vi".
+.P
+The current erase character (see
+.IR stty )
+shall cause an equivalent action to the
+<control>\(hyH
+command, unless the previously inserted character was a
+<backslash>,
+in which case it shall be as if the literal current erase character had
+been inserted instead of the
+<backslash>.
+.P
+.IR "Current line" :
+Unchanged, unless previously input lines are erased, in which case it
+shall be set to line \(mi1.
+.P
+.IR "Current column" :
+Set to the first column that displays any portion of the character
+backed up over.
+.SS "<newline>"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<newline>
+.br
+<carriage-return>
+.br
+<control>-J
+.br
+<control>-M
+.fi \fR
+.P
+.RE
+.RE
+.P
+If input was part of a line-oriented command, text input mode shall be
+terminated and the command shall continue execution with the input
+provided.
+.P
+Otherwise, terminate the current line. If there are no characters other
+than
+.BR autoindent
+characters on the line, all characters on the line shall be discarded.
+Otherwise, it is unspecified whether the
+.BR autoindent
+characters in the line are modified by entering these characters.
+.P
+Continue text input mode on a new line appended after the current line.
+If the
+.BR slowopen
+edit option is set, the lines on the screen below the current line
+shall not be pushed down, but the first of them shall be cleared and
+shall appear to be overwritten. Otherwise, the lines of the screen
+below the current line shall be pushed down.
+.P
+If the
+.BR autoindent
+edit option is set, an appropriate number of
+.BR autoindent
+characters shall be added as a prefix to the line as described by the
+.IR ex
+.BR autoindent
+edit option.
+.P
+All columns after the cursor that are erase-columns (as described in
+.IR "Input Mode Commands in vi")
+shall be discarded.
+.P
+If the
+.BR autoindent
+edit option is set, all
+<blank>
+characters immediately following the cursor shall be discarded.
+.P
+All remaining characters after the cursor shall be transferred to the
+new line, positioned after any
+.BR autoindent
+characters.
+.P
+.IR "Current line" :
+Set to current line +1.
+.P
+.IR "Current column" :
+Set to the first column that displays any portion of the first
+character after the
+.BR autoindent
+characters on the new line, if any, or the first column position after
+the last
+.BR autoindent
+character, if any, or column position 1.
+.SS "<control>-T"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-T
+.fi \fR
+.P
+.RE
+.RE
+.P
+The
+<control>\(hyT
+character shall have no special meaning when in text input mode for a
+line-oriented command (see
+.IR "Command Descriptions in vi").
+.P
+This command need not be supported on block-mode terminals.
+.P
+Behave as if the user entered the minimum number of
+<blank>
+characters necessary to move the cursor forward to the column position
+after the next
+.BR shiftwidth
+(see the
+.IR ex
+.BR shiftwidth
+command) boundary.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Set to
+.IR column
++
+.BR shiftwidth
+\(mi ((column \(mi1) %
+.BR shiftwidth ).
+.SS "<control>-U"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-U
+.fi \fR
+.P
+.RE
+.RE
+.P
+If there are characters other than
+.BR autoindent
+characters that have been input on the current line before the cursor,
+the cursor shall move to the first character input after the
+.BR autoindent
+characters.
+.P
+Otherwise, if there are
+.BR autoindent
+characters on the current line before the cursor, it is
+implementation-defined whether the
+<control>\(hyU
+command is an error or if the cursor moves to the first column position
+on the line.
+.P
+Otherwise, if the cursor is in column position 1 and there are previous
+lines that have been input, it is implementation-defined whether the
+<control>\(hyU
+command is an error or if it is equivalent to entering
+<control>\(hyU
+after the last input character on the previous input line.
+.P
+Otherwise, it shall be an error.
+.P
+All of the glyphs on columns between the starting cursor position and
+(inclusively) the ending cursor position shall become erase-columns as
+described in
+.IR "Input Mode Commands in vi".
+.P
+The current
+.IR kill
+character (see
+.IR stty )
+shall cause an equivalent action to the
+<control>\(hyU
+command, unless the previously inserted character was a
+<backslash>,
+in which case it shall be as if the literal current
+.IR kill
+character had been inserted instead of the
+<backslash>.
+.P
+.IR "Current line" :
+Unchanged, unless previously input lines are erased, in which case it
+shall be set to line \(mi1.
+.P
+.IR "Current column" :
+Set to the first column that displays any portion of the last character
+backed up over.
+.SS "<control>-V"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-V
+.br
+<control>-Q
+.fi \fR
+.P
+.RE
+.RE
+.P
+Allow the entry of any subsequent character, other than
+<control>\(hyJ
+or the
+<newline>,
+as a literal character, removing any special meaning that it may have
+to the editor in text input mode. If a
+<control>\(hyV
+or
+<control>\(hyQ
+is entered before a
+<control>\(hyJ
+or
+<newline>,
+the
+<control>\(hyV
+or
+<control>\(hyQ
+character shall be discarded, and the
+<control>\(hyJ
+or
+<newline>
+shall behave as described in the
+<newline>
+command character during input mode.
+.P
+For purposes of the display only, the editor shall behave as if a
+.BR '^' 
+character was entered, and the cursor shall be positioned as if
+overwriting the
+.BR '^' 
+character. When a subsequent character is entered, the editor shall
+behave as if that character was entered instead of the original
+<control>\(hyV
+or
+<control>\(hyQ
+character.
+.P
+.IR "Current line" :
+Unchanged.
+.P
+.IR "Current column" :
+Unchanged.
+.SS "<control>-W"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<control>-W
+.fi \fR
+.P
+.RE
+.RE
+.P
+If there are characters other than
+.BR autoindent
+characters that have been input on the current line before the cursor,
+the cursor shall move back over the last word preceding the cursor
+(including any
+<blank>
+characters between the end of the last word and the current cursor); the
+cursor shall not move to before the first character after the end of any
+.BR autoindent
+characters.
+.P
+Otherwise, if there are
+.BR autoindent
+characters on the current line before the cursor, it is
+implementation-defined whether the
+<control>\(hyW
+command is an error or if the cursor moves to the first column position
+on the line.
+.P
+Otherwise, if the cursor is in column position 1 and there are previous
+lines that have been input, it is implementation-defined whether the
+<control>\(hyW
+command is an error or if it is equivalent to entering
+<control>\(hyW
+after the last input character on the previous input line.
+.P
+Otherwise, it shall be an error.
+.P
+All of the glyphs on columns between the starting cursor position and
+(inclusively) the ending cursor position shall become erase-columns as
+described in
+.IR "Input Mode Commands in vi".
+.P
+.IR "Current line" :
+Unchanged, unless previously input lines are erased, in which case it
+shall be set to line \(mi1.
+.P
+.IR "Current column" :
+Set to the first column that displays any portion of the last character
+backed up over.
+.SS "<ESC>"
+.IP "\fISynopsis\fR:" 10
+.sp -1v
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+<ESC>
+.fi \fR
+.P
+.RE
+.RE
+.P
+If input was part of a line-oriented command:
+.IP " 1." 4
+If
+.IR interrupt
+was entered, text input mode shall be terminated and the editor shall
+return to command mode. The terminal shall be alerted.
+.IP " 2." 4
+If
+<ESC>
+was entered, text input mode shall be terminated and the command shall
+continue execution with the input provided.
+.P
+Otherwise, terminate text input mode and return to command mode.
+.P
+Any
+.BR autoindent
+characters entered on newly created lines that have no other non-\c
+<newline>
+characters shall be deleted.
+.P
+Any leading
+.BR autoindent
+and
+<blank>
+characters on newly created lines shall be rewritten to be the minimum
+number of
+<blank>
+characters possible.
+.P
+The screen shall be redisplayed as necessary to match the contents of
+the edit buffer.
+.P
+.IR "Current line" :
+Unchanged.
+.br
+.P
+.IR "Current column" :
+.IP " 1." 4
+If there are text input characters on the current line, the column
+shall be set to the last column where any portion of the last text
+input character is displayed.
+.IP " 2." 4
+Otherwise, if a character is displayed in the current column,
+unchanged.
+.IP " 3." 4
+Otherwise, set to column position 1.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+When any error is encountered and the standard input is not a terminal
+device file,
+.IR vi
+shall not write the file or return to command or text input mode, and
+shall terminate with a non-zero exit status.
+.P
+Otherwise, when an unrecoverable error is encountered it shall be
+equivalent to a SIGHUP asynchronous event.
+.P
+Otherwise, when an error is encountered, the editor shall behave as
+specified in
+.IR "Command Descriptions in vi".
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+See the RATIONALE for
+.IR "\fIex\fR\^"
+for more information on
+.IR vi .
+Major portions of the
+.IR vi
+utility specification point to
+.IR ex
+to avoid inadvertent divergence. While
+.IR ex
+and
+.IR vi
+have historically been implemented as a single utility, this is not
+required by POSIX.1\(hy2008.
+.P
+It is recognized that portions of
+.IR vi
+would be difficult, if not impossible, to implement satisfactorily on a
+block-mode terminal, or a terminal without any form of cursor
+addressing, thus it is not a mandatory requirement that such features
+should work on all terminals. It is the intention, however, that a
+.IR vi
+implementation should provide the full set of capabilities on all
+terminals capable of supporting them.
+.P
+Historically,
+.IR vi
+exited immediately if the standard input was not a terminal. POSIX.1\(hy2008
+permits, but does not require, this behavior. An end-of-file condition
+is not equivalent to an end-of-file character. A common end-of-file
+character,
+<control>\(hyD,
+is historically a
+.IR vi
+command.
+.P
+The text in the STDOUT section reflects the usage of the verb
+.IR display
+in this section; some implementations of
+.IR vi
+use standard output to write to the terminal, but POSIX.1\(hy2008 does not
+require that to be the case.
+.P
+Historically, implementations reverted to open mode if the terminal was
+incapable of supporting full visual mode. POSIX.1\(hy2008 requires this
+behavior. Historically, the open mode of
+.IR vi
+behaved roughly equivalently to the visual mode, with the exception
+that only a single line from the edit buffer (one ``buffer line'') was
+kept current at any time. This line was normally displayed on the
+next-to-last line of a terminal with cursor addressing (and the last
+line performed its normal visual functions for line-oriented commands
+and messages). In addition, some few commands behaved differently in
+open mode than in visual mode. POSIX.1\(hy2008 requires conformance to historical
+practice.
+.P
+Historically,
+.IR ex
+and
+.IR vi
+implementations have expected text to proceed in the usual
+European/Latin order of left to right, top to bottom. There is no
+requirement in POSIX.1\(hy2008 that this be the case. The specification was
+deliberately written using words like ``before'', ``after'', ``first'',
+and ``last'' in order to permit implementations to support the natural
+text order of the language.
+.P
+Historically, lines past the end of the edit buffer were marked with
+single
+<tilde>
+(\c
+.BR '~' )
+characters; that is, if the one-based display was 20 lines in length,
+and the last line of the file was on line one, then lines 2-20 would
+contain only a single
+.BR '~' 
+character.
+.P
+Historically, the
+.IR vi
+editor attempted to display only complete lines at the bottom of the
+screen (it did display partial lines at the top of the screen). If a
+line was too long to fit in its entirety at the bottom of the screen,
+the screen lines where the line would have been displayed were
+displayed as single
+.BR '@' 
+characters, instead of displaying part of the line. POSIX.1\(hy2008 permits, but
+does not require, this behavior. Implementations are encouraged to
+attempt always to display a complete line at the bottom of the screen
+when doing scrolling or screen positioning by buffer lines.
+.P
+Historically, lines marked with
+.BR '@' 
+were also used to minimize output to dumb terminals over slow lines;
+that is, changes local to the cursor were updated, but changes to lines
+on the screen that were not close to the cursor were simply marked with
+an
+.BR '@' 
+sign instead of being updated to match the current text. POSIX.1\(hy2008 permits,
+but does not require this feature because it is used ever less
+frequently as terminals become smarter and connections are faster.
+.SS "Initialization in ex and vi"
+.P
+Historically,
+.IR vi
+always had a line in the edit buffer, even if the edit buffer was
+``empty''. For example:
+.IP " 1." 4
+The
+.IR ex
+command
+.BR =
+executed from visual mode wrote ``1'' when the buffer was empty.
+.IP " 2." 4
+Writes from visual mode of an empty edit buffer wrote files of a single
+character (a
+<newline>),
+while writes from
+.IR ex
+mode of an empty edit buffer wrote empty files.
+.IP " 3." 4
+Put and read commands into an empty edit buffer left an empty line at
+the top of the edit buffer.
+.P
+For consistency, POSIX.1\(hy2008 does not permit any of these behaviors.
+.P
+Historically,
+.IR vi
+did not always return the terminal to its original modes; for example,
+ICRNL was modified if it was not originally set. POSIX.1\(hy2008 does not permit
+this behavior.
+.SS "Command Descriptions in vi"
+.P
+Motion commands are among the most complicated aspects of
+.IR vi
+to describe. With some exceptions, the text region and buffer type
+effect of a motion command on a
+.IR vi
+command are described on a case-by-case basis. The descriptions of text
+regions in POSIX.1\(hy2008 are not intended to imply direction; that is, an
+inclusive region from line
+.IR n
+to line
+.IR n +5
+is identical to a region from line
+.IR n +5
+to line
+.IR n .
+This is of more than academic interest\(emmovements to marks can be in
+either direction, and, if the
+.BR wrapscan
+option is set, so can movements to search points. Historically, lines
+are always stored into buffers in text order; that is, from the start
+of the edit buffer to the end. POSIX.1\(hy2008 requires conformance to historical
+practice.
+.P
+Historically, command counts were applied to any associated motion, and
+were multiplicative to any supplied motion count. For example,
+.BR 2cw
+is the same as
+.BR c2w ,
+and
+.BR 2c3w
+is the same as
+.BR c6w .
+POSIX.1\(hy2008 requires this behavior. Historically,
+.IR vi
+commands that used bigwords, words, paragraphs, and sentences as
+objects treated groups of empty lines, or lines that contained only
+<blank>
+characters, inconsistently. Some commands treated them as a single entity,
+while others treated each line separately. For example, the
+.BR w ,
+.BR W ,
+and
+.BR B
+commands treated groups of empty lines as individual words; that is,
+the command would move the cursor to each new empty line. The
+.BR e
+and
+.BR E
+commands treated groups of empty lines as a single word; that is, the
+first use would move past the group of lines. The
+.BR b
+command would just beep at the user, or if done from the start of the
+line as a motion command, fail in unexpected ways. If the lines
+contained only (or ended with)
+<blank>
+characters, the
+.BR w
+and
+.BR W
+commands would just beep at the user, the
+.BR E
+and
+.BR e
+commands would treat the group as a single word, and the
+.BR B
+and
+.BR b
+commands would treat the lines as individual words. For consistency and
+simplicity of specification, POSIX.1\(hy2008 requires that all
+.IR vi
+commands treat groups of empty or blank lines as a single entity, and
+that movement through lines ending with
+<blank>
+characters be consistent with other movements.
+.P
+Historically,
+.IR vi
+documentation indicated that any number of double-quotes were skipped
+after punctuation marks at sentence boundaries; however,
+implementations only skipped single-quotes. POSIX.1\(hy2008 requires both to be
+skipped.
+.P
+Historically, the first and last characters in the edit buffer were
+word boundaries. This historical practice is required by POSIX.1\(hy2008.
+.P
+Historically,
+.IR vi
+attempted to update the minimum number of columns on the screen
+possible, which could lead to misleading information being displayed.
+POSIX.1\(hy2008 makes no requirements other than that the current character being
+entered is displayed correctly, leaving all other decisions in this
+area up to the implementation.
+.P
+Historically, lines were arbitrarily folded between columns of any
+characters that required multiple column positions on the screen, with
+the exception of tabs, which terminated at the right-hand margin. POSIX.1\(hy2008
+permits the former and requires the latter. Implementations that do not
+arbitrarily break lines between columns of characters that occupy
+multiple column positions should not permit the cursor to rest on a
+column that does not contain any part of a character.
+.P
+The historical
+.IR vi
+had a problem in that all movements were by buffer lines, not by
+display or screen lines. This is often the right thing to do; for
+example, single line movements, such as
+.BR j
+or
+.BR k ,
+should work on buffer lines. Commands like
+.BR dj ,
+or
+.BR j. ,
+where
+.BR .
+is a change command, only make sense for buffer lines. It is not,
+however, the right thing to do for screen motion or scrolling commands
+like
+<control>\(hyD,
+<control>\(hyF,
+and
+.BR H .
+If the window is fairly small, using buffer lines in these cases can
+result in completely random motion; for example,
+.BR 1 \c
+<control>\c
+.BR \(hyD
+can result in a completely changed screen, without any overlap. This is
+clearly not what the user wanted. The problem is even worse in the case
+of the
+.BR H ,
+.BR L ,
+and
+.BR M
+commands\(emas they position the cursor at the first non-\c
+<blank>
+of the line, they may all refer to the same location in large lines,
+and will result in no movement at all.
+.P
+In addition, if the line is larger than the screen, using buffer
+lines can make it impossible to display parts of the line\(emthere are
+not any commands that do not display the beginning of the line in
+historical
+.IR vi ,
+and if both the beginning and end of the line cannot be on the screen
+at the same time, the user suffers. Finally, the page and half-page
+scrolling commands historically moved to the first non-\c
+<blank>
+in the new line. If the line is approximately the same size as the
+screen, this is inadequate because the cursor before and after a
+<control>\(hyD
+command will refer to the same location on the screen.
+.P
+Implementations of
+.IR ex
+and
+.IR vi
+exist that do not have these problems because the relevant commands (\c
+<control>\(hyB,
+<control>\(hyD,
+<control>\(hyF,
+<control>\(hyU,
+<control>\(hyY,
+<control>\(hyE,
+.BR H ,
+.BR L ,
+and
+.BR M)
+operate on display (screen) lines, not (edit) buffer lines.
+.P
+POSIX.1\(hy2008 does not permit this behavior by default because the standard
+developers believed that users would find it too confusing. However,
+historical practice has been relaxed. For example,
+.IR ex
+and
+.IR vi
+historically attempted, albeit sometimes unsuccessfully, to never put
+part of a line on the last lines of a screen; for example, if a line
+would not fit in its entirety, no part of the line was displayed, and
+the screen lines corresponding to the line contained single
+.BR '@' 
+characters. This behavior is permitted, but not required by POSIX.1\(hy2008, so
+that it is possible for implementations to support long lines in small
+screens more reasonably without changing the commands to be oriented to
+the display (instead of oriented to the buffer). POSIX.1\(hy2008 also permits
+implementations to refuse to edit any edit buffer containing a line
+that will not fit on the screen in its entirety.
+.P
+The display area (for example, the value of the
+.BR window
+edit option) has historically been ``grown'', or expanded, to display
+new text when local movements are done in displays where the number of
+lines displayed is less than the maximum possible. Expansion has
+historically been the first choice, when the target line is less than
+the maximum possible expansion value away. Scrolling has historically
+been the next choice, done when the target line is less than half a
+display away, and otherwise, the screen was redrawn. There were
+exceptions, however, in that
+.IR ex
+commands generally always caused the screen to be redrawn. POSIX.1\(hy2008 does
+not specify a standard behavior because there may be external issues,
+such as connection speed, the number of characters necessary to redraw
+as opposed to scroll, or terminal capabilities that implementations
+will have to accommodate.
+.P
+The current line in POSIX.1\(hy2008 maps one-to-one to a buffer line in the
+file. The current column does not. There are two different column
+values that are described by POSIX.1\(hy2008. The first is the current column
+value as set by many of the
+.IR vi
+commands. This value is remembered for the lifetime of the editor. The
+second column value is the actual position on the screen where the
+cursor rests. The two are not always the same. For example, when the
+cursor is backed by a multi-column character, the actual cursor
+position on the screen has historically been the last column of the
+character in command mode, and the first column of the character in
+input mode.
+.P
+Commands that set the current line, but that do not set the current
+cursor value (for example,
+.BR j
+and
+.BR k )
+attempt to get as close as possible to the remembered column position,
+so that the cursor tends to restrict itself to a vertical column as the
+user moves around in the edit buffer. POSIX.1\(hy2008 requires conformance to
+historical practice, requiring that the display location of the cursor
+on the display line be adjusted from the current column value as
+necessary to support this historical behavior.
+.P
+Historically, only a single line (and for some terminals, a single line
+minus 1 column) of characters could be entered by the user for the
+line-oriented commands; that is,
+.BR : ,
+.BR ! ,
+.BR / ,
+or
+.BR ? .
+POSIX.1\(hy2008 permits, but does not require, this limitation.
+.P
+Historically, ``soft'' errors in
+.IR vi
+caused the terminal to be alerted, but no error message was displayed.
+As a general rule, no error message was displayed for errors in command
+execution in
+.IR vi ,
+when the error resulted from the user attempting an invalid or
+impossible action, or when a searched-for object was not found.
+Examples of soft errors included
+.BR h
+at the left margin,
+<control>\(hyB
+or
+.BR [[
+at the beginning of the file,
+.BR 2G
+at the end of the file, and so on. In addition, errors such as
+.BR % ,
+.BR ]] ,
+.BR } ,
+.BR ) ,
+.BR N ,
+.BR n ,
+.BR f ,
+.BR F ,
+.BR t ,
+and
+.BR T
+failing to find the searched-for object were soft as well. Less
+consistently,
+.BR /
+and
+.BR ?
+displayed an error message if the pattern was not found,
+.BR / ,
+.BR ? ,
+.BR N ,
+and
+.BR n
+displayed an error message if no previous regular expression had been
+specified, and
+.BR ;
+did not display an error message if no previous
+.BR f ,
+.BR F ,
+.BR t ,
+or
+.BR T
+command had occurred. Also, behavior in this area might reasonably be
+based on a runtime evaluation of the speed of a network connection.
+Finally, some implementations have provided error messages for soft
+errors in order to assist naive users, based on the value of a verbose
+edit option. POSIX.1\(hy2008 does not list specific errors for which an error
+message shall be displayed. Implementations should conform to
+historical practice in the absence of any strong reason to diverge.
+.SS "Page Backwards"
+.P
+The
+<control>\(hyB
+and
+<control>\(hyF
+commands historically considered it an error to attempt to page past
+the beginning or end of the file, whereas the
+<control>\(hyD
+and
+<control>\(hyU
+commands simply moved to the beginning or end of the file. For
+consistency, POSIX.1\(hy2008 requires the latter behavior for all four commands.
+All four commands still consider it an error if the current line is at
+the beginning (\c
+<control>\(hyB,
+<control>\(hyU)
+or end (\c
+<control>\(hyF,
+<control>\(hyD)
+of the file. Historically, the
+<control>\(hyB
+and
+<control>\(hyF
+commands skip two lines in order to include overlapping lines when a
+single command is entered. This makes less sense in the presence of a
+.IR count ,
+as there will be, by definition, no overlapping lines. The actual
+calculation used by historical implementations of the
+.IR vi
+editor for
+<control>\(hyB
+was:
+.sp
+.RS 4
+.nf
+\fB
+((current first line) \(mi count x (window edit option)) +2
+.fi \fR
+.P
+.RE
+.P
+and for
+<control>\(hyF
+was:
+.sp
+.RS 4
+.nf
+\fB
+((current first line) + count x (window edit option)) \(mi2
+.fi \fR
+.P
+.RE
+.P
+This calculation does not work well when intermixing commands with and
+without counts; for example,
+.BR 3\c
+<control>\(hyF
+is not equivalent to entering the
+<control>\(hyF
+command three times, and is not reversible by entering the
+<control>\(hyB
+command three times. For consistency with other
+.IR vi
+commands that take counts, POSIX.1\(hy2008 requires a different calculation.
+.SS "Scroll Forward"
+.P
+The 4BSD and System V implementations of
+.IR vi
+differed on the initial value used by the
+.BR scroll
+command. 4BSD used:
+.sp
+.RS 4
+.nf
+\fB
+((window edit option) +1) /2
+.fi \fR
+.P
+.RE
+.P
+while System V used the value of the
+.BR scroll
+edit option. The System V version is specified by POSIX.1\(hy2008 because the
+standard developers believed that it was more intuitive and permitted
+the user a method of setting the scroll value initially without also
+setting the number of lines that are displayed.
+.SS "Scroll Forward by Line"
+.P
+Historically, the
+<control>\(hyE
+and
+<control>\(hyY
+commands considered it an error if the last and first lines,
+respectively, were already on the screen. POSIX.1\(hy2008 requires conformance to
+historical practice. Historically, the
+<control>\(hyE
+and
+<control>\(hyY
+commands had no effect in open mode. For simplicity and consistency of
+specification, POSIX.1\(hy2008 requires that they behave as usual, albeit with a
+single line screen.
+.SS "Clear and Redisplay"
+.P
+The historical
+<control>\(hyL
+command refreshed the screen exactly as it was supposed to be currently
+displayed, replacing any
+.BR '@' 
+characters for lines that had been deleted but not updated on the
+screen with refreshed
+.BR '@' 
+characters. The intent of the
+<control>\(hyL
+command is to refresh when the screen has been accidentally
+overwritten; for example, by a
+.BR write
+command from another user, or modem noise.
+.SS "Redraw Screen"
+.P
+The historical
+<control>\(hyR
+command redisplayed only when necessary to update lines that had been
+deleted but not updated on the screen and that were flagged with
+.BR '@' 
+characters. There is no requirement that the screen be in any way
+refreshed if no lines of this form are currently displayed. POSIX.1\(hy2008
+permits implementations to extend this command to refresh lines on the
+screen flagged with
+.BR '@' 
+characters because they are too long to be displayed in the current
+framework; however, the current line and column need not be modified.
+.SS "Search for tagstring"
+.P
+Historically, the first non-\c
+<blank>
+at or after the cursor was the first character, and all subsequent
+characters that were word characters, up to the end of the line, were
+included. For example, with the cursor on the leading
+<space>
+or on the
+.BR '#' 
+character in the text
+.BR \(dq#bar@\(dq ,
+the tag was
+.BR \(dq#bar\(dq .
+On the character
+.BR 'b' 
+it was
+.BR \(dqbar\(dq ,
+and on the
+.BR 'a' 
+it was
+.BR \(dqar\(dq .
+POSIX.1\(hy2008 requires this behavior.
+.SS "Replace Text with Results from Shell Command"
+.P
+Historically, the
+.BR < ,
+.BR > ,
+and
+.BR !
+commands considered most cursor motions other than line-oriented
+motions an error; for example, the command
+.BR ">/foo<CR>"
+succeeded, while the command
+.BR ">l"
+failed, even though the text region described by the two commands might
+be identical. For consistency, all three commands only consider entire
+lines and not partial lines, and the region is defined as any line that
+contains a character that was specified by the motion.
+.SS "Move to Matching Character"
+.P
+Other matching characters have been left implementation-defined in
+order to allow extensions such as matching
+.BR '<' 
+and
+.BR '>' 
+for searching HTML, or
+.BR #ifdef ,
+.BR #else ,
+and
+.BR #endif
+for searching C source.
+.SS "Repeat Substitution"
+.P
+POSIX.1\(hy2008 requires that any
+.BR c
+and
+.BR g
+flags specified to the previous substitute command be ignored; however,
+the
+.BR r
+flag may still apply, if supported by the implementation.
+.SS "Return to Previous (Context or Section)"
+.P
+The
+.BR [[ ,
+.BR ]] ,
+.BR ( ,
+.BR ) ,
+.BR { ,
+and
+.BR }
+commands are all affected by ``section boundaries'', but in some
+historical implementations not all of the commands recognize the same
+section boundaries. This is a bug, not a feature, and a unique
+section-boundary algorithm was not described for each command. One
+special case that is preserved is that the sentence command moves to
+the end of the last line of the edit buffer while the other commands go
+to the beginning, in order to preserve the traditional character cut
+semantics of the sentence command. Historically,
+.IR vi
+section boundaries at the beginning and end of the edit buffer were the
+first non-\c
+<blank>
+on the first and last lines of the edit buffer if one exists;
+otherwise, the last character of the first and last lines of the edit
+buffer if one exists. To increase consistency with other section
+locations, this has been simplified by POSIX.1\(hy2008 to the first character of
+the first and last lines of the edit buffer, or the first and the last
+lines of the edit buffer if they are empty.
+.P
+Sentence boundaries were problematic in the historical
+.IR vi .
+They were not only the boundaries as defined for the section and
+paragraph commands, but they were the first non-\c
+<blank>
+that occurred after those boundaries, as well. Historically, the
+.IR vi
+section commands were documented as taking an optional window size as a
+.IR count
+preceding the command. This was not implemented in historical versions,
+so POSIX.1\(hy2008 requires that the
+.IR count
+repeat the command, for consistency with other
+.IR vi
+commands.
+.SS "Repeat"
+.P
+Historically, mapped commands other than text input commands could not
+be repeated using the
+.BR period
+command. POSIX.1\(hy2008 requires conformance to historical practice.
+.P
+The restrictions on the interpretation of special characters (for
+example,
+<control>\(hyH)
+in the repetition of text input mode commands is intended to match
+historical practice. For example, given the input sequence:
+.sp
+.RS 4
+.nf
+\fB
+iab<control>-H<control>-H<control>-Hdef<escape>
+.fi \fR
+.P
+.RE
+.P
+the user should be informed of an error when the sequence is first
+entered, but not during a command repetition. The character
+<control>\(hyT
+is specifically exempted from this restriction. Historical
+implementations of
+.IR vi
+ignored
+<control>\(hyT
+characters that were input in the original command during command
+repetition. POSIX.1\(hy2008 prohibits this behavior.
+.SS "Find Regular Expression"
+.P
+Historically, commands did not affect the line searched to or from if
+the motion command was a search (\c
+.BR / ,
+.BR ? ,
+.BR N ,
+.BR n )
+and the final position was the start/end of the line. There were some
+special cases and
+.IR vi
+was not consistent. POSIX.1\(hy2008 does not permit this behavior, for
+consistency. Historical implementations permitted but were unable to
+handle searches as motion commands that wrapped (that is, due to the
+edit option
+.BR wrapscan )
+to the original location. POSIX.1\(hy2008 requires that this behavior be treated
+as an error.
+.P
+Historically, the syntax
+.BR \(dq/RE/0\(dq 
+was used to force the command to cut text in line mode. POSIX.1\(hy2008 requires
+conformance to historical practice.
+.P
+Historically, in open mode, a
+.BR z
+specified to a search command redisplayed the current line instead of
+displaying the current screen with the current line highlighted. For
+consistency and simplicity of specification, POSIX.1\(hy2008 does not permit this
+behavior.
+.P
+Historically, trailing
+.BR z
+commands were permitted and ignored if entered as part of a search used
+as a motion command. For consistency and simplicity of specification,
+POSIX.1\(hy2008 does not permit this behavior.
+.SS "Execute an ex Command"
+.P
+Historically,
+.IR vi
+implementations restricted the commands that could be entered on the
+colon command line (for example,
+.BR append
+and
+.BR change ),
+and some other commands were known to cause them to fail
+catastrophically. For consistency, POSIX.1\(hy2008 does not permit these
+restrictions. When executing an
+.IR ex
+command by entering
+.BR : ,
+it is not possible to enter a
+<newline>
+as part of the command because it is considered the end of the command.
+A different approach is to enter
+.IR ex
+command mode by using the
+.IR vi
+.BR Q
+command (and later resuming visual mode with the
+.IR ex
+.BR vi
+command). In
+.IR ex
+command mode, the single-line limitation does not exist. So, for
+example, the following is valid:
+.sp
+.RS 4
+.nf
+\fB
+Q
+s/break here/break\e
+here/
+vi
+.fi \fR
+.P
+.RE
+.P
+POSIX.1\(hy2008 requires that, if the
+.IR ex
+command overwrites any part of the screen that would be erased by a
+refresh,
+.IR vi
+pauses for a character from the user. Historically, this character
+could be any character; for example, a character input by the user
+before the message appeared, or even a mapped character. This is
+probably a bug, but implementations that have tried to be more rigorous
+by requiring that the user enter a specific character, or that the user
+enter a character after the message was displayed, have been forced by
+user indignation back into historical behavior. POSIX.1\(hy2008 requires
+conformance to historical practice.
+.SS "Shift Left (Right)"
+.P
+Refer to the Rationale for the
+.BR !
+and
+.BR /
+commands. Historically, the
+.BR <
+and
+.BR >
+commands sometimes moved the cursor to the first non-\c
+<blank>
+(for example if the command was repeated or with
+.BR _
+as the motion command), and sometimes left it unchanged. POSIX.1\(hy2008 does not
+permit this inconsistency, requiring instead that the cursor always
+move to the first non-\c
+<blank>.
+Historically, the
+.BR <
+and
+.BR >
+commands did not support buffer arguments, although some
+implementations allow the specification of an optional buffer. This
+behavior is neither required nor disallowed by POSIX.1\(hy2008.
+.SS "Execute"
+.P
+Historically, buffers could execute other buffers, and loops, infinite
+and otherwise, were possible. POSIX.1\(hy2008 requires conformance to historical
+practice. The *\c
+.IR buffer
+syntax of
+.IR ex
+is not required in
+.IR vi ,
+because it is not historical practice and has been used in some
+.IR vi
+implementations to support additional scripting languages.
+.SS "Reverse Case"
+.P
+Historically, the
+.BR ~
+command ignored any associated
+.IR count ,
+and acted only on the characters in the current line. For consistency
+with other
+.IR vi
+commands, POSIX.1\(hy2008 requires that an associated
+.IR count
+act on the next
+.IR count
+characters, and that the command move to subsequent lines if warranted
+by
+.IR count ,
+to make it possible to modify large pieces of text in a reasonably
+efficient manner. There exist
+.IR vi
+implementations that optionally require an associated motion command
+for the
+.BR ~
+command. Implementations supporting this functionality are encouraged
+to base it on the
+.BR tildedop
+edit option and handle the text regions and cursor positioning
+identically to the
+.BR yank
+command.
+.SS "Append"
+.P
+Historically,
+.IR count s
+specified to the
+.BR A ,
+.BR a ,
+.BR I ,
+and
+.BR i
+commands repeated the input of the first line
+.IR count
+times, and did not repeat the subsequent lines of the input text. POSIX.1\(hy2008
+requires that the entire text input be repeated
+.IR count
+times.
+.SS "Move Backward to Preceding Word"
+.P
+Historically,
+.IR vi
+became confused if word commands were used as motion commands in empty
+files. POSIX.1\(hy2008 requires that this be an error. Historical implementations
+of
+.IR vi
+had a large number of bugs in the word movement commands, and they
+varied greatly in behavior in the presence of empty lines, ``words''
+made up of a single character, and lines containing only
+<blank>
+characters. For consistency and simplicity of specification, POSIX.1\(hy2008 does
+not permit this behavior.
+.SS "Change to End-of-Line"
+.P
+Some historical implementations of the
+.BR C
+command did not behave as described by POSIX.1\(hy2008 when the
+.BR $
+key was remapped because they were implemented by pushing the
+.BR $
+key onto the input queue and reprocessing it. POSIX.1\(hy2008 does not permit
+this behavior. Historically, the
+.BR C ,
+.BR S ,
+and
+.BR s
+commands did not copy replaced text into the numeric buffers. For
+consistency and simplicity of specification, POSIX.1\(hy2008 requires that they
+behave like their respective
+.BR c
+commands in all respects.
+.SS "Delete"
+.P
+Historically, lines in open mode that were deleted were scrolled up,
+and an
+.BR @
+glyph written over the beginning of the line. In the case of terminals
+that are incapable of the necessary cursor motions, the editor erased
+the deleted line from the screen. POSIX.1\(hy2008 requires conformance to
+historical practice; that is, if the terminal cannot display the
+.BR '@' 
+character, the line cannot remain on the screen.
+.SS "Delete to End-of-Line"
+.P
+Some historical implementations of the
+.BR D
+command did not behave as described by POSIX.1\(hy2008 when the
+.BR $
+key was remapped because they were implemented by pushing the
+.BR $
+key onto the input queue and reprocessing it. POSIX.1\(hy2008 does not permit
+this behavior.
+.SS "Join"
+.P
+An historical oddity of
+.IR vi
+is that the commands
+.BR J ,
+.BR 1J ,
+and
+.BR 2J
+are all equivalent. POSIX.1\(hy2008 requires conformance to historical practice.
+The
+.IR vi
+.BR J
+command is specified in terms of the
+.IR ex
+.BR join
+command with an
+.IR ex
+command
+.IR count
+value. The address correction for a
+.IR count
+that is past the end of the edit buffer is necessary for historical
+compatibility for both
+.IR ex
+and
+.IR vi .
+.SS "Mark Position"
+.P
+Historical practice is that only lowercase letters, plus backquote and
+single-quote, could be used to mark a cursor position. POSIX.1\(hy2008 requires
+conformance to historical practice, but encourages implementations to
+support other characters as marks as well.
+.SS "Repeat Regular Expression Find (Forward and Reverse)"
+.P
+Historically, the
+.BR N
+and
+.BR n
+commands could not be used as motion components for the
+.BR c
+command. With the exception of the
+.BR cN
+command, which worked if the search crossed a line boundary, the text
+region would be discarded, and the user would not be in text input
+mode. For consistency and simplicity of specification, POSIX.1\(hy2008 does not
+permit this behavior.
+.SS "Insert Empty Line (Below and Above)"
+.P
+Historically, counts to the
+.BR O
+and
+.BR o
+commands were used as the number of physical lines to open, if the
+terminal was dumb and the
+.BR slowopen
+option was not set. This was intended to minimize traffic over slow
+connections and repainting for dumb terminals. POSIX.1\(hy2008 does not permit
+this behavior, requiring that a
+.IR count
+to the open command behave as for other text input commands. This
+change to historical practice was made for consistency, and because a
+superset of the functionality is provided by the
+.BR slowopen
+edit option.
+.SS "Put from Buffer (Following and Before)"
+.P
+Historically,
+.IR count s
+to the
+.BR p
+and
+.BR P
+commands were ignored if the buffer was a line mode buffer, but were
+(mostly) implemented as described in POSIX.1\(hy2008 if the buffer was a
+character mode buffer. Because implementations exist that do not have
+this limitation, and because pasting lines multiple times is generally
+useful, POSIX.1\(hy2008 requires that
+.IR count
+be supported for all
+.BR p
+and
+.BR P
+commands.
+.P
+Historical implementations of
+.IR vi
+were widely known to have major problems in the
+.BR p
+and
+.BR P
+commands, particularly when unusual regions of text were copied into
+the edit buffer. The standard developers viewed these as bugs, and they
+are not permitted for consistency and simplicity of specification.
+.P
+Historically, a
+.BR P
+or
+.BR p
+command (or an
+.IR ex
+.BR put
+command executed from open or visual mode) executed in an empty file,
+left an empty line as the first line of the file. For consistency and
+simplicity of specification, POSIX.1\(hy2008 does not permit this behavior.
+.SS "Replace Character"
+.P
+Historically, the
+.BR r
+command did not correctly handle the
+.IR erase
+and
+.IR "word erase"
+characters as arguments, nor did it handle an associated
+.IR count
+greater than 1 with a
+<carriage-return>
+argument, for which it replaced
+.IR count
+characters with a single
+<newline>.
+POSIX.1\(hy2008 does not permit these inconsistencies.
+.P
+Historically, the
+.BR r
+command permitted the
+<control>\(hyV
+escaping of entered characters, such as
+<ESC>
+and the
+<carriage-return>;
+however, it required two leading
+<control>\(hyV
+characters instead of one. POSIX.1\(hy2008 requires that this be changed for
+consistency with the other text input commands of
+.IR vi .
+.P
+Historically, it is an error to enter the
+.BR r
+command if there are less than
+.IR count
+characters at or after the cursor in the line. While a reasonable and
+unambiguous extension would be to permit the
+.BR r
+command on empty lines, it would require that too large a
+.IR count
+be adjusted to match the number of characters at or after the cursor
+for consistency, which is sufficiently different from historical
+practice to be avoided. POSIX.1\(hy2008 requires conformance to historical
+practice.
+.SS "Replace Characters"
+.P
+Historically, if there were
+.BR autoindent
+characters in the line on which the
+.BR R
+command was run, and
+.BR autoindent
+was set, the first
+<newline>
+would be properly indented and no characters would be replaced by the
+<newline>.
+Each additional
+<newline>
+would replace
+.IR n
+characters, where
+.IR n
+was the number of characters that were needed to indent the rest of the
+line to the proper indentation level. This behavior is a bug and is not
+permitted by POSIX.1\(hy2008.
+.SS "Undo"
+.P
+Historical practice for cursor positioning after undoing commands was
+mixed. In most cases, when undoing commands that affected a single
+line, the cursor was moved to the start of added or changed text, or
+immediately after deleted text. However, if the user had moved from the
+line being changed, the column was either set to the first non-\c
+<blank>,
+returned to the origin of the command, or remained unchanged. When
+undoing commands that affected multiple lines or entire lines, the
+cursor was moved to the first character in the first line restored. As
+an example of how inconsistent this was, a search, followed by an
+.BR o
+text input command, followed by an
+.BR undo
+would return the cursor to the location where the
+.BR o
+command was entered, but a
+.BR cw
+command followed by an
+.BR o
+command followed by an
+.BR undo
+would return the cursor to the first non-\c
+<blank>
+of the line. POSIX.1\(hy2008 requires the most useful of these behaviors, and
+discards the least useful, in the interest of consistency and
+simplicity of specification.
+.SS "Yank"
+.P
+Historically, the
+.BR yank
+command did not move to the end of the motion if the motion was in the
+forward direction. It moved to the end of the motion if the motion was
+in the backward direction, except for the
+.BR _
+command, or for the
+.BR G
+and
+.BR '
+commands when the end of the motion was on the current line. This was
+further complicated by the fact that for a number of motion commands,
+the
+.BR yank
+command moved the cursor but did not update the screen; for example, a
+subsequent command would move the cursor from the end of the motion,
+even though the cursor on the screen had not reflected the cursor
+movement for the
+.BR yank
+command. POSIX.1\(hy2008 requires that all
+.BR yank
+commands associated with backward motions move the cursor to the end of
+the motion for consistency, and specifically, to make
+.BR '
+commands as motions consistent with search patterns as motions.
+.SS "Yank Current Line"
+.P
+Some historical implementations of the
+.BR Y
+command did not behave as described by POSIX.1\(hy2008 when the
+.BR '_' 
+key was remapped because they were implemented by pushing the
+.BR '_' 
+key onto the input queue and reprocessing it. POSIX.1\(hy2008 does not permit
+this behavior.
+.SS "Redraw Window"
+.P
+Historically, the
+.BR z
+command always redrew the screen. This is permitted but not required by
+POSIX.1\(hy2008, because of the frequent use of the
+.BR z
+command in macros such as
+.BR "map n nz."
+for screen positioning, instead of its use to change the screen size.
+The standard developers believed that expanding or scrolling the screen
+offered a better interface for users. The ability to redraw the screen
+is preserved if the optional new window size is specified, and in the
+<control>\(hyL
+and
+<control>\(hyR
+commands.
+.P
+The semantics of
+.BR z^
+are confusing at best. Historical practice is that the screen before
+the screen that ended with the specified line is displayed. POSIX.1\(hy2008
+requires conformance to historical practice.
+.P
+Historically, the
+.BR z
+command would not display a partial line at the top or bottom of the
+screen. If the partial line would normally have been displayed at the
+bottom of the screen, the command worked, but the partial line was
+replaced with
+.BR '@' 
+characters. If the partial line would normally have been displayed at
+the top of the screen, the command would fail. For consistency and
+simplicity of specification, POSIX.1\(hy2008 does not permit this behavior.
+.P
+Historically, the
+.BR z
+command with a line specification of 1 ignored the command. For
+consistency and simplicity of specification, POSIX.1\(hy2008 does not permit this
+behavior.
+.P
+Historically, the
+.BR z
+command did not set the cursor column to the first non-\c
+<blank>
+for the character if the first screen was to be displayed, and was
+already displayed. For consistency and simplicity of specification,
+POSIX.1\(hy2008 does not permit this behavior.
+.SS "Input Mode Commands in vi"
+.P
+Historical implementations of
+.IR vi
+did not permit the user to erase more than a single line of input,
+or to use normal erase characters such as
+.IR "line erase" ,
+.IR worderase ,
+and
+.IR erase
+to erase
+.BR autoindent
+characters. As there exist implementations of
+.IR vi
+that do not have these limitations, both behaviors are permitted, but
+only historical practice is required. In the case of these extensions,
+.IR vi
+is required to pause at the
+.BR autoindent
+and previous line boundaries.
+.P
+Historical implementations of
+.IR vi
+updated only the portion of the screen where the current cursor
+character was displayed. For example, consider the
+.IR vi
+input keystrokes:
+.sp
+.RS 4
+.nf
+\fB
+iabcd<escape>0C<tab>
+.fi \fR
+.P
+.RE
+.P
+Historically, the
+<tab>
+would overwrite the characters
+.BR \(dqabcd\(dq 
+when it was displayed. Other implementations replace only the
+.BR 'a' 
+character with the
+<tab>,
+and then push the rest of the characters ahead of the cursor. Both
+implementations have problems. The historical implementation is
+probably visually nicer for the above example; however, for the
+keystrokes:
+.sp
+.RS 4
+.nf
+\fB
+iabcd<ESC>0R<tab><ESC>
+.fi \fR
+.P
+.RE
+.P
+the historical implementation results in the string
+.BR \(dqbcd\(dq 
+disappearing and then magically reappearing when the
+<ESC>
+character is entered. POSIX.1\(hy2008 requires the former behavior when
+overwriting erase-columns\(emthat is, overwriting characters that are no
+longer logically part of the edit buffer\(emand the latter behavior
+otherwise.
+.P
+Historical implementations of
+.IR vi
+discarded the
+<control>\(hyD
+and
+<control>\(hyT
+characters when they were entered at places where their command
+functionality was not appropriate. POSIX.1\(hy2008 requires that the
+<control>\(hyT
+functionality always be available, and that
+<control>\(hyD
+be treated as any other key when not operating on
+.BR autoindent
+characters.
+.SS "NUL"
+.P
+Some historical implementations of
+.IR vi
+limited the number of characters entered using the NUL input character
+to 256 bytes. POSIX.1\(hy2008 permits this limitation; however, implementations
+are encouraged to remove this limit.
+.SS "<control>\(hyD"
+.P
+See also Rationale for the input mode command
+<newline>.
+The hidden assumptions in the
+<control>\(hyD
+command (and in the
+.IR vi
+.BR autoindent
+specification in general) is that
+<space>
+characters take up a single column on the screen and that
+<tab>
+characters are comprised of an integral number of
+<space>
+characters.
+.SS "<newline>"
+.P
+Implementations are permitted to rewrite
+.BR autoindent
+characters in the line when
+<newline>,
+<carriage-return>,
+<control>\(hyD,
+and
+<control>\(hyT
+are entered, or when the
+.BR shift
+commands are used, because historical implementations have both done so
+and found it necessary to do so. For example, a
+<control>\(hyD
+when the cursor is preceded by a single
+<tab>,
+with
+.BR tabstop
+set to 8, and
+.BR shiftwidth
+set to 3, will result in the
+<tab>
+being replaced by several
+<space>
+characters.
+.SS "<control>\(hyT"
+.P
+See also the Rationale for the input mode command
+<newline>.
+Historically,
+<control>\(hyT
+only worked if no non-\c
+<blank>
+characters had yet been input in the current input line. In addition,
+the characters inserted by
+<control>\(hyT
+were treated as
+.BR autoindent
+characters, and could not be erased using normal user erase characters.
+Because implementations exist that do not have these limitations, and
+as moving to a column boundary is generally useful, POSIX.1\(hy2008 requires that
+both limitations be removed.
+.SS "<control>\(hyV"
+.P
+Historically,
+.IR vi
+used
+.BR ^V ,
+regardless of the value of the literal-next character of the terminal.
+POSIX.1\(hy2008 requires conformance to historical practice.
+.P
+The uses described for
+<control>\(hyV
+can also be accomplished with
+<control>\(hyQ,
+which is useful on terminals that use
+<control>\(hyV
+for the down-arrow function. However, most historical implementations
+use
+<control>\(hyQ
+for the
+.IR termios
+START character, so the editor will generally not receive the
+<control>\(hyQ
+unless
+.BR "stty ixon"
+mode is set to off. (In addition, some historical implementations of
+.IR vi
+explicitly set
+.BR ixon
+mode to on, so it was difficult for the user to set it to off.) Any of
+the command characters described in POSIX.1\(hy2008 can be made ineffective by
+their selection as
+.IR termios
+control characters, using the
+.IR stty
+utility or other methods described in the System Interfaces volume of POSIX.1\(hy2008.
+.SS "<ESC>"
+.P
+Historically, SIGINT alerted the terminal when used to end input
+mode. This behavior is permitted, but not required, by POSIX.1\(hy2008.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIed\fR\^",
+.IR "\fIex\fR\^",
+.IR "\fIstty\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

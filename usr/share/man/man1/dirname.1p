@@ -1,0 +1,260 @@
+'\" et
+.TH DIRNAME "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+dirname
+\(em return the directory portion of a pathname
+.SH SYNOPSIS
+.LP
+.nf
+dirname \fIstring\fR
+.fi
+.SH DESCRIPTION
+The
+.IR string
+operand shall be treated as a pathname, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.267" ", " "Pathname".
+The string
+.IR string
+shall be converted to the name of the directory containing the
+filename corresponding to the last pathname component in
+.IR string ,
+performing actions equivalent to the following steps in order:
+.IP " 1." 4
+If
+.IR string
+is
+.BR // ,
+skip steps 2 to 5.
+.IP " 2." 4
+If
+.IR string
+consists entirely of
+<slash>
+characters,
+.IR string
+shall be set to a single
+<slash>
+character. In this case, skip steps 3 to 8.
+.IP " 3." 4
+If there are any trailing
+<slash>
+characters in
+.IR string ,
+they shall be removed.
+.IP " 4." 4
+If there are no
+<slash>
+characters remaining in
+.IR string ,
+.IR string
+shall be set to a single
+<period>
+character. In this case, skip steps 5 to 8.
+.IP " 5." 4
+If there are any trailing non-\c
+<slash>
+characters in
+.IR string ,
+they shall be removed.
+.IP " 6." 4
+If the remaining
+.IR string
+is
+.BR // ,
+it is implementation-defined whether steps 7 and 8 are skipped or
+processed.
+.IP " 7." 4
+If there are any trailing
+<slash>
+characters in
+.IR string ,
+they shall be removed.
+.IP " 8." 4
+If the remaining
+.IR string
+is empty,
+.IR string
+shall be set to a single
+<slash>
+character.
+.P
+The resulting string shall be written to standard output.
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIstring\fR" 10
+A string.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR dirname :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR dirname
+utility shall write a line to the standard output in the following
+format:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIresulting string\fR>
+.fi \fR
+.P
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The definition of
+.IR pathname
+specifies implementation-defined behavior for pathnames starting with
+two
+<slash>
+characters. Therefore, applications shall not arbitrarily add
+<slash>
+characters to the beginning of a pathname unless they can ensure
+that there are more or less than two or are prepared to deal with the
+implementation-defined consequences.
+.SH EXAMPLES
+.TS
+center tab(@) box;
+cB | cB
+l | l.
+Command@Results
+_
+\fIdirname\fR /@/
+\fIdirname\fR //@/ or //
+\fIdirname\fR /\fIa\fR/\fIb\fR/@/\fIa\fR
+\fIdirname\fR //\fIa\fR//\fIb\fR//@//\fIa\fR
+\fIdirname\fR@Unspecified
+\fIdirname a\fR@. ($? = 0)
+\fIdirname\fR ""@. ($? = 0)
+\fIdirname\fR /\fIa\fR@/
+\fIdirname\fR /\fIa\fR/\fIb\fR@/\fIa\fR
+\fIdirname\fR \fIa\fR/\fIb\fR@\fIa\fR
+.TE
+.P
+See also the examples for the
+.IR basename
+utility.
+.SH RATIONALE
+The
+.IR dirname
+utility originated in System III. It has evolved through the System V
+releases to a version that matches the requirements specified in this
+description in System V Release 3. 4.3 BSD and earlier versions did
+not include
+.IR dirname .
+.P
+The behaviors of
+.IR basename
+and
+.IR dirname
+in this volume of POSIX.1\(hy2008 have been coordinated so that when
+.IR string
+is a valid pathname:
+.sp
+.RS 4
+.nf
+\fB
+$(basename -- "\fIstring\fP")
+.fi \fR
+.P
+.RE
+.P
+would be a valid filename for the file in the directory:
+.sp
+.RS 4
+.nf
+\fB
+$(dirname -- "\fIstring\fP")
+.fi \fR
+.P
+.RE
+.P
+This would not work for the versions of these utilities in early proposals
+due to the way processing of trailing
+<slash>
+characters was specified. Consideration was given to leaving processing
+unspecified if there were trailing
+<slash>
+characters, but this cannot be done; the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.267" ", " "Pathname"
+allows trailing
+<slash>
+characters. The
+.IR basename
+and
+.IR dirname
+utilities have to specify consistent handling for all valid pathnames.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.5" ", " "Parameters and Variables",
+.IR "\fIbasename\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.267" ", " "Pathname",
+.IR "Chapter 8" ", " "Environment Variables"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

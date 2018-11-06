@@ -1,0 +1,582 @@
+'\" et
+.TH signal.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+signal.h
+\(em signals
+.SH SYNOPSIS
+.LP
+.nf
+#include <signal.h>
+.fi
+.SH DESCRIPTION
+Some of the functionality described on this reference page extends the
+ISO\ C standard. Applications shall define the appropriate feature test macro
+(see the System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment")
+to enable the visibility of these symbols in this header.
+.P
+The
+.IR <signal.h> 
+header shall define the following macros, which shall expand to constant
+expressions with distinct values that have a type compatible with the
+second argument to, and the return value of, the
+\fIsignal\fR()
+function, and whose values shall compare unequal to the address of any
+declarable function.
+.IP SIG_DFL 14
+Request for default signal handling.
+.IP SIG_ERR 14
+Return value from
+\fIsignal\fR()
+in case of error.
+.IP SIG_HOLD 14
+Request that signal be held.
+.IP SIG_IGN 14
+Request that signal be ignored.
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR pthread_t ,
+.BR size_t ,
+and
+.BR uid_t
+types as described in
+.IR <sys/types.h> .
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR timespec
+structure as described in
+.IR <time.h> .
+.P
+The
+.IR <signal.h> 
+header shall define the following data types:
+.IP "\fBsig_atomic_t\fP" 14
+Possibly volatile-qualified integer type of an object that can be
+accessed as an atomic entity, even in the presence of asynchronous
+interrupts.
+.IP "\fBsigset_t\fP" 14
+Integer or structure type of an object used to represent sets of
+signals.
+.IP "\fBpid_t\fP" 14
+As described in
+.IR <sys/types.h> .
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR pthread_attr_t
+type as described in
+.IR <sys/types.h> .
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR sigevent
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+int              sigev_notify            \fRNotification type.\fP
+int              sigev_signo             \fRSignal number.\fP
+union sigval     sigev_value             \fRSignal value.\fP
+void           (*sigev_notify_function)(union sigval)
+                                         \fRNotification function.\fP
+pthread_attr_t *sigev_notify_attributes  \fRNotification attributes.\fP
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <signal.h> 
+header shall define the following symbolic constants for the values of
+.IR sigev_notify :
+.IP SIGEV_NONE 14
+No asynchronous notification is delivered when the event of interest
+occurs.
+.IP SIGEV_SIGNAL 14
+A queued signal, with an application-defined value, is generated when
+the event of interest occurs.
+.IP SIGEV_THREAD 14
+A notification function is called to perform notification.
+.br
+.P
+The
+.BR sigval
+union shall be defined as:
+.sp
+.RS 4
+.nf
+\fB
+int    sival_int    \fRInteger signal value.\fP
+void  *sival_ptr    \fRPointer signal value.\fP
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <signal.h> 
+header shall declare the SIGRTMIN and SIGRTMAX macros,
+which shall expand to positive integer expressions with type
+.BR int ,
+but which need not be constant expressions. These macros specify a
+range of signal numbers that are reserved for application use and for
+which the realtime signal behavior specified in this volume of POSIX.1\(hy2008 is supported. The
+signal numbers in this range do not overlap any of the signals specified
+in the following table.
+.P
+The range SIGRTMIN through SIGRTMAX inclusive shall include at least
+{RTSIG_MAX}
+signal numbers.
+.P
+It is implementation-defined whether realtime signal behavior is
+supported for other signals.
+.P
+The
+.IR <signal.h> 
+header shall define the following macros that are used to refer to the
+signals that occur in the system. Signals defined here begin with the
+letters SIG followed by an uppercase letter. The macros shall expand to
+positive integer constant expressions with type
+.BR int
+and distinct values. The value 0 is reserved for use as the null signal
+(see
+\fIkill\fR()).
+Additional implementation-defined signals may occur in the system.
+.P
+The ISO\ C standard only requires the signal names SIGABRT, SIGFPE, SIGILL,
+SIGINT, SIGSEGV, and SIGTERM to be defined.
+.P
+The following signals shall be supported on all implementations
+(default actions are explained below the table):
+.TS
+box center tab(!);
+cB | cB | cB
+l | n | lw(3.6i).
+Signal!Default Action!Description
+_
+SIGABRT!A!Process abort signal.
+SIGALRM!T!Alarm clock.
+SIGBUS!A!Access to an undefined portion of a memory object.
+SIGCHLD!I!Child process terminated, stopped,
+!!or continued.
+SIGCONT!C!Continue executing, if stopped.
+SIGFPE!A!Erroneous arithmetic operation.
+SIGHUP!T!Hangup.
+SIGILL!A!Illegal instruction.
+SIGINT!T!Terminal interrupt signal.
+SIGKILL!T!Kill (cannot be caught or ignored).
+SIGPIPE!T!Write on a pipe with no one to read it.
+SIGQUIT!A!Terminal quit signal.
+SIGSEGV!A!Invalid memory reference.
+SIGSTOP!S!Stop executing (cannot be caught or ignored).
+SIGTERM!T!Termination signal.
+SIGTSTP!S!Terminal stop signal.
+SIGTTIN!S!Background process attempting read.
+SIGTTOU!S!Background process attempting write.
+SIGUSR1!T!User-defined signal 1.
+SIGUSR2!T!User-defined signal 2.
+SIGPOLL!T!Pollable event.
+SIGPROF!T!Profiling timer expired.
+SIGSYS!A!Bad system call.
+SIGTRAP!A!Trace/breakpoint trap.
+SIGURG!I!High bandwidth data is available at a socket.
+SIGVTALRM!T!Virtual timer expired.
+SIGXCPU!A!CPU time limit exceeded.
+SIGXFSZ!A!File size limit exceeded.
+.sp
+.TE
+.br
+.P
+The default actions are as follows:
+.IP T 6
+Abnormal termination of the process.
+.IP A 6
+Abnormal termination of the process
+with additional actions.
+.IP I 6
+Ignore the signal.
+.IP S 6
+Stop the process.
+.IP C 6
+Continue the process, if it is stopped; otherwise, ignore the signal.
+.P
+The effects on the process in each case are described in the System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.4.3" ", " "Signal Actions".
+.P
+The
+.IR <signal.h> 
+header shall declare the
+.BR sigaction
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+void   (*sa_handler)(int)  \fRPointer to a signal-catching function\fR
+                           \fRor one of the SIG_IGN or SIG_DFL.\fR
+sigset_t sa_mask           \fRSet of signals to be blocked during execution\fR
+                           \fRof the signal handling function.\fR
+int      sa_flags          \fRSpecial flags.\fR
+void   (*sa_sigaction)(int, siginfo_t *, void *)
+                           \fRPointer to a signal-catching function.\fR
+.fi \fR
+.P
+.RE
+.P
+The storage occupied by
+.IR sa_handler
+and
+.IR sa_sigaction
+may overlap, and a conforming application shall not use both
+simultaneously.
+.P
+The
+.IR <signal.h> 
+header shall define the following macros which shall expand to
+integer constant expressions that need not be usable in
+.BR #if
+preprocessing directives:
+.IP SIG_BLOCK 14
+The resulting set is the union of the current set and the signal set
+pointed to by the argument
+.IR set .
+.IP SIG_UNBLOCK 14
+The resulting set is the intersection of the current set and the
+complement of the signal set pointed to by the argument
+.IR set .
+.IP SIG_SETMASK 14
+The resulting set is the signal set pointed to by the argument
+.IR set .
+.P
+The
+.IR <signal.h> 
+header shall also define the following symbolic constants:
+.IP SA_NOCLDSTOP 14
+Do not generate SIGCHLD when children stop
+.br
+or stopped children continue.
+.IP SA_ONSTACK 14
+Causes signal delivery to occur on an alternate stack.
+.IP SA_RESETHAND 14
+Causes signal dispositions to be set to SIG_DFL on entry to signal
+handlers.
+.IP SA_RESTART 14
+Causes certain functions to become restartable.
+.IP SA_SIGINFO 14
+Causes extra information to be passed to signal handlers at the time of
+receipt of a signal.
+.IP SA_NOCLDWAIT 14
+Causes implementations not to create zombie processes on child death.
+.IP SA_NODEFER 14
+Causes signal not to be automatically blocked on entry to signal handler.
+.IP SS_ONSTACK 14
+Process is executing on an alternate signal stack.
+.IP SS_DISABLE 14
+Alternate signal stack is disabled.
+.IP MINSIGSTKSZ 14
+Minimum stack size for a signal handler.
+.IP SIGSTKSZ 14
+Default size in bytes for the alternate signal stack.
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR mcontext_t
+type through
+.BR typedef .
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR ucontext_t
+type as a structure that shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+ucontext_t *uc_link     \fRPointer to the context that is resumed\fR
+                        \fRwhen this context returns.\fR
+sigset_t    uc_sigmask  \fRThe set of signals that are blocked when this\fR
+                        \fRcontext is active.\fR
+stack_t     uc_stack    \fRThe stack used by this context.\fR
+mcontext_t  uc_mcontext \fRA machine-specific representation of the saved\fR
+                        \fRcontext.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR stack_t
+type as a structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+void     *ss_sp       \fRStack base or pointer.\fR
+size_t    ss_size     \fRStack size.\fR
+int       ss_flags    \fRFlags.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <signal.h> 
+header shall define the
+.BR siginfo_t
+type as a structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+int           si_signo  \fRSignal number.\fR
+int           si_code   \fRSignal code.\fR
+int           si_errno  \fRIf non-zero, an \fIerrno\fR value associated with\fR
+                        \fRthis signal, as described in \fB<errno.h>\fR.\fR
+pid_t         si_pid    \fRSending process ID.\fR
+uid_t         si_uid    \fRReal user ID of sending process.\fR
+void         *si_addr   \fRAddress of faulting instruction.\fR
+int           si_status \fRExit value or signal.\fR
+long          si_band   \fRBand event for SIGPOLL.\fR
+union sigval  si_value  \fRSignal value.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <signal.h> 
+header shall define the symbolic constants in the
+.BR Code
+column of the following table for use as values of
+.IR si_code
+that are signal-specific or non-signal-specific reasons why the
+signal was generated.
+.TS
+box center tab(!);
+cB | cB | cB
+l1 | l1 | l.
+Signal!Code!Reason
+_
+SIGILL!ILL_ILLOPC!Illegal opcode.
+!ILL_ILLOPN!Illegal operand.
+!ILL_ILLADR!Illegal addressing mode.
+!ILL_ILLTRP!Illegal trap.
+!ILL_PRVOPC!Privileged opcode.
+!ILL_PRVREG!Privileged register.
+!ILL_COPROC!Coprocessor error.
+!ILL_BADSTK!Internal stack error.
+_
+SIGFPE!FPE_INTDIV!Integer divide by zero.
+!FPE_INTOVF!Integer overflow.
+!FPE_FLTDIV!Floating-point divide by zero.
+!FPE_FLTOVF!Floating-point overflow.
+!FPE_FLTUND!Floating-point underflow.
+!FPE_FLTRES!Floating-point inexact result.
+!FPE_FLTINV!Invalid floating-point operation.
+!FPE_FLTSUB!Subscript out of range.
+_
+SIGSEGV!SEGV_MAPERR!Address not mapped to object.
+!SEGV_ACCERR!Invalid permissions for mapped object.
+_
+SIGBUS!BUS_ADRALN!Invalid address alignment.
+!BUS_ADRERR!Nonexistent physical address.
+!BUS_OBJERR!Object-specific hardware error.
+_
+SIGTRAP!TRAP_BRKPT!Process breakpoint.
+!TRAP_TRACE!Process trace trap.
+_
+SIGCHLD!CLD_EXITED!Child has exited.
+!CLD_KILLED!Child has terminated abnormally and did not create a \fBcore\fP file.
+!CLD_DUMPED!Child has terminated abnormally and created a \fBcore\fP file.
+!CLD_TRAPPED!Traced child has trapped.
+!CLD_STOPPED!Child has stopped.
+!CLD_CONTINUED!Stopped child has continued.
+_
+SIGPOLL!POLL_IN!Data input available.
+!POLL_OUT!Output buffers available.
+!POLL_MSG!Input message available.
+!POLL_ERR!I/O error.
+!POLL_PRI!High priority input available.
+!POLL_HUP!Device disconnected.
+_
+Any!SI_USER!Signal sent by \fIkill\fP\^(\|).
+!SI_QUEUE!Signal sent by \fIsigqueue\fP\^(\|).
+!SI_TIMER!Signal generated by expiration of a timer set by \fItimer_settime\fP\^(\|).
+!SI_ASYNCIO!Signal generated by completion of an asynchronous I/O
+!!request.
+!SI_MESGQ!Signal generated by arrival of a message on an empty message
+!!queue.
+.TE
+.P
+Implementations may support additional
+.IR si_code
+values not included in this list, may generate values included in this
+list under circumstances other than those described in this list, and
+may contain extensions or limitations that prevent some values from
+being generated. Implementations do not generate a different value from
+the ones described in this list for circumstances described in this
+list.
+.br
+.P
+In addition, the following signal-specific information shall be
+available:
+.TS
+box center tab(!);
+cB | cB | cB
+l | lB | lw(3.9i).
+Signal!Member!Value
+_
+SIGILL!void * \fIsi_addr\fP!Address of faulting instruction.
+SIGFPE
+_
+SIGSEGV!void * \fIsi_addr\fP!Address of faulting memory reference.
+SIGBUS
+_
+SIGCHLD!pid_t \fIsi_pid\fP!Child process ID.
+!int \fIsi_status\fP!Exit value or signal.
+!uid_t \fIsi_uid\fP!Real user ID of the process that sent the signal.
+_
+SIGPOLL!long \fIsi_band\fP!Band event for POLL_IN, POLL_OUT, or POLL_MSG.
+.TE
+.P
+For some implementations, the value of \fIsi_addr\fR may be inaccurate.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int    kill(pid_t, int);
+int    killpg(pid_t, int);
+void   psiginfo(const siginfo_t *, const char *);
+void   psignal(int, const char *);
+int    pthread_kill(pthread_t, int);
+int    pthread_sigmask(int, const sigset_t *restrict,
+           sigset_t *restrict);
+int    raise(int);
+int    sigaction(int, const struct sigaction *restrict,
+           struct sigaction *restrict);
+int    sigaddset(sigset_t *, int);
+int    sigaltstack(const stack_t *restrict, stack_t *restrict);
+int    sigdelset(sigset_t *, int);
+int    sigemptyset(sigset_t *);
+int    sigfillset(sigset_t *);
+int    sighold(int);
+int    sigignore(int);
+int    siginterrupt(int, int);
+int    sigismember(const sigset_t *, int);
+void (*signal(int, void (*)(int)))(int);
+int    sigpause(int);
+int    sigpending(sigset_t *);
+int    sigprocmask(int, const sigset_t *restrict, sigset_t *restrict);
+int    sigqueue(pid_t, int, const union sigval);
+int    sigrelse(int);
+void (*sigset(int, void (*)(int)))(int);
+int    sigsuspend(const sigset_t *);
+int    sigtimedwait(const sigset_t *restrict, siginfo_t *restrict,
+           const struct timespec *restrict);
+int    sigwait(const sigset_t *restrict, int *restrict);
+int    sigwaitinfo(const sigset_t *restrict, siginfo_t *restrict);
+.fi \fR
+.P
+.RE
+.P
+Inclusion of the
+.IR <signal.h> 
+header may make visible all symbols from the
+.IR <time.h> 
+header.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+On systems not supporting the XSI option, the
+.IR si_pid
+and
+.IR si_uid
+members of
+.BR siginfo_t
+are only required to be valid when
+.IR si_code
+is SI_USER or SI_QUEUE. On XSI-conforming systems, they are also
+valid for all
+.IR si_code
+values less than or equal to 0; however, it is unspecified whether
+SI_USER and SI_QUEUE have values less than or equal to zero, and
+therefore XSI applications should check whether
+.IR si_code
+has the value SI_USER or SI_QUEUE or is less than or equal to 0
+to tell whether
+.IR si_pid
+and
+.IR si_uid
+are valid.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The SIGPOLL and SIGPROF signals may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fB<errno.h>\fP",
+.IR "\fB<stropts.h>\fP",
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<time.h>\fP"
+.P
+.ad l
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "Section 2.2" ", " "The Compilation Environment",
+.IR "\fIalarm\fR\^(\|)",
+.IR "\fIioctl\fR\^(\|)",
+.IR "\fIkill\fR\^(\|)",
+.IR "\fIkillpg\fR\^(\|)",
+.IR "\fIpsiginfo\fR\^(\|)",
+.IR "\fIpthread_kill\fR\^(\|)",
+.IR "\fIpthread_sigmask\fR\^(\|)",
+.IR "\fIraise\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)",
+.IR "\fIsigaddset\fR\^(\|)",
+.IR "\fIsigaltstack\fR\^(\|)",
+.IR "\fIsigdelset\fR\^(\|)",
+.IR "\fIsigemptyset\fR\^(\|)",
+.IR "\fIsigfillset\fR\^(\|)",
+.IR "\fIsighold\fR\^(\|)",
+.IR "\fIsiginterrupt\fR\^(\|)",
+.IR "\fIsigismember\fR\^(\|)",
+.IR "\fIsignal\fR\^(\|)",
+.IR "\fIsigpending\fR\^(\|)",
+.IR "\fIsigqueue\fR\^(\|)",
+.IR "\fIsigsuspend\fR\^(\|)",
+.IR "\fIsigtimedwait\fR\^(\|)",
+.IR "\fIsigwait\fR\^(\|)",
+.IR "\fItimer_create\fR\^(\|)",
+.IR "\fIwait\fR\^(\|)",
+.IR "\fIwaitid\fR\^(\|)"
+.ad b
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

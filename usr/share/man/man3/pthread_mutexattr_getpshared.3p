@@ -1,0 +1,130 @@
+'\" et
+.TH PTHREAD_MUTEXATTR_GETPSHARED "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_mutexattr_getpshared,
+pthread_mutexattr_setpshared
+\(em get and set the process-shared attribute
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_mutexattr_getpshared(const pthread_mutexattr_t
+    *restrict \fIattr\fP, int *restrict \fIpshared\fP);
+int pthread_mutexattr_setpshared(pthread_mutexattr_t *\fIattr\fP,
+    int \fIpshared\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_mutexattr_getpshared\fR()
+function shall obtain the value of the
+.IR process-shared
+attribute from the attributes object referenced by
+.IR attr .
+.P
+The
+\fIpthread_mutexattr_setpshared\fR()
+function shall set the
+.IR process-shared
+attribute in an initialized attributes object referenced by
+.IR attr .
+.P
+The
+.IR process-shared
+attribute is set to PTHREAD_PROCESS_SHARED to permit a mutex
+to be operated upon by any thread that has access to the memory where
+the mutex is allocated, even if the mutex is allocated in memory that
+is shared by multiple processes. If the
+.IR process-shared
+attribute is PTHREAD_PROCESS_PRIVATE, the mutex shall only be operated
+upon by threads created within the same process as the thread that
+initialized the mutex; if threads of differing processes attempt to
+operate on such a mutex, the behavior is undefined. The default value
+of the attribute shall be PTHREAD_PROCESS_PRIVATE.
+.P
+The behavior is undefined if the value specified by the
+.IR attr
+argument to
+\fIpthread_mutexattr_getpshared\fR()
+or
+\fIpthread_mutexattr_setpshared\fR()
+does not refer to an initialized mutex attributes object.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIpthread_mutexattr_setpshared\fR()
+shall return zero; otherwise, an error number shall be returned to
+indicate the error.
+.P
+Upon successful completion,
+\fIpthread_mutexattr_getpshared\fR()
+shall return zero and store the value of the
+.IR process-shared
+attribute of
+.IR attr
+into the object referenced by the
+.IR pshared
+parameter. Otherwise, an error number shall be returned to indicate
+the error.
+.SH ERRORS
+The
+\fIpthread_mutexattr_setpshared\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The new value specified for the attribute is outside the range of legal
+values for that attribute.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+If an implementation detects that the value specified by the
+.IR attr
+argument to
+\fIpthread_mutexattr_getpshared\fR()
+or
+\fIpthread_mutexattr_setpshared\fR()
+does not refer to an initialized mutex attributes object, it is
+recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIpthread_cond_destroy\fR\^(\|)",
+.IR "\fIpthread_create\fR\^(\|)",
+.IR "\fIpthread_mutex_destroy\fR\^(\|)",
+.IR "\fIpthread_mutexattr_destroy\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

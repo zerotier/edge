@@ -1,0 +1,267 @@
+'\" et
+.TH NEWLOCALE "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+newlocale
+\(em create or modify a locale object
+.SH SYNOPSIS
+.LP
+.nf
+#include <locale.h>
+.P
+locale_t newlocale(int \fIcategory_mask\fP, const char *\fIlocale\fP,
+    locale_t \fIbase\fP);
+.fi
+.SH DESCRIPTION
+The
+\fInewlocale\fR()
+function shall create a new locale object or modify an existing one.
+If the
+.IR base
+argument is (\c
+.BR locale_t )0,
+a new locale object shall be created. It is unspecified whether the
+locale object pointed to by
+.IR base
+shall be modified, or freed and a new locale object created.
+.P
+The
+.IR category_mask
+argument specifies the locale categories to be set or modified.
+Values for
+.IR category_mask
+shall be constructed by a bitwise-inclusive OR of the symbolic
+constants
+.IR LC_CTYPE_MASK ,
+.IR LC_NUMERIC_MASK ,
+.IR LC_TIME_MASK ,
+.IR LC_COLLATE_MASK ,
+.IR LC_MONETARY_MASK ,
+and
+.IR LC_MESSAGES_MASK ,
+or any of the other implementation-defined
+.IR LC_*_MASK
+values defined in
+.IR <locale.h> .
+.P
+For each category with the corresponding bit set in
+.IR category_mask
+the data from the locale named by
+.IR locale
+shall be used. In the case of modifying an existing locale object, the
+data from the locale named by
+.IR locale
+shall replace the existing data within the locale object. If a completely
+new locale object is created, the data for all sections not requested by
+.IR category_mask
+shall be taken from the default locale.
+.P
+The following preset values of
+.IR locale
+are defined for all settings of
+.IR category_mask :
+.IP "\&\(dqPOSIX\(dq" 12
+Specifies the minimal environment for C-language translation called
+the POSIX locale.
+.IP "\&\(dqC\(dq" 12
+Equivalent to
+.BR \(dqPOSIX\(dq .
+.IP "\&\(dq\|\(dq" 12
+Specifies an implementation-defined native environment. This corresponds
+to the value of the associated environment variables,
+.IR LC_*
+and
+.IR LANG ;
+see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale"
+and
+.IR "Chapter 8" ", " "Environment Variables".
+.P
+If the
+.IR base
+argument is not (\c
+.BR locale_t )0
+and the
+\fInewlocale\fR()
+function call succeeds, the contents of
+.IR base
+are unspecified. Applications shall ensure that they stop using
+.IR base
+as a locale object before calling
+\fInewlocale\fR().
+If the function call fails and the
+.IR base
+argument is not (\c
+.BR locale_t )0,
+the contents of
+.IR base
+shall remain valid and unchanged.
+.P
+The behavior is undefined if the
+.IR base
+argument is the special locale object LC_GLOBAL_LOCALE, or is not a
+valid locale object handle and is not (\c
+.BR locale_t )0.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fInewlocale\fR()
+function shall return a handle which the caller may use on subsequent
+calls to
+\fIduplocale\fR(),
+\fIfreelocale\fR(),
+and other functions taking a
+.BR locale_t
+argument.
+.P
+Upon failure, the
+\fInewlocale\fR()
+function shall return (\c
+.BR locale_t )0
+and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fInewlocale\fR()
+function shall fail if:
+.TP
+.BR ENOMEM
+There is not enough memory available to create the locale object or
+load the locale data.
+.TP
+.BR EINVAL
+The
+.IR category_mask
+contains a bit that does not correspond to a valid category.
+.TP
+.BR ENOENT
+For any of the categories in
+.IR category_mask ,
+the locale data is not available.
+.P
+The
+\fInewlocale\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The
+.IR locale
+argument is not a valid string pointer.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Constructing a Locale Object from Different Locales"
+.P
+The following example shows the construction of a locale where the
+.IR LC_CTYPE
+category data comes from a locale
+.IR loc1
+and the
+.IR LC_TIME
+category data from a locale
+.IR tok2 :
+.sp
+.RS 4
+.nf
+\fB
+#include <locale.h>
+\&...
+locale_t loc, new_loc;
+.P
+/* Get the "loc1" data. */
+.P
+loc = newlocale (LC_CTYPE_MASK, "loc1", (locale_t)0);
+if (loc == (locale_t) 0)
+    abort ();
+.P
+/* Get the "loc2" data. */
+.P
+new_loc = newlocale (LC_TIME_MASK, "loc2", loc);
+if (new_loc != (locale_t) 0)
+    /* We don t abort if this fails. In this case this
+       simply used to unchanged locale object. */
+    loc = new_loc;
+.P
+\&...
+.fi \fR
+.P
+.RE
+.SS "Freeing up a Locale Object"
+.P
+The following example shows a code fragment to free a locale object
+created by
+\fInewlocale\fR():
+.sp
+.RS 4
+.nf
+\fB
+#include <locale.h>
+\&...
+.P
+/* Every locale object allocated with newlocale() should be
+ * freed using freelocale():
+ */
+.P
+locale_t loc;
+.P
+/* Get the locale. */
+.P
+loc = newlocale (LC_CTYPE_MASK | LC_TIME_MASK, "locname", (locale_t)0);
+.P
+/* ... Use the locale object ... */
+\&...
+.P
+/* Free the locale object resources. */
+freelocale (loc);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Handles for locale objects created by the
+\fInewlocale\fR()
+function should either be released by a corresponding call to
+\fIfreelocale\fR(),
+or be used as a base locale to another
+\fInewlocale\fR()
+call.
+.P
+The special locale object LC_GLOBAL_LOCALE must not be passed for the
+.IR base
+argument, even when returned by the
+\fIuselocale\fR()
+function.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIduplocale\fR\^(\|)",
+.IR "\fIfreelocale\fR\^(\|)",
+.IR "\fIuselocale\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 7" ", " "Locale",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "\fB<locale.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

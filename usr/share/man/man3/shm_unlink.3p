@@ -1,0 +1,139 @@
+'\" et
+.TH SHM_UNLINK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+shm_unlink
+\(em remove a shared memory object
+(\fBREALTIME\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mman.h>
+.P
+int shm_unlink(const char *\fIname\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIshm_unlink\fR()
+function shall remove the name of the shared memory object named
+by the string pointed to by
+.IR name .
+.P
+If one or more references to the shared memory object exist when the
+object is unlinked, the name shall be removed before
+\fIshm_unlink\fR()
+returns, but the removal of the memory object contents shall be postponed
+until all open and map references to the shared memory object have been
+removed.
+.P
+Even if the object continues to exist after the last
+\fIshm_unlink\fR(),
+reuse of the name shall subsequently cause
+\fIshm_open\fR()
+to behave as if no shared memory object of this name exists (that is,
+\fIshm_open\fR()
+will fail if O_CREAT is not set, or will create a new shared memory
+object if O_CREAT is set).
+.SH "RETURN VALUE"
+Upon successful completion, a value of zero shall be returned.
+Otherwise, a value of \(mi1 shall be returned and
+.IR errno
+set to indicate the error. If \(mi1 is returned, the named shared
+memory object shall not be changed by this function call.
+.SH ERRORS
+The
+\fIshm_unlink\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Permission is denied to unlink the named shared memory object.
+.TP
+.BR ENOENT
+The named shared memory object does not exist.
+.P
+The
+\fIshm_unlink\fR()
+function may fail if:
+.TP
+.BR ENAMETOOLONG
+.br
+The length of the
+.IR name
+argument exceeds
+{_POSIX_PATH_MAX}
+on systems that do not support the XSI option
+or exceeds
+{_XOPEN_PATH_MAX}
+on XSI systems,
+or has a pathname component that is longer than
+{_POSIX_NAME_MAX}
+on systems that do not support the XSI option
+or longer than
+{_XOPEN_NAME_MAX}
+on XSI systems.
+A call to
+\fIshm_unlink\fR()
+with a
+.IR name
+argument that contains the same shared memory object name as was
+previously used in a successful
+\fIshm_open\fR()
+call shall not give an
+.BR [ENAMETOOLONG] 
+error.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Names of memory objects that were allocated with
+\fIopen\fR()
+are deleted with
+\fIunlink\fR()
+in the usual fashion. Names of memory objects that were allocated with
+\fIshm_open\fR()
+are deleted with
+\fIshm_unlink\fR().
+Note that the actual memory object is not destroyed until the
+last close and unmap on it have occurred if it was already in use.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+A future version might require the
+\fIshm_open\fR()
+and
+\fIshm_unlink\fR()
+functions to have semantics similar to normal file system operations.
+.SH "SEE ALSO"
+.IR "\fIclose\fR\^(\|)",
+.IR "\fImmap\fR\^(\|)",
+.IR "\fImunmap\fR\^(\|)",
+.IR "\fIshmat\fR\^(\|)",
+.IR "\fIshmctl\fR\^(\|)",
+.IR "\fIshmdt\fR\^(\|)",
+.IR "\fIshm_open\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_mman.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

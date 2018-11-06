@@ -1,0 +1,132 @@
+'\" et
+.TH ULIMIT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ulimit
+\(em get and set process limits
+.SH SYNOPSIS
+.LP
+.nf
+#include <ulimit.h>
+.P
+long ulimit(int \fIcmd\fP, ...);
+.fi
+.SH DESCRIPTION
+The
+\fIulimit\fR()
+function shall control process limits. The process limits that can be
+controlled by this function include the maximum size of a single file
+that can be written (this is equivalent to using
+\fIsetrlimit\fR()
+with RLIMIT_FSIZE). The
+.IR cmd
+values, defined in
+.IR <ulimit.h> ,
+include:
+.IP UL_GETFSIZE 12
+Return the file size limit (RLIMIT_FSIZE) of the process. The limit
+shall be in units of 512-byte blocks and shall be inherited by child
+processes. Files of any size can be read. The return value shall be the
+integer part of the soft file size limit divided by 512. If the result
+cannot be represented as a
+.BR long ,
+the result is unspecified.
+.IP UL_SETFSIZE 12
+Set the file size limit for output operations of the process to the
+value of the second argument, taken as a
+.BR long ,
+multiplied by 512. If the result would overflow an
+.BR rlim_t ,
+the actual value set is unspecified. Any process may decrease its own
+limit, but only a process with appropriate privileges may increase the
+limit. The return value shall be the integer part of the new file size
+limit divided by 512.
+.P
+The
+\fIulimit\fR()
+function shall not change the setting of
+.IR errno
+if successful.
+.P
+As all return values are permissible in a successful situation, an
+application wishing to check for error situations should set
+.IR errno
+to 0, then call
+\fIulimit\fR(),
+and, if it returns \(mi1, check to see if
+.IR errno
+is non-zero.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIulimit\fR()
+shall return the value of the requested limit. Otherwise, \(mi1
+shall be returned and
+.IR errno
+set to indicate the error.
+.SH ERRORS
+The
+\fIulimit\fR()
+function shall fail and the limit shall be unchanged if:
+.TP
+.BR EINVAL
+The
+.IR cmd
+argument is not valid.
+.TP
+.BR EPERM
+A process not having appropriate privileges attempts to increase its
+file size limit.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Since the
+\fIulimit\fR()
+function uses type
+.BR long
+rather than
+.BR rlim_t ,
+this function is not sufficient for file sizes on many current systems.
+Applications should use the
+\fIgetrlimit\fR()
+or
+\fIsetrlimit\fR()
+functions instead of the obsolescent
+\fIulimit\fR()
+function.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fIulimit\fR()
+function may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^",
+.IR "\fIgetrlimit\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<ulimit.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

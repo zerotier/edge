@@ -1,0 +1,97 @@
+'\" et
+.TH TRUE "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+true
+\(em return true value
+.SH SYNOPSIS
+.LP
+.nf
+true
+.fi
+.SH DESCRIPTION
+The
+.IR true
+utility shall return with exit code zero.
+.SH OPTIONS
+None.
+.SH OPERANDS
+None.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+None.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+Not used.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+Zero.
+.SH "CONSEQUENCES OF ERRORS"
+None.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+This utility is typically used in shell scripts, as shown in the
+EXAMPLES section. The special built-in utility
+.BR :
+is sometimes more efficient than
+.IR true .
+.SH EXAMPLES
+This command is executed forever:
+.sp
+.RS 4
+.nf
+\fB
+while true
+do
+    command
+done
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The
+.IR true
+utility has been retained in this volume of POSIX.1\(hy2008, even though the shell special
+built-in
+.BR :
+provides similar functionality, because
+.IR true
+is widely used in historical scripts and is less cryptic to novice
+script readers.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.9" ", " "Shell Commands",
+.IR "\fIfalse\fR\^"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

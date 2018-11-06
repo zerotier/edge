@@ -1,0 +1,155 @@
+'\" et
+.TH PTHREAD_SPIN_DESTROY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_spin_destroy,
+pthread_spin_init
+\(em destroy or initialize a spin lock object
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_spin_destroy(pthread_spinlock_t *\fIlock\fP);
+int pthread_spin_init(pthread_spinlock_t *\fIlock\fP, int \fIpshared\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_spin_destroy\fR()
+function shall destroy the spin lock referenced by
+.IR lock
+and release any resources used by the lock. The effect of subsequent
+use of the lock is undefined until the lock is reinitialized by another
+call to
+\fIpthread_spin_init\fR().
+The results are undefined if
+\fIpthread_spin_destroy\fR()
+is called when a thread holds the lock, or if this function is called
+with an uninitialized thread spin lock.
+.P
+The
+\fIpthread_spin_init\fR()
+function shall allocate any resources required to use the spin lock
+referenced by
+.IR lock
+and initialize the lock to an unlocked state.
+.P
+If the Thread Process-Shared Synchronization option is supported and
+the value of
+.IR pshared
+is PTHREAD_PROCESS_SHARED, the implementation
+shall permit the spin lock to be operated upon by any thread that has
+access to the memory where the spin lock is allocated, even if it is
+allocated in memory that is shared by multiple processes.
+.P
+If the Thread Process-Shared Synchronization option is supported and
+the value of
+.IR pshared
+is PTHREAD_PROCESS_PRIVATE,
+or if the option is not supported, the spin lock shall only be operated
+upon by threads created within the same process as the thread that
+initialized the spin lock. If threads of differing processes attempt to
+operate on such a spin lock, the behavior is undefined.
+.P
+The results are undefined if
+\fIpthread_spin_init\fR()
+is called specifying an already initialized spin lock. The results are
+undefined if a spin lock is used without first being initialized.
+.P
+If the
+\fIpthread_spin_init\fR()
+function fails, the lock is not initialized and the contents of
+.IR lock
+are undefined.
+.P
+Only the object referenced by
+.IR lock
+may be used for performing synchronization.
+.P
+The result of referring to copies of that object in calls to
+\fIpthread_spin_destroy\fR(),
+\fIpthread_spin_lock\fR(),
+\fIpthread_spin_trylock\fR(),
+or
+\fIpthread_spin_unlock\fR()
+is undefined.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return zero;
+otherwise, an error number shall be returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_spin_init\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The system lacks the necessary resources to initialize another spin
+lock.
+.TP
+.BR ENOMEM
+Insufficient memory exists to initialize the lock.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+If an implementation detects that the value specified by the
+.IR lock
+argument to
+\fIpthread_spin_destroy\fR()
+does not refer to an initialized spin lock object, it is recommended
+that the function should fail and report an
+.BR [EINVAL] 
+error.
+.P
+If an implementation detects that the value specified by the
+.IR lock
+argument to
+\fIpthread_spin_destroy\fR()
+or
+\fIpthread_spin_init\fR()
+refers to a locked spin lock object, or detects that the value specified
+by the
+.IR lock
+argument to
+\fIpthread_spin_init\fR()
+refers to an already initialized spin lock object, it is recommended
+that the function should fail and report an
+.BR [EBUSY] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIpthread_spin_lock\fR\^(\|)",
+.IR "\fIpthread_spin_unlock\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

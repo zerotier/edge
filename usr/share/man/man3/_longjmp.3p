@@ -1,0 +1,130 @@
+'\" et
+.TH _LONGJMP "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+_longjmp,
+_setjmp
+\(em non-local goto
+.SH SYNOPSIS
+.LP
+.nf
+#include <setjmp.h>
+.P
+void _longjmp(jmp_buf \fIenv\fP, int \fIval\fP);
+int _setjmp(jmp_buf \fIenv\fP);
+.fi
+.SH DESCRIPTION
+The
+\fI_longjmp\fR()
+and
+\fI_setjmp\fR()
+functions shall be equivalent to
+\fIlongjmp\fR()
+and
+\fIsetjmp\fR(),
+respectively, with the additional restriction that
+\fI_longjmp\fR()
+and
+\fI_setjmp\fR()
+shall not manipulate the signal mask.
+.P
+If
+\fI_longjmp\fR()
+is called even though
+.IR env
+was never initialized by a call to
+\fI_setjmp\fR(),
+or when the last such call was in a function that has since returned,
+the results are undefined.
+.SH "RETURN VALUE"
+Refer to
+.IR "\fIlongjmp\fR\^(\|)"
+and
+.IR "\fIsetjmp\fR\^(\|)".
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+If
+\fI_longjmp\fR()
+is executed and the environment in which
+\fI_setjmp\fR()
+was executed no longer exists, errors can occur. The conditions under
+which the environment of the
+\fI_setjmp\fR()
+no longer exists include exiting the function that contains the
+\fI_setjmp\fR()
+call, and exiting an inner block with temporary storage. This
+condition might not be detectable, in which case the
+\fI_longjmp\fR()
+occurs and, if the environment no longer exists, the contents of the
+temporary storage of an inner block are unpredictable. This condition
+might also cause unexpected process termination. If the function has
+returned, the results are undefined.
+.P
+Passing
+\fIlongjmp\fR()
+a pointer to a buffer not created by
+\fIsetjmp\fR(),
+passing
+\fI_longjmp\fR()
+a pointer to a buffer not created by
+\fI_setjmp\fR(),
+passing
+\fIsiglongjmp\fR()
+a pointer to a buffer not created by
+\fIsigsetjmp\fR(),
+or passing any of these three functions a buffer that has been modified
+by the user can cause all the problems listed above, and more.
+.P
+The
+\fI_longjmp\fR()
+and
+\fI_setjmp\fR()
+functions are included to support programs written to historical system
+interfaces. New applications should use
+\fIsiglongjmp\fR()
+and
+\fIsigsetjmp\fR()
+respectively.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fI_longjmp\fR()
+and
+\fI_setjmp\fR()
+functions may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIlongjmp\fR\^(\|)",
+.IR "\fIsetjmp\fR\^(\|)",
+.IR "\fIsiglongjmp\fR\^(\|)",
+.IR "\fIsigsetjmp\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<setjmp.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

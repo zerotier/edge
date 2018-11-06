@@ -1,0 +1,121 @@
+'\" et
+.TH PTHREAD_CANCEL "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_cancel
+\(em cancel execution of a thread
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_cancel(pthread_t \fIthread\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_cancel\fR()
+function shall request that
+.IR thread
+be canceled. The target thread's cancelability state and type
+determines when the cancellation takes effect. When the cancellation
+is acted on, the cancellation cleanup handlers for
+.IR thread
+shall be called. When the last cancellation cleanup handler returns,
+the thread-specific data destructor functions shall be called for
+.IR thread .
+When the last destructor function returns,
+.IR thread
+shall be terminated.
+.P
+The cancellation processing in the target thread shall run
+asynchronously with respect to the calling thread returning from
+\fIpthread_cancel\fR().
+.SH "RETURN VALUE"
+If successful, the
+\fIpthread_cancel\fR()
+function shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_cancel\fR()
+function shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+Two alternative functions were considered for sending the cancellation
+notification to a thread. One would be to define a new SIGCANCEL
+signal that had the cancellation semantics when delivered; the other was
+to define the new
+\fIpthread_cancel\fR()
+function, which would trigger the cancellation semantics.
+.P
+The advantage of a new signal was that so much of the delivery criteria
+were identical to that used when trying to deliver a signal that making
+cancellation notification a signal was seen as consistent. Indeed, many
+implementations implement cancellation using a special signal. On the
+other hand, there would be no signal functions that could be used with
+this signal except
+\fIpthread_kill\fR(),
+and the behavior of the delivered cancellation signal would be unlike
+any previously existing defined signal.
+.P
+The benefits of a special function include the recognition that this
+signal would be defined because of the similar delivery criteria and
+that this is the only common behavior between a cancellation request and
+a signal. In addition, the cancellation delivery mechanism does not
+have to be implemented as a signal. There are also strong, if not
+stronger, parallels with language exception mechanisms than with
+signals that are potentially obscured if the delivery mechanism is
+visibly closer to signals.
+.P
+In the end, it was considered that as there were so many exceptions to
+the use of the new signal with existing signals functions it
+would be misleading. A special function has resolved this problem.
+This function was carefully defined so that an implementation wishing
+to provide the cancellation functions on top of signals could do so.
+The special function also means that implementations are not obliged
+to implement cancellation with signals.
+.P
+If an implementation detects use of a thread ID after the end of its
+lifetime, it is recommended that the function should fail and report an
+.BR [ESRCH] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIpthread_exit\fR\^(\|)",
+.IR "\fIpthread_cond_timedwait\fR\^(\|)",
+.IR "\fIpthread_join\fR\^(\|)",
+.IR "\fIpthread_setcancelstate\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

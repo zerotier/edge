@@ -1,0 +1,362 @@
+'\" et
+.TH TRAP "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+trap
+\(em trap signals
+.SH SYNOPSIS
+.LP
+.nf
+trap \fIn \fB[\fIcondition\fR...\fB]\fR
+trap \fB[\fIaction condition\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+If the first operand is an unsigned decimal integer, the shell shall
+treat all operands as conditions, and shall reset each condition to
+the default value. Otherwise, if there are operands, the first is
+treated as an action and the remaining as conditions.
+.P
+If
+.IR action
+is
+.BR '\(mi' ,
+the shell shall reset each
+.IR condition
+to the default value. If
+.IR action
+is null (\c
+.BR \(dq\^\(dq ),
+the shell shall ignore each specified
+.IR condition
+if it arises. Otherwise, the argument
+.IR action
+shall be read and executed by the shell when one of the corresponding
+conditions arises. The action of
+.IR trap
+shall override a previous action (either default action or one
+explicitly set). The value of
+.BR \(dq$?\(dq 
+after the
+.IR trap
+action completes shall be the value it had before
+.IR trap
+was invoked.
+.P
+The condition can be EXIT, 0 (equivalent to EXIT), or a signal
+specified using a symbolic name, without the SIG prefix, as listed in
+the tables of signal names in the
+.IR <signal.h> 
+header defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 13" ", " "Headers";
+for example, HUP, INT, QUIT, TERM. Implementations may permit names with
+the SIG prefix or ignore case in signal names as an extension. Setting
+a trap for SIGKILL or SIGSTOP produces undefined results.
+.P
+The environment in which the shell executes a
+.IR trap
+on EXIT shall be identical to the environment immediately after the
+last command executed before the
+.IR trap
+on EXIT was taken.
+.P
+Each time
+.IR trap
+is invoked, the
+.IR action
+argument shall be processed in a manner equivalent to:
+.sp
+.RS 4
+.nf
+\fB
+eval \fIaction\fR
+.fi \fR
+.P
+.RE
+.P
+Signals that were ignored on entry to a non-interactive shell cannot be
+trapped or reset, although no error need be reported when attempting to
+do so. An interactive shell may reset or catch signals ignored on
+entry. Traps shall remain in place for a given shell until explicitly
+changed with another
+.IR trap
+command.
+.P
+When a subshell is entered, traps that are not being ignored shall be
+set to the default actions, except in the case of a command substitution
+containing only a single
+.IR trap
+command, when the traps need not be altered. Implementations may check
+for this case using only lexical analysis; for example, if
+.IR `trap`
+and
+.IR "$( trap -- )"
+do not alter the traps in the subshell, cases such as assigning
+.IR var=trap
+and then using
+.IR $($var)
+may still alter them. This does not imply that the
+.IR trap
+command cannot be used within the subshell to set new traps.
+.P
+The
+.IR trap
+command with no operands shall write to standard output a list of commands
+associated with each condition. If the command is executed in a subshell,
+the implementation does not perform the optional check described above
+for a command substitution containing only a single
+.IR trap
+command, and no
+.IR trap
+commands with operands have been executed since entry to the subshell,
+the list shall contain the commands that were associated with each
+condition immediately before the subshell environment was entered.
+Otherwise, the list shall contain the commands currently associated with
+each condition. The format shall be:
+.sp
+.RS 4
+.nf
+\fB
+"trap \(mi\|\(mi %s %s ...\en", <\fIaction\fR>, <\fIcondition\fR> ...
+.fi \fR
+.P
+.RE
+.P
+The shell shall format the output, including the proper use of quoting,
+so that it is suitable for reinput to the shell as commands that
+achieve the same trapping results. For example:
+.sp
+.RS 4
+.nf
+\fB
+save_traps=$(trap)
+\&...
+eval "$save_traps"
+.fi \fR
+.P
+.RE
+.P
+XSI-conformant systems also allow numeric signal numbers for the
+conditions corresponding to the following signal names:
+.IP 1 6
+SIGHUP
+.IP 2 6
+SIGINT
+.IP 3 6
+SIGQUIT
+.IP 6 6
+SIGABRT
+.IP 9 6
+SIGKILL
+.IP 14 6
+SIGALRM
+.IP 15 6
+SIGTERM
+.P
+The
+.IR trap
+special built-in shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.SH OPTIONS
+None.
+.SH OPERANDS
+See the DESCRIPTION.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+None.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+See the DESCRIPTION.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+If the trap name
+or number
+is invalid, a non-zero exit status shall be returned; otherwise, zero
+shall be returned. For both interactive and non-interactive shells,
+invalid signal names
+or numbers
+shall not be considered a syntax error and do not cause the shell to
+abort.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+Write out a list of all traps and actions:
+.sp
+.RS 4
+.nf
+\fB
+trap
+.fi \fR
+.P
+.RE
+.P
+Set a trap so the
+.IR logout
+utility in the directory referred to by the
+.IR HOME
+environment variable executes when the shell terminates:
+.sp
+.RS 4
+.nf
+\fB
+trap '"$HOME"/logout' EXIT
+.fi \fR
+.P
+.RE
+.P
+or:
+.sp
+.RS 4
+.nf
+\fB
+trap '"$HOME"/logout' 0
+.fi \fR
+.P
+.RE
+.P
+Unset traps on INT, QUIT, TERM, and EXIT:
+.sp
+.RS 4
+.nf
+\fB
+trap \(mi INT QUIT TERM EXIT
+.fi \fR
+.P
+.RE
+.SH "RATIONALE"
+Implementations may permit lowercase signal names as an extension.
+Implementations may also accept the names with the SIG prefix; no known
+historical shell does so. The
+.IR trap
+and
+.IR kill
+utilities in this volume of POSIX.1\(hy2008 are now consistent in their omission of the SIG
+prefix for signal names. Some
+.IR kill
+implementations do not allow the prefix, and
+.IR kill
+.BR \(mil
+lists the signals without prefixes.
+.P
+Trapping SIGKILL or SIGSTOP is syntactically accepted by some
+historical implementations, but it has no effect. Portable POSIX
+applications cannot attempt to trap these signals.
+.P
+The output format is not historical practice. Since the output of
+historical
+.IR trap
+commands is not portable (because numeric signal values are not
+portable) and had to change to become so, an opportunity was taken to
+format the output in a way that a shell script could use to save and
+then later reuse a trap if it wanted.
+.P
+The KornShell uses an
+.BR ERR
+trap that is triggered whenever
+.IR set
+.BR \(mie
+would cause an exit. This is allowable as an extension, but was not
+mandated, as other shells have not used it.
+.P
+The text about the environment for the EXIT trap invalidates the
+behavior of some historical versions of interactive shells which, for
+example, close the standard input before executing a trap on 0. For
+example, in some historical interactive shell sessions the following
+trap on 0 would always print
+.BR \(dq\(mi\|\(mi\(dq :
+.sp
+.RS 4
+.nf
+\fB
+trap 'read foo; echo "\(mi$foo\(mi"' 0
+.fi \fR
+.P
+.RE
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+trap 'eval " $cmd"' 0
+.fi \fR
+.P
+.RE
+.P
+causes the contents of the shell variable
+.IR cmd
+to be executed as a command when the shell exits. Using:
+.sp
+.RS 4
+.nf
+\fB
+trap '$cmd' 0
+.fi \fR
+.P
+.RE
+.P
+does not work correctly if
+.IR cmd
+contains any special characters such as quoting or redirections. Using:
+.sp
+.RS 4
+.nf
+\fB
+trap " $cmd" 0
+.fi \fR
+.P
+.RE
+.P
+also works (the leading
+<space>
+character protects against unlikely cases where
+.IR cmd
+is a decimal integer or begins with
+.BR '\(mi' ),
+but it expands the
+.IR cmd
+variable when the
+.IR trap
+command is executed, not when the exit action is executed.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.14" ", " "Special Built-In Utilities"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+.IR "\fB<signal.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

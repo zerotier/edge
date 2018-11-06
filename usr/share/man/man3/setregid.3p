@@ -1,0 +1,135 @@
+'\" et
+.TH SETREGID "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+setregid
+\(em set real and effective group IDs
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int setregid(gid_t \fIrgid\fP, gid_t \fIegid\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIsetregid\fR()
+function shall set the real and effective group IDs of the calling
+process.
+.P
+If
+.IR rgid
+is \(mi1, the real group ID shall not be changed; if
+.IR egid
+is \(mi1, the effective group ID shall not be changed.
+.P
+The real and effective group IDs may be set to different values in the
+same call.
+.P
+Only a process with appropriate privileges can set the real group ID
+and the effective group ID to any valid value.
+.P
+A non-privileged process can set either the real group ID to the saved
+set-group-ID from one of the
+.IR exec
+family of functions, or the effective group ID to the saved
+set-group-ID or the real group ID.
+.P
+If the real group ID is being set (\c
+.IR rgid
+is not \(mi1), or the effective group ID is being set to a value not
+equal to the real group ID, then the saved set-group-ID of the current
+process shall be set equal to the new effective group ID.
+.P
+Any supplementary group IDs of the calling process remain unchanged.
+.SH "RETURN VALUE"
+Upon successful completion, 0 shall be returned. Otherwise, \(mi1
+shall be returned and
+.IR errno
+set to indicate the error, and neither of the group IDs are changed.
+.SH ERRORS
+The
+\fIsetregid\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR rgid
+or
+.IR egid
+argument is invalid or out-of-range.
+.TP
+.BR EPERM
+The process does not have appropriate privileges and a change other
+than changing the real group ID to the saved set-group-ID, or changing
+the effective group ID to the real group ID or the saved set-group-ID,
+was requested.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+If a non-privileged set-group-ID process sets its effective group ID to
+its real group ID, it can only set its effective group ID back to the
+previous value if
+.IR rgid
+was \(mi1 in the
+\fIsetregid\fR()
+call, since the saved-group-ID is not changed in that case. If
+.IR rgid
+was equal to the real group ID in the
+\fIsetregid\fR()
+call, then the saved set-group-ID will also have been changed to the
+real user ID.
+.SH RATIONALE
+Earlier versions of this standard did not specify whether the saved
+set-group-ID was affected by
+\fIsetregid\fR()
+calls. This version specifies common existing practice that constitutes an
+important security feature. The ability to set both the effective group
+ID and saved set-group-ID to be the same as the real group ID means that
+any security weakness in code that is executed after that point cannot
+result in malicious code being executed with the previous effective
+group ID. Privileged applications could already do this using just
+\fIsetgid\fR(),
+but for non-privileged applications the only standard method available
+is to use this feature of
+\fIsetregid\fR().
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^",
+.IR "\fIgetegid\fR\^(\|)",
+.IR "\fIgeteuid\fR\^(\|)",
+.IR "\fIgetgid\fR\^(\|)",
+.IR "\fIgetuid\fR\^(\|)",
+.IR "\fIsetegid\fR\^(\|)",
+.IR "\fIseteuid\fR\^(\|)",
+.IR "\fIsetgid\fR\^(\|)",
+.IR "\fIsetreuid\fR\^(\|)",
+.IR "\fIsetuid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,133 @@
+#!/bin/sh
+
+# abuild-keygen - generate signing keys
+# Copyright (c) 2009 Natanael Copa <ncopa@alpinelinux.org>
+#
+# Distributed under GPL-2
+#
+
+program_version=3.3.0_pre1-r1
+datadir=/usr/share/abuild
+
+if ! [ -f "$datadir/functions.sh" ]; then
+	echo "$datadir/functions.sh: not found" >&2
+	exit 1
+fi
+. "$datadir/functions.sh"
+
+
+# ask for privkey unless non-interactive mode
+# returns value in global $privkey
+get_privkey_file() {
+	local emailaddr default_name
+	emailaddr=${PACKAGER##*<}
+	emailaddr=${emailaddr%%>*}
+
+	# if PACKAGER does not contain a valid email address, then ask git
+	if [ -z "$emailaddr" ] || [ "${emailaddr##*@}" = "$emailaddr" ]; then
+		emailaddr=$(git config --get user.email 2>/dev/null)
+	fi
+
+	default_name="${emailaddr:-$USER}-$(printf "%x" $(date +%s))"
+
+	privkey="$ABUILD_USERDIR/$default_name.rsa"
+	[ -n "$non_interactive" ] && return 0
+	msg "Generating public/private rsa key pair for abuild"
+	echo -n "Enter file in which to save the key [$privkey]: "
+
+	read line
+	if [ -n "$line" ]; then
+		privkey="$line"
+	fi
+}
+
+do_keygen() {
+	mkdir -p "$ABUILD_USERDIR"
+
+	get_privkey_file
+	pubkey="$privkey.pub"
+
+	# generate the private key in a subshell with stricter umask
+	(
+	umask 0007
+	openssl genrsa -out "$privkey" 2048
+	)
+	openssl rsa -in "$privkey" -pubout -out "$pubkey"
+
+
+	if [ -n "$install_pubkey" ]; then
+		msg "Installing $pubkey to /etc/apk/keys..."
+		sudo mkdir -p /etc/apk/keys
+		sudo cp -i "$pubkey" /etc/apk/keys/
+	else
+
+		msg ""
+		msg "You'll need to install $pubkey into "
+		msg "/etc/apk/keys to be able to install packages and repositories signed with"
+		msg "$privkey"
+	fi
+
+	if [ -n "$append_config" ]; then
+		if [ -f "$ABUILD_USERCONF" ]; then
+			# comment out the existing values
+			sed -i -e 's/^PACKAGER_PRIVKEY=/\#&/' "$ABUILD_USERCONF"
+		fi
+		echo "PACKAGER_PRIVKEY=\"$privkey\"" >> "$ABUILD_USERCONF"
+	else
+		msg ""
+		msg "You might want add following line to $ABUILD_USERCONF:"
+		msg ""
+		msg "PACKAGER_PRIVKEY=\"$privkey\""
+		msg ""
+	fi
+
+	msg ""
+	msg "Please remember to make a safe backup of your private key:"
+	msg "$privkey"
+	msg ""
+}
+
+usage() {
+	cat >&2 <<-__EOF__
+		$program $program_version - generate signing keys
+		Usage: $program [-a|--append] [-i|--install] [-n]
+		Options:
+		  -a, --append   Set PACKAGER_PRIVKEY=<generated key> in
+		                 $ABUILD_USERCONF
+		  -i, --install  Install public key into /etc/apk/keys using sudo
+		  -n             Non-interactive. Use defaults
+		  -q, --quiet
+		  -h, --help     Show this help
+
+	__EOF__
+}
+
+append_config=
+install_pubkey=
+non_interactive=
+quiet=
+
+args=$(getopt -o ainqh --long append,install,quiet,help -n "$program" -- "$@")
+if [ $? -ne 0 ]; then
+	usage
+	exit 2
+fi
+eval set -- "$args"
+while true; do
+	case $1 in
+		-a|--append) append_config=1;;
+		-i|--install) install_pubkey=1;;
+		-n) non_interactive=1;;
+		-q|--quiet) quiet=1;; # suppresses msg
+		-h|--help) usage; exit;;
+		--) shift; break;;
+		*) exit 1;; # getopt error
+	esac
+	shift
+done
+if [ $# -ne 0 ]; then
+	usage
+	exit 2
+fi
+
+do_keygen

@@ -1,0 +1,807 @@
+'\" et
+.TH STTY "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+stty
+\(em set the options for a terminal
+.SH SYNOPSIS
+.LP
+.nf
+stty \fB[\fR\(mia|\(mig\fB]\fR
+.P
+stty \fIoperand\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR stty
+utility shall set or report on terminal I/O characteristics for the
+device that is its standard input. Without options or operands
+specified, it shall report the settings of certain characteristics,
+usually those that differ from implementation-defined defaults.
+Otherwise, it shall modify the terminal state according to the
+specified operands. Detailed information about the modes listed in the
+first five groups below are described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+Operands in the Combination Modes group (see
+.IR "Combination Modes")
+are implemented using operands in the previous groups. Some
+combinations of operands are mutually-exclusive on some terminal types;
+the results of using such combinations are unspecified.
+.P
+Typical implementations of this utility require a communications line
+configured to use the
+.BR termios
+interface defined in the System Interfaces volume of POSIX.1\(hy2008. On systems where none of these lines
+are available, and on lines not currently configured to support the
+.BR termios
+interface, some of the operands need not affect terminal
+characteristics.
+.SH OPTIONS
+The
+.IR stty
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\fP" 10
+Write to standard output all the current settings for the terminal.
+.IP "\fB\(mig\fP" 10
+Write to standard output all the current settings in an unspecified
+form that can be used as arguments to another invocation of the
+.IR stty
+utility on the same system. The form used shall not contain any
+characters that would require quoting to avoid word expansion by the
+shell; see
+.IR "Section 2.6" ", " "Word Expansions".
+.SH OPERANDS
+The following operands shall be supported to set the terminal
+characteristics.
+.SS "Control Modes"
+.IP "\fBparenb\ \fR(\fB\(miparenb\fR)" 12
+Enable (disable) parity generation and detection. This shall have
+the effect of setting (not setting) PARENB in the
+.BR termios
+.IR c_cflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBparodd\ \fR(\fB\(miparodd\fR)" 12
+.br
+Select odd (even) parity. This shall have the effect of setting (not
+setting) PARODD in the
+.BR termios
+.IR c_cflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBcs5\ cs6\ cs7\ cs8\fR" 12
+Select character size, if possible. This shall have the effect of
+setting CS5, CS6, CS7, and CS8, respectively, in the
+.BR termios
+.IR c_cflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fInumber\fR" 12
+Set terminal baud rate to the number given, if possible. If the baud
+rate is set to zero, the modem control lines shall no longer be
+asserted. This shall have the effect of setting the input and output
+.BR termios
+baud rate values as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBispeed\ \fInumber\fR" 12
+Set terminal input baud rate to the number given, if possible. If the
+input baud rate is set to zero, the input baud rate shall be specified
+by the value of the output baud rate. This shall have the effect of
+setting the input
+.BR termios
+baud rate values as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBospeed\ \fInumber\fR" 12
+Set terminal output baud rate to the number given, if possible. If the
+output baud rate is set to zero, the modem control lines shall no
+longer be asserted. This shall have the effect of setting the output
+.BR termios
+baud rate values as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBhupcl\ \fR(\fB\(mihupcl\fR)" 12
+Stop asserting modem control lines (do not stop asserting modem control
+lines) on last close. This shall have the effect of setting (not
+setting) HUPCL in the
+.BR termios
+.IR c_cflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBhup\ \fR(\fB\(mihup\fR)" 12
+Equivalent to
+.BR hupcl (\c
+.BR \(mihupcl ).
+.IP "\fBcstopb\ \fR(\fB\(micstopb\fR)" 12
+Use two (one) stop bits per character. This shall have the effect of
+setting (not setting) CSTOPB in the
+.BR termios
+.IR c_cflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBcread\ \fR(\fB\(micread\fR)" 12
+Enable (disable) the receiver. This shall have the effect of setting
+(not setting) CREAD in the
+.BR termios
+.IR c_cflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBclocal\ \fR(\fB\(miclocal\fR)" 12
+Assume a line without (with) modem control. This shall have the effect
+of setting (not setting) CLOCAL in the
+.BR termios
+.IR c_cflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.P
+It is unspecified whether
+.IR stty
+shall report an error if an attempt to set a Control Mode fails.
+.SS "Input Modes"
+.IP "\fBignbrk\ \fR(\fB\(miignbrk\fR)" 12
+Ignore (do not ignore) break on input. This shall have the effect of
+setting (not setting) IGNBRK in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBbrkint\ \fR(\fB\(mibrkint\fR)" 12
+Signal (do not signal) INTR on break. This shall have the effect of
+setting (not setting) BRKINT in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBignpar\ \fR(\fB\(miignpar\fR)" 12
+Ignore (do not ignore) bytes with parity errors. This shall have the
+effect of setting (not setting) IGNPAR in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBparmrk\ \fR(\fB\(miparmrk\fR)" 12
+.br
+Mark (do not mark) parity errors. This shall have the effect of
+setting (not setting) PARMRK in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBinpck\ \fR(\fB\(miinpck\fR)" 12
+Enable (disable) input parity checking. This shall have the effect of
+setting (not setting) INPCK in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBistrip\ \fR(\fB\(miistrip\fR)" 12
+Strip (do not strip) input characters to seven bits. This shall have
+the effect of setting (not setting) ISTRIP in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBinlcr\ \fR(\fB\(miinlcr\fR)" 12
+Map (do not map) NL to CR on input. This shall have the effect of
+setting (not setting) INLCR in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBigncr\ (\(miigncr)\fR" 12
+Ignore (do not ignore) CR on input. This shall have the effect of
+setting (not setting) IGNCR in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBicrnl\ \fR(\fB\(miicrnl\fR)" 12
+Map (do not map) CR to NL on input. This shall have the effect of
+setting (not setting) ICRNL in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBixon\ \fR(\fB\(miixon\fR)" 12
+Enable (disable) START/STOP output control. Output from the system is
+stopped when the system receives STOP and started when the system
+receives START. This shall have the effect of setting (not setting)
+IXON in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBixany\ \fR(\fB\(miixany\fR)" 12
+Allow any character to restart output. This shall have the effect of
+setting (not setting) IXANY in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBixoff\ \fR(\fB\(miixoff\fR)" 12
+Request that the system send (not send) STOP characters when the input
+queue is nearly full and START characters to resume data transmission.
+This shall have the effect of setting (not setting) IXOFF in the
+.BR termios
+.IR c_iflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.SS "Output Modes"
+.IP "\fBopost\ \fR(\fB\(miopost\fR)" 12
+Post-process output (do not post-process output; ignore all other
+output modes). This shall have the effect of setting (not setting)
+OPOST in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBocrnl\ \fR(\fB\(miocrnl\fR)" 12
+Map (do not map) CR to NL on output This shall have the effect of
+setting (not setting) OCRNL in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBonocr\ \fR(\fB\(mionocr\fR)" 12
+Do not (do) output CR at column zero. This shall have the effect of
+setting (not setting) ONOCR in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBonlret\ \fR(\fB\(mionlret\fR)" 12
+The terminal newline key performs (does not perform) the CR function.
+This shall have the effect of setting (not setting) ONLRET in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBofill\ \fR(\fB\(miofill\fR)" 12
+Use fill characters (use timing) for delays. This shall have the
+effect of setting (not setting) OFILL in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBofdel\ \fR(\fB\(miofdel\fR)" 12
+Fill characters are DELs (NULs). This shall have the effect of setting
+(not setting) OFDEL in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBcr0\ cr1\ cr2\ cr3\fR" 12
+Select the style of delay for CRs. This shall have the effect of
+setting CRDLY to CR0, CR1, CR2, or CR3, respectively, in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBnl0\ nl1\fR" 12
+Select the style of delay for NL. This shall have the effect of
+setting NLDLY to NL0 or NL1, respectively, in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBtab0\ tab1\ tab2\ tab3\fR" 12
+.br
+Select the style of delay for horizontal tabs. This shall have the
+effect of setting TABDLY to TAB0, TAB1, TAB2, or TAB3, respectively,
+in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+Note that TAB3 has the effect of expanding
+<tab>
+characters to
+<space>
+characters.
+.IP "\fBtabs\ \fR(\fB\(mitabs\fR)" 12
+Synonym for
+.BR tab0
+(\c
+.BR tab3 ).
+.IP "\fBbs0\ bs1\fR" 12
+Select the style of delay for
+<backspace>
+characters. This shall have the effect of setting BSDLY to BS0 or BS1,
+respectively, in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBff0\ ff1\fR" 12
+Select the style of delay for
+<form-feed>
+characters. This shall have the effect of setting FFDLY to FF0 or FF1,
+respectively, in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBvt0\ vt1\fR" 12
+Select the style of delay for
+<vertical-tab>
+characters. This shall have the effect of setting VTDLY to VT0 or VT1,
+respectively, in the
+.BR termios
+.IR c_oflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.SS "Local Modes"
+.IP "\fBisig\ \fR(\fB\(miisig\fR)" 12
+Enable (disable) the checking of characters against the special control
+characters INTR, QUIT, and SUSP. This shall have the effect of setting
+(not setting) ISIG in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBicanon\ \fR(\fB\(miicanon\fR)" 12
+Enable (disable) canonical input (ERASE and KILL processing). This
+shall have the effect of setting (not setting) ICANON in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBiexten\ \fR(\fB\(miiexten\fR)" 12
+Enable (disable) any implementation-defined special control
+characters not currently controlled by
+.BR icanon ,
+.BR isig ,
+.BR ixon ,
+or
+.BR ixoff .
+This shall have the effect of setting (not setting) IEXTEN in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBecho\ \fR(\fB\(miecho\fR)" 12
+Echo back (do not echo back) every character typed. This shall have
+the effect of setting (not setting) ECHO in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBechoe\ \fR(\fB\(miechoe\fR)" 12
+The ERASE character visually erases (does not erase) the last character
+in the current line from the display, if possible. This shall have the
+effect of setting (not setting) ECHOE in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBechok\ \fR(\fB\(miechok\fR)" 12
+Echo (do not echo) NL after KILL character. This shall have the effect
+of setting (not setting) ECHOK in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBechonl\ \fR(\fB\(miechonl\fR)" 12
+Echo (do not echo) NL, even if
+.BR echo
+is disabled. This shall have the effect of setting (not setting)
+ECHONL in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBnoflsh\ \fR(\fB\(minoflsh\fR)" 12
+Disable (enable) flush after INTR, QUIT, SUSP. This shall have the
+effect of setting (not setting) NOFLSH in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP "\fBtostop\ \fR(\fB\(mitostop\fR)" 12
+Send SIGTTOU for background output. This shall have the effect of
+setting (not setting) TOSTOP in the
+.BR termios
+.IR c_lflag
+field, as defined in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.SS "Special Control Character Assignments"
+.IP "<\fIcontrol\fR>\(hy\fIcharacter\ string\fR" 6
+.br
+Set <\fIcontrol\fP>\(hy\fIcharacter\fR to
+.IR string .
+If <\fIcontrol\fP>\(hy\fIcharacter\fR is one of the character sequences
+in the first column of the following table, the corresponding the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface"
+control character from the second column shall be recognized. This has
+the effect of setting the corresponding element of the
+.BR termios
+.IR c_cc
+array (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 13" ", " "Headers",
+.IR <termios.h> ).
+.br
+.sp
+.ce 1
+\fBTable: Control Character Names in \fIstty\fP\fR
+.TS
+center tab(@) box;
+cB | cB | cB
+lB | l | l.
+Control Character@c_cc Subscript@Description
+_
+eof@VEOF@EOF character
+eol@VEOL@EOL character
+erase@VERASE@ERASE character
+intr@VINTR@INTR character
+kill@VKILL@KILL character
+quit@VQUIT@QUIT character
+susp@VSUSP@SUSP character
+start@VSTART@START character
+stop@VSTOP@STOP character
+.TE
+.RS 6 
+.P
+If
+.IR string
+is a single character, the control character shall be set to that
+character. If
+.IR string
+is the two-character sequence
+.BR \(dq^\(mi\(dq 
+or the string
+.IR undef ,
+the control character shall be set to _POSIX_VDISABLE , if it is in
+effect for the device; if _POSIX_VDISABLE is not in effect for the
+device, it shall be treated as an error. In the POSIX locale, if
+.IR string
+is a two-character sequence beginning with
+<circumflex>
+(\c
+.BR '^' ),
+and the second character is one of those listed in the
+.BR \(dq^c\(dq 
+column of the following table, the control character shall be set to
+the corresponding character value in the Value column of the table.
+.sp
+.ce 1
+\fBTable: Circumflex Control Characters in \fIstty\fP\fR
+.TS
+center tab(@) box;
+cB cB | cB cB | cB cB
+lf5 2 l 6 | lf5 2 l 6 | lf5 2 l.
+\&^c@Value@^c@Value@^c@Value
+_
+a\fR,\fP A@<SOH>@l\fR,\fP L@<FF>@w\fR,\fP W@<ETB>
+b\fR,\fP B@<STX>@m\fR,\fP M@<CR>@x\fR,\fP X@<CAN>
+c\fR,\fP C@<ETX>@n\fR,\fP N@<SO>@y\fR,\fP Y@<EM>
+d\fR,\fP D@<EOT>@o\fR,\fP O@<SI>@z\fR,\fP Z@<SUB>
+e\fR,\fP E@<ENQ>@p\fR,\fP P@<DLE>@[@<ESC>
+f\fR,\fP F@<ACK>@q\fR,\fP Q@<DC1>@\e@<FS>
+g\fR,\fP G@<BEL>@r\fR,\fP R@<DC2>@]@<GS>
+h\fR,\fP H@<BS>@s\fR,\fP S@<DC3>@\&^@<RS>
+i\fR,\fP I@<HT>@t\fR,\fP T@<DC4>@\&_@<US>
+j\fR,\fP J@<LF>@u\fR,\fP U@<NAK>@?@<DEL>
+k\fR,\fP K@<VT>@v\fR,\fP V@<SYN>
+.TE
+.RE
+.IP "\fBmin\ \fInumber\fR" 6
+.br
+Set the value of MIN to
+.IR number .
+MIN is used in non-canonical mode input processing (\c
+.BR icanon ).
+.IP "\fBtime\ \fInumber\fR" 6
+.br
+Set the value of TIME to
+.IR number .
+TIME is used in non-canonical mode input processing (\c
+.BR icanon ).
+.SS "Combination Modes"
+.IP "\fIsaved\ settings\fR" 6
+.br
+Set the current terminal characteristics to the saved settings produced
+by the
+.BR \(mig
+option.
+.IP "\fBevenp\fR\ or\ \fBparity\fR" 6
+.br
+Enable
+.BR parenb
+and
+.BR cs7 ;
+disable
+.BR parodd .
+.IP "\fBoddp\fR" 6
+.br
+Enable
+.BR parenb ,
+.BR cs7 ,
+and
+.BR parodd .
+.IP "\fB\(miparity\fR, \fB\(mievenp\fR, or \fB\(mioddp\fR" 6
+.br
+Disable
+.BR parenb ,
+and set
+.BR cs8 .
+.IP "\fBraw\ \fR(\fB\(miraw\fR\ or\ \fBcooked\fR)" 6
+.br
+Enable (disable) raw input and output. Raw mode shall be equivalent to
+setting:
+.RS 6 
+.sp
+.RS 4
+.nf
+\fB
+stty cs8 erase ^\(mi kill ^\(mi intr ^\(mi \e
+    quit ^\(mi eof ^\(mi eol ^\(mi \(mipost \(miinpck
+.fi \fR
+.P
+.RE
+.RE
+.IP "\fBnl\ \fR(\fB\(minl\fR)" 6
+.br
+Disable (enable)
+.BR icrnl .
+In addition,
+.BR \(minl
+unsets
+.BR inlcr
+and
+.BR igncr .
+.IP "\fBek\fR" 6
+Reset ERASE and KILL characters back to system defaults.
+.IP "\fBsane\fR" 6
+.br
+Reset all modes to some reasonable, unspecified, values.
+.SH STDIN
+Although no input is read from standard input, standard input shall be
+used to get the current terminal I/O characteristics and to set new
+terminal I/O characteristics.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR stty :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+This variable determines the locale for the interpretation of sequences
+of bytes of text data as characters (for example, single-byte as
+opposed to multi-byte characters in arguments) and which characters are
+in the class
+.BR print .
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If operands are specified, no output shall be produced.
+.P
+If the
+.BR \(mig
+option is specified,
+.IR stty
+shall write to standard output the current settings in a form that can
+be used as arguments to another instance of
+.IR stty
+on the same system.
+.P
+If the
+.BR \(mia
+option is specified, all of the information as described in the
+OPERANDS section shall be written to standard output. Unless otherwise
+specified, this information shall be written as
+<space>-separated
+tokens in an unspecified format, on one or more lines, with an
+unspecified number of tokens per line. Additional information may be
+written.
+.P
+If no options or operands are specified, an unspecified subset of the
+information written for the
+.BR \(mia
+option shall be written.
+.P
+If speed information is written as part of the default output, or if
+the
+.BR \(mia
+option is specified and if the terminal input speed and output speed
+are the same, the speed information shall be written as follows:
+.sp
+.RS 4
+.nf
+\fB
+"speed %d baud;", <\fIspeed\fR>
+.fi \fR
+.P
+.RE
+.P
+Otherwise, speeds shall be written as:
+.sp
+.RS 4
+.nf
+\fB
+"ispeed %d baud; ospeed %d baud;", <\fIispeed\fR>, <\fIospeed\fR>
+.fi \fR
+.P
+.RE
+.P
+In locales other than the POSIX locale, the word
+.BR baud
+may be changed to something more appropriate in those locales.
+.P
+If control characters are written as part of the default output, or if
+the
+.BR \(mia
+option is specified, control characters shall be written as:
+.sp
+.RS 4
+.nf
+\fB
+"%s = %s;", <\fIcontrol-character name\fR>, <\fIvalue\fR>
+.fi \fR
+.P
+.RE
+.P
+where <\fIvalue\fP> is either the character, or some visual
+representation of the character if it is non-printable, or the string
+.IR undef
+if the character is disabled.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+The terminal options were read or set successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.BR \(mig
+flag is designed to facilitate the saving and restoring of terminal
+state from the shell level. For example, a program may:
+.sp
+.RS 4
+.nf
+\fB
+saveterm="$(stty \(mig)"       # save terminal state
+stty \fI(new settings)\fR         # set new state
+\&...                         # ...
+stty $saveterm              # restore terminal state
+.fi \fR
+.P
+.RE
+.P
+Since the format is unspecified, the saved value is not portable across
+systems.
+.P
+Since the
+.BR \(mia
+format is so loosely specified, scripts that save and restore terminal
+settings should use the
+.BR \(mig
+option.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The original
+.IR stty
+description was taken directly from System V and reflected the System V
+terminal driver
+.BR termio .
+It has been modified to correspond to the terminal driver
+.BR termios .
+.P
+Output modes are specified only for XSI-conformant systems. All
+implementations are expected to provide
+.IR stty
+operands corresponding to all of the output modes they support.
+.P
+The
+.IR stty
+utility is primarily used to tailor the user interface of the terminal,
+such as selecting the preferred ERASE and KILL characters. As an
+application programming utility,
+.IR stty
+can be used within shell scripts to alter the terminal settings for the
+duration of the script.
+.P
+The
+.BR termios
+section states that individual disabling of control characters is
+possible through the option _POSIX_VDISABLE.
+If enabled, two conventions currently exist for specifying this: System
+V uses
+.BR \(dq^\(mi\(dq ,
+and BSD uses
+.IR undef .
+Both are accepted by
+.IR stty
+in this volume of POSIX.1\(hy2008. The other BSD convention of using the letter
+.BR 'u' 
+was rejected because it conflicts with the actual letter
+.BR 'u' ,
+which is an acceptable value for a control character.
+.P
+Early proposals did not specify the mapping of
+.BR \(dq^c\(dq 
+to control characters because the control characters were not specified
+in the POSIX locale character set description file requirements. The
+control character set is now specified in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 3" ", " "Definitions",
+so the historical mapping is specified. Note that although the mapping
+corresponds to control-character key assignments on many terminals that
+use the ISO/IEC\ 646:\|1991 standard (or ASCII) character encodings, the mapping specified
+here is to the control characters, not their keyboard encodings.
+.P
+Since
+.BR termios
+supports separate speeds for input and output, two new options were
+added to specify each distinctly.
+.P
+Some historical implementations use standard input to get and set
+terminal characteristics; others use standard output. Since input from
+a login TTY is usually restricted to the owner while output to a TTY is
+frequently open to anyone, using standard input provides fewer chances
+of accidentally (or maliciously) altering the terminal settings of
+other users. Using standard input also allows
+.IR stty
+.BR \(mia
+and
+.IR stty
+.BR \(mig
+output to be redirected for later use. Therefore, usage of standard
+input is required by this volume of POSIX.1\(hy2008.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Chapter 2" ", " "Shell Command Language"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Chapter 11" ", " "General Terminal Interface",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+.IR "\fB<termios.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

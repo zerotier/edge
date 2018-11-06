@@ -1,0 +1,207 @@
+'\" et
+.TH HEAD "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+head
+\(em copy the first part of files
+.SH SYNOPSIS
+.LP
+.nf
+head \fB[\fR\(min \fInumber\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR head
+utility shall copy its input files to the standard output, ending the
+output for each file at a designated point.
+.P
+Copying shall end at the point in each input file indicated by the
+.BR \(min
+.IR number
+option. The option-argument
+.IR number
+shall be counted in units of lines.
+.SH OPTIONS
+The
+.IR head
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(min\ \fInumber\fR" 10
+The first
+.IR number
+lines of each input file shall be copied to standard output. The
+application shall ensure that the
+.IR number
+option-argument is a positive decimal integer.
+.P
+When a file contains less than
+.IR number
+lines, it shall be copied to standard output in its entirety. This
+shall not be an error.
+.P
+If no options are specified,
+.IR head
+shall act as if
+.BR "\(min 10"
+had been specified.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an input file. If no
+.IR file
+operands are specified, the standard input shall be used.
+.SH STDIN
+The standard input shall be used if no
+.IR file
+operands are specified, and shall be used if a
+.IR file
+operand is
+.BR '\(mi' 
+and the implementation treats the
+.BR '\(mi' 
+as meaning standard input.
+Otherwise, the standard input shall not be used.
+See the INPUT FILES section.
+.SH "INPUT FILES"
+Input files shall be text files, but the line length is not restricted
+to
+{LINE_MAX}
+bytes.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR head :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall contain designated portions of the input
+files.
+.P
+If multiple
+.IR file
+operands are specified,
+.IR head
+shall precede the output for each with the header:
+.sp
+.RS 4
+.nf
+\fB
+"\en==> %s <==\en", <\fIpathname\fR>
+.fi \fR
+.P
+.RE
+.P
+except that the first header written shall not include the initial
+<newline>.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+To write the first ten lines of all files (except those with a leading
+period) in the directory:
+.sp
+.RS 4
+.nf
+\fB
+head \(mi\|\(mi *
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+Although it is possible to simulate
+.IR head
+with
+.IR sed
+10q for a single file, the standard developers decided that the
+popularity of
+.IR head
+on historical BSD systems warranted its inclusion alongside
+.IR tail .
+.P
+POSIX.1\(hy2008 version of
+.IR head
+follows the Utility Syntax Guidelines. The
+.BR \(min
+option was added to this new interface so that
+.IR head
+and
+.IR tail
+would be more logically related. Earlier versions of this standard
+allowed a
+.BR \(minumber
+option. This form is no longer specified by POSIX.1\(hy2008 but may
+be present in some implementations.
+.P
+There is no
+.BR \(mic
+option (as there is in
+.IR tail )
+because it is not historical practice and because other utilities in
+\&this volume of POSIX.1\(hy2008 provide similar functionality.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIsed\fR\^",
+.IR "\fItail\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

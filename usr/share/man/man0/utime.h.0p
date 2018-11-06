@@ -1,0 +1,91 @@
+'\" et
+.TH utime.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+utime.h
+\(em access and modification times structure
+.SH SYNOPSIS
+.LP
+.nf
+#include <utime.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <utime.h> 
+header shall declare the
+.BR utimbuf
+structure, which shall include the following members:
+.sp
+.RS 4
+.nf
+\fB
+time_t    actime    \fRAccess time.\fR
+time_t    modtime   \fRModification time.\fR
+.fi \fR
+.P
+.RE
+.P
+The times shall be measured in seconds since the Epoch.
+.P
+The
+.IR <utime.h> 
+header shall define the
+.BR time_t
+type as described in
+.IR <sys/types.h> .
+.P
+The following shall be declared as a function and may also be defined
+as a macro. A function prototype shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int utime(const char *, const struct utimbuf *);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+\fIutime\fR()
+function only allows setting file timestamps to the nearest second.
+Applications should use the
+\fIutimensat\fR()
+function instead. See
+.IR <sys/stat.h> .
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+.IR <utime.h> 
+header may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fB<sys_stat.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIfutimens\fR\^(\|)",
+.IR "\fIutime\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

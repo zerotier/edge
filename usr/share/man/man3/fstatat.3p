@@ -1,0 +1,493 @@
+'\" et
+.TH FSTATAT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fstatat,
+lstat,
+stat
+\(em get file status
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/stat.h>
+.P
+int fstatat(int fd, const char *restrict \fIpath\fP,
+    struct stat *restrict \fIbuf\fP, int \fIflag\fP);
+int lstat(const char *restrict \fIpath\fP, struct stat *restrict \fIbuf\fP);
+int stat(const char *restrict \fIpath\fP, struct stat *restrict \fIbuf\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIstat\fR()
+function shall obtain information about the named file and write it
+to the area pointed to by the
+.IR buf
+argument. The
+.IR path
+argument points to a pathname naming a file. Read, write, or execute
+permission of the named file is not required. An implementation that
+provides additional or alternate file access control mechanisms may,
+under implementation-defined conditions, cause
+\fIstat\fR()
+to fail. In particular, the system may deny the existence of the file
+specified by
+.IR path .
+.P
+If the named file is a symbolic link, the
+\fIstat\fR()
+function shall continue pathname resolution using the contents of the
+symbolic link, and shall return information pertaining to the resulting
+file if the file exists.
+.P
+The
+.IR buf
+argument is a pointer to a
+.BR stat
+structure, as defined in the
+.IR <sys/stat.h> 
+header, into which information is placed concerning the file.
+.P
+The
+\fIstat\fR()
+function shall update any time-related fields (as described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.8" ", " "File Times Update"),
+before writing into the
+.BR stat
+structure.
+.P
+If the named file is a shared memory object, the implementation
+shall update in the
+.BR stat
+structure pointed to by the
+.IR buf
+argument the
+.IR st_uid ,
+.IR st_gid ,
+.IR st_size ,
+and
+.IR st_mode
+fields, and only the S_IRUSR, S_IWUSR, S_IRGRP, S_IWGRP, S_IROTH, and
+S_IWOTH file permission bits need be valid. The implementation may
+update other fields and flags.
+.P
+If the named file is a typed memory object, the implementation
+shall update in the
+.BR stat
+structure pointed to by the
+.IR buf
+argument the
+.IR st_uid ,
+.IR st_gid ,
+.IR st_size ,
+and
+.IR st_mode
+fields, and only the S_IRUSR, S_IWUSR, S_IRGRP, S_IWGRP, S_IROTH, and
+S_IWOTH file permission bits need be valid. The implementation may
+update other fields and flags.
+.P
+For all other file types defined in this volume of POSIX.1\(hy2008, the structure members
+.IR st_mode ,
+.IR st_ino ,
+.IR st_dev ,
+.IR st_uid ,
+.IR st_gid ,
+.IR st_atim ,
+.IR st_ctim ,
+and
+.IR st_mtim
+shall have meaningful values and the value of the member
+.IR st_nlink
+shall be set to the number of links to the file.
+.P
+The
+\fIlstat\fR()
+function shall be equivalent to
+\fIstat\fR(),
+except when
+.IR path
+refers to a symbolic link. In that case
+\fIlstat\fR()
+shall return information about the link, while
+\fIstat\fR()
+shall return information about the file the link references.
+.P
+For symbolic links, the
+.IR st_mode
+member shall contain meaningful information when used with the file
+type macros. The file mode bits in
+.IR st_mode
+are unspecified. The structure members
+.IR st_ino ,
+.IR st_dev ,
+.IR st_uid ,
+.IR st_gid ,
+.IR st_atim ,
+.IR st_ctim ,
+and
+.IR st_mtim
+shall have meaningful values and the value of the
+.IR st_nlink
+member shall be set to the number of (hard) links to the symbolic link.
+The value of the
+.IR st_size
+member shall be set to the length of the pathname contained in the
+symbolic link not including any terminating null byte.
+.P
+The
+\fIfstatat\fR()
+function shall be equivalent to the
+\fIstat\fR()
+or
+\fIlstat\fR()
+function, depending on the value of
+.IR flag
+(see below), except in the case where
+.IR path
+specifies a relative path. In this case the status shall be retrieved
+from a file relative to the directory associated with the file descriptor
+.IR fd
+instead of the current working directory. If the file descriptor was
+opened without O_SEARCH, the function shall check whether directory
+searches are permitted using the current permissions of the directory
+underlying the file descriptor. If the file descriptor was opened with
+O_SEARCH, the function shall not perform the check.
+.P
+Values for
+.IR flag
+are constructed by a bitwise-inclusive OR of flags from the following
+list, defined in
+.IR <fcntl.h> :
+.IP AT_SYMLINK_NOFOLLOW 6
+.br
+If
+.IR path
+names a symbolic link, the status of the symbolic link is returned.
+.P
+If
+\fIfstatat\fR()
+is passed the special value AT_FDCWD in the
+.IR fd
+parameter, the current working directory shall be used and the behavior
+shall be identical to a call to
+\fIstat\fR()
+or
+\fIlstat\fR()
+respectively, depending on whether or not the AT_SYMLINK_NOFOLLOW bit
+is set in
+.IR flag .
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return 0.
+Otherwise, these functions shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+These functions shall fail if:
+.TP
+.BR EACCES
+Search permission is denied for a component of the path prefix.
+.TP
+.BR EIO
+An error occurred while reading from the file system.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.TP
+.BR EOVERFLOW
+The file size in bytes or the number of blocks allocated to the file or
+the file serial number cannot be represented correctly in the structure
+pointed to by
+.IR buf .
+.P
+The
+\fIfstatat\fR()
+function shall fail if:
+.TP
+.BR EACCES
+.IR fd
+was not opened with O_SEARCH and the permissions of the directory
+underlying
+.IR fd
+do not permit directory searches.
+.TP
+.BR EBADF
+The
+.IR path
+argument does not specify an absolute path and the
+.IR fd
+argument is neither AT_FDCWD nor a valid file descriptor open
+for reading or searching.
+.TP
+.BR ENOTDIR
+The
+.IR path
+argument is not an absolute path and
+.IR fd
+is a file descriptor associated with a non-directory file.
+.P
+These functions may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.TP
+.BR EOVERFLOW
+A value to be stored would overflow one of the members of the
+.BR stat
+structure.
+.br
+.P
+The
+\fIfstatat\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The value of the
+.IR flag
+argument is not valid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Obtaining File Status Information"
+.P
+The following example shows how to obtain file status information for a
+file named
+.BR /home/cnd/mod1 .
+The structure variable
+.IR buffer
+is defined for the
+.BR stat
+structure.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+.P
+struct stat buffer;
+int         status;
+\&...
+status = stat("/home/cnd/mod1", &buffer);
+.fi \fR
+.P
+.RE
+.SS "Getting Directory Information"
+.P
+The following example fragment gets status information for each entry
+in a directory. The call to the
+\fIstat\fR()
+function stores file information in the
+.BR stat
+structure pointed to by
+.IR statbuf .
+The lines that follow the
+\fIstat\fR()
+call format the fields in the
+.BR stat
+structure for presentation to the user of the program.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
+#include <locale.h>
+#include <langinfo.h>
+#include <stdio.h>
+#include <stdint.h>
+.P
+struct dirent  *dp;
+struct stat     statbuf;
+struct passwd  *pwd;
+struct group   *grp;
+struct tm      *tm;
+char            datestring[256];
+\&...
+/* Loop through directory entries. */
+while ((dp = readdir(dir)) != NULL) {
+.P
+    /* Get entry's information. */
+    if (stat(dp->d_name, &statbuf) == -1)
+        continue;
+.P
+    /* Print out type, permissions, and number of links. */
+    printf("%10.10s", sperm (statbuf.st_mode));
+    printf("%4d", statbuf.st_nlink);
+.P
+    /* Print out owner's name if it is found using getpwuid(). */
+    if ((pwd = getpwuid(statbuf.st_uid)) != NULL)
+        printf(" %-8.8s", pwd->pw_name);
+    else
+        printf(" %-8d", statbuf.st_uid);
+.P
+    /* Print out group name if it is found using getgrgid(). */
+    if ((grp = getgrgid(statbuf.st_gid)) != NULL)
+        printf(" %-8.8s", grp->gr_name);
+    else
+        printf(" %-8d", statbuf.st_gid);
+.P
+    /* Print size of file. */
+    printf(" %9jd", (intmax_t)statbuf.st_size);
+.P
+    tm = localtime(&statbuf.st_mtime);
+.P
+    /* Get localized date string. */
+    strftime(datestring, sizeof(datestring), nl_langinfo(D_T_FMT), tm);
+.P
+    printf(" %s %s\en", datestring, dp->d_name);
+}
+.fi \fR
+.P
+.RE
+.SS "Obtaining Symbolic Link Status Information"
+.P
+The following example shows how to obtain status information for a
+symbolic link named
+.BR /modules/pass1 .
+The structure variable
+.IR buffer
+is defined for the
+.BR stat
+structure. If the
+.IR path
+argument specified the pathname for the file pointed to by the symbolic
+link (\c
+.BR /home/cnd/mod1 ),
+the results of calling the function would be the same as those returned
+by a call to the
+\fIstat\fR()
+function.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/stat.h>
+.P
+struct stat buffer;
+int status;
+\&...
+status = lstat("/modules/pass1", &buffer);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The intent of the paragraph describing ``additional or alternate file
+access control mechanisms'' is to allow a secure implementation where a
+process
+with a label that does not dominate the file's label cannot perform a
+\fIstat\fR()
+function. This is not related to read permission; a process with a
+label that dominates the file's label does not need read permission.
+An implementation that supports write-up operations could fail
+\fIfstat\fR()
+function calls even though it has a valid file descriptor open for
+writing.
+.P
+The
+\fIlstat\fR()
+function is not required to update the time-related fields if the named
+file is not a symbolic link. While the
+.IR st_uid ,
+.IR st_gid ,
+.IR st_atim ,
+.IR st_mtim ,
+and
+.IR st_ctim
+members of the
+.BR stat
+structure may apply to a symbolic link, they are not required to do so.
+No functions in POSIX.1\(hy2008 are required to maintain any of these time
+fields.
+.P
+The purpose of the
+\fIfstatat\fR()
+function is to obtain the status of files in directories other than the
+current working directory without exposure to race conditions. Any part
+of the path of a file could be changed in parallel to a call to
+\fIstat\fR(),
+resulting in unspecified behavior. By opening a file descriptor for the
+target directory and using the
+\fIfstatat\fR()
+function it can be guaranteed that the file for which status is returned
+is located relative to the desired directory.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIaccess\fR\^(\|)",
+.IR "\fIchmod\fR\^(\|)",
+.IR "\fIfdopendir\fR\^(\|)",
+.IR "\fIfstat\fR\^(\|)",
+.IR "\fImknod\fR\^(\|)",
+.IR "\fIreadlink\fR\^(\|)",
+.IR "\fIsymlink\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.8" ", " "File Times Update",
+.IR "\fB<fcntl.h>\fP",
+.IR "\fB<sys_stat.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

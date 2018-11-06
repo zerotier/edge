@@ -1,0 +1,149 @@
+'\" et
+.TH LLROUND "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+llround,
+llroundf,
+llroundl
+\(em round to nearest integer value
+.SH SYNOPSIS
+.LP
+.nf
+#include <math.h>
+.P
+long long llround(double \fIx\fP);
+long long llroundf(float \fIx\fP);
+long long llroundl(long double \fIx\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+These functions shall round their argument to the nearest integer
+value, rounding halfway cases away from zero, regardless of the current
+rounding direction.
+.P
+An application wishing to check for error situations should set
+.IR errno
+to zero and call
+.IR feclearexcept (FE_ALL_EXCEPT)
+before calling these functions. On return, if
+.IR errno
+is non-zero or \fIfetestexcept\fR(FE_INVALID | FE_DIVBYZERO |
+FE_OVERFLOW | FE_UNDERFLOW) is non-zero, an error has occurred.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return the rounded
+integer value.
+.P
+If
+.IR x
+is NaN, a domain error shall occur, and an unspecified value is
+returned.
+.P
+If
+.IR x
+is +Inf, a domain error shall occur and an unspecified value is
+returned.
+.P
+If
+.IR x
+is \(miInf, a domain error shall occur and an unspecified value is
+returned.
+.P
+If the correct value is positive and too large to represent as a
+.BR "long long" ,
+an unspecified value shall be returned.
+On systems that support the IEC 60559 Floating-Point option, a domain
+error shall occur;
+otherwise, a
+domain
+error may occur.
+.P
+If the correct value is negative and too large to represent as a
+.BR "long long" ,
+an unspecified value shall be returned.
+On systems that support the IEC 60559 Floating-Point option, a domain
+error shall occur;
+otherwise, a
+domain
+error may occur.
+.SH ERRORS
+These functions shall fail if:
+.IP "Domain\ Error" 12
+The
+.IR x
+argument is NaN or \(+-Inf, or the correct value is not representable
+as an integer.
+.RS 12 
+.P
+If the integer expression (\fImath_errhandling\fR & MATH_ERRNO) is
+non-zero, then
+.IR errno
+shall be set to
+.BR [EDOM] .
+If the integer expression (\fImath_errhandling\fR & MATH_ERREXCEPT) is
+non-zero, then the invalid floating-point exception shall be raised.
+.RE
+.P
+These functions may fail if:
+.IP "Domain\ Error" 12
+The correct value is not representable as an integer.
+.RS 12 
+.P
+If the integer expression (\fImath_errhandling\fR & MATH_ERRNO) is
+non-zero, then
+.IR errno
+shall be set to
+.BR [EDOM] .
+If the integer expression (\fImath_errhandling\fR & MATH_ERREXCEPT) is
+non-zero, then the invalid floating-point exception shall be raised.
+.RE
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+On error, the expressions (\fImath_errhandling\fR & MATH_ERRNO) and
+(\fImath_errhandling\fR & MATH_ERREXCEPT) are independent of each
+other, but at least one of them must be non-zero.
+.SH RATIONALE
+These functions differ from the
+\fIllrint\fR()
+functions in that the default rounding direction for the
+\fIllround\fR()
+functions round halfway cases away from zero and need not raise the
+inexact floating-point exception for non-integer arguments that round
+to within the range of the return type.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfeclearexcept\fR\^(\|)",
+.IR "\fIfetestexcept\fR\^(\|)",
+.IR "\fIlround\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.19" ", " "Treatment of Error Conditions for Mathematical Functions",
+.IR "\fB<math.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

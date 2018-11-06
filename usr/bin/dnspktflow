@@ -1,0 +1,690 @@
+#!/usr/bin/perl
+#
+# Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+# See the COPYING file included with the DNSSEC-Tools package for details.
+#
+
+use Data::Dumper;
+use strict;
+use File::Temp qw(tempfile);
+use IO::File;
+use Net::DNS::SEC::Tools::BootStrap;
+use Net::DNS::SEC::Tools::QWPrimitives;
+
+######################################################################
+# detect needed GraphViz requirement
+#
+dnssec_tools_load_mods('GraphViz' => "");
+
+my %opts;
+my $mapinwindow;
+
+%opts = ( o => "out%03d.png",
+	  b => 1,
+	  l => 0,
+	  fontsize => 9,
+	  'layout-style' => 'dot',
+	);
+
+use QWizard;
+DTGetOptions(\%opts,
+		['GUI:otherargs_text', 'tcpdump files to analyze'],
+
+		["GUI:screen", "Input Packet Selection:"],
+		["GUI:guionly", { type => 'label', text => 'DNS Name Filters:'}],
+		['i|ignore-hosts=s',"A regular expression of host names to ignore in the query/response fields"],
+		['r|only-hosts=s',"A regular expression of host names to analyze in the query/response fields"],
+		['f|show-frame-num',"Display the packet frame numbers"],
+	        ['Q|no-query-num',  "Don't show the query number"],
+		['b|begin-frame=i',"Begin at packet frame NUMBER"],
+
+		["GUI:screen", "Output File Options:"],
+		['o|output-file=s',
+		 "Output file name (default: $opts{o} as png format)",
+#		 question => { 'type' => 'fileupload' }
+		],
+		['fig','Output format should be fig'],
+		['svg','Output format should be svg'],
+		['svgz','Output format should be svgz'],
+		['ps','Output format should be postscript'],
+		['O|tshark-out=s','Save tshark output to this file',
+#		 question => { 'type' => 'fileupload' }
+		],
+		['m|multiple-outputs',
+		 "One picture per request (use %03d in the filename)"],
+		['M|magic-point=s',
+		 "Saves a Magic Point presentation for the output"],
+
+		["GUI:screen", "Output Visualization Options:"],
+	        ['layout-style=s','Layout style',
+		 question => { type => 'menu',
+			       values => [qw(dot neato twopi circo fdp)] }],
+	        ['node-size=s', "Reduce node size to 'small' or 'none'"],
+		['L|last-line-labels-only',
+		 "Only show data on the last line drawn."],
+		['z|most-lines=i', "Only show at most INTEGER connections."],
+		"",
+		['T|input-is-tshark-out','The input file is already processed by tshark'],
+
+		["GUI:separator", "Graphical Options:"],
+		['t|show-type',"Shows message type in result image"],
+		['q|show-queries',"Shows query questions in result image"],
+		['a|show-answers',"Shows query answers in result image"],
+		['A|show-authoritative',"Shows authoritative information in result image"],
+		['x|show-additional',"Shows additional information in result image"],
+		['l|show-label-lines','Shows lines attaching labels to lines'],
+	        ['C|dont-cluster-auth', "Don't group the authoritative addresses"],
+		["fontsize=i","Font Size"],
+
+		["GUI:separator", "Debugging:"],
+		["d|dump-pkts", "Dump data collected from the packets"],
+		["h|help", "Show help for command line options"],
+
+#
+# GUI only options
+#
+		['GUI:guionly',{type => 'checkbox',
+				values => [1,0],
+				default => 1,
+				text => 'Show map in a window',
+				name => 'mapinwindow'}],
+		['GUI:actions', sub { require QWizard;
+				      import QWizard;
+				      $mapinwindow = qwparam('mapinwindow')}],
+		['GUI:VERSION',"DNSSEC-Tools Version: 2.1"],
+
+	       );
+
+my $data;
+my @dnspkts;
+my $state;
+my $qdata;
+my $shorttype;
+my %authdata;
+my %ipdata;
+my $nameexp = '[-\w\.<>]+';
+my $addrexp = '[\da-f\.:]+';
+my $eitherexp = '[\w\.:]+';
+
+foreach my $file (@ARGV) {
+    my ($fh, $filename);
+
+    # use tshark to parse the tcpdump file and save the text output
+    # to the file specified by the -f option.  Then set the file
+    # variable to that file for use later.
+    if (!$opts{'T'}) {
+	if ($opts{'O'}) {
+	    $fh = new IO::File;
+	    $fh->open(">$opts{O}");
+	    $filename = $opts{'O'};
+	} else {
+	    ($fh, $filename) = tempfile("dnspktXXXXXX", SUFFIX => 'txt',
+					DIR => "/tmp");
+	}
+	open(T,"tshark -V -o ip.defragment:TRUE -n -r $file|");
+	while (<T>) {
+	    print $fh $_;
+	}
+	close(T);
+	$fh->close();
+	$file = $filename;
+    }
+
+    # read in the tshark output text file and parse it for various patterns
+    open(I, $file);
+    while (<I>) {
+
+	# If it's a new frame, it's a brand new packet
+	if (/^Frame (\d+)/) {
+	    $data = { Frame => $1 };
+	}
+
+	# mark if we're a TCP packet
+	$data->{'tcp'} = 1 if (/Transmission Control Protocol/);
+
+	# collect to/from addresses (v4 or v6)
+	$data->{'src'} = $1 if (/^Internet.*Src: ($eitherexp)/);
+	$data->{'dst'} = $1 if (/^Internet.*Dst: ($eitherexp)/);
+
+	# If DNS, remember the type of DNS message and push to packet list
+	if (/Domain Name System \((\w+)\)/) {
+	    $data->{'type'} = $1;
+	    push @dnspkts, $data;
+	}
+
+	# misc things to watch for
+	$data->{'dnssecok'} = 1 if (/Accepts DNSSEC/);
+	$shorttype = $1 if (/type (\w+)/);
+	$data->{'err'} = "/$1" if (/Reply code:\s*(.*)/);
+	$data->{'truncated'} = 1 if (/1.*Truncated/);
+	$data->{'udpsize'} = $1 if (/UDP payload size: (\d+)/);
+
+	# mark if ...
+	if (/(0|1).*(Truncated)/) {
+	    $data->{'flags'}{$2} = $1;
+	}
+
+	# collect queries and answers and ...
+	$state = $1 if (/^\s*(Queries|Answers|Additional|Authoritative)/);
+
+	# start a new record on a Name: field
+	if (/^\s*Name: ($nameexp)/) {
+	    # remember the query itself
+	    $qdata = { Name => $1, type => $shorttype };
+
+	    # save the query data by packet section.
+	    push @{$data->{'dns'}{$state}}, $qdata;
+
+	    # If the name matches the -i flag regexp, drop it
+	    # if the name doesn't match -r flag, drop it
+	    if (($opts{'i'} && $qdata->{'Name'} =~ /$opts{'i'}/) ||
+		($opts{'r'} && $qdata->{'Name'} !~ /$opts{'r'}/)) {
+		# drop packets we don't care about
+		if ($#dnspkts > -1 &&
+		    $dnspkts[$#dnspkts]{'Frame'} == $data->{'Frame'}) {
+		    print "dropping $data->{'Frame'}\n" if ($opts{'d'});
+		    pop @dnspkts;
+		}
+	    }
+	}
+
+	# remember other things that may be in it
+	$qdata->{$1} = $2 if (/^\s*(Type|Name Server|Algorithm):\s*(.*)/);
+
+	# remember authoritative name servers
+	$authdata{$1}{$qdata->{'Name'}} = 1 if ($state eq 'Authoritative' &&
+						/Name server:\s($nameexp)/);
+	$ipdata{$1} = $qdata->{'Name'} if (/^\s*Addr: ($addrexp)/);
+    }
+    close(I);
+
+    unlink($filename) if (! $opts{'O'});
+}
+
+# debugging output
+if ($opts{'d'}) {
+    print "-" x 70, "\npackets:";
+    print Dumper(\@dnspkts);
+    print "-" x 70, "\nauthdata:";
+    print Dumper(\%authdata);
+    print "-" x 70, "\nip data:";
+    print Dumper(\%ipdata);
+}
+
+#######################################################################
+# actually draw/output the results
+#
+
+#
+# multiple output files
+#
+if ($opts{'m'}) {
+    $| = 1;
+    print "Generating $#dnspkts images: ";
+
+    # magic point output files
+    if ($opts{'M'}) {
+	open(M,">$opts{'M'}");
+	print M "%default 1 leftfill, size 2, fore \"dark blue\", back \"white\"\n";
+	print M "%default 2 size 6, vgap 10, prefix \" \", fore \"dark blue\"\n";
+	print M "%default 3 size 2, bar \"dark blue\", vgap 75, fore \"black\"\n";
+    }
+}
+
+#
+# graphviz images
+#
+my $gv;
+
+# either display everything at once, or if multiple files are
+# requested: save a series of cascading images to create an animation
+# with each new packet adding to the previous screen's data.
+#my @graphArgs = (layout => $opts{'layout-style'},
+#		 edge => { fontsize => $opts{'fontsize'}});
+my @graphArgs = (layout => 'fdp',
+            rankdir => 1,
+		    edge => { fontsize => $opts{'fontsize'}});
+if ($opts{'layout-style'} eq 'dot') {
+    push @graphArgs, rankdir => 1;
+}
+for (my $m = ($opts{'m'} ? 0 : $#dnspkts); $m <= $#dnspkts; $m++) {
+    if (exists($opts{'node-size'})) {
+	if ($opts{'node-size'} eq 'small') {
+	    require GraphViz::Small;
+	    $gv = GraphViz::Small->new(@graphArgs);
+	} elsif ($opts{'node-size'} eq 'none') {
+	    require GraphViz::No;
+	    $gv = GraphViz::No->new(@graphArgs);
+	} else {
+	    print STDERR "The graphviz --node-style $opts{'node-size'} is not legal.\n";
+	    print STDERR "  please use option values of 'no' or 'small' instead.\n";
+	    exit 1;
+	}
+    } else {
+	$gv = GraphViz->new(@graphArgs);
+    }
+    for (my $i = ($opts{'z'} ? ($m > $opts{'z'} ? ($m - $opts{'z'}) : 0) : 0);
+		  $i <= (($opts{'m'}) ? $m : $#dnspkts); $i++) {
+	my $pkt = $dnspkts[$i];
+	next if ($pkt->{'Frame'} < $opts{'b'});
+	$gv->add_node($pkt->{'src'},
+		      label => get_host_label_plus($pkt->{'src'}),
+		      fontsize => $opts{'fontsize'});
+	$gv->add_node($pkt->{'dst'},
+		      label => get_host_label_plus($pkt->{'dst'}),
+		      fontsize => $opts{'fontsize'});
+	my $edge =
+	  $gv->add_edge($pkt->{'src'} => $pkt->{'dst'},
+			get_edge_properties($pkt, $i, $m),
+			decorateP => $opts{'l'});
+    }
+
+    # if doing multiple files, save each frame to an individual image
+    if ($opts{'m'}) {
+	print " $m";
+	my $file = sprintf($opts{'o'}, $m);
+	save_now($gv, $file);
+
+	# if doing magic-point output, write the presentation screen
+	if ($opts{'M'}) {
+	    print M "%page\n\nMessage " . ($m+1) . " / " . ($#dnspkts+1) . 
+	      "\n" . get_host_label($dnspkts[$m]{'src'}) . " -> " .
+		get_host_label($dnspkts[$m]{'dst'}) . 
+		  "\n%center\n%image \"$file\"\n";
+	}
+    }
+}
+
+if ($opts{'m'}) {
+    # finish multiple output display
+    print "\n";
+} else {
+    # if not multiple, save the final results
+    # (if magic point then the results were already saved above)
+    $opts{'o'} =~ s/\%\d*d//;
+    save_now($gv, $opts{'o'});
+}
+
+#
+# display the results in a window if requested
+#
+if ($mapinwindow && $Getopt::GUI::Long::GUI_qw) {
+    $Getopt::GUI::Long::GUI_qw->merge_primaries(
+						{
+						 mapout =>
+						 {
+						  title => 'Map',
+						  questions => 
+						  [{
+						    type => 'image',
+						    image => $opts{'o'},
+						   }]
+						 }});
+    $Getopt::GUI::Long::GUI_qw->magic('mapout');
+}
+
+#
+# saves the current graphviz output as a fig or a png file
+#
+sub save_now {
+    my ($gv,$file) = @_;
+
+
+    if ($opts{'fig'}) {
+	$gv->as_fig($file);
+    } elsif ($opts{'svg'}) {
+	$gv->as_svg($file);
+    } elsif ($opts{'svgz'}) {
+	$gv->as_svgz($file);
+    } elsif ($opts{'ps'}) {
+	$gv->as_ps($file);
+    } else {
+	$gv->as_png($file);
+    }
+}
+
+sub get_host_label {
+    my $addr = shift;
+    my $lab;
+    $lab = exists($ipdata{$addr}) ? $ipdata{$addr} : $addr;
+    if (exists($authdata{$lab})) {
+	$lab .= "\nauth:" . join("\nauth:",keys(%{$authdata{$lab}}));
+    }
+    return $lab;
+}
+
+sub get_host_label_plus {
+    my $addr = shift;
+    my @ret;
+    if ($opts{'C'}) {
+	return get_host_label($addr);
+    }
+    # return the host label
+    push @ret, (exists($ipdata{$addr}) ? $ipdata{$addr} : $addr);
+
+    # see if the node should be clustered with other nodes
+    if (exists($authdata{$ret[0]})) {
+	my $str = keys(%{$authdata{$ret[0]}});
+	push @ret, 'cluster', join("\n",keys(%{$authdata{$ret[0]}}));
+    }
+    return @ret;
+}
+
+#
+# create an edge label based on packet data
+#
+sub get_edge_properties {
+    my ($pkt, $num, $mnum) = @_;
+    my $lab = '';
+    my ($txt, $cnt, $type, $count);
+
+#    $lab .= "$num / " . $pkt->{'Frame'};
+    $num++;
+
+    $lab .= $num if (!$opts{'Q'});
+    $lab .= "/frame=" . $pkt->{'Frame'} if ($opts{'f'});
+    $lab .= "/trunc" if ($pkt->{'truncated'});
+    $lab .= "/udp=$pkt->{udpsize}" if ($pkt->{'udpsize'});
+    $lab .= "/dnssecok" if ($pkt->{'dnssecok'});
+    $lab .= "\n$pkt->{'err'}" if ($pkt->{'err'} && $pkt->{'err'} !~ /No err/);
+#    $lab .= "\n$pkt->{'type'}";
+
+    if ($opts{'q'} && $pkt->{'type'} eq 'query') {
+	$lab .= add_breakdown($pkt, 'Queries', '?');
+    }
+
+    if ($opts{'a'} && $pkt->{'type'} eq 'response') {
+	$lab .= add_breakdown($pkt, 'Queries', '=');
+    }
+
+    if ($opts{'A'} && $pkt->{'type'} eq 'response') {
+	$lab .= add_breakdown($pkt, 'Authoritative', 'NS');
+    }
+
+    if ($opts{'x'} && $pkt->{'type'} eq 'response') {
+	$lab .= add_breakdown($pkt, 'Additional', '+');
+    }
+
+    $lab = "";
+    
+    # figure out the color code for the line
+    my $edgecolor;
+    if ((exists($pkt->{'dns'}{'Authoritative'}) &&
+	 $#{$pkt->{'dns'}{'Authoritative'}} > -1 &&
+	 $pkt->{'dns'}{'Authoritative'}[$#{$pkt->{'dns'}{'Authoritative'}}]{'type'} =~ /(RRSIG|DNSKEY|NSEC)/) ||
+	(exists($pkt->{'dns'}{'Queries'}) &&
+	 $#{$pkt->{'dns'}{'Queries'}} > -1 &&
+	 $pkt->{'dns'}{'Queries'}[$#{$pkt->{'dns'}{'Authoritative'}}]{'type'} =~ /(RRSIG|DNSKEY|NSEC)/)) {
+	$edgecolor = 'darkgreen';
+    }
+    elsif ($pkt->{'truncated'}) {
+	$edgecolor = 'red';
+    } elsif ($pkt->{'type'} eq 'response') {
+	$edgecolor = 'blue4';
+    } else {
+	$edgecolor = 'orange';
+    }
+
+    return (label => ((!$opts{'L'} || $num == $mnum+1) ? $lab : "$num"),
+	    style => (($pkt->{'tcp'}) ? 'bold' : 'solid'),
+	    color => $edgecolor
+	   );
+}
+
+sub add_breakdown {
+    my ($pkt, $name, $tag) = @_;
+#	print "doing answers $num\n";
+    my ($lab, $txt, $type, $count);
+    foreach my $q (@{$pkt->{'dns'}{$name}}) {
+	#	    print "$q->{Name} ne $txt\n";
+	if ($txt && $type &&
+	    (($q->{Name} ne $txt) || "/$q->{type}" ne $type)) {
+	    #		print "$q->{Name} ne $txt-$type $txt$type\n";
+	    $lab .= "\n$tag/$txt$type($count)";
+	    $count = 0;
+	}
+	$txt = $q->{'Name'};	# remember name
+	#	    print "$q->{Name} ne $txt\n";
+	$count++;		# remember number
+	$type = "/$q->{type}" if ($opts{'t'}); # remember type
+    }
+    if ($txt) {
+	$lab .= "\n$tag/$txt$type($count)";
+    }
+    return $lab;
+}
+
+=pod
+
+=head1 NAME
+
+dnspktflow - Analyze and draw DNS flow diagrams from a tcpdump file
+
+=head1 SYNOPSIS
+
+  dnspktflow -o output.png file.tcpdump
+
+  dnspktflow -o output.png -x -a -t -q file.tcpdump
+
+=head1 DESCRIPTION
+
+The B<dnspktflow> application takes a B<tcpdump> network traffic dump
+file, passes it through the B<tshark> application and then displays the
+resulting DNS packet flows in a "flow-diagram" image.  B<dnspktflow>
+can output a single image or a series of images which can then be
+shown in sequence as an animation.
+
+B<dnspktflow> was written as a debugging utility to help trace DNS
+queries and responses, especially as they apply to DNSSEC-enabled lookups.
+
+=head1 REQUIREMENTS
+
+This application requires the following Perl modules and software
+components to work:
+
+  graphviz                  (http://www.graphviz.org/)
+  GraphViz                  (Perl module)
+  tshark                    (http://www.wireshark.org/)
+
+The following is required for outputting screen presentations:
+
+  MagicPoint                (http://member.wide.ad.jp/wg/mgp/)
+
+If the following modules are installed, a GUI interface will be enabled for
+communication with B<dnspktflow>:
+
+  QWizard                   (Perl module)
+  Getopt::GUI::Long         (Perl module)
+
+=head1 OPTIONS
+
+B<dnspktflow> takes a wide variety of command-line options.  These options
+are described below in the following functional groups:  input packet
+selection, output file options, output visualization options, graphical
+options, and debugging.
+
+=head2 Input Packet Selection
+
+These options determine the packets that will be selected by B<dnspktflow>.
+
+=over
+
+=item  -i STRING
+
+=item  --ignore-hosts=STRING
+
+A regular expression of host names to ignore in the query/response fields.
+
+=item  -r STRING
+
+=item  --only-hosts=STRING
+
+A regular expression of host names to analyze in the query/response fields.
+
+=item  -f
+
+=item  --show-frame-num
+
+Display the packet frame numbers.
+
+=item  -b INTEGER
+
+=item  --begin-frame=INTEGER
+
+Begin at packet frame NUMBER.
+
+=back
+
+=head2 Output File Options
+
+These options determine the type and location of B<dnspktflow>'s output.
+
+=over
+
+=item  -o STRING
+
+=item  --output-file=STRING
+
+Output file name (default: out%03d.png as PNG format.)
+
+=item  --fig
+
+Output format should be fig.
+
+=item  -O STRING
+
+=item  --tshark-out=STRING
+
+Save B<tshark> output to this file.
+
+=item  -m
+
+=item  --multiple-outputs
+
+One picture per request (use %03d in the filename.)
+
+=item  -M STRING
+
+=item  --magic-point=STRING
+
+Saves a MagicPoint presentation for the output.
+
+=back
+
+=head2 Output Visualization Options:
+
+These options determine specifics of B<dnspktflow>'s output.
+
+=over
+
+=item --layout-style
+
+Selects the graphviz layout style to use (dot, neato, twopi, circo, or fdp).
+
+=item  -L
+
+=item  --last-line-labels-only
+
+Only show data on the last line drawn.
+
+=item  -z INTEGER
+
+=item  --most-lines=INTEGER
+
+Only show at most INTEGER connections.
+
+=item  -T
+
+=item  --input-is-tshark-out
+
+The input file is already processed by B<tshark>.
+
+=back
+
+=head2 Graphical Options:
+
+These options determine fields included in B<dnspktflow>'s output.
+
+=over
+
+=item  -t
+
+=item  --show-type
+
+Shows message type in result image.
+
+=item  -q
+
+=item  --show-queries
+
+Shows query questions in result image.
+
+=item  -a
+
+=item  --show-answers
+
+Shows query answers in result image.
+
+=item  -A
+
+=item  --show-authoritative
+
+Shows authoritative information in result image.
+
+=item  -x
+
+=item  --show-additional
+
+Shows additional information in result image.
+
+=item  -l
+
+=item  --show-label-lines
+
+Shows lines attaching labels to lines.
+
+=item  --fontsize=INTEGER
+
+Font Size
+
+=back
+
+=head2 Debugging:
+
+These options may assist in debugging B<dnspktflow>.
+
+=over
+
+=item  -d
+
+=item  --dump-pkts
+
+Dump data collected from the packets.
+
+=item  -h
+
+=item  --help
+
+Show help for command line options.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2004-2013 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wes Hardaker <hardaker@users.sourceforge.net>
+
+=head1 SEE ALSO
+
+B<Getopt::GUI::Long(3)>
+B<Net::DNS(3)>
+B<QWizard.pm(3)>
+
+http://dnssec-tools.sourceforge.net/
+
+=cut
+

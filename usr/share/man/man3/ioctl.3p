@@ -1,0 +1,1214 @@
+'\" et
+.TH IOCTL "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ioctl
+\(em control a STREAMS device (\fBSTREAMS\fP)
+.SH SYNOPSIS
+.LP
+.nf
+#include <stropts.h>
+.P
+int ioctl(int \fIfildes\fP, int \fIrequest\fP, ... /* arg */);
+.fi
+.SH DESCRIPTION
+The
+\fIioctl\fR()
+function shall perform a variety of control functions on STREAMS
+devices. For non-STREAMS devices, the functions performed by this call
+are unspecified. The
+.IR request
+argument and an optional third argument (with varying type) shall be
+passed to and interpreted by the appropriate part of the STREAM
+associated with
+.IR fildes .
+.P
+The
+.IR fildes
+argument is an open file descriptor that refers to a device.
+.P
+The
+.IR request
+argument selects the control function to be performed and shall
+depend on the STREAMS device being addressed.
+.P
+The
+.IR arg
+argument represents additional information that is needed by this
+specific STREAMS device to perform the requested function. The type of
+.IR arg
+depends upon the particular control request, but it shall be either an
+integer or a pointer to a device-specific data structure.
+.P
+The
+\fIioctl\fR()
+commands applicable to STREAMS, their arguments, and error conditions
+that apply to each individual command are described below.
+.P
+The following
+\fIioctl\fR()
+commands, with error values indicated, are applicable to all STREAMS
+files:
+.IP I_PUSH 12
+Pushes the module whose name is pointed to by
+.IR arg
+onto the top of the current STREAM, just below the STREAM head. It then
+calls the
+\fIopen\fR()
+function of the newly-pushed module.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_PUSH command shall fail if:
+.TP
+.BR EINVAL
+Invalid module name.
+.TP
+.BR ENXIO
+Open function of new module failed.
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.RE
+.IP I_POP 12
+Removes the module just below the STREAM head of the STREAM pointed to
+by
+.IR fildes .
+The
+.IR arg
+argument should be 0 in an I_POP request.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_POP command shall fail if:
+.TP
+.BR EINVAL
+No module present in the STREAM.
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.RE
+.IP I_LOOK 12
+Retrieves the name of the module just below the STREAM head of the
+STREAM pointed to by
+.IR fildes ,
+and places it in a character string pointed to by
+.IR arg .
+The buffer pointed to by
+.IR arg
+should be at least FMNAMESZ+1
+bytes long, where FMNAMESZ is defined in
+.IR <stropts.h> .
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_LOOK command shall fail if:
+.TP
+.BR EINVAL
+No module present in the STREAM.
+.RE
+.IP I_FLUSH 12
+Flushes read and/or write queues, depending on the value of
+.IR arg .
+Valid
+.IR arg
+values are:
+.RS 12 
+.IP FLUSHR 12
+Flush all read queues.
+.IP FLUSHW 12
+Flush all write queues.
+.IP FLUSHRW 12
+Flush all read and all write queues.
+.P
+The
+\fIioctl\fR()
+function with the I_FLUSH command shall fail if:
+.TP
+.BR EINVAL
+Invalid
+.IR arg
+value.
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Unable to allocate buffers for flush message.
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.RE
+.IP I_FLUSHBAND 12
+Flushes a particular band of messages. The
+.IR arg
+argument points to a
+.BR bandinfo
+structure. The
+.IR bi_flag
+member may be one of FLUSHR, FLUSHW, or FLUSHRW as described above. The
+.IR bi_pri
+member determines the priority band to be flushed.
+.IP I_SETSIG 12
+Requests that the STREAMS implementation send the SIGPOLL signal to the
+calling process when a particular event has occurred on
+the STREAM associated with
+.IR fildes .
+I_SETSIG supports an asynchronous processing capability in STREAMS. The
+value of
+.IR arg
+is a bitmask that specifies the events for which the process should be
+signaled. It is the bitwise-inclusive OR of any combination of the
+following constants:
+.RS 12 
+.IP S_RDNORM 12
+A normal (priority band set to 0) message has arrived at the head of a
+STREAM head read queue. A signal shall be generated even if the message
+is of zero length.
+.IP S_RDBAND 12
+A message with a non-zero priority band has arrived at the head of a
+STREAM head read queue. A signal shall be generated even if the message
+is of zero length.
+.IP S_INPUT 12
+A message, other than a high-priority message, has arrived at the head
+of a STREAM head read queue. A signal shall be generated even if the
+message is of zero length.
+.IP S_HIPRI 12
+A high-priority message is present on a STREAM head read queue. A
+signal shall be generated even if the message is of zero length.
+.IP S_OUTPUT 12
+The write queue for normal data (priority band 0) just below the STREAM
+head is no longer full. This notifies the process that there is room
+on the queue for sending (or writing) normal data downstream.
+.IP S_WRNORM 12
+Equivalent to S_OUTPUT.
+.IP S_WRBAND 12
+The write queue for a non-zero priority band just below the STREAM head
+is no longer full. This notifies the process that there is room on the
+queue for sending (or writing) priority data downstream.
+.IP S_MSG 12
+A STREAMS signal message that contains the SIGPOLL signal has reached
+the front of the STREAM head read queue.
+.IP S_ERROR 12
+Notification of an error condition has reached the STREAM head.
+.IP S_HANGUP 12
+Notification of a hangup has reached the STREAM head.
+.IP S_BANDURG 12
+When used in conjunction with S_RDBAND, SIGURG is generated instead of
+SIGPOLL when a priority message reaches the front of the STREAM head
+read queue.
+.P
+If
+.IR arg
+is 0, the calling process shall be unregistered and shall not receive
+further SIGPOLL signals for the stream associated with
+.IR fildes .
+.P
+Processes that wish to receive SIGPOLL signals shall ensure that they
+explicitly register to receive them using I_SETSIG. If several
+processes register to receive this
+signal for the same event on the same STREAM, each process shall be
+signaled when the event occurs.
+.P
+The
+\fIioctl\fR()
+function with the I_SETSIG command shall fail if:
+.TP
+.BR EINVAL
+The value of
+.IR arg
+is invalid.
+.TP
+.BR EINVAL
+The value of
+.IR arg
+is 0 and the calling process is not registered to receive
+the SIGPOLL signal.
+.TP
+.BR EAGAIN
+There were insufficient resources to store the signal request.
+.RE
+.IP I_GETSIG 12
+Returns the events for which the calling process is currently
+registered to be sent a SIGPOLL signal. The events are returned as a
+bitmask in an
+.BR int
+pointed to by
+.IR arg ,
+where the events are those specified in the description of
+I_SETSIG above.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_GETSIG command shall fail if:
+.TP
+.BR EINVAL
+Process is not registered to receive the SIGPOLL signal.
+.RE
+.IP I_FIND 12
+Compares the names of all modules currently present in the STREAM to
+the name pointed to by
+.IR arg ,
+and returns 1 if the named module is present in the STREAM, or returns
+0 if the named module is not present.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_FIND command shall fail if:
+.TP
+.BR EINVAL
+.IR arg
+does not contain a valid module name.
+.RE
+.IP I_PEEK 12
+Retrieves the information in the first message on the STREAM head read
+queue without taking the message off the queue. It is analogous to
+\fIgetmsg\fR()
+except that this command does not remove the message from the queue.
+The
+.IR arg
+argument points to a
+.BR strpeek
+structure.
+.RS 12 
+.P
+The application shall ensure that the
+.IR maxlen
+member in the
+.BR ctlbuf
+and
+.BR "databuf strbuf"
+structures is set to the number of bytes of control information and/or
+data information, respectively, to retrieve. The
+.IR flags
+member may be marked RS_HIPRI or 0, as described by
+\fIgetmsg\fR().
+If the process sets
+.IR flags
+to RS_HIPRI, for example, I_PEEK shall only look for a high-priority
+message on the STREAM head read queue.
+.P
+I_PEEK returns 1 if a message was retrieved, and returns 0 if no
+message was found on the STREAM head read queue, or if the RS_HIPRI
+flag was set in
+.IR flags
+and a high-priority message was not present on the STREAM head read
+queue. It does not wait for a message to arrive. On return,
+.BR ctlbuf
+specifies information in the control buffer,
+.BR databuf
+specifies information in the data buffer, and
+.IR flags
+contains the value RS_HIPRI or 0.
+.RE
+.IP I_SRDOPT 12
+Sets the read mode using the value of the argument
+.IR arg .
+Read modes are described in
+\fIread\fR().
+Valid
+.IR arg
+flags are:
+.RS 12 
+.IP RNORM 12
+Byte-stream mode, the default.
+.IP RMSGD 12
+Message-discard mode.
+.IP RMSGN 12
+Message-nondiscard mode.
+.P
+The bitwise-inclusive OR of RMSGD and RMSGN shall return
+.BR [EINVAL] .
+The bitwise-inclusive OR of RNORM and either RMSGD or RMSGN shall
+result in the other flag overriding RNORM which is the default.
+.P
+In addition, treatment of control messages by the STREAM head may be
+changed by setting any of the following flags in
+.IR arg :
+.IP RPROTNORM 12
+Fail
+\fIread\fR()
+with
+.BR [EBADMSG] 
+if a message containing a control part is at the front of the
+STREAM head read queue.
+.IP RPROTDAT 12
+Deliver the control part of a message as data when a process issues a
+\fIread\fR().
+.IP RPROTDIS 12
+Discard the control part of a message, delivering any data portion,
+when a process issues a
+\fIread\fR().
+.P
+The
+\fIioctl\fR()
+function with the I_SRDOPT command shall fail if:
+.TP
+.BR EINVAL
+The
+.IR arg
+argument is not valid.
+.RE
+.IP I_GRDOPT 12
+Returns the current read mode setting, as described above, in an
+.BR int
+pointed to by the argument
+.IR arg .
+Read modes are described in
+\fIread\fR().
+.IP I_NREAD 12
+Counts the number of data bytes in the data part of the first message
+on the STREAM head read queue and places this value in the
+.BR int
+pointed to by
+.IR arg .
+The return value for the command shall be the number of messages on the
+STREAM head read queue. For example, if 0 is returned in
+.IR arg ,
+but the
+\fIioctl\fR()
+return value is greater than 0, this indicates that a zero-length
+message is next on the queue.
+.IP I_FDINSERT 12
+Creates a message from specified buffer(s), adds information about
+another STREAM, and sends the message downstream. The message contains
+a control part and an optional data part. The data and control parts to
+be sent are distinguished by placement in separate buffers, as
+described below. The
+.IR arg
+argument points to a
+.BR strfdinsert
+structure.
+.RS 12 
+.P
+The application shall ensure that the
+.IR len
+member in the
+.BR "ctlbuf strbuf"
+structure is set to the size of a
+.BR t_uscalar_t
+plus the number of bytes of control information to be sent with the
+message. The
+.IR fildes
+member specifies the file descriptor of the other STREAM, and the
+.IR offset
+member, which must be suitably aligned for use as a
+.BR t_uscalar_t ,
+specifies the offset from the start of the control buffer where
+I_FDINSERT shall store a
+.BR t_uscalar_t
+whose interpretation is specific to the STREAM end. The application
+shall ensure that the
+.IR len
+member in the
+.BR "databuf strbuf"
+structure is set to the number of bytes of data information to be sent
+with the message, or to 0 if no data part is to be sent.
+.P
+The
+.IR flags
+member specifies the type of message to be created. A normal message is
+created if
+.IR flags
+is set to 0, and a high-priority message is created if
+.IR flags
+is set to RS_HIPRI. For non-priority messages, I_FDINSERT shall block if
+the STREAM write queue is full due to internal flow control conditions.
+For priority messages, I_FDINSERT does not block on this condition. For
+non-priority messages, I_FDINSERT does not block when the write queue
+is full and O_NONBLOCK is set. Instead, it fails and sets
+.IR errno
+to
+.BR [EAGAIN] .
+.P
+I_FDINSERT also blocks, unless prevented by lack of internal resources,
+waiting for the availability of message blocks in the STREAM,
+regardless of priority or whether O_NONBLOCK has been specified. No
+partial message is sent.
+.P
+The
+\fIioctl\fR()
+function with the I_FDINSERT command shall fail if:
+.TP
+.BR EAGAIN
+A non-priority message is specified, the O_NONBLOCK flag is set, and
+the STREAM write queue is full due to internal flow control
+conditions.
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Buffers cannot be allocated for the message that is to be created.
+.TP
+.BR EINVAL
+One of the following:
+.RS 12 
+.IP -- 4
+The
+.IR fildes
+member of the
+.BR strfdinsert
+structure is not a valid, open STREAM file descriptor.
+.IP -- 4
+The size of a
+.BR t_uscalar_t
+plus
+.IR offset
+is greater than the
+.IR len
+member for the buffer specified through
+.BR ctlbuf .
+.IP -- 4
+The
+.IR offset
+member does not specify a properly-aligned location in the data buffer.
+.IP -- 4
+An undefined value is stored in
+.IR flags .
+.RE
+.TP
+.BR ENXIO
+Hangup received on the STREAM identified by either the
+.IR fildes
+argument or the
+.IR fildes
+member of the
+.BR strfdinsert
+structure.
+.TP
+.BR ERANGE
+The
+.IR len
+member for the buffer specified through
+.BR databuf
+does not fall within the range specified by the maximum and minimum
+packet sizes of the topmost STREAM module; or the
+.IR len
+member for the buffer specified through
+.BR databuf
+is larger than the maximum configured size of the data part of a
+message; or the
+.IR len
+member for the buffer specified through
+.BR ctlbuf
+is larger than the maximum configured size of the control part of a
+message.
+.RE
+.IP I_STR 12
+Constructs an internal STREAMS
+\fIioctl\fR()
+message from the data pointed to by
+.IR arg ,
+and sends that message downstream.
+.RS 12 
+.P
+This mechanism is provided to send
+\fIioctl\fR()
+requests to downstream modules and drivers. It allows information to be
+sent with
+\fIioctl\fR(),
+and returns to the process any information sent upstream by the
+downstream recipient. I_STR shall block until the system responds with
+either a positive or negative acknowledgement message, or until the
+request times out after some period of time. If the request times out,
+it shall fail with
+.IR errno
+set to
+.BR [ETIME] .
+.P
+At most, one I_STR can be active on a STREAM. Further I_STR calls shall
+block until the active I_STR completes at the STREAM head. The default
+timeout interval for these requests is 15 seconds. The O_NONBLOCK flag
+has no effect on this call.
+.P
+To send requests downstream, the application shall ensure that
+.IR arg
+points to a
+.BR strioctl
+structure.
+.P
+The
+.IR ic_cmd
+member is the internal
+\fIioctl\fR()
+command intended for a downstream module or driver and
+.IR ic_timout
+is the number of seconds (\(mi1=infinite, 0=use
+implementation-defined timeout interval, >0=as specified) an I_STR
+request shall wait for acknowledgement before timing out.
+.IR ic_len
+is the number of bytes in the data argument, and
+.IR ic_dp
+is a pointer to the data argument. The
+.IR ic_len
+member has two uses: on input, it contains the length of the data
+argument passed in, and on return from the command, it contains the
+number of bytes being returned to the process (the buffer pointed to by
+.IR ic_dp
+should be large enough to contain the maximum amount of data that any
+module or the driver in the STREAM can return).
+.P
+The STREAM head shall convert the information pointed to by the
+.BR strioctl
+structure to an internal
+\fIioctl\fR()
+command message and send it downstream.
+.P
+The
+\fIioctl\fR()
+function with the I_STR command shall fail if:
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Unable to allocate buffers for the
+\fIioctl\fR()
+message.
+.TP
+.BR EINVAL
+The
+.IR ic_len
+member is less than 0 or larger than the maximum configured size of the
+data part of a message, or
+.IR ic_timout
+is less than \(mi1.
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.TP
+.BR ETIME
+A downstream
+\fIioctl\fR()
+timed out before acknowledgement was received.
+.P
+An I_STR can also fail while waiting for an acknowledgement if a
+message indicating an error or a hangup is received at the STREAM head.
+In addition, an error code can be returned in the positive or negative
+acknowledgement message, in the event the
+\fIioctl\fR()
+command sent downstream fails. For these cases, I_STR shall fail with
+.IR errno
+set to the value in the message.
+.RE
+.IP I_SWROPT 12
+Sets the write mode using the value of the argument
+.IR arg .
+Valid bit settings for
+.IR arg
+are:
+.RS 12 
+.IP SNDZERO 12
+Send a zero-length message downstream when a
+\fIwrite\fR()
+of 0 bytes occurs. To not send a zero-length message when a
+\fIwrite\fR()
+of 0 bytes occurs, the application shall ensure that this bit is not
+set in
+.IR arg
+(for example,
+.IR arg
+would be set to 0).
+.P
+The
+\fIioctl\fR()
+function with the I_SWROPT command shall fail if:
+.TP
+.BR EINVAL
+.IR arg
+is not the above value.
+.RE
+.IP I_GWROPT 12
+Returns the current write mode setting, as described above, in the
+.BR int
+that is pointed to by the argument
+.IR arg .
+.IP I_SENDFD 12
+Creates a new reference to the open file description associated with
+the file descriptor
+.IR arg ,
+and writes a message on the STREAMS-based pipe
+.IR fildes
+containing this reference, together with the user ID and group ID of
+the calling process.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_SENDFD command shall fail if:
+.TP
+.BR EAGAIN
+The sending STREAM is unable to allocate a message block to contain the
+file pointer; or the read queue of the receiving STREAM head is full
+and cannot accept the message sent by I_SENDFD.
+.TP
+.BR EBADF
+The
+.IR arg
+argument is not a valid, open file descriptor.
+.TP
+.BR EINVAL
+The
+.IR fildes
+argument is not connected to a STREAM pipe.
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.P
+The
+\fIioctl\fR()
+function with the I_SENDFD command may fail if:
+.TP
+.BR EINVAL
+The
+.IR arg
+argument is equal to the
+.IR fildes
+argument.
+.RE
+.IP I_RECVFD 12
+Retrieves the reference to an open file description from a message
+written to a STREAMS-based pipe using the I_SENDFD command, and
+allocates a new file descriptor in the calling process that refers to
+this open file description. The
+.IR arg
+argument is a pointer to a
+.BR strrecvfd
+data structure as defined in
+.IR <stropts.h> .
+.RS 12 
+.P
+The
+.IR fd
+member is a file descriptor. The
+.IR uid
+and
+.IR gid
+members are the effective user ID and effective group ID, respectively,
+of the sending process.
+.P
+If O_NONBLOCK is not set, I_RECVFD shall block until a message is
+present at the STREAM head. If O_NONBLOCK is set, I_RECVFD shall fail
+with
+.IR errno
+set to
+.BR [EAGAIN] 
+if no message is present at the STREAM head.
+.P
+If the message at the STREAM head is a message sent by an I_SENDFD, a
+new file
+descriptor shall be allocated for the open file descriptor referenced
+in the message. The new file descriptor is placed in the
+.IR fd
+member of the
+.BR strrecvfd
+structure pointed to by
+.IR arg .
+.P
+The
+\fIioctl\fR()
+function with the I_RECVFD command shall fail if:
+.TP
+.BR EAGAIN
+A message is not present at the STREAM head read queue and the
+O_NONBLOCK flag is set.
+.TP
+.BR EBADMSG
+The message at the STREAM head read queue is not a message containing a
+passed file descriptor.
+.TP
+.BR EMFILE
+All file descriptors available to the process are currently open.
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.RE
+.IP I_LIST 12
+Allows the process to list all the module names on the STREAM, up to
+and including the topmost driver name. If
+.IR arg
+is a null pointer, the return value shall be the number of modules,
+including the driver, that are on the STREAM pointed to by
+.IR fildes .
+This lets the process allocate enough space for the module names.
+Otherwise, it should point to a
+.BR str_list
+structure.
+.RS 12 
+.P
+The
+.IR sl_nmods
+member indicates the number of entries the process has allocated in the
+array. Upon return, the
+.IR sl_modlist
+member of the
+.BR str_list
+structure shall contain the list of module names, and the number of
+entries that have been filled into the
+.IR sl_modlist
+array is found in the
+.IR sl_nmods
+member (the number includes the number of modules including the
+driver). The return value from
+\fIioctl\fR()
+shall be 0. The entries are filled in starting at the top of the STREAM
+and continuing downstream until either the end of the STREAM is
+reached, or the number of requested modules (\c
+.IR sl_nmods )
+is satisfied.
+.P
+The
+\fIioctl\fR()
+function with the I_LIST command shall fail if:
+.TP
+.BR EINVAL
+The
+.IR sl_nmods
+member is less than 1.
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Unable to allocate buffers.
+.RE
+.IP I_ATMARK 12
+Allows the process to see if the message at the head of the STREAM head
+read queue is marked by some module downstream. The
+.IR arg
+argument determines how the checking is done when there may be multiple
+marked messages on the STREAM head read queue. It may take on the
+following values:
+.RS 12 
+.IP ANYMARK 12
+Check if the message is marked.
+.IP LASTMARK 12
+Check if the message is the last one marked on the queue.
+.P
+The bitwise-inclusive OR of the flags ANYMARK and LASTMARK is permitted.
+.P
+The return value shall be 1 if the mark condition is satisfied;
+otherwise, the value shall be 0.
+.P
+The
+\fIioctl\fR()
+function with the I_ATMARK command shall fail if:
+.TP
+.BR EINVAL
+Invalid
+.IR arg
+value.
+.RE
+.IP I_CKBAND 12
+Checks if the message of a given priority band exists on the STREAM
+head read queue. This shall return 1 if a message of the given priority
+exists, 0 if no such message exists, or \(mi1 on error.
+.IR arg
+should be of type
+.BR int .
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_CKBAND command shall fail if:
+.TP
+.BR EINVAL
+Invalid
+.IR arg
+value.
+.RE
+.IP I_GETBAND 12
+Returns the priority band of the first message on the STREAM head read
+queue in the integer referenced by
+.IR arg .
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_GETBAND command shall fail if:
+.TP
+.BR ENODATA
+No message on the STREAM head read queue.
+.RE
+.IP I_CANPUT 12
+Checks if a certain band is writable.
+.IR arg
+is set to the priority band in question. The return value shall be 0 if
+the band is flow-controlled, 1 if the band is writable, or \(mi1 on
+error.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_CANPUT command shall fail if:
+.TP
+.BR EINVAL
+Invalid
+.IR arg
+value.
+.RE
+.IP I_SETCLTIME 12
+This request allows the process to set the time the STREAM head shall
+delay when a STREAM is closing and there is data on the write queues.
+Before closing each module or driver, if there is data on its write
+queue, the STREAM head shall delay for the specified amount of time to
+allow the data to drain. If, after the delay, data is still present, it
+shall be flushed. The
+.IR arg
+argument is a pointer to an integer specifying the number of
+milliseconds to delay, rounded up to the nearest valid value. If
+I_SETCLTIME is not performed on a STREAM, an implementation-defined
+default timeout interval is used.
+.br
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_SETCLTIME command shall fail if:
+.TP
+.BR EINVAL
+Invalid
+.IR arg
+value.
+.RE
+.IP I_GETCLTIME 12
+Returns the close time delay in the integer pointed to by
+.IR arg .
+.SS "Multiplexed STREAMS Configurations"
+.P
+The following commands are used for connecting and disconnecting
+multiplexed STREAMS configurations. These commands use an
+implementation-defined default timeout interval.
+.IP I_LINK 12
+Connects two STREAMs, where
+.IR fildes
+is the file descriptor of the STREAM connected to the multiplexing
+driver, and
+.IR arg
+is the file descriptor of the STREAM connected to another driver. The
+STREAM designated by
+.IR arg
+is connected below the multiplexing driver. I_LINK requires the
+multiplexing driver to send an acknowledgement message to the STREAM
+head regarding the connection. This call shall return a multiplexer ID
+number (an identifier used to disconnect the multiplexer; see I_UNLINK)
+on success, and \(mi1 on failure.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_LINK command shall fail if:
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.TP
+.BR ETIME
+Timeout before acknowledgement message was received at STREAM head.
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Unable to allocate STREAMS storage to perform the I_LINK.
+.TP
+.BR EBADF
+The
+.IR arg
+argument is not a valid, open file descriptor.
+.TP
+.BR EINVAL
+The
+.IR fildes
+argument does not support multiplexing; or
+.IR arg
+is not a STREAM or is already connected downstream from a multiplexer;
+or the specified I_LINK operation would connect the STREAM head in more
+than one place in the multiplexed STREAM.
+.P
+An I_LINK can also fail while waiting for the multiplexing driver to
+acknowledge the request, if a message indicating an error or a hangup
+is received at the STREAM head of
+.IR fildes .
+In addition, an error code can be returned in the positive or negative
+acknowledgement message. For these cases, I_LINK fails with
+.IR errno
+set to the value in the message.
+.RE
+.IP I_UNLINK 12
+Disconnects the two STREAMs specified by
+.IR fildes
+and
+.IR arg .
+.IR fildes
+is the file descriptor of the STREAM connected to the multiplexing
+driver. The
+.IR arg
+argument is the multiplexer ID number that was returned by the I_LINK
+\fIioctl\fR()
+command when a STREAM was connected downstream from the multiplexing
+driver. If
+.IR arg
+is MUXID_ALL, then all STREAMs that were connected to
+.IR fildes
+shall be disconnected. As in I_LINK, this command requires
+acknowledgement.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_UNLINK command shall fail if:
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.TP
+.BR ETIME
+Timeout before acknowledgement message was received at STREAM head.
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Unable to allocate buffers for the acknowledgement message.
+.TP
+.BR EINVAL
+Invalid multiplexer ID number.
+.P
+An I_UNLINK can also fail while waiting for the multiplexing driver to
+acknowledge the request if a message indicating an error or a hangup is
+received at the STREAM head of
+.IR fildes .
+In addition, an error code can be returned in the positive or negative
+acknowledgement message. For these cases, I_UNLINK shall fail with
+.IR errno
+set to the value in the message.
+.RE
+.IP I_PLINK 12
+Creates a
+.IR "persistent connection"
+between two STREAMs, where
+.IR fildes
+is the file descriptor of the STREAM connected to the multiplexing
+driver, and
+.IR arg
+is the file descriptor of the STREAM connected to another driver. This
+call shall create a persistent connection which can exist even if the
+file descriptor
+.IR fildes
+associated with the upper STREAM to the multiplexing driver is closed.
+The STREAM designated by
+.IR arg
+gets connected via a persistent connection below the multiplexing
+driver. I_PLINK requires the multiplexing driver to send an
+acknowledgement message to the STREAM head. This call shall return a
+multiplexer ID number (an identifier that may be used to disconnect the
+multiplexer; see I_PUNLINK) on success, and \(mi1 on failure.
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_PLINK command shall fail if:
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.TP
+.BR ETIME
+Timeout before acknowledgement message was received at STREAM head.
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Unable to allocate STREAMS storage to perform the I_PLINK.
+.TP
+.BR EBADF
+The
+.IR arg
+argument is not a valid, open file descriptor.
+.TP
+.BR EINVAL
+The
+.IR fildes
+argument does not support multiplexing; or
+.IR arg
+is not a STREAM or is already connected downstream from a multiplexer;
+or the specified I_PLINK operation would connect the STREAM head in
+more than one place in the multiplexed STREAM.
+.P
+An I_PLINK can also fail while waiting for the multiplexing driver to
+acknowledge the request, if a message indicating an error or a hangup
+is received at the STREAM head of
+.IR fildes .
+In addition, an error code can be returned in the positive or negative
+acknowledgement message. For these cases, I_PLINK shall fail with
+.IR errno
+set to the value in the message.
+.RE
+.IP I_PUNLINK 12
+Disconnects the two STREAMs specified by
+.IR fildes
+and
+.IR arg
+from a persistent connection. The
+.IR fildes
+argument is the file descriptor of the STREAM connected to the
+multiplexing driver. The
+.IR arg
+argument is the multiplexer ID number that was returned by the I_PLINK
+\fIioctl\fR()
+command when a STREAM was connected downstream from the multiplexing
+driver. If
+.IR arg
+is MUXID_ALL, then all STREAMs which are persistent connections
+to
+.IR fildes
+shall be disconnected. As in I_PLINK, this command requires the
+multiplexing driver to acknowledge the request.
+.br
+.RS 12 
+.P
+The
+\fIioctl\fR()
+function with the I_PUNLINK command shall fail if:
+.TP
+.BR ENXIO
+Hangup received on
+.IR fildes .
+.TP
+.BR ETIME
+Timeout before acknowledgement message was received at STREAM head.
+.TP
+.BR EAGAIN " or " ENOSR
+.br
+Unable to allocate buffers for the acknowledgement message.
+.TP
+.BR EINVAL
+Invalid multiplexer ID number.
+.P
+An I_PUNLINK can also fail while waiting for the multiplexing driver to
+acknowledge the request if a message indicating an error or a hangup is
+received at the STREAM head of
+.IR fildes .
+In addition, an error code can be returned in the positive or negative
+acknowledgement message. For these cases, I_PUNLINK shall fail with
+.IR errno
+set to the value in the message.
+.RE
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIioctl\fR()
+shall return a value other than \(mi1 that depends upon the STREAMS device
+control function. Otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+Under the following general conditions,
+\fIioctl\fR()
+shall fail if:
+.TP
+.BR EBADF
+The
+.IR fildes
+argument is not a valid open file descriptor.
+.TP
+.BR EINTR
+A signal was caught during the
+\fIioctl\fR()
+operation.
+.TP
+.BR EINVAL
+The STREAM or multiplexer referenced by
+.IR fildes
+is linked (directly or indirectly) downstream from a multiplexer.
+.P
+If an underlying device driver detects an error, then
+\fIioctl\fR()
+shall fail if:
+.TP
+.BR EINVAL
+The
+.IR request
+or
+.IR arg
+argument is not valid for this device.
+.TP
+.BR EIO
+Some physical I/O error has occurred.
+.TP
+.BR ENOTTY
+The file associated with the
+.IR fildes
+argument is not a STREAMS device that accepts control functions.
+.TP
+.BR ENXIO
+The
+.IR request
+and
+.IR arg
+arguments are valid for this device driver, but the service requested
+cannot be performed on this particular sub-device.
+.TP
+.BR ENODEV
+The
+.IR fildes
+argument refers to a valid STREAMS device, but the corresponding device
+driver does not support the
+\fIioctl\fR()
+function.
+.P
+If a STREAM is connected downstream from a multiplexer, any
+\fIioctl\fR()
+command except I_UNLINK and I_PUNLINK shall set
+.IR errno
+to
+.BR [EINVAL] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The implementation-defined timeout interval for STREAMS has
+historically been 15 seconds.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fIioctl\fR()
+function may be removed in a future version.
+.SH "SEE ALSO"
+.IR "Section 2.6" ", " "STREAMS",
+.IR "\fIclose\fR\^(\|)",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIgetmsg\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIpipe\fR\^(\|)",
+.IR "\fIpoll\fR\^(\|)",
+.IR "\fIputmsg\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fIsigaction\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stropts.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

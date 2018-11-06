@@ -1,0 +1,235 @@
+'\" et
+.TH GETPRIORITY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getpriority,
+setpriority
+\(em get and set the nice value
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/resource.h>
+.P
+int getpriority(int \fIwhich\fP, id_t \fIwho\fP);
+int setpriority(int \fIwhich\fP, id_t \fIwho\fP, int \fIvalue\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIgetpriority\fR()
+function shall obtain the nice value of a process, process group, or
+user. The
+\fIsetpriority\fR()
+function shall set the nice value of a process, process group, or user
+to
+.IR value +\c
+{NZERO}.
+.P
+Target processes are specified by the values of the
+.IR which
+and
+.IR who
+arguments. The
+.IR which
+argument may be one of the following values: PRIO_PROCESS, PRIO_PGRP,
+or PRIO_USER, indicating that the
+.IR who
+argument
+is to be interpreted as a process ID, a process group ID, or an
+effective user ID, respectively. A 0 value for the
+.IR who
+argument specifies the current process, process group, or user.
+.P
+The nice value set with
+\fIsetpriority\fR()
+shall be applied to the process. If the process is multi-threaded,
+the nice value shall affect all system scope threads in the process.
+.P
+If more than one process is specified,
+\fIgetpriority\fR()
+shall return value
+{NZERO}
+less than the lowest nice value pertaining to any of the specified
+processes, and
+\fIsetpriority\fR()
+shall set the nice values of all of the specified processes to
+.IR value +\c
+{NZERO}.
+.P
+The default nice value is
+{NZERO};
+lower nice values shall cause more favorable scheduling. While the
+range of valid nice values is [0,{NZERO}*2\(mi1], implementations may
+enforce more restrictive limits. If
+.IR value +\c
+{NZERO}
+is less than the system's lowest supported nice value,
+\fIsetpriority\fR()
+shall set the nice value to the lowest supported value; if
+.IR value +\c
+{NZERO}
+is greater than the system's highest supported nice value,
+\fIsetpriority\fR()
+shall set the nice value to the highest supported value.
+.P
+Only a process with appropriate privileges can lower its nice value.
+.P
+Any processes or threads using SCHED_FIFO or SCHED_RR shall be
+unaffected by a call to
+\fIsetpriority\fR().
+This is not considered an error. A process which subsequently reverts
+to SCHED_OTHER need not have its priority affected by such a
+\fIsetpriority\fR()
+call.
+.P
+The effect of changing the nice value may vary depending on the
+process-scheduling algorithm in effect.
+.P
+Since
+\fIgetpriority\fR()
+can return the value \(mi1 upon successful completion, it is necessary to
+set
+.IR errno
+to 0 prior to a call to
+\fIgetpriority\fR().
+If
+\fIgetpriority\fR()
+returns the value \(mi1, then
+.IR errno
+can be checked to see if an error occurred or if the value is a
+legitimate nice value.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIgetpriority\fR()
+shall return an integer in the range \(mi{NZERO} to
+{NZERO}\(mi1.
+Otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.P
+Upon successful completion,
+\fIsetpriority\fR()
+shall return 0; otherwise, \(mi1 shall be returned and
+.IR errno
+set to indicate the error.
+.br
+.SH ERRORS
+The
+\fIgetpriority\fR()
+and
+\fIsetpriority\fR()
+functions shall fail if:
+.TP
+.BR ESRCH
+No process could be located using the
+.IR which
+and
+.IR who
+argument values specified.
+.TP
+.BR EINVAL
+The value of the
+.IR which
+argument was not recognized, or the value of the
+.IR who
+argument is not a valid process ID, process group ID, or user ID.
+.P
+In addition,
+\fIsetpriority\fR()
+may fail if:
+.TP
+.BR EPERM
+A process was located, but neither the real nor effective user ID of
+the executing process match the effective user ID of the process whose
+nice value is being changed.
+.TP
+.BR EACCES
+A request was made to change the nice value to a lower numeric value
+and the current process does not have appropriate privileges.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Using getpriority(\|)"
+.P
+The following example returns the current scheduling priority for the
+process ID returned by the call to
+\fIgetpid\fR().
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/resource.h>
+\&...
+int which = PRIO_PROCESS;
+id_t pid;
+int ret;
+.P
+pid = getpid();
+ret = getpriority(which, pid);
+.fi \fR
+.P
+.RE
+.SS "Using setpriority(\|)"
+.P
+The following example sets the priority for the current process ID to
+\(mi20.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/resource.h>
+\&...
+int which = PRIO_PROCESS;
+id_t pid;
+int priority = -20;
+int ret;
+.P
+pid = getpid();
+ret = setpriority(which, pid, priority);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+The
+\fIgetpriority\fR()
+and
+\fIsetpriority\fR()
+functions work with an offset nice value (nice value \(mi{NZERO}). The
+nice value is in the range [0,2*{NZERO} \(mi1], while the return value
+for
+\fIgetpriority\fR()
+and the third parameter for
+\fIsetpriority\fR()
+are in the range [\(mi{NZERO},{NZERO} \(mi1].
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fInice\fR\^(\|)",
+.IR "\fIsched_get_priority_max\fR\^(\|)",
+.IR "\fIsched_setscheduler\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_resource.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

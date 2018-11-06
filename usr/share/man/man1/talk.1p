@@ -1,0 +1,309 @@
+'\" et
+.TH TALK "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+talk
+\(em talk to another user
+.SH SYNOPSIS
+.LP
+.nf
+talk \fIaddress \fB[\fIterminal\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR talk
+utility is a two-way, screen-oriented communication program.
+.P
+When first invoked,
+.IR talk
+shall send a message similar to:
+.sp
+.RS 4
+.nf
+\fB
+Message from <\fIunspecified string\fP>
+talk: connection requested by \fIyour_address\fP
+talk: respond with: talk \fIyour_address\fP
+.fi \fR
+.P
+.RE
+.P
+to the specified
+.IR address .
+At this point, the recipient of the message can reply by typing:
+.sp
+.RS 4
+.nf
+\fB
+talk \fIyour_address\fR
+.fi \fR
+.P
+.RE
+.P
+Once communication is established, the two parties can type
+simultaneously, with their output displayed in separate regions of the
+screen. Characters shall be processed as follows:
+.IP " *" 4
+Typing the
+<alert>
+character shall alert the recipient's terminal.
+.IP " *" 4
+Typing <control>\(hyL shall cause the sender's screen regions to be
+refreshed.
+.IP " *" 4
+Typing the erase and kill characters shall affect the sender's terminal
+in the manner described by the
+.BR termios
+interface in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 11" ", " "General Terminal Interface".
+.IP " *" 4
+Typing the interrupt or end-of-file characters shall terminate the
+local
+.IR talk
+utility. Once the
+.IR talk
+session has been terminated on one side, the other side of the
+.IR talk
+session shall be notified that the
+.IR talk
+session has been terminated and shall be able to do nothing except
+exit.
+.IP " *" 4
+Typing characters from
+.IR LC_CTYPE
+classifications
+.BR print
+or
+.BR space
+shall cause those characters to be sent to the recipient's terminal.
+.IP " *" 4
+When and only when the
+.IR stty
+.BR iexten
+local mode is enabled, the existence and processing of additional
+special control characters and multi-byte or single-byte functions
+shall be implementation-defined.
+.IP " *" 4
+Typing other non-printable characters shall cause
+implementation-defined sequences of printable characters to be sent
+to the recipient's terminal.
+.P
+Permission to be a recipient of a
+.IR talk
+message can be denied or granted by use of the
+.IR mesg
+utility. However, a user's privilege may further constrain the domain
+of accessibility of other users' terminals. The
+.IR talk
+utility shall fail when the user lacks appropriate privileges to
+perform the requested action.
+.P
+Certain block-mode terminals do not have all the capabilities necessary
+to support the simultaneous exchange of messages required for
+.IR talk .
+When this type of exchange cannot be supported on such terminals, the
+implementation may support an exchange with reduced levels of
+simultaneous interaction or it may report an error describing the
+terminal-related deficiency.
+.SH OPTIONS
+None.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIaddress\fR" 10
+The recipient of the
+.IR talk
+session. One form of
+.IR address
+is the <\fIuser\ name\fP>, as returned by the
+.IR who
+utility. Other address formats and how they are handled are
+unspecified.
+.IP "\fIterminal\fR" 10
+If the recipient is logged in more than once, the
+.IR terminal
+argument can be used to indicate the appropriate terminal name. If
+.IR terminal
+is not specified, the
+.IR talk
+message shall be displayed on one or more accessible terminals in use
+by the recipient. The format of
+.IR terminal
+shall be the same as that returned by the
+.IR who
+utility.
+.SH STDIN
+Characters read from standard input shall be copied to the recipient's
+terminal in an unspecified manner. If standard input is not a
+terminal, talk shall write a diagnostic message and exit with a
+non-zero status.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR talk :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files). If the
+recipient's locale does not use an
+.IR LC_CTYPE
+equivalent to the sender's, the results are undefined.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fITERM\fP" 10
+Determine the name of the invoker's terminal type. If this variable is
+unset or null, an unspecified default terminal type shall be used.
+.SH "ASYNCHRONOUS EVENTS"
+When the
+.IR talk
+utility receives a SIGINT signal, the utility shall terminate and exit
+with a zero status. It shall take the standard action for all other
+signals.
+.SH STDOUT
+If standard output is a terminal, characters copied from the
+recipient's standard input may be written to standard output. Standard
+output also may be used for diagnostic messages. If standard output is
+not a terminal,
+.IR talk
+shall exit with a non-zero status.
+.SH STDERR
+None.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred or
+.IR talk
+was invoked on a terminal incapable of supporting it.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Because the handling of non-printable, non-\c
+<space>
+characters is tied to the
+.IR stty
+description of
+.BR iexten ,
+implementation extensions within the terminal driver can be accessed.
+For example, some implementations provide line editing functions with
+certain control character sequences.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The
+.IR write
+utility was included in this volume of POSIX.1\(hy2008 since it can be implemented on all
+terminal types. The
+.IR talk
+utility, which cannot be implemented on certain terminals, was
+considered to be a ``better'' communications interface. Both of these
+programs are in widespread use on historical implementations.
+Therefore, both utilities have been specified.
+.P
+All references to networking abilities (\fItalk\fPing to a user on
+another system) were removed as being outside the scope of this volume of POSIX.1\(hy2008.
+.P
+Historical BSD and System V versions of
+.IR talk
+terminate both of the conversations when either user breaks out of the
+session. This can lead to adverse consequences if a user unwittingly
+continues to enter text that is interpreted by the shell when the other
+terminates the session. Therefore, the version of
+.IR talk
+specified by this volume of POSIX.1\(hy2008 requires both users to terminate their end of the
+session explicitly.
+.P
+Only messages sent to the terminal of the invoking user can be
+internationalized in any way:
+.IP " *" 4
+The original ``Message from <\fIunspecified string\fP> .\|.\|.''
+message sent to the terminal of the recipient cannot be
+internationalized because the environment of the recipient is as yet
+inaccessible to the
+.IR talk
+utility. The environment of the invoking party is irrelevant.
+.IP " *" 4
+Subsequent communication between the two parties cannot be
+internationalized because the two parties may specify different
+languages in their environment (and non-portable characters cannot be
+mapped from one language to another).
+.IP " *" 4
+Neither party can be required to communicate in a language other than C
+and/or the one specified by their environment because unavailable
+terminal hardware support (for example, fonts) may be required.
+.P
+The text in the STDOUT section reflects the usage of the verb
+``display'' in this section; some
+.IR talk
+implementations actually use standard output to write to the terminal,
+but this volume of POSIX.1\(hy2008 does not require that to be the case.
+.P
+The format of the terminal name is unspecified, but the descriptions of
+.IR ps ,
+.IR talk ,
+.IR who ,
+and
+.IR write
+require that they all use or accept the same format.
+.P
+The handling of non-printable characters is partially
+implementation-defined
+because the details of mapping them to printable sequences is not
+needed by the user. Historical implementations, for security reasons,
+disallow the transmission of non-printable characters that may send
+commands to the other terminal.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImesg\fR\^",
+.IR "\fIstty\fR\^",
+.IR "\fIwho\fR\^",
+.IR "\fIwrite\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Chapter 11" ", " "General Terminal Interface"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

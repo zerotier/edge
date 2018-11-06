@@ -1,0 +1,419 @@
+#!/bin/sh
+#
+# newapkbuild - generate a new APKBUILD
+# Copyright (c) 2009 Natanael Copa <natanael.copa@gmail.com>
+#
+# Distributed under GPL-2
+#
+
+program_version=3.3.0_pre1-r1
+datadir=/usr/share/abuild
+
+if ! [ -f "$datadir/functions.sh" ]; then
+	echo "$datadir/functions.sh: not found" >&2
+	exit 1
+fi
+. "$datadir/functions.sh"
+
+
+is_url() {
+	case "$1" in
+	http://*|https://*|ftp://*) return 0;;
+	esac
+	return 1
+}
+
+is_github_url() {
+	case $1 in
+	https://github.com/*/*/archive/*.tar.gz) return 0;;
+	esac
+	return 1
+}
+
+# Build sections
+build_make() {
+	cat >>APKBUILD<<__EOF__
+	make
+__EOF__
+}
+
+build_autotools() {
+	cat >>APKBUILD<<__EOF__
+	./configure \\
+		--build=\$CBUILD \\
+		--host=\$CHOST \\
+		--prefix=/usr \\
+		--sysconfdir=/etc \\
+		--mandir=/usr/share/man \\
+		--localstatedir=/var
+	make
+__EOF__
+}
+
+build_cmake() {
+# References:
+# http://www.cmake.org/Wiki/CMake_Useful_Variables
+# http://www.vtk.org/Wiki/CMake_Cross_Compiling
+# This is incomplete: CMAKE_{HOST_,}SYSTEM_PROCESSOR needs to be set,
+# and likewise CMAKE_FIND_ROOT_PATH and a few other details.
+
+	cat >>APKBUILD<<__EOF__
+	if [ "\$CBUILD" != "\$CHOST" ]; then
+		CMAKE_CROSSOPTS="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
+	fi
+	cmake \\
+		-DCMAKE_INSTALL_PREFIX=/usr \\
+		-DCMAKE_INSTALL_LIBDIR=lib \\
+		-DBUILD_SHARED_LIBS=True \\
+		-DCMAKE_BUILD_TYPE=Release \\
+		-DCMAKE_CXX_FLAGS="\$CXXFLAGS" \\
+		-DCMAKE_C_FLAGS="\$CFLAGS" \\
+		\${CMAKE_CROSSOPTS}
+	make
+__EOF__
+}
+
+build_meson() {
+# References:
+# http://mesonbuild.com/Reference-manual.html
+# http://mesonbuild.com/Cross-compilation.html
+# TODO For cross compilation a cross_file needs to be created.
+
+	cat >>APKBUILD<<__EOF__
+	meson \\
+		--prefix=/usr \\
+		--sysconfdir=/etc \\
+		--mandir=/usr/share/man \\
+		--localstatedir=/var \\
+		--buildtype=release \\
+		. output
+	ninja -C output
+__EOF__
+}
+
+build_perl() {
+	cat >>APKBUILD<<__EOF__
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor
+	make
+__EOF__
+}
+
+build_python() {
+	cat >>APKBUILD<<__EOF__
+	python3 setup.py build
+__EOF__
+}
+
+check_make() {
+	cat >>APKBUILD<<__EOF__
+	make check
+__EOF__
+}
+
+check_python() {
+	cat >>APKBUILD<<__EOF__
+	python3 setup.py test
+__EOF__
+}
+
+# Package sections
+package_make() {
+	cat >>APKBUILD<<__EOF__
+	make DESTDIR="\$pkgdir" install
+__EOF__
+}
+
+package_autotools() {
+	package_make
+}
+
+package_meson() {
+	cat >>APKBUILD<<__EOF__
+	DESTDIR="\$pkgdir" ninja -C output install
+__EOF__
+}
+
+package_perl() {
+	cat >>APKBUILD<<__EOF__
+	make DESTDIR="\$pkgdir" install
+	find "\$pkgdir" \\( -name perllocal.pod -o -name .packlist \\) -delete
+__EOF__
+}
+
+package_python() {
+	cat >>APKBUILD<<__EOF__
+	python3 setup.py install --prefix=/usr --root="\$pkgdir"
+__EOF__
+}
+
+# Create new aport from templates
+newaport() {
+	local newname="${1##*/}"
+	local pn=${newname%-[0-9]*}
+	local pv
+	local source=
+	is_url "$1" && source="$1"
+
+	if is_github_url $source; then
+		if [ -z "$pkgname" ]; then
+			pkgname=${source%/archive/*}
+			pkgname=${pkgname##*/}
+		fi
+		pv=${newname%.t*} #strip .tar.gz .tgz .tar.bz2 etc
+		pv=${pv#*[a-z]}
+		source="$pkgname-$pv.tar.gz::$source"
+	elif [ "$pn" != "$newname" ]; then
+		pv=${newname#$pn-}
+		pv=${pv%.t*} #strip .tar.gz .tgz .tar.bz2 etc
+	fi
+	if [ -z "$pkgname" ]; then
+		pkgname=$pn
+	fi
+	if [ -e "$pkgname"/APKBUILD ] && [ -z "$force" ]; then
+		error "$pkgname/APKBUILD already exists"
+		return 1
+	fi
+	mkdir -p "$pkgname"
+	cd "$pkgname"
+
+	if [ -z "$source" ] && [ -n "$sourceforge" ]; then
+		source="https://downloads.sourceforge.net/$pn/$pn-$pv.tar.gz"
+	fi
+
+	if [ -z "$depends" ] &&[ "$buildtype" = "python" ]; then
+		depends="python3"
+	fi
+
+	case "$buildtype" in
+	python) makedepends="python3-dev";;
+	cmake)  makedepends="cmake";;
+	meson)  makedepends="meson";;
+	*)      makedepends="\$depends_dev";;
+	esac
+
+	# Replace pkgver in $source
+	if [ -n "$source" ]; then
+		source=$(echo "$source" | sed "s/$pv/\$pkgver/g")
+	fi
+
+	# Copy init.d scripts if requested
+	if [ -n "$cpinitd" ]; then
+		cp "$datadir"/sample.initd $pkgname.initd
+		cp "$datadir"/sample.confd $pkgname.confd
+		cp "$datadir"/sample.pre-install $pkgname.pre-install
+		cp "$datadir"/sample.post-install $pkgname.post-install
+		install="\$pkgname.pre-install \$pkgname.post-install"
+		source="$source
+	$pkgname.initd
+	$pkgname.confd
+	"
+	fi
+
+	# Generate header with standard variables
+	cat >APKBUILD<<__EOF__
+# Contributor:${PACKAGER:+" "}${PACKAGER}
+# Maintainer:${MAINTAINER:+" "}${MAINTAINER}
+pkgname=$pkgname
+pkgver=$pv
+pkgrel=0
+pkgdesc="$pkgdesc"
+url="$url"
+arch="all"
+license="$license"
+depends="$depends"
+depends_dev=""
+makedepends="$makedepends"
+install="$install"
+subpackages="\$pkgname-dev \$pkgname-doc"
+source="$source"
+__EOF__
+
+	abuild -f fetch checksum unpack
+	# Figure out the builddir
+	for i in src/*; do
+		if [ -d "$i" ]; then
+			sdir=$i
+			builddir=$(echo ${i#*/} | sed "s/$pv/\$pkgver/g")
+		fi
+	done
+	printf 'builddir="$srcdir/%s"\n\n' "$builddir" >> APKBUILD
+
+	# Subpackage -dev is usually required only for C/C++. Since depends_dev
+	# confuses a lot people, remove it if there's no .h or .hpp file.
+	find "$sdir" -name "*.h" -o -name "*.hpp" -maxdepth 3 2>/dev/null \
+		| head -n 1 | grep -q ".*" \
+		|| sed -i -e '/^depends_dev=.*/d' -e 's/\$depends_dev\s*//' APKBUILD
+
+	# Try to autodetect the buildtype
+	if [ -z "$buildtype" ]; then
+		if [ -x "$sdir"/configure ]; then
+			buildtype="autotools"
+		elif [ -r "$sdir"/Makefile.PL ] || [ "${pn#perl-}" != "$pn" ]; then
+			buildtype="perl"
+		elif [ -r "$sdir"/waf ]; then
+			buildtype="waf"
+		elif [ -r "$sdir"/meson.build ]; then
+			buildtype="meson"
+		elif [ -d "$sdir"/cmake ] || [ -r "$sdir/CMakeLists.txt" ]; then
+			buildtype="cmake"
+		elif [ -r "$sdir"/Makefile ]; then
+			buildtype="make"
+		elif [ -r "$sdir"/setup.py ]; then
+			buildtype="python"
+		fi
+	fi
+
+	# Create build() function
+	cat >>APKBUILD<<__EOF__
+build() {
+	cd "\$builddir"
+__EOF__
+
+	case "$buildtype" in
+	make)
+		build_make;;
+	cmake)
+		build_cmake;;
+	meson)
+		build_meson;;
+	autotools)
+		build_autotools;;
+	perl)
+		build_perl;;
+	python)
+		build_python;;
+	esac
+
+	cat >>APKBUILD<<__EOF__
+}
+
+__EOF__
+
+	# Create check() function
+	cat >>APKBUILD<<__EOF__
+check() {
+	cd "\$builddir"
+__EOF__
+
+	case "$buildtype" in
+	make|cmake|autotools|perl)
+		check_make;;
+	python)
+		check_python;;
+	esac
+
+	cat >>APKBUILD<<__EOF__
+}
+
+__EOF__
+
+	# Create package() function
+	cat >>APKBUILD<<__EOF__
+package() {
+	cd "\$builddir"
+__EOF__
+
+	case "$buildtype" in
+	make|cmake)
+		package_make;;
+	autotools)
+		package_autotools;;
+	meson)
+		package_meson;;
+	perl)
+		package_perl;;
+	python)
+		package_python;;
+	esac
+
+	if [ -n "$cpinitd" ]; then
+		cat >>APKBUILD<<__EOF__
+
+	install -m755 -D "\$srcdir"/\$pkgname.initd \\
+		"\$pkgdir"/etc/init.d/\$pkgname
+	install -m644 -D "\$srcdir"/\$pkgname.confd \\
+		"\$pkgdir"/etc/conf.d/\$pkgname
+__EOF__
+	fi
+	cat >>APKBUILD<<__EOF__
+}
+
+__EOF__
+
+	# regenerate checksum so they end last in APKBUILD
+	abuild -f checksum
+}
+
+usage() {
+	cat >&2 <<-__EOF__
+		$program $program_version - generate a new APKBUILD
+		Usage: $program [-n PKGNAME] [-d PKGDESC] [-l LICENSE] [-u URL]
+		       [-a | -C | -m | -p | -y] [-s] [-c] [-f] [-h]
+		       PKGNAME[-PKGVER] | SRCURL
+		Options:
+		  -n  Set package name to PKGNAME (only use with SRCURL)
+		  -d  Set package description to PKGDESC
+		  -l  Set package license to LICENSE, use identifiers from:
+		      <https://spdx.org/licenses/>
+		  -u  Set package URL
+		  -a  Create autotools package (use ./configure ...)
+		  -C  Create CMake package (Assume cmake/ is there)
+		  -m  Create meson package (Assume meson.build is there)
+		  -p  Create perl package (Assume Makefile.PL is there)
+		  -y  Create python package (Assume setup.py is there)
+		  -s  Use sourceforge source URL
+		  -c  Copy a sample init.d, conf.d, and install script
+		  -f  Force even if directory already exists
+		  -h  Show this help
+	__EOF__
+}
+
+set_buildtype() {
+	if [ -n "$buildtype" ]; then
+		error "More than one buildtype flag specified ($buildtype and $1)"
+		exit 1
+	fi
+	buildtype="$1"
+}
+
+check_arguments() {
+	if [ $# -eq 0 ]; then
+		error "Missing required argument: PKGNAME[-PKGVER] | SRCURL"
+		exit 1
+	fi
+	if [ $# -gt 1 ]; then
+		shift
+		error "Unrecognized arguments: $*"
+		exit 1
+	fi
+	if ! is_url "$1" && [ -n "$pkgname" ]; then
+		error "-n is only allowed when using SRCURL as last argument"
+		exit 1
+	fi
+	if is_url "$1" && [ -n "$sourceforge" ]; then
+		error "-s is only allowed when using PKGNAME as last argument"
+		exit 1
+	fi
+}
+
+while getopts "acCmd:fhl:n:pyu:s" opt; do
+	case $opt in
+		'a') set_buildtype "autotools";;
+		'c') cpinitd=1;;
+		'C') set_buildtype "cmake";;
+		'm') set_buildtype "meson";;
+		'd') pkgdesc="$OPTARG";;
+		'f') force=1;;
+		'h') usage; exit;;
+		'l') license="$OPTARG";;
+		'n') pkgname="$OPTARG";;
+		'p') set_buildtype "perl";;
+		'y') set_buildtype "python";;
+		'u') url="$OPTARG";;
+		's') sourceforge=1;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+check_arguments "$@"
+newaport $1

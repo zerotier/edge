@@ -1,0 +1,207 @@
+'\" et
+.TH sys_resource.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/resource.h
+\(em definitions for XSI resource operations
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/resource.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/resource.h> 
+header shall define the following symbolic constants as possible values
+of the
+.IR which
+argument of
+\fIgetpriority\fR()
+and
+\fIsetpriority\fR():
+.IP PRIO_PROCESS 16
+Identifies the
+.IR who
+argument as a process ID.
+.IP PRIO_PGRP 16
+Identifies the
+.IR who
+argument as a process group ID.
+.IP PRIO_USER 16
+Identifies the
+.IR who
+argument as a user ID.
+.P
+The
+.IR <sys/resource.h> 
+header shall define the following type through
+.BR typedef :
+.IP "\fBrlim_t\fR" 16
+Unsigned integer type used for limit values.
+.P
+The
+.IR <sys/resource.h> 
+header shall define the following symbolic constants, which shall have
+values suitable for use in
+.BR #if
+preprocessing directives:
+.IP RLIM_INFINITY 16
+A value of
+.BR rlim_t
+indicating no limit.
+.IP RLIM_SAVED_MAX 16
+A value of type
+.BR rlim_t
+indicating an unrepresentable saved hard limit.
+.IP RLIM_SAVED_CUR 16
+A value of type
+.BR rlim_t
+indicating an unrepresentable saved soft limit.
+.P
+On implementations where all resource limits are representable in an
+object of type
+.BR rlim_t ,
+RLIM_SAVED_MAX and RLIM_SAVED_CUR need not be distinct from
+RLIM_INFINITY.
+.P
+The
+.IR <sys/resource.h> 
+header shall define the following symbolic constants as possible values
+of the
+.IR who
+parameter of
+\fIgetrusage\fR():
+.IP RUSAGE_SELF 16
+Returns information about the current process.
+.IP RUSAGE_CHILDREN 16
+Returns information about children of the current process.
+.P
+The
+.IR <sys/resource.h> 
+header shall define the
+.BR rlimit
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+rlim_t rlim_cur  \fRThe current (soft) limit.\fR
+rlim_t rlim_max  \fRThe hard limit.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <sys/resource.h> 
+header shall define the
+.BR rusage
+structure, which shall include at least the following members:
+.sp
+.RS 4
+.nf
+\fB
+struct timeval ru_utime  \fRUser time used.\fR
+struct timeval ru_stime  \fRSystem time used.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <sys/resource.h> 
+header shall define the
+.BR timeval
+structure as described in
+.IR <sys/time.h> .
+.P
+The
+.IR <sys/resource.h> 
+header shall define the following symbolic constants as possible values
+for the
+.IR resource
+argument of
+\fIgetrlimit\fR()
+and
+\fIsetrlimit\fR():
+.IP RLIMIT_CORE 16
+Limit on size of
+.BR core
+file.
+.IP RLIMIT_CPU 16
+Limit on CPU time per process.
+.IP RLIMIT_DATA 16
+Limit on data segment size.
+.IP RLIMIT_FSIZE 16
+Limit on file size.
+.IP RLIMIT_NOFILE 16
+Limit on number of open files.
+.IP RLIMIT_STACK 16
+Limit on stack size.
+.IP RLIMIT_AS 16
+Limit on address space size.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int  getpriority(int, id_t);
+int  getrlimit(int, struct rlimit *);
+int  getrusage(int, struct rusage *);
+int  setpriority(int, id_t, int);
+int  setrlimit(int, const struct rlimit *);
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <sys/resource.h> 
+header shall define the
+.BR id_t
+type through
+.BR typedef ,
+as described in
+.IR <sys/types.h> .
+.P
+Inclusion of the
+.IR <sys/resource.h> 
+header may also make visible all symbols from
+.IR <sys/time.h> .
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_time.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIgetpriority\fR\^(\|)",
+.IR "\fIgetrlimit\fR\^(\|)",
+.IR "\fIgetrusage\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

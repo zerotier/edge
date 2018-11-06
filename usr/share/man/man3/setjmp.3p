@@ -1,0 +1,104 @@
+'\" et
+.TH SETJMP "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+setjmp
+\(em set jump point for a non-local goto
+.SH SYNOPSIS
+.LP
+.nf
+#include <setjmp.h>
+.P
+int setjmp(jmp_buf \fIenv\fP);
+.fi
+.SH DESCRIPTION
+The functionality described on this reference page is aligned with the
+ISO\ C standard. Any conflict between the requirements described here and the
+ISO\ C standard is unintentional. This volume of POSIX.1\(hy2008 defers to the ISO\ C standard.
+.P
+A call to
+\fIsetjmp\fR()
+shall save the calling environment in its
+.IR env
+argument for later use by
+\fIlongjmp\fR().
+.P
+It is unspecified whether
+\fIsetjmp\fR()
+is a macro or a function. If a macro definition is suppressed in order
+to access an actual function, or a program defines an external
+identifier with the name
+.IR setjmp ,
+the behavior is undefined.
+.P
+An application shall ensure that an invocation of
+\fIsetjmp\fR()
+appears in one of the following contexts only:
+.IP " *" 4
+The entire controlling expression of a selection or iteration
+statement
+.IP " *" 4
+One operand of a relational or equality operator with the other operand
+an integral constant expression, with the resulting expression being
+the entire controlling expression of a selection or iteration statement
+.IP " *" 4
+The operand of a unary
+.BR '!' 
+operator with the resulting expression being the entire controlling
+expression of a selection or iteration
+.IP " *" 4
+The entire expression of an expression statement (possibly cast to
+.BR void )
+.P
+If the invocation appears in any other context, the behavior is
+undefined.
+.SH "RETURN VALUE"
+If the return is from a direct invocation,
+\fIsetjmp\fR()
+shall return 0. If the return is from a call to
+\fIlongjmp\fR(),
+\fIsetjmp\fR()
+shall return a non-zero value.
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+In general,
+\fIsigsetjmp\fR()
+is more useful in dealing with errors and interrupts encountered in a
+low-level subroutine of a program.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIlongjmp\fR\^(\|)",
+.IR "\fIsigsetjmp\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<setjmp.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

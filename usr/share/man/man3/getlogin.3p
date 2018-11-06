@@ -1,0 +1,225 @@
+'\" et
+.TH GETLOGIN "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getlogin,
+getlogin_r
+\(em get login name
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+char *getlogin(void);
+int getlogin_r(char *\fIname\fP, size_t \fInamesize\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIgetlogin\fR()
+function shall return a pointer to a string containing the user name
+associated by the login activity with the controlling terminal of the
+current process. If
+\fIgetlogin\fR()
+returns a non-null pointer, then that pointer points to the name that
+the user logged in under, even if there are several login names with
+the same user ID.
+.P
+The
+\fIgetlogin\fR()
+function need not be thread-safe.
+.P
+The
+\fIgetlogin_r\fR()
+function shall put the name associated by the login activity with the
+controlling terminal of the current process in the character array
+pointed to by
+.IR name .
+The array is
+.IR namesize
+characters long and should have space for the name and the terminating
+null character. The maximum size of the login name is
+{LOGIN_NAME_MAX}.
+.P
+If
+\fIgetlogin_r\fR()
+is successful,
+.IR name
+points to the name the user used at login, even if there are several
+login names with the same user ID.
+.P
+The
+\fIgetlogin\fR()
+and
+\fIgetlogin_r\fR()
+functions may make use of file descriptors 0, 1, and 2 to find the
+controlling terminal of the current process, examining each in turn
+until the terminal is found. If in this case none of these three file
+descriptors is open to the controlling terminal, these functions may
+fail. The method used to find the terminal associated with a file
+descriptor may depend on the file descriptor being open to the actual
+terminal device, not
+.BR /dev/tty .
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIgetlogin\fR()
+shall return a pointer to the login name or a null pointer if the
+user's login name cannot be found. Otherwise, it shall return a null
+pointer and set
+.IR errno
+to indicate the error.
+.P
+The application shall not modify the string returned. The returned
+pointer might be invalidated or the string content might be overwritten
+by a subsequent call to
+\fIgetlogin\fR().
+.P
+If successful, the
+\fIgetlogin_r\fR()
+function shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+These functions may fail if:
+.TP
+.BR EMFILE
+All file descriptors available to the process are currently open.
+.TP
+.BR ENFILE
+The maximum allowable number of files is currently open in the system.
+.TP
+.BR ENOTTY
+None of the file descriptors 0, 1, or 2 is open to the controlling
+terminal of the current process.
+.TP
+.BR ENXIO
+The calling process has no controlling terminal.
+.P
+The
+\fIgetlogin_r\fR()
+function may fail if:
+.TP
+.BR ERANGE
+The value of
+.IR namesize
+is smaller than the length of the string to be returned including the
+terminating null character.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Getting the User Login Name" S
+.P
+The following example calls the
+\fIgetlogin\fR()
+function to obtain the name of the user associated with the calling
+process, and passes this information to the
+\fIgetpwnam\fR()
+function to get the associated user database information.
+.sp
+.RS 4
+.nf
+\fB
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <stdio.h>
+\&...
+char *lgn;
+struct passwd *pw;
+\&...
+if ((lgn = getlogin()) == NULL || (pw = getpwnam(lgn)) == NULL) {
+    fprintf(stderr, "Get of user information failed.\en"); exit(1);
+    }
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+Three names associated with the current process can be determined:
+.IR getpwuid (\c
+\fIgeteuid\fR())
+shall return the name associated with the effective user ID of the
+process;
+\fIgetlogin\fR()
+shall return the name associated with the current login activity; and
+.IR getpwuid (\c
+\fIgetuid\fR())
+shall return the name associated with the real user ID of the process.
+.P
+The
+\fIgetlogin_r\fR()
+function is thread-safe and returns values in a user-supplied buffer
+instead of possibly using a static data area that may be overwritten by
+each call.
+.SH RATIONALE
+The
+\fIgetlogin\fR()
+function returns a pointer to the user's login name. The same user ID
+may be shared by several login names. If it is desired to get the user
+database entry that is used during login, the result of
+\fIgetlogin\fR()
+should be used to provide the argument to the
+\fIgetpwnam\fR()
+function. (This might be used to determine the user's login shell,
+particularly where a single user has multiple login shells with
+distinct login names, but the same user ID.)
+.P
+The information provided by the
+.IR cuserid (\|)
+function, which was originally defined in the POSIX.1\(hy1988 standard and subsequently
+removed, can be obtained by the following:
+.sp
+.RS 4
+.nf
+\fB
+getpwuid(geteuid())
+.fi \fR
+.P
+.RE
+.P
+while the information provided by historical implementations of
+.IR cuserid (\|)
+can be obtained by:
+.sp
+.RS 4
+.nf
+\fB
+getpwuid(getuid())
+.fi \fR
+.P
+.RE
+.P
+The thread-safe version of this function places the user name in a
+user-supplied buffer and returns a non-zero value if it fails. The
+non-thread-safe version may return the name in a static data area that
+may be overwritten by each call.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIgetpwnam\fR\^(\|)",
+.IR "\fIgetpwuid\fR\^(\|)",
+.IR "\fIgeteuid\fR\^(\|)",
+.IR "\fIgetuid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<limits.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

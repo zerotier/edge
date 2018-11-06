@@ -1,0 +1,213 @@
+'\" et
+.TH sys_mman.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/mman.h
+\(em memory management declarations
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mman.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/mman.h> 
+header shall define the following symbolic constants for use as
+protection options:
+.IP PROT_EXEC 14
+Page can be executed.
+.IP PROT_NONE 14
+Page cannot be accessed.
+.IP PROT_READ 14
+Page can be read.
+.IP PROT_WRITE 14
+Page can be written.
+.P
+The
+.IR <sys/mman.h> 
+header shall define the following symbolic constants for use as
+flag options:
+.IP MAP_FIXED 14
+Interpret
+.IR addr
+exactly.
+.IP MAP_PRIVATE 14
+Changes are private.
+.IP MAP_SHARED 14
+Share changes.
+.P
+The
+.IR <sys/mman.h> 
+header shall define the following symbolic constants for the
+\fImsync\fR()
+function:
+.IP MS_ASYNC 14
+Perform asynchronous writes.
+.IP MS_INVALIDATE 14
+Invalidate mappings.
+.IP MS_SYNC 14
+Perform synchronous writes.
+.P
+The
+.IR <sys/mman.h> 
+header shall define the following symbolic constants for the
+\fImlockall\fR()
+function:
+.IP MCL_CURRENT 14
+Lock currently mapped pages.
+.IP MCL_FUTURE 14
+Lock pages that become mapped.
+.P
+The
+.IR <sys/mman.h> 
+header shall define the symbolic constant MAP_FAILED which shall
+have type
+.BR "void *"
+and shall be used to indicate a failure from the
+\fImmap\fR()
+function .
+.P
+If the Advisory Information option is supported, the
+.IR <sys/mman.h> 
+header shall define symbolic constants for the
+.IR advice
+argument to the
+\fIposix_madvise\fR()
+function as follows:
+.IP POSIX_MADV_DONTNEED 6
+.br
+The application expects that it will not access the specified range in
+the near future.
+.IP POSIX_MADV_NORMAL 6
+.br
+The application has no advice to give on its behavior with respect to
+the specified range. It is the default characteristic if no advice is
+given for a range of memory.
+.IP POSIX_MADV_RANDOM 6
+.br
+The application expects to access the specified range in a random
+order.
+.IP POSIX_MADV_SEQUENTIAL 6
+.br
+The application expects to access the specified range sequentially from
+lower addresses to higher addresses.
+.IP POSIX_MADV_WILLNEED 6
+.br
+The application expects to access the specified range in the near
+future.
+.P
+The
+.IR <sys/mman.h> 
+header shall define the following symbolic constants for use as
+flags for the
+\fIposix_typed_mem_open\fR()
+function:
+.IP POSIX_TYPED_MEM_ALLOCATE 6
+.br
+Allocate on
+\fImmap\fR().
+.IP POSIX_TYPED_MEM_ALLOCATE_CONTIG 6
+.br
+Allocate contiguously on
+\fImmap\fR().
+.IP POSIX_TYPED_MEM_MAP_ALLOCATABLE 6
+.br
+Map on
+\fImmap\fR(),
+without affecting allocatability.
+.P
+The
+.IR <sys/mman.h> 
+header shall define the
+.BR mode_t ,
+.BR off_t ,
+and
+.BR size_t
+types as described in
+.IR "\fB<sys_types.h>\fP".
+.P
+The
+.IR <sys/mman.h> 
+header shall define the
+.BR posix_typed_mem_info
+structure, which shall include at least the following member:
+.sp
+.RS 4
+.nf
+\fB
+size_t  posix_tmi_length  \fRMaximum length which may be allocated\fR
+                          \fRfrom a typed memory object.\fR
+.fi \fR
+.P
+.RE
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int    mlock(const void *, size_t);
+int    mlockall(int);
+void  *mmap(void *, size_t, int, int, int, off_t);
+int    mprotect(void *, size_t, int);
+int    msync(void *, size_t, int);
+int    munlock(const void *, size_t);
+int    munlockall(void);
+int    munmap(void *, size_t);
+int    posix_madvise(void *, size_t, int);
+int    posix_mem_offset(const void *restrict, size_t, off_t *restrict,
+           size_t *restrict, int *restrict);
+int    posix_typed_mem_get_info(int, struct posix_typed_mem_info *);
+int    posix_typed_mem_open(const char *, int, int);
+int    shm_open(const char *, int, mode_t);
+int    shm_unlink(const char *);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fImlock\fR\^(\|)",
+.IR "\fImlockall\fR\^(\|)",
+.IR "\fImmap\fR\^(\|)",
+.IR "\fImprotect\fR\^(\|)",
+.IR "\fImsync\fR\^(\|)",
+.IR "\fImunmap\fR\^(\|)",
+.IR "\fIposix_madvise\fR\^(\|)",
+.IR "\fIposix_mem_offset\fR\^(\|)",
+.IR "\fIposix_typed_mem_get_info\fR\^(\|)",
+.IR "\fIposix_typed_mem_open\fR\^(\|)",
+.IR "\fIshm_open\fR\^(\|)",
+.IR "\fIshm_unlink\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

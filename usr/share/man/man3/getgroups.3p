@@ -1,0 +1,145 @@
+'\" et
+.TH GETGROUPS "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getgroups
+\(em get supplementary group IDs
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+.P
+int getgroups(int \fIgidsetsize\fP, gid_t \fIgrouplist\fP[]);
+.fi
+.SH DESCRIPTION
+The
+\fIgetgroups\fR()
+function shall fill in the array
+.IR grouplist
+with the current supplementary group IDs of the calling process. It is
+implementation-defined whether
+\fIgetgroups\fR()
+also returns the effective group ID in the
+.IR grouplist
+array.
+.P
+The
+.IR gidsetsize
+argument specifies the number of elements in the array
+.IR grouplist .
+The actual number of group IDs stored in the array shall be returned.
+The values of array entries with indices greater than or equal to the
+value returned are undefined.
+.P
+If
+.IR gidsetsize
+is 0,
+\fIgetgroups\fR()
+shall return the number of group IDs that it would otherwise return
+without modifying the array pointed to by
+.IR grouplist .
+.P
+If the effective group ID of the process is returned with the
+supplementary group IDs, the value returned shall always be greater
+than or equal to one and less than or equal to the value of
+{NGROUPS_MAX}+1.
+.SH "RETURN VALUE"
+Upon successful completion, the number of supplementary group IDs shall
+be returned. A return value of \(mi1 indicates failure and
+.IR errno
+shall be set to indicate the error.
+.SH ERRORS
+The
+\fIgetgroups\fR()
+function shall fail if:
+.TP
+.BR EINVAL
+The
+.IR gidsetsize
+argument is non-zero and less than the number of group IDs that would
+have been returned.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Getting the Supplementary Group IDs of the Calling Process"
+.P
+The following example places the current supplementary group IDs of the
+calling process into the
+.IR group
+array.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/types.h>
+#include <unistd.h>
+\&...
+gid_t *group;
+int nogroups;
+long ngroups_max;
+.P
+ngroups_max = sysconf(_SC_NGROUPS_MAX) + 1;
+group = (gid_t *)malloc(ngroups_max *sizeof(gid_t));
+.P
+ngroups = getgroups(ngroups_max, group);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+The related function
+\fIsetgroups\fR()
+is a privileged operation and therefore is not covered by this volume of POSIX.1\(hy2008.
+.P
+As implied by the definition of supplementary groups, the effective
+group ID
+may appear in the array returned by
+\fIgetgroups\fR()
+or it may be returned only by
+\fIgetegid\fR().
+Duplication may exist, but the application needs to call
+\fIgetegid\fR()
+to be sure of getting all of the information. Various implementation
+variations and administrative sequences cause the set of groups
+appearing in the result of
+\fIgetgroups\fR()
+to vary in order and as to whether the effective group ID is included,
+even when the set of groups is the same (in the mathematical sense of
+``set''). (The history of a process and its parents could affect the
+details of the result.)
+.P
+Application developers should note that
+{NGROUPS_MAX}
+is not necessarily a constant on all implementations.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIgetegid\fR\^(\|)",
+.IR "\fIsetgid\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_types.h>\fP",
+.IR "\fB<unistd.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

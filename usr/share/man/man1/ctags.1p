@@ -1,0 +1,477 @@
+'\" et
+.TH CTAGS "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+ctags
+\(em create a tags file (\fBDEVELOPMENT\fR, \fBFORTRAN\fR)
+.SH SYNOPSIS
+.LP
+.nf
+ctags \fB[\fR\(mia\fB] [\fR\(mif \fItagsfile\fB] \fIpathname\fR...
+.P
+ctags \(mix \fIpathname\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR ctags
+utility shall be provided on systems that support the the Software
+Development Utilities option, and either or both of the C-Language
+Development Utilities option and FORTRAN Development Utilities option. On
+other systems, it is optional.
+.P
+The
+.IR ctags
+utility shall write a
+.IR tagsfile
+or an index of objects from C-language or FORTRAN source files
+specified by the
+.IR pathname
+operands. The
+.IR tagsfile
+shall list the locators of language-specific objects within the source
+files. A locator consists of a name, pathname, and either a search
+pattern
+or a line number that can be used in searching for the object
+definition. The objects that shall be recognized are specified in the
+EXTENDED DESCRIPTION section.
+.SH OPTIONS
+The
+.IR ctags
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\fP" 10
+Append to
+.IR tagsfile .
+.IP "\fB\(mif\ \fItagsfile\fR" 10
+Write the object locator lists into
+.IR tagsfile
+instead of the default file named
+.BR tags
+in the current directory.
+.IP "\fB\(mix\fP" 10
+Produce a list of object names, the line number, and filename in which
+each is defined, as well as the text of that line, and write this to
+the standard output. A
+.IR tagsfile
+shall not be created when
+.BR \(mix
+is specified.
+.SH OPERANDS
+The following
+.IR pathname
+operands are supported:
+.IP "\fIfile\fB.c\fR" 10
+Files with basenames ending with the
+.BR .c
+suffix shall be treated as C-language source code. Such files that are
+not valid input to
+.IR c99
+produce unspecified results.
+.IP "\fIfile\fB.h\fR" 10
+Files with basenames ending with the
+.BR .h
+suffix shall be treated as C-language source code. Such files that are
+not valid input to
+.IR c99
+produce unspecified results.
+.IP "\fIfile\fB.f\fR" 10
+Files with basenames ending with the
+.BR .f
+suffix shall be treated as FORTRAN-language source code. Such files
+that are not valid input to
+.IR fort77
+produce unspecified results.
+.P
+The handling of other files is implementation-defined.
+.SH STDIN
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be text files containing source code in the
+language indicated by the operand filename suffixes.
+.br
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR ctags :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the order in which output is sorted for the
+.BR \(mix
+option. The POSIX locale determines the order in which the
+.IR tagsfile
+is written.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files). When processing
+C-language source code, if the locale is not compatible with the C
+locale described by the ISO\ C standard, the results are unspecified.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The list of object name information produced by the
+.BR \(mix
+option shall be written to standard output in the following format:
+.sp
+.RS 4
+.nf
+\fB
+"%s %d %s %s", <\fIobject-name\fR>, <\fIline-number\fR>, <\fIfilename\fR>, <\fItext\fR>
+.fi \fR
+.P
+.RE
+.P
+where <\fItext\fP> is the text of line <\fIline-number\fP> of file
+<\fIfilename\fP>.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+When the
+.BR \(mix
+option is not specified, the format of the output file shall be:
+.sp
+.RS 4
+.nf
+\fB
+"%s\et%s\et/%s/\en", <\fIidentifier\fR>, <\fIfilename\fR>, <\fIpattern\fR>
+.fi \fR
+.P
+.RE
+.P
+where <\fIpattern\fP> is a search pattern that could be used by an
+editor to find the defining instance of <\fIidentifier\fP> in
+<\fIfilename\fP> (where
+.IR "defining instance"
+is indicated by the declarations listed in the EXTENDED DESCRIPTION).
+.P
+An optional
+<circumflex>
+(\c
+.BR '^' )
+can be added as a prefix to <\fIpattern\fP>, and an optional
+<dollar-sign>
+can be appended to <\fIpattern\fP> to indicate that the pattern is
+anchored to the beginning (end) of a line of text. Any
+<slash>
+or
+<backslash>
+characters in <\fIpattern\fP> shall be preceded by a
+<backslash>
+character. The anchoring
+<circumflex>,
+<dollar-sign>,
+and escaping
+<backslash>
+characters shall not be considered part of the search pattern. All other
+characters in the search pattern shall be considered literal characters.
+.br
+.P
+An alternative format is:
+.sp
+.RS 4
+.nf
+\fB
+"%s\et%s\et?%s?\en", <\fIidentifier\fR>, <\fIfilename\fR>, <\fIpattern\fR>
+.fi \fR
+.P
+.RE
+.P
+which is identical to the first format except that
+<slash>
+characters in <\fIpattern\fP> shall not be preceded by escaping
+<backslash>
+characters, and
+<question-mark>
+characters in <\fIpattern\fP> shall be preceded by
+<backslash>
+characters.
+.P
+A second alternative format is:
+.sp
+.RS 4
+.nf
+\fB
+"%s\et%s\et%d\en", <\fIidentifier\fR>, <\fIfilename\fR>, <\fIlineno\fR>
+.fi \fR
+.P
+.RE
+.P
+where <\fIlineno\fP> is a decimal line number that could be used by an
+editor to find <\fIidentifier\fP> in <\fIfilename\fP>.
+.P
+Neither alternative format shall be produced by
+.IR ctags
+when it is used as described by POSIX.1\(hy2008, but the standard utilities that
+process tags files shall be able to process those formats as well as
+the first format.
+.P
+In any of these formats, the file shall be sorted by identifier, based
+on the collation sequence in the POSIX locale.
+.SH "EXTENDED DESCRIPTION"
+If the operand identifies C-language source, the
+.IR ctags
+utility shall attempt to produce an output line for each of the
+following objects:
+.IP " *" 4
+Function definitions
+.IP " *" 4
+Type definitions
+.IP " *" 4
+Macros with arguments
+.P
+It may also produce output for any of the following objects:
+.IP " *" 4
+Function prototypes
+.IP " *" 4
+Structures
+.IP " *" 4
+Unions
+.IP " *" 4
+Global variable definitions
+.IP " *" 4
+Enumeration types
+.IP " *" 4
+Macros without arguments
+.IP " *" 4
+.BR #define
+statements
+.IP " *" 4
+.BR #line
+statements
+.P
+Any
+.BR #if
+and
+.BR #ifdef
+statements shall produce no output. The tag
+.BR main
+is treated specially in C programs. The tag formed shall be created by
+prefixing
+.BR M
+to the name of the file, with the trailing
+.BR .c ,
+and leading pathname components (if any) removed.
+.P
+On systems that do not support the C-Language Development Utilities
+option,
+.IR ctags
+produces unspecified results for C-language source code files. It should
+write to standard error a message identifying this condition and cause
+a non-zero exit status to be produced.
+.P
+If the operand identifies FORTRAN source, the
+.IR ctags
+utility shall produce an output line for each function definition. It
+may also produce output for any of the following objects:
+.IP " *" 4
+Subroutine definitions
+.IP " *" 4
+COMMON statements
+.IP " *" 4
+PARAMETER statements
+.IP " *" 4
+DATA and BLOCK DATA statements
+.IP " *" 4
+Statement numbers
+.P
+On systems that do not support the FORTRAN Development Utilities
+option,
+.IR ctags
+produces unspecified results for FORTRAN source code files. It should
+write to standard error a message identifying this condition and cause
+a non-zero exit status to be produced.
+.P
+It is implementation-defined what other objects (including duplicate
+identifiers) produce output.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The output with
+.BR \(mix
+is meant to be a simple index that can be written out as an off-line
+readable function index. If the input files to
+.IR ctags
+(such as
+.BR .c
+files) were not created using the same locale as that in effect when
+.IR ctags
+.BR \(mix
+is run, results might not be as expected.
+.P
+The description of C-language processing says ``attempts to'' because
+the C language can be greatly confused, especially through the use of
+.BR #define s,
+and this utility would be of no use if the real C preprocessor were run
+to identify them. The output from
+.IR ctags
+may be fooled and incorrect for various constructs.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The option list was significantly reduced from that provided by
+historical implementations. The
+.BR \(miF
+option was omitted as redundant, since it is the default. The
+.BR \(miB
+option was omitted as being of very limited usefulness. The
+.BR \(mit
+option was omitted since the recognition of
+.BR typedef s
+is now required for C source files. The
+.BR \(miu
+option was omitted because the update function was judged to be not
+only inefficient, but also rarely needed.
+.P
+An early proposal included a
+.BR \(miw
+option to suppress warning diagnostics. Since the types of such
+diagnostics could not be described, the option was omitted as being not
+useful.
+.P
+The text for
+.IR LC_CTYPE
+about compatibility with the C locale acknowledges that the ISO\ C standard
+imposes requirements on the locale used to process C source. This could
+easily be a superset of that known as ``the C locale'' by way of
+implementation extensions, or one of a few alternative locales for
+systems supporting different codesets. No statement is made for FORTRAN
+because the ANSI\ X3.9\(hy1978 standard (FORTRAN 77) does not (yet) define a similar locale
+concept. However, a general rule in this volume of POSIX.1\(hy2008 is that any time that locales
+do not match (preparing a file for one locale and processing it in
+another), the results are suspect.
+.P
+The collation sequence of the tags file is not affected by
+.IR LC_COLLATE
+because it is typically not used by human readers, but only by programs
+such as
+.IR vi
+to locate the tag within the source files. Using the POSIX locale
+eliminates some of the problems of coordinating locales between the
+.IR ctags
+file creator and the
+.IR vi
+file reader.
+.P
+Historically, the tags file has been used only by
+.IR ex
+and
+.IR vi .
+However, the format of the tags file has been published to encourage
+other programs to use the tags in new ways. The format allows either
+patterns or line numbers to find the identifiers because the historical
+.IR vi
+recognizes either. The
+.IR ctags
+utility does not produce the format using line numbers because it is
+not useful following any source file changes that add or delete lines.
+The documented search patterns match historical practice. It should be
+noted that literal leading
+<circumflex>
+or trailing
+<dollar-sign>
+characters in the search pattern will only behave correctly if anchored
+to the beginning of the line or end of the line by an additional
+<circumflex>
+or
+<dollar-sign>
+character.
+.P
+Historical implementations also understand the objects used by the
+languages Pascal and sometimes LISP, and they understand the C source
+output by
+.IR lex
+and
+.IR yacc .
+The
+.IR ctags
+utility is not required to accommodate these languages, although
+implementors are encouraged to do so.
+.P
+The following historical option was not specified, as
+.IR vgrind
+is not included in this volume of POSIX.1\(hy2008:
+.IP "\fB\(miv\fP" 10
+If the
+.BR \(miv
+flag is given, an index of the form expected by
+.IR vgrind
+is produced on the standard output. This listing contains the function
+name, filename, and page number (assuming 64-line pages). Since the
+output is sorted into lexicographic order, it may be desired to run the
+output through
+.IR sort
+.BR \(mif .
+Sample use:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+ctags \(miv files | sort \(mif > index vgrind \(mix index
+.fi \fR
+.P
+.RE
+.RE
+.P
+The special treatment of the tag
+.BR main
+makes the use of
+.IR ctags
+practical in directories with more than one program.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIc99\fR\^",
+.IR "\fIfort77\fR\^",
+.IR "\fIvi\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

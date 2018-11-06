@@ -1,0 +1,145 @@
+'\" et
+.TH sys_wait.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sys/wait.h
+\(em declarations for waiting
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/wait.h>
+.fi
+.SH DESCRIPTION
+The
+.IR <sys/wait.h> 
+header shall define the following symbolic constants for use with
+\fIwaitpid\fR():
+.IP WCONTINUED 14
+Report status of continued child process.
+.IP WNOHANG 14
+Do not hang if no status is available; return immediately.
+.IP WUNTRACED 14
+Report status of stopped child process.
+.P
+The
+.IR <sys/wait.h> 
+header shall define the following macros for analysis of process status
+values:
+.IP WEXITSTATUS 14
+Return exit status.
+.IP WIFCONTINUED 14
+True if child has been continued.
+.IP WIFEXITED 14
+True if child exited normally.
+.IP WIFSIGNALED 14
+True if child exited due to uncaught signal.
+.IP WIFSTOPPED 14
+True if child is currently stopped.
+.IP WSTOPSIG 14
+Return signal number that caused process to stop.
+.IP WTERMSIG 14
+Return signal number that caused process to terminate.
+.P
+The
+.IR <sys/wait.h> 
+header shall define the following symbolic constants as possible values
+for the
+.IR options
+argument to
+\fIwaitid\fR():
+.IP WEXITED 14
+Wait for processes that have exited.
+.IP WNOWAIT 14
+Keep the process whose status is returned in
+.IR infop
+in a waitable state.
+.IP WSTOPPED 14
+Status is returned for any child that has stopped upon receipt of a
+signal.
+.P
+The
+WCONTINUED
+and WNOHANG constants, described above for
+\fIwaitpid\fR(),
+can also be used with
+\fIwaitid\fR().
+.P
+The type
+.BR idtype_t
+shall be defined as an enumeration type whose possible values shall
+include at least the following:
+P_ALL
+P_PGID
+P_PID
+.P
+The
+.IR <sys/wait.h> 
+header shall define the
+.BR id_t
+and
+.BR pid_t
+types as described in
+.IR <sys/types.h> .
+.P
+The
+.IR <sys/wait.h> 
+header shall define the
+.BR siginfo_t
+type as described in
+.IR <signal.h> .
+.P
+Inclusion of the
+.IR <sys/wait.h> 
+header may also make visible
+all symbols from
+.IR <signal.h> .
+.P
+The following shall be declared as functions and may also be defined
+as macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+pid_t  wait(int *);
+int    waitid(idtype_t, id_t, siginfo_t *, int);
+pid_t  waitpid(pid_t, int *, int);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<signal.h>\fP",
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIwait\fR\^(\|)",
+.IR "\fIwaitid\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

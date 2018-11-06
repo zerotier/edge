@@ -1,0 +1,202 @@
+'\" et
+.TH UTIME "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+utime
+\(em set file access and modification times
+.SH SYNOPSIS
+.LP
+.nf
+#include <utime.h>
+.P
+int utime(const char *\fIpath\fP, const struct utimbuf *\fItimes\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIutime\fR()
+function shall set the access and modification times of the file named
+by the
+.IR path
+argument.
+.P
+If
+.IR times
+is a null pointer, the access and modification times of the file shall
+be set to the current time. The effective user ID of the process shall
+match the owner of the file, or the process has write permission to the
+file or has appropriate privileges, to use
+\fIutime\fR()
+in this manner.
+.P
+If
+.IR times
+is not a null pointer,
+.IR times
+shall be interpreted as a pointer to a
+.BR utimbuf
+structure and the access and modification times shall be set to the
+values contained in the designated structure. Only a process with
+the effective user ID equal to the user ID of the file or a process with
+appropriate privileges may use
+\fIutime\fR()
+this way.
+.P
+The
+.BR utimbuf
+structure is defined in the
+.IR <utime.h> 
+header. The times in the structure
+.BR utimbuf
+are measured in seconds since the Epoch.
+.P
+Upon successful completion, the
+\fIutime\fR()
+function shall mark the last file status change timestamp
+for update; see
+.IR <sys/stat.h> .
+.SH "RETURN VALUE"
+Upon successful completion, 0 shall be returned. Otherwise, \(mi1
+shall be returned and
+.IR errno
+shall be set to indicate the error, and the file times shall not be
+affected.
+.SH ERRORS
+The
+\fIutime\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Search permission is denied by a component of the path prefix; or the
+.IR times
+argument is a null pointer and the effective user ID of the process
+does not match the owner of the file, the process does not have write
+permission for the file, and the process does not have appropriate
+privileges.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.TP
+.BR EPERM
+The
+.IR times
+argument is not a null pointer and the effective user ID of the calling
+process does not match the owner of the file and the calling process
+does not have appropriate privileges.
+.TP
+.BR EROFS
+The file system containing the file is read-only.
+.br
+.P
+The
+\fIutime\fR()
+function may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Since the
+.BR utimbuf
+structure only contains
+.BR time_t
+variables and is not accurate to fractions of a second,
+applications should use the
+\fIutimensat\fR()
+function instead of the obsolescent
+\fIutime\fR()
+function.
+.SH RATIONALE
+The
+.IR actime
+structure member must be present so that an application may set it,
+even though an implementation may ignore it and not change the last data
+access timestamp on the file. If an application intends to leave one of
+the times of a file unchanged while changing the other, it should use
+\fIstat\fR()
+or
+\fIfstat\fR()
+to retrieve the file's
+.IR st_atim
+and
+.IR st_mtim
+parameters, set
+.IR actime
+and
+.IR modtime
+in the buffer, and change one of them before making the
+\fIutime\fR()
+call.
+.SH "FUTURE DIRECTIONS"
+The
+\fIutime\fR()
+function may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIfstat\fR\^(\|)",
+.IR "\fIfstatat\fR\^(\|)",
+.IR "\fIfutimens\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_stat.h>\fP",
+.IR "\fB<utime.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

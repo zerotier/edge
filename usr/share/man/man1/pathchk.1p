@@ -1,0 +1,426 @@
+'\" et
+.TH PATHCHK "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pathchk
+\(em check pathnames
+.SH SYNOPSIS
+.LP
+.nf
+pathchk \fB[\fR\(mip\fB] [\fR\(miP\fB] \fIpathname\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR pathchk
+utility shall check that one or more pathnames are valid (that is, they
+could be used to access or create a file without causing syntax errors)
+and portable (that is, no filename truncation results). More
+extensive portability checks are provided by the
+.BR \(mip
+and
+.BR \(miP
+options.
+.P
+By default, the
+.IR pathchk
+utility shall check each component of each
+.IR pathname
+operand based on the underlying file system. A diagnostic shall be
+written for each
+.IR pathname
+operand that:
+.IP " *" 4
+Is longer than
+{PATH_MAX}
+bytes (see
+.BR "Pathname Variable Values"
+in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<limits.h>\fP")
+.IP " *" 4
+Contains any component longer than
+{NAME_MAX}
+bytes in its containing directory
+.IP " *" 4
+Contains any component in a directory that is not searchable
+.IP " *" 4
+Contains any byte sequence that is not valid in its
+containing directory
+.P
+The format of the diagnostic message is not specified, but shall
+indicate the error detected and the corresponding
+.IR pathname
+operand.
+.P
+It shall not be considered an error if one or more components of a
+.IR pathname
+operand do not exist as long as a file matching the pathname specified
+by the missing components could be created that does not violate any of
+the checks specified above.
+.SH OPTIONS
+The
+.IR pathchk
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(mip\fP" 10
+Instead of performing checks based on the underlying file system, write
+a diagnostic for each
+.IR pathname
+operand that:
+.RS 10 
+.IP " *" 4
+Is longer than
+{_POSIX_PATH_MAX}
+bytes (see
+.BR "Minimum Values"
+in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<limits.h>\fP")
+.IP " *" 4
+Contains any component longer than
+{_POSIX_NAME_MAX}
+bytes
+.IP " *" 4
+Contains any character in any component that is not in the portable
+filename character set
+.RE
+.IP "\fB\(miP\fP" 10
+Write a diagnostic for each
+.IR pathname
+operand that:
+.RS 10 
+.IP " *" 4
+Contains a component whose first character is the
+<hyphen>
+character
+.IP " *" 4
+Is empty
+.RE
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIpathname\fR" 10
+A pathname to be checked.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR pathchk :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+the precedence of internationalization variables used to determine the
+values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All
+.IR pathname
+operands passed all of the checks.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.IR test
+utility can be used to determine whether a given pathname names an
+existing file; it does not, however, give any indication of whether or
+not any component of the pathname was truncated in a directory where
+the _POSIX_NO_TRUNC feature is not in effect. The
+.IR pathchk
+utility does not check for file existence; it performs checks to
+determine whether a pathname does exist or could be created with no
+pathname component truncation.
+.P
+The
+.IR noclobber
+option in the shell (see the
+.IR "\fIset\fR\^"
+special built-in) can be used to atomically create a file. As with all
+file creation semantics in the System Interfaces volume of POSIX.1\(hy2008, it guarantees atomic creation,
+but still depends on applications to agree on conventions and cooperate
+on the use of files after they have been created.
+.P
+To verify that a pathname meets the requirements of filename
+portability, applications should use both the
+.BR \(mip
+and
+.BR \(miP
+options together.
+.SH EXAMPLES
+To verify that all pathnames in an imported data interchange archive
+are legitimate and unambiguous on the current system:
+.sp
+.RS 4
+.nf
+\fB
+# This example assumes that no pathnames in the archive
+# contain <newline> characters.
+pax \(mif archive | sed \(mie 's/[^[:alnum:]]/\e\e&/g' | xargs pathchk \(mi\|\(mi
+if [ $? \(mieq 0 ]
+then
+    pax \(mir \(mif archive
+else
+    echo Investigate problems before importing files.
+    exit 1
+fi
+.fi \fR
+.P
+.RE
+.P
+To verify that all files in the current directory hierarchy could be
+moved to any system conforming to the System Interfaces volume of POSIX.1\(hy2008 that also supports the
+.IR pax
+utility:
+.sp
+.RS 4
+.nf
+\fB
+find . \(miexec pathchk \(mip \(miP {} +
+if [ $? \(mieq 0 ]
+then
+    pax \(miw \(mif ../archive .
+else
+    echo Portable archive cannot be created.
+    exit 1
+fi
+.fi \fR
+.P
+.RE
+.P
+To verify that a user-supplied pathname names a readable file and that
+the application can create a file extending the given path without
+truncation and without overwriting any existing file:
+.sp
+.RS 4
+.nf
+\fB
+case $\(mi in
+    *C*)    reset="";;
+    *)      reset="set +C"
+            set \(miC;;
+esac
+test \(mir "$path" && pathchk "$path.out" &&
+    rm "$path.out" > "$path.out"
+if [ $? \(mine 0 ]; then
+    printf "%s: %s not found or %s.out fails \e
+creation checks.\en" $0 "$path$path"
+    $reset    # Reset the noclobber option in case a trap
+              # on EXIT depends on it.
+    exit 1
+fi
+$reset
+PROCESSING < "$path" > "$path.out"
+.fi \fR
+.P
+.RE
+.P
+The following assumptions are made in this example:
+.IP " 1." 4
+.BR PROCESSING
+represents the code that is used by the application to use
+.BR $path
+once it is verified that
+.BR $path.out
+works as intended.
+.IP " 2." 4
+The state of the
+.IR noclobber
+option is unknown when this code is invoked and should be set on exit
+to the state it was in when this code was invoked. (The
+.BR reset
+variable is used in this example to restore the initial state.)
+.IP " 3." 4
+Note the usage of:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+rm "$path.out" > "$path.out"
+.fi \fR
+.P
+.RE
+.IP " a." 4
+The
+.IR pathchk
+command has already verified, at this point, that
+.BR $path.out
+is not truncated.
+.IP " b." 4
+With the
+.IR noclobber
+option set, the shell verifies that
+.BR $path.out
+does not already exist before invoking
+.IR rm .
+.IP " c." 4
+If the shell succeeded in creating
+.BR $path.out ,
+.IR rm
+removes it so that the application can create the file again in the
+.BR PROCESSING
+step.
+.IP " d." 4
+If the
+.BR PROCESSING
+step wants the file to exist already when it is invoked, the:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+rm "$path.out" > "$path.out"
+.fi \fR
+.P
+.RE
+.P
+should be replaced with:
+.sp
+.RS 4
+.nf
+\fB
+> "$path.out"
+.fi \fR
+.P
+.RE
+.P
+which verifies that the file did not already exist, but leaves
+.BR $path.out
+in place for use by
+.BR PROCESSING .
+.RE
+.RE
+.SH RATIONALE
+The
+.IR pathchk
+utility was new for the ISO\ POSIX\(hy2:\|1993 standard. It, along with the
+.IR set
+.BR \(miC (\c
+.IR noclobber )
+option added to the shell, replaces the
+.IR mktemp ,
+.IR validfnam ,
+and
+.IR create
+utilities that appeared in early proposals. All of these utilities were
+attempts to solve several common problems:
+.IP " *" 4
+Verify the validity (for several different definitions of ``valid'') of
+a pathname supplied by a user, generated by an application, or imported
+from an external source.
+.IP " *" 4
+Atomically create a file.
+.IP " *" 4
+Perform various string handling functions to generate a temporary
+filename.
+.P
+The
+.IR create
+utility, included in an early proposal, provided checking and atomic
+creation in a single invocation of the utility; these are orthogonal
+issues and need not be grouped into a single utility. Note that the
+.IR noclobber
+option also provides a way of creating a lock for process
+synchronization; since it provides an atomic
+.IR create ,
+there is no race between a test for existence and the following
+creation if it did not exist.
+.P
+Having a function like
+\fItmpnam\fR()
+in the ISO\ C standard is important in many high-level languages. The shell
+programming language, however, has built-in string manipulation
+facilities, making it very easy to construct temporary filenames. The
+names needed obviously depend on the application, but are frequently of
+a form similar to:
+.sp
+.RS 4
+.nf
+\fB
+\fB$TMPDIR/\fIapplication_abbreviation\fB$$.\fIsuffix\fR
+.fi \fR
+.P
+.RE
+.P
+In cases where there is likely to be contention for a given suffix, a
+simple shell
+.BR for
+or
+.BR while
+loop can be used with the shell
+.IR noclobber
+option to create a file without risk of collisions, as long as
+applications trying to use the same filename name space are cooperating
+on the use of files after they have been created.
+.P
+For historical purposes,
+.BR \(mip
+does not check for the use of the
+<hyphen>
+character as the first character in a component of the pathname, or for
+an empty
+.IR pathname
+operand.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.7" ", " "Redirection",
+.IR "\fIset\fR\^",
+.IR "\fItest\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+.IR "\fB<limits.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

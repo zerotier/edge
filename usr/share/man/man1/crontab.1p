@@ -1,0 +1,360 @@
+'\" et
+.TH CRONTAB "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+crontab
+\(em schedule periodic background work
+.SH SYNOPSIS
+.LP
+.nf
+crontab \fB[\fIfile\fB]\fR
+.P
+crontab \fB[\fR\(mie\||\(mil|\(mir\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR crontab
+utility shall create, replace,
+or edit a user's crontab entry;
+a crontab entry is a list of commands and the times at which they
+shall be executed. The new crontab entry can be input by specifying
+.IR file
+or input from standard input if no
+.IR file
+operand is specified,
+or by using an editor, if
+.BR \(mie
+is specified.
+.P
+Upon execution of a command from a crontab entry, the implementation
+shall supply a default environment, defining at least the following
+environment variables:
+.IP "\fIHOME\fP" 10
+A pathname of the user's home directory.
+.IP "\fILOGNAME\fP" 10
+The user's login name.
+.IP "\fIPATH\fP" 10
+A string representing a search path guaranteed to find all of the
+standard utilities.
+.IP "\fISHELL\fP" 10
+A pathname of the command interpreter. When
+.IR crontab
+is invoked as specified by this volume of POSIX.1\(hy2008, the value shall be a pathname for
+.IR sh .
+.P
+The values of these variables when
+.IR crontab
+is invoked as specified by this volume of POSIX.1\(hy2008 shall not affect the default
+values provided when the scheduled command is run.
+.P
+If standard output and standard error are not redirected by commands
+executed from the crontab entry, any generated output or errors shall
+be mailed, via an implementation-defined method, to the user.
+.P
+Users shall be permitted to use
+.IR crontab
+if their names appear in the file
+.BR cron.allow
+which is located in an implementation-defined directory.
+If that file does not exist, the file
+.BR cron.deny ,
+which is located in an implementation-defined directory,
+shall be checked to determine whether the user shall be denied access to
+.IR crontab .
+If neither file exists, only a process with appropriate privileges shall be
+allowed to submit a job. If only
+.BR cron.deny
+exists and is empty, global usage shall be permitted. The
+.BR cron.allow
+and
+.BR cron.deny
+files shall consist of one user name per line.
+.SH OPTIONS
+The
+.IR crontab
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mie\fP" 10
+Edit a copy of the invoking user's crontab entry, or create an empty
+entry to edit if the crontab entry does not exist. When editing is
+complete, the entry shall be installed as the user's crontab entry.
+.IP "\fB\(mil\fP" 10
+(The letter ell.) List the invoking user's crontab entry.
+.IP "\fB\(mir\fP" 10
+Remove the invoking user's crontab entry.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+The pathname of a file that contains specifications, in the format
+defined in the INPUT FILES section, for crontab entries.
+.SH STDIN
+See the INPUT FILES section.
+.SH "INPUT FILES"
+In the POSIX locale, the user or application shall ensure that a
+crontab entry is a text file consisting of lines of six fields each.
+The fields shall be separated by
+<blank>
+characters. The first five fields shall be integer patterns that specify
+the following:
+.IP " 1." 4
+Minute [0,59]
+.IP " 2." 4
+Hour [0,23]
+.IP " 3." 4
+Day of the month [1,31]
+.IP " 4." 4
+Month of the year [1,12]
+.IP " 5." 4
+Day of the week ([0,6] with 0=Sunday)
+.P
+Each of these patterns can be either an
+<asterisk>
+(meaning all valid values), an element, or a list of elements separated by
+<comma>
+characters. An element shall be either a number or two numbers separated
+by a
+<hyphen>
+(meaning an inclusive range). The specification of days can be made by
+two fields (day of the month and day of the week). If month, day of
+month, and day of week are all
+<asterisk>
+characters, every day shall be matched. If either the month or day of
+month is specified as an element or list, but the day of week is an
+<asterisk>,
+the month and day of month fields shall specify the days that match. If
+both month and day of month are specified as an
+<asterisk>,
+but day of week is an element or list, then only the specified days of the
+week match. Finally, if either the month or day of month is specified as
+an element or list, and the day of week is also specified as an element
+or list, then any day matching either the month and day of month, or
+the day of week, shall be matched.
+.P
+The sixth field of a line in a crontab entry is a string that shall be
+executed by
+.IR sh
+at the specified times. A
+<percent-sign>
+character in this field shall be translated to a
+<newline>.
+Any character preceded by a
+<backslash>
+(including the
+.BR '%' )
+shall cause that character to be treated literally. Only the first line
+(up to a
+.BR '%' 
+or end-of-line) of the command field shall be executed by the command
+interpreter. The other lines shall be made available to the command as
+standard input.
+.P
+Blank lines and those whose first non-\c
+<blank>
+is
+.BR '#' 
+shall be ignored.
+.P
+The text files
+.BR cron.allow
+and
+.BR cron.deny ,
+which are located in an implementation-defined directory,
+shall contain zero or more user names, one per line, of users who are,
+respectively, authorized or denied access to the service underlying the
+.IR crontab
+utility.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR crontab :
+.IP "\fIEDITOR\fP" 10
+Determine the editor to be invoked when the
+.BR \(mie
+option is specified. The default editor shall be
+.IR vi .
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+If the
+.BR \(mil
+option is specified, the crontab entry shall be written to the standard
+output.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+The user's crontab entry is not submitted, removed,
+edited,
+or listed.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The format of the crontab entry shown here is guaranteed only for the
+POSIX locale. Other cultures may be supported with substantially
+different interfaces, although implementations are encouraged to
+provide comparable levels of functionality.
+.P
+The default settings of the
+.IR HOME ,
+.IR LOGNAME ,
+.IR PATH ,
+and
+.IR SHELL
+variables that are given to the scheduled job are not affected by the
+settings of those variables when
+.IR crontab
+is run; as stated, they are defaults. The text about ``invoked as
+specified by this volume of POSIX.1\(hy2008'' means that the implementation may provide
+extensions that allow these variables to be affected at runtime, but
+that the user has to take explicit action in order to access the
+extension, such as give a new option flag or modify the format of the
+crontab entry.
+.P
+A typical user error is to type only
+.IR crontab ;
+this causes the system to wait for the new crontab entry on standard
+input. If end-of-file is typed (generally <control>\(hyD), the crontab
+entry is replaced by an empty file. In this case, the user should type
+the interrupt character, which prevents the crontab entry from being
+replaced.
+.SH EXAMPLES
+.IP " 1." 4
+Clean up
+.BR core
+files every weekday morning at 3:15 am:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+15 3 * * 1-5 find "$HOME" \(miname core \(miexec rm \(mif {} + 2>/dev/null
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+Mail a birthday greeting:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+0 12 14 2 * mailx john%Happy Birthday!%Time for lunch.
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+As an example of specifying the two types of days:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+0 0 1,15 * 1
+.fi \fR
+.P
+.RE
+.P
+would run a command on the first and fifteenth of each month, as well
+as on every Monday. To specify days by only one field, the other field
+should be set to
+.BR '*' ;
+for example:
+.sp
+.RS 4
+.nf
+\fB
+0 0 * * 1
+.fi \fR
+.P
+.RE
+.P
+would run a command only on Mondays.
+.RE
+.SH RATIONALE
+All references to a
+.IR cron
+daemon and to
+.IR cron
+.IR files
+have been omitted. Although historical implementations have used this
+arrangement, there is no reason to limit future implementations.
+.P
+This description of
+.IR crontab
+is designed to support only users with normal privileges. The format of
+the input is based on the System V
+.IR crontab ;
+however, there is no requirement here that the actual system database
+used by the
+.IR cron
+daemon (or a similar mechanism) use this format internally. For
+example, systems derived from BSD are likely to have an additional
+field appended that indicates the user identity to be used when the job
+is submitted.
+.P
+The
+.BR \(mie
+option was adopted from the SVID as a user convenience, although it
+does not exist in all historical implementations.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIat\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

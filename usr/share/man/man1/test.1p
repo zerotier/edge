@@ -1,0 +1,1058 @@
+'\" et
+.TH TEST "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+test
+\(em evaluate expression
+.SH SYNOPSIS
+.LP
+.nf
+test \fB[\fIexpression\fB]\fR
+.P
+[ \fB[\fIexpression\fB]\fR ]
+.fi
+.SH DESCRIPTION
+The
+.IR test
+utility shall evaluate the
+.IR expression
+and indicate the result of the evaluation by its exit status. An exit
+status of zero indicates that the expression evaluated as true and an
+exit status of 1 indicates that the expression evaluated as false.
+.P
+In the second form of the utility, which uses
+.BR \(dq[]\(dq 
+rather than
+.IR test ,
+the application shall ensure that the square brackets are separate
+arguments.
+.SH OPTIONS
+The
+.IR test
+utility shall not recognize the
+.BR \(dq\(mi\|\(mi\(dq 
+argument in the manner specified by Guideline 10 in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+No options shall be supported.
+.SH OPERANDS
+The application shall ensure that all operators and elements of
+primaries are presented as separate arguments to the
+.IR test
+utility.
+.P
+The following primaries can be used to construct
+.IR expression :
+.IP "\fB\(mib\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to en existing directory entry for a block special file.
+False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a block
+special file.
+.IP "\fB\(mic\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a character special file.
+False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a character
+special file.
+.IP "\fB\(mid\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a directory. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a
+directory.
+.IP "\fB\(mie\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry. False if
+.IR pathname
+cannot be resolved.
+.IP "\fB\(mif\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a regular file. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a
+regular file.
+.IP "\fB\(mig\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a file that has its
+set-group-ID flag set. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that does not have
+its set-group-ID flag set.
+.IP "\fB\(mih\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a symbolic link. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a symbolic
+link. If the final component of
+.IR pathname
+is a symbolic link, that symbolic link is not followed.
+.IP "\fB\(miL\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a symbolic link. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a symbolic
+link. If the final component of
+.IR pathname
+is a symbolic link, that symbolic link is not followed.
+.IP "\fB\(min\ \fIstring\fR" 10
+True if the length of
+.IR string
+is non-zero; otherwise, false.
+.IP "\fB\(mip\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a FIFO. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a FIFO.
+.IP "\fB\(mir\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a file for which permission
+to read from the file will be granted, as defined in
+.IR "Section 1.1.1.4" ", " "File Read" ", " "Write" ", " "and Creation".
+False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file for which permission
+to read from the file will not be granted.
+.IP "\fB\(miS\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a socket. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that is not a socket.
+.IP "\fB\(mis\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a file that has a size
+greater than zero. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that does not have
+a size greater than zero.
+.IP "\fB\(mit\ \fIfile_descriptor\fR" 10
+.br
+True if file descriptor number
+.IR file_descriptor
+is open and is associated with a terminal. False if
+.IR file_descriptor
+is not a valid file descriptor number, or if file descriptor number
+.IR file_descriptor
+is not open, or if it is open but is not associated with a terminal.
+.IP "\fB\(miu\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a file that has its
+set-user-ID flag set. False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file that does not have
+its set-user-ID flag set.
+.IP "\fB\(miw\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a file for which permission
+to write to the file will be granted, as defined in
+.IR "Section 1.1.1.4" ", " "File Read" ", " "Write" ", " "and Creation".
+False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file for which permission
+to write to the file will not be granted.
+.IP "\fB\(mix\ \fIpathname\fR" 10
+True if
+.IR pathname
+resolves to an existing directory entry for a file for which permission
+to execute the file (or search it, if it is a directory) will be granted,
+as defined in
+.IR "Section 1.1.1.4" ", " "File Read" ", " "Write" ", " "and Creation".
+False if
+.IR pathname
+cannot be resolved, or if
+.IR pathname
+resolves to an existing directory entry for a file for which permission
+to execute (or search) the file will not be granted.
+.IP "\fB\(miz\ \fIstring\fR" 10
+True if the length of string
+.IR string
+is zero; otherwise, false.
+.IP "\fIstring\fR" 10
+True if the string
+.IR string
+is not the null string; otherwise, false.
+.IP "\fIs1\fB\ \(eq\ \fIs2\fR" 10
+True if the strings
+.IR s1
+and
+.IR s2
+are identical; otherwise, false.
+.IP "\fIs1\fB\ !=\ \fIs2\fR" 10
+True if the strings
+.IR s1
+and
+.IR s2
+are not identical; otherwise, false.
+.IP "\fIn1\fB\ \(mieq\ \fIn2\fR" 10
+True if the integers
+.IR n1
+and
+.IR n2
+are algebraically equal; otherwise, false.
+.IP "\fIn1\fB\ \(mine\ \fIn2\fR" 10
+True if the integers
+.IR n1
+and
+.IR n2
+are not algebraically equal; otherwise, false.
+.IP "\fIn1\fB\ \(migt\ \fIn2\fR" 10
+True if the integer
+.IR n1
+is algebraically greater than the integer
+.IR n2 ;
+otherwise, false.
+.IP "\fIn1\fB\ \(mige\ \fIn2\fR" 10
+True if the integer
+.IR n1
+is algebraically greater than or equal to the integer
+.IR n2 ;
+otherwise, false.
+.IP "\fIn1\fB\ \(milt\ \fIn2\fR" 10
+True if the integer
+.IR n1
+is algebraically less than the integer
+.IR n2 ;
+otherwise, false.
+.IP "\fIn1\fB\ \(mile\ \fIn2\fR" 10
+True if the integer
+.IR n1
+is algebraically less than or equal to the integer
+.IR n2 ;
+otherwise, false.
+.IP "\fIexpression1\fB\ \(mia\ \fIexpression2\fR" 10
+.br
+True if both
+.IR expression1
+and
+.IR expression2
+are true; otherwise, false. The
+.BR \(mia
+binary primary is left associative. It has a higher precedence than
+.BR \(mio .
+.IP "\fIexpression1\fB\ \(mio\ \fIexpression2\fR" 10
+.br
+True if either
+.IR expression1
+or
+.IR expression2
+is true; otherwise, false. The
+.BR \(mio
+binary primary is left associative.
+.P
+With the exception of the
+.BR \(mih
+.IR pathname
+and
+.BR \(miL
+.IR pathname
+primaries, if a
+.IR pathname
+argument is a symbolic link,
+.IR test
+shall evaluate the expression by resolving the symbolic link and using
+the file referenced by the link.
+.P
+These primaries can be combined with the following operators:
+.IP "\fB!\ \fIexpression\fR" 10
+True if
+.IR expression
+is false. False if
+.IR expression
+is true.
+.IP "\fB(\ \fIexpression\ \fB)\fR" 10
+True if
+.IR expression
+is true. False if
+.IR expression
+is false. The parentheses can be used to alter the normal precedence
+and associativity.
+.P
+The primaries with two elements of the form:
+.sp
+.RS 4
+.nf
+\fB
+\(mi\fIprimary_operator primary_operand\fR
+.fi \fR
+.P
+.RE
+.P
+are known as
+.IR "unary primaries" .
+The primaries with three elements in either of the two forms:
+.sp
+.RS 4
+.nf
+\fB
+\fIprimary_operand \fR\(mi\fIprimary_operator primary_operand
+.P
+primary_operand primary_operator primary_operand\fR
+.fi \fR
+.P
+.RE
+.P
+are known as
+.IR "binary primaries" .
+Additional implementation-defined operators and
+.IR primary_operator s
+may be provided by implementations. They shall be of the form \(mi\c
+.IR operator
+where the first character of
+.IR operator
+is not a digit.
+.P
+The algorithm for determining the precedence of the operators and the
+return value that shall be generated is based on the number of
+arguments presented to
+.IR test .
+(However, when using the
+.BR \(dq[...]\(dq 
+form, the
+<right-square-bracket>
+final argument shall not be counted in this algorithm.)
+.P
+In the following list, $1, $2, $3, and $4 represent the arguments
+presented to
+.IR test :
+.IP "0\ arguments:" 12
+Exit false (1).
+.IP "1\ argument:" 12
+Exit true (0) if $1 is not null; otherwise, exit false.
+.IP "2\ arguments:" 12
+.sp -1v
+.RS 12 
+.IP " *" 4
+If $1 is
+.BR '!' ,
+exit true if $2 is null, false if $2 is not null.
+.IP " *" 4
+If $1 is a unary primary, exit true if the unary test is true, false if
+the unary test is false.
+.IP " *" 4
+Otherwise, produce unspecified results.
+.RE
+.IP "3\ arguments:" 12
+.sp -1v
+.RS 12 
+.IP " *" 4
+If $2 is a binary primary, perform the binary test of $1 and $3.
+.IP " *" 4
+If $1 is
+.BR '!' ,
+negate the two-argument test of $2 and $3.
+.IP " *" 4
+If $1 is
+.BR '(' 
+and $3 is
+.BR ')' ,
+perform the unary test of $2.
+On systems that do not support the XSI option, the results are
+unspecified if $1 is
+.BR '(' 
+and $3 is
+.BR ')' .
+.IP " *" 4
+Otherwise, produce unspecified results.
+.RE
+.IP "4\ arguments:" 12
+.sp -1v
+.RS 12 
+.IP " *" 4
+If $1 is
+.BR '!' ,
+negate the three-argument test of $2, $3, and $4.
+.IP " *" 4
+If $1 is
+.BR '(' 
+and $4 is
+.BR ')' ,
+perform the two-argument test of $2 and $3.
+On systems that do not support the XSI option, the results are
+unspecified if $1 is
+.BR '(' 
+and $4 is
+.BR ')' .
+.IP " *" 4
+Otherwise, the results are unspecified.
+.RE
+.IP ">4\ arguments:" 12
+The results are unspecified.
+.RS 12 
+.P
+On XSI-conformant systems, combinations of primaries and operators
+shall be evaluated using the precedence and associativity rules
+described previously. In addition, the string comparison binary
+primaries
+.BR '=' 
+and
+.BR \(dq!=\(dq 
+shall have a higher precedence than any unary primary.
+.RE
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR test :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+Not used.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+.IR expression
+evaluated to true.
+.IP "\01" 6
+.IR expression
+evaluated to false or
+.IR expression
+was missing.
+.IP >1 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The XSI extensions specifying the
+.BR \(mia
+and
+.BR \(mio
+binary primaries and the
+.BR '(' 
+and
+.BR ')' 
+operators have been marked obsolescent. (Many expressions using them
+are ambiguously defined by the grammar depending on the specific
+expressions being evaluated.) Scripts using these expressions should be
+converted to the forms given below. Even though many implementations
+will continue to support these obsolescent forms, scripts should be
+extremely careful when dealing with user-supplied input that could be
+confused with these and other primaries and operators. Unless the
+application developer knows all the cases that produce input to the
+script, invocations like:
+.sp
+.RS 4
+.nf
+\fB
+test "$1" \(mia "$2"
+.fi \fR
+.P
+.RE
+.P
+should be written as:
+.sp
+.RS 4
+.nf
+\fB
+test "$1" && test "$2"
+.fi \fR
+.P
+.RE
+.P
+to avoid problems if a user supplied values such as $1 set to
+.BR '!' 
+and $2 set to the null string. That is, in cases where maximal
+portability is of concern, replace:
+.sp
+.RS 4
+.nf
+\fB
+test expr1 \(mia expr2
+.fi \fR
+.P
+.RE
+.P
+with:
+.sp
+.RS 4
+.nf
+\fB
+test expr1 && test expr2
+.fi \fR
+.P
+.RE
+.P
+and replace:
+.sp
+.RS 4
+.nf
+\fB
+test expr1 \(mio expr2
+.fi \fR
+.P
+.RE
+.P
+with:
+.sp
+.RS 4
+.nf
+\fB
+test expr1 || test expr2
+.fi \fR
+.P
+.RE
+.P
+but note that, in
+.IR test ,
+.BR \(mia
+has higher precedence than
+.BR \(mio
+while
+.BR \(dq&&\(dq 
+and
+.BR \(dq||\(dq 
+have equal precedence in the shell.
+.P
+Parentheses or braces can be used in the shell command language to
+effect grouping.
+.P
+Parentheses must be escaped when using
+.IR sh ;
+for example:
+.sp
+.RS 4
+.nf
+\fB
+test \e( expr1 \(mia expr2 \e) \(mio expr3
+.fi \fR
+.P
+.RE
+.P
+This command is not always portable even on XSI-conformant systems
+depending on the expressions specified by
+.IR expr 1,
+.IR expr 2,
+and
+.IR expr 3.
+The following form can be used instead:
+.sp
+.RS 4
+.nf
+\fB
+( test expr1 && test expr2 ) || test expr3
+.fi \fR
+.P
+.RE
+.P
+The two commands:
+.sp
+.RS 4
+.nf
+\fB
+test "$1"
+test ! "$1"
+.fi \fR
+.P
+.RE
+.P
+could not be used reliably on some historical systems. Unexpected
+results would occur if such a
+.IR string
+expression were used and $1 expanded to
+.BR '!' ,
+.BR '(' ,
+or a known unary primary. Better constructs are:
+.sp
+.RS 4
+.nf
+\fB
+test \(min "$1"
+test \(miz "$1"
+.fi \fR
+.P
+.RE
+respectively.
+.P
+Historical systems have also been unreliable given the common
+construct:
+.sp
+.RS 4
+.nf
+\fB
+test "$response" = "expected string"
+.fi \fR
+.P
+.RE
+.P
+One of the following is a more reliable form:
+.sp
+.RS 4
+.nf
+\fB
+test "X$response" = "Xexpected string"
+test "expected string" = "$response"
+.fi \fR
+.P
+.RE
+.P
+Note that the second form assumes that
+.IR "expected string"
+could not be confused with any unary primary. If
+.IR "expected string"
+starts with
+.BR '\(mi' ,
+.BR '(' ,
+.BR '!' ,
+or even
+.BR '=' ,
+the first form should be used instead. Using the preceding rules
+without the XSI marked extensions, any of the three comparison forms is
+reliable, given any input. (However, note that the strings are quoted
+in all cases.)
+.P
+Because the string comparison binary primaries,
+.BR '=' 
+and
+.BR \(dq!=\(dq ,
+have a higher precedence than any unary primary in the greater than 4
+argument case, unexpected results can occur if arguments are not
+properly prepared. For example, in:
+.sp
+.RS 4
+.nf
+\fB
+test \(mid $1 \(mio \(mid $2
+.fi \fR
+.P
+.RE
+.P
+If $1 evaluates to a possible directory name of
+.BR '=' ,
+the first three arguments are considered a string comparison, which
+shall cause a syntax error when the second
+.BR \(mid
+is encountered. One of the following forms prevents this; the second
+is preferred:
+.sp
+.RS 4
+.nf
+\fB
+test \e( \(mid "$1" \e) \(mio \e( \(mid "$2" \e)
+test \(mid "$1" || test \(mid "$2"
+.fi \fR
+.P
+.RE
+.P
+Also in the greater than 4 argument case:
+.sp
+.RS 4
+.nf
+\fB
+test "$1" = "bat" \(mia "$2" = "ball"
+.fi \fR
+.P
+.RE
+.P
+syntax errors occur if $1 evaluates to
+.BR '(' 
+or
+.BR '!' .
+One of the following forms prevents this; the third is preferred:
+.sp
+.RS 4
+.nf
+\fB
+test "X$1" = "Xbat" \(mia "X$2" = "Xball"
+test "$1" = "bat" && test "$2" = "ball"
+test "X$1" = "Xbat" && test "X$2" = "Xball"
+.fi \fR
+.P
+.RE
+.SH EXAMPLES
+.IP " 1." 4
+Exit if there are not two or three arguments (two variations):
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+if [ $# \(mine 2 ] && [ $# \(mine 3 ]; then exit 1; fi
+if [ $# \(milt 2 ] || [ $# \(migt 3 ]; then exit 1; fi
+.fi \fR
+.P
+.RE
+.RE
+.IP " 2." 4
+Perform a
+.IR mkdir
+if a directory does not exist:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+test ! \(mid tempdir && mkdir tempdir
+.fi \fR
+.P
+.RE
+.RE
+.IP " 3." 4
+Wait for a file to become non-readable:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+while test \(mir thefile
+do
+    sleep 30
+done
+echo '"thefile" is no longer readable'
+.fi \fR
+.P
+.RE
+.RE
+.IP " 4." 4
+Perform a command if the argument is one of three strings (two
+variations):
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+if [ "$1" = "pear" ] || [ "$1" = "grape" ] || [ "$1" = "apple" ]
+then
+    \fIcommand\fP
+fi
+.P
+case "$1" in
+    pear|grape|apple) \fIcommand\fP ;;
+esac
+.fi \fR
+.P
+.RE
+.RE
+.SH RATIONALE
+The KornShell-derived conditional command (double bracket
+.BR [[\|]] )
+was removed from the shell command language description in an early
+proposal. Objections were raised that the real problem is misuse of the
+.IR test
+command (\c
+.BR [ ),
+and putting it into the shell is the wrong way to fix the problem.
+Instead, proper documentation and a new shell reserved word (\c
+.BR ! )
+are sufficient.
+.P
+Tests that require multiple
+.IR test
+operations can be done at the shell level using individual invocations
+of the
+.IR test
+command and shell logicals, rather than using the error-prone
+.BR \(mio
+flag of
+.IR test .
+.P
+XSI-conformant systems support more than four arguments.
+.P
+XSI-conformant systems support the combining of primaries with the
+following constructs:
+.IP "\fIexpression1\fB \(mia \fIexpression2\fR" 6
+.br
+True if both
+.IR expression1
+and
+.IR expression2
+are true.
+.IP "\fIexpression1\fB \(mio \fIexpression2\fR" 6
+.br
+True if at least one of
+.IR expression1
+and
+.IR expression2
+are true.
+.IP "\fB( \fIexpression \fB)\fR" 6
+.br
+True if
+.IR expression
+is true.
+.P
+In evaluating these more complex combined expressions, the following
+precedence rules are used:
+.IP " *" 4
+The unary primaries have higher precedence than the algebraic binary
+primaries.
+.IP " *" 4
+The unary primaries have lower precedence than the string binary
+primaries.
+.IP " *" 4
+The unary and binary primaries have higher precedence than the unary
+.IR string
+primary.
+.IP " *" 4
+The
+.BR !
+operator has higher precedence than the
+.BR \(mia
+operator, and the
+.BR \(mia
+operator has higher precedence than the
+.BR \(mio
+operator.
+.IP " *" 4
+The
+.BR \(mia
+and
+.BR \(mio
+operators are left associative.
+.IP " *" 4
+The parentheses can be used to alter the normal precedence and
+associativity.
+.P
+The BSD and System V versions of
+.BR \(mif
+are not the same. The BSD definition was:
+.IP "\fB\(mif\ \fIfile\fR" 10
+True if
+.IR file
+exists and is not a directory.
+.P
+The SVID version (true if the file exists and is a regular file) was
+chosen for this volume of POSIX.1\(hy2008 because its use is consistent with the
+.BR \(mib ,
+.BR \(mic ,
+.BR \(mid ,
+and
+.BR \(mip
+operands (\c
+.IR file
+exists and is a specific file type).
+.P
+The
+.BR \(mie
+primary, possessing similar functionality to that provided by the C
+shell, was added because it provides the only way for a shell script to
+find out if a file exists without trying to open the file. Since
+implementations are allowed to add additional file types, a portable
+script cannot use:
+.sp
+.RS 4
+.nf
+\fB
+test \(mib foo \(mio \(mic foo \(mio \(mid foo \(mio \(mif foo \(mio \(mip foo
+.fi \fR
+.P
+.RE
+.P
+to find out if
+.BR foo
+is an existing file. On historical BSD systems, the existence of a
+file could be determined by:
+.sp
+.RS 4
+.nf
+\fB
+test \(mif foo \(mio \(mid foo
+.fi \fR
+.P
+.RE
+.P
+but there was no easy way to determine that an existing file was a
+regular file. An early proposal used the KornShell
+.BR \(mia
+primary (with the same meaning), but this was changed to
+.BR \(mie
+because there were concerns about the high probability of humans
+confusing the
+.BR \(mia
+primary with the
+.BR \(mia
+binary operator.
+.P
+The following options were not included in this volume of POSIX.1\(hy2008, although they are
+provided by some implementations. These operands should not be used by
+new implementations for other purposes:
+.IP "\fB\(mik\ \fIfile\fR" 10
+True if
+.IR file
+exists and its sticky bit is set.
+.IP "\fB\(miC\ \fIfile\fR" 10
+True if
+.IR file
+is a contiguous file.
+.IP "\fB\(miV\ \fIfile\fR" 10
+True if
+.IR file
+is a version file.
+.P
+The following option was not included because it was undocumented in
+most implementations, has been removed from some implementations
+(including System V), and the functionality is provided by the shell
+(see
+.IR "Section 2.6.2" ", " "Parameter Expansion".
+.IP "\fB\(mil\ \fIstring\fR" 10
+The length of the string
+.IR string .
+.P
+The
+.BR \(mib ,
+.BR \(mic ,
+.BR \(mig ,
+.BR \(mip ,
+.BR \(miu ,
+and
+.BR \(mix
+operands are derived from the SVID; historical BSD does not provide
+them. The
+.BR \(mik
+operand is derived from System V; historical BSD does not provide it.
+.P
+On historical BSD systems,
+.IR test
+.BR \(miw
+.IR directory
+always returned false because
+.IR test
+tried to open the directory for writing, which always fails.
+.P
+Some additional primaries newly invented or from the KornShell appeared
+in an early proposal as part of the conditional command (\c
+.BR [[\|]] ):
+.IR s1
+.BR >
+.IR s2 ,
+.IR s1
+.BR <
+.IR s2 ,
+.IR str
+.BR =
+.IR pattern ,
+.IR str
+.BR !=
+.IR pattern ,
+.IR f1
+.BR \(mint
+.IR f2 ,
+.IR f1
+.BR \(miot
+.IR f2 ,
+and
+.IR f1
+.BR \(mief
+.IR f2 .
+They were not carried forward into the
+.IR test
+utility when the conditional command was removed from the shell because
+they have not been included in the
+.IR test
+utility built into historical implementations of the
+.IR sh
+utility.
+.P
+The
+.BR \(mit
+.IR file_descriptor
+primary is shown with a mandatory argument because the grammar is
+ambiguous if it can be omitted. Historical implementations have allowed
+it to be omitted, providing a default of 1.
+.P
+It is noted that
+.BR '[' 
+is not part of the portable filename character set; however, since it
+is required to be encoded by a single byte, and is part of the portable
+character set, the name of this utility forms a character string across
+all supported locales.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 1.1.1.4" ", " "File Read" ", " "Write" ", " "and Creation",
+.IR "\fIfind\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

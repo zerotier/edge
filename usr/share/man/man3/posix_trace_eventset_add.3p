@@ -1,0 +1,155 @@
+'\" et
+.TH POSIX_TRACE_EVENTSET_ADD "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+.ad l
+posix_trace_eventset_add,
+posix_trace_eventset_del,
+posix_trace_eventset_empty,
+posix_trace_eventset_fill,
+posix_trace_eventset_ismember
+\(em manipulate trace event type sets
+(\fBTRACING\fP)
+.ad b
+.SH SYNOPSIS
+.LP
+.nf
+#include <trace.h>
+.P
+int posix_trace_eventset_add(trace_event_id_t \fIevent_id\fP,
+    trace_event_set_t *\fIset\fP);
+int posix_trace_eventset_del(trace_event_id_t \fIevent_id\fP,
+    trace_event_set_t *\fIset\fP);
+int posix_trace_eventset_empty(trace_event_set_t *\fIset\fP);
+int posix_trace_eventset_fill(trace_event_set_t *\fIset\fP, int \fIwhat\fP);
+int posix_trace_eventset_ismember(trace_event_id_t \fIevent_id\fP,
+    const trace_event_set_t *restrict \fIset\fP, int *restrict \fIismember\fP);
+.fi
+.SH DESCRIPTION
+These primitives manipulate sets of trace event types. They operate on
+data objects addressable by the application, not on the current trace
+event filter of any trace stream.
+.P
+The
+\fIposix_trace_eventset_add\fR()
+and
+\fIposix_trace_eventset_del\fR()
+functions, respectively, shall add or delete the individual trace event
+type specified by the value of the argument
+.IR event_id
+to or from the trace event type set pointed to by the argument
+.IR set .
+Adding a trace event type already in the set or deleting a trace event
+type not in the set shall not be considered an error.
+.P
+The
+\fIposix_trace_eventset_empty\fR()
+function shall initialize the trace event type set pointed to by the
+.IR set
+argument such that all trace event types defined, both system and user,
+shall be excluded from the set.
+.P
+The
+\fIposix_trace_eventset_fill\fR()
+function shall initialize the trace event type set pointed to by the
+argument
+.IR set ,
+such that the set of trace event types defined by the argument
+.IR what
+shall be included in the set. The value of the argument
+.IR what
+shall consist of one of the following values, as defined in the
+.IR <trace.h> 
+header:
+.IP POSIX_TRACE_WOPID_EVENTS 6
+.br
+All the process-independent implementation-defined system trace event
+types are included in the set.
+.IP POSIX_TRACE_SYSTEM_EVENTS 6
+.br
+All the implementation-defined system trace event types are included in
+the set, as are those defined in POSIX.1\(hy2008.
+.IP POSIX_TRACE_ALL_EVENTS 6
+.br
+All trace event types defined, both system and user, are included in
+the set.
+.P
+Applications shall call either
+\fIposix_trace_eventset_empty\fR()
+or
+\fIposix_trace_eventset_fill\fR()
+at least once for each object of type
+.BR trace_event_set_t
+prior to any other use of that object. If such an object is not
+initialized in this way, but is nonetheless supplied as an argument to
+any of the
+\fIposix_trace_eventset_add\fR(),
+\fIposix_trace_eventset_del\fR(),
+or
+\fIposix_trace_eventset_ismember\fR()
+functions, the results are undefined.
+.P
+The
+\fIposix_trace_eventset_ismember\fR()
+function shall test whether the trace event type specified by the value
+of the argument
+.IR event_id
+is a member of the set pointed to by the argument
+.IR set .
+The value returned in the object pointed to by
+.IR ismember
+argument is zero if the trace event type identifier is not a member of
+the set and a value different from zero if it is a member of the set.
+.SH "RETURN VALUE"
+Upon successful completion, these functions shall return a value of
+zero. Otherwise, they shall return the corresponding error number.
+.SH ERRORS
+These functions may fail if:
+.TP
+.BR EINVAL
+The value of one of the arguments is invalid.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+The
+\fIposix_trace_eventset_add\fR(),
+\fIposix_trace_eventset_del\fR(),
+\fIposix_trace_eventset_empty\fR(),
+\fIposix_trace_eventset_fill\fR(),
+and
+\fIposix_trace_eventset_ismember\fR()
+functions may be removed in a future version.
+.SH "SEE ALSO"
+.IR "\fIposix_trace_eventid_equal\fR\^(\|)",
+.IR "\fIposix_trace_get_filter\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<trace.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

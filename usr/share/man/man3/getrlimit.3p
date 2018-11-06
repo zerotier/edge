@@ -1,0 +1,250 @@
+'\" et
+.TH GETRLIMIT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+getrlimit,
+setrlimit
+\(em control maximum resource consumption
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/resource.h>
+.P
+int getrlimit(int \fIresource\fP, struct rlimit *\fIrlp\fP);
+int setrlimit(int \fIresource\fP, const struct rlimit *\fIrlp\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIgetrlimit\fR()
+function shall get, and the
+\fIsetrlimit\fR()
+function shall set, limits on the consumption of a variety of
+resources.
+.P
+Each call to either
+\fIgetrlimit\fR()
+or
+\fIsetrlimit\fR()
+identifies a specific resource to be operated upon as well as a
+resource limit. A resource limit is represented by an
+.BR rlimit
+structure. The
+.IR rlim_cur
+member specifies the current or soft limit and the
+.IR rlim_max
+member specifies the maximum or hard limit. Soft limits may be changed
+by a process to any value that is less than or equal to the hard
+limit. A process may (irreversibly) lower its hard limit to any value
+that is greater than or equal to the soft limit. Only a process with
+appropriate privileges can raise a hard limit. Both hard and soft
+limits can be changed in a single call to
+\fIsetrlimit\fR()
+subject to the constraints described above.
+.P
+The value RLIM_INFINITY, defined in
+.IR <sys/resource.h> ,
+shall be considered to be larger than any other limit value. If a
+call to
+\fIgetrlimit\fR()
+returns RLIM_INFINITY for a resource, it means the implementation shall
+not enforce limits on that resource. Specifying RLIM_INFINITY as any
+resource limit value on a successful call to
+\fIsetrlimit\fR()
+shall inhibit enforcement of that resource limit.
+.P
+The following resources are defined:
+.IP RLIMIT_CORE 14
+This is the maximum size of a
+.BR core
+file, in bytes, that may be created by a process. A limit of 0 shall
+prevent the creation of a
+.BR core
+file. If this limit is exceeded, the writing of a
+.BR core
+file shall terminate at this size.
+.IP RLIMIT_CPU 14
+This is the maximum amount of CPU time, in seconds, used by a process.
+If this limit is exceeded, SIGXCPU shall be generated for the process. If
+the process is catching or ignoring SIGXCPU, or all threads belonging
+to that process are blocking SIGXCPU, the behavior is unspecified.
+.IP RLIMIT_DATA 14
+This is the maximum size of a data segment of the process, in bytes.
+If this limit is exceeded, the
+\fImalloc\fR()
+function shall fail with
+.IR errno
+set to
+.BR [ENOMEM] .
+.IP RLIMIT_FSIZE 14
+This is the maximum size of a file, in bytes, that may be created by a
+process. If a write or truncate operation would cause this limit to be
+exceeded, SIGXFSZ shall be generated for the thread. If the thread is
+blocking, or
+the process is catching or ignoring SIGXFSZ, continued attempts to
+increase the size of a file from end-of-file to beyond the limit
+shall fail with
+.IR errno
+set to
+.BR [EFBIG] .
+.IP RLIMIT_NOFILE 14
+This is a number one greater than the maximum value that the system may
+assign to a newly-created descriptor. If this limit is exceeded,
+functions that allocate a file descriptor shall fail with
+.IR errno
+set to
+.BR [EMFILE] .
+This limit constrains the number of file descriptors that a process may
+allocate.
+.IP RLIMIT_STACK 14
+This is the maximum size of the initial thread's stack, in bytes. The
+implementation does not automatically grow the stack beyond this
+limit. If this limit is exceeded, SIGSEGV shall be generated for the
+thread. If the thread is blocking SIGSEGV, or the process is ignoring
+or catching SIGSEGV and has not made arrangements to use an alternate
+stack, the disposition of SIGSEGV shall be set to SIG_DFL before it is
+generated.
+.IP RLIMIT_AS 14
+This is the maximum size of total available memory of the process, in
+bytes. If this limit is exceeded, the
+\fImalloc\fR()
+and
+\fImmap\fR()
+functions shall fail with
+.IR errno
+set to
+.BR [ENOMEM] .
+In addition, the automatic stack growth fails with the effects outlined
+above.
+.P
+When using the
+\fIgetrlimit\fR()
+function, if a resource limit can be represented correctly in an object
+of type
+.BR rlim_t ,
+then its representation is returned; otherwise, if the value of the
+resource limit is equal to that of the corresponding saved hard limit,
+the value returned shall be RLIM_SAVED_MAX; otherwise, the value
+returned shall be RLIM_SAVED_CUR.
+.P
+When using the
+\fIsetrlimit\fR()
+function, if the requested new limit is RLIM_INFINITY, the new limit
+shall be ``no limit''; otherwise, if the
+requested new limit is RLIM_SAVED_MAX, the new limit shall be the
+corresponding saved hard limit; otherwise, if the requested new limit
+is RLIM_SAVED_CUR, the new limit shall be the corresponding saved soft
+limit; otherwise, the new limit shall be the requested value. In
+addition, if the corresponding saved limit can be represented correctly
+in an object of type
+.BR rlim_t
+then it shall be overwritten with the new limit.
+.P
+The result of setting a limit to RLIM_SAVED_MAX or RLIM_SAVED_CUR is
+unspecified unless a previous call to
+\fIgetrlimit\fR()
+returned that value as the soft or hard limit for the corresponding
+resource limit.
+.P
+The determination of whether a limit can be correctly represented in an
+object of type
+.BR rlim_t
+is implementation-defined. For example, some implementations permit a
+limit whose value is greater than RLIM_INFINITY and others do not.
+.P
+The
+.IR exec
+family of functions shall cause resource limits to be saved.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIgetrlimit\fR()
+and
+\fIsetrlimit\fR()
+shall return 0. Otherwise, these functions shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIgetrlimit\fR()
+and
+\fIsetrlimit\fR()
+functions shall fail if:
+.TP
+.BR EINVAL
+An invalid
+.IR resource
+was specified; or in a
+\fIsetrlimit\fR()
+call, the new
+.IR rlim_cur
+exceeds the new
+.IR rlim_max .
+.TP
+.BR EPERM
+The limit specified to
+\fIsetrlimit\fR()
+would have raised the maximum limit value, and the calling process does
+not have appropriate privileges.
+.P
+The
+\fIsetrlimit\fR()
+function may fail if:
+.TP
+.BR EINVAL
+The limit specified cannot be lowered because current usage is already
+higher than the limit.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+If a process attempts to set the hard limit or soft limit for
+RLIMIT_NOFILE to less than the value of
+{_POSIX_OPEN_MAX}
+from
+.IR <limits.h> ,
+unexpected behavior may occur.
+.P
+If a process attempts to set the hard limit or soft limit for
+RLIMIT_NOFILE to less than the highest currently open file descriptor
++1, unexpected behavior may occur.
+.SH RATIONALE
+It should be noted that RLIMIT_STACK applies ``at least'' to the stack
+of the initial thread in the process, and not to the sum of all the
+stacks in the process, as that would be very limiting unless the value
+is so big as to provide no value at all with a single thread.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIexec\fR\^",
+.IR "\fIfork\fR\^(\|)",
+.IR "\fImalloc\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIsigaltstack\fR\^(\|)",
+.IR "\fIsysconf\fR\^(\|)",
+.IR "\fIulimit\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<stropts.h>\fP",
+.IR "\fB<sys_resource.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

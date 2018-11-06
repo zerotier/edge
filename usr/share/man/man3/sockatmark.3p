@@ -1,0 +1,149 @@
+'\" et
+.TH SOCKATMARK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sockatmark
+\(em determine whether a socket is at the out-of-band mark
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/socket.h>
+.P
+int sockatmark(int \fIs\fR);
+.fi
+.SH DESCRIPTION
+The
+\fIsockatmark\fR()
+function shall determine whether the socket specified by the descriptor
+.IR s
+is at the out-of-band data mark (see
+.IR "Section 2.10.12" ", " "Socket Out-of-Band Data State").
+If the protocol for the socket supports out-of-band data by marking the
+stream with an out-of-band data mark, the
+\fIsockatmark\fR()
+function shall return 1 when all data preceding the mark has been read
+and the out-of-band data mark is the first element in the receive
+queue. The
+\fIsockatmark\fR()
+function shall not remove the mark from the stream.
+.SH "RETURN VALUE"
+Upon successful completion, the
+\fIsockatmark\fR()
+function shall return a value indicating whether the socket is at an
+out-of-band data mark. If the protocol has marked the data stream and
+all data preceding the mark has been read, the return value shall be 1;
+if there is no mark, or if data precedes the mark in the receive queue,
+the
+\fIsockatmark\fR()
+function shall return 0. Otherwise, it shall return a value of \(mi1
+and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIsockatmark\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The
+.IR s
+argument is not a valid file descriptor.
+.TP
+.BR ENOTTY
+The file associated with the
+.IR s
+argument is not a socket.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+The use of this function between receive operations allows an
+application to determine which received data precedes the out-of-band
+data and which follows the out-of-band data.
+.P
+There is an inherent race condition in the use of this function. On an
+empty receive queue, the current read of the location might well be at
+the ``mark'', but the system has no way of knowing that the next data
+segment that will arrive from the network will carry the mark, and
+\fIsockatmark\fR()
+will return false, and the next read operation will silently consume
+the mark.
+.P
+Hence, this function can only be used reliably when the application
+already knows that the out-of-band data has been seen by the system or
+that it is known that there is data waiting to be read at the socket
+(via SIGURG or
+\fIselect\fR()).
+See
+.IR "Section 2.10.11" ", " "Socket Receive Queue",
+.IR "Section 2.10.12" ", " "Socket Out-of-Band Data State",
+.IR "Section 2.10.14" ", " "Signals",
+and
+\fIpselect\fR()
+for details.
+.SH RATIONALE
+The
+\fIsockatmark\fR()
+function replaces the historical SIOCATMARK command to
+\fIioctl\fR()
+which implemented the same functionality on many implementations. Using
+a wrapper function follows the adopted conventions to avoid specifying
+commands to the
+\fIioctl\fR()
+function, other than those now included to support XSI STREAMS. The
+\fIsockatmark\fR()
+function could be implemented as follows:
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/ioctl.h>
+.P
+int sockatmark(int s)
+{
+    int val;
+    if (ioctl(s,SIOCATMARK,&val)==\(mi1)
+        return(\(mi1);
+    return(val);
+}
+.fi \fR
+.P
+.RE
+.P
+The use of
+.BR [ENOTTY] 
+to indicate an incorrect descriptor type matches the historical
+behavior of SIOCATMARK.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 2.10.12" ", " "Socket Out-of-Band Data State",
+.IR "\fIpselect\fR\^(\|)",
+.IR "\fIrecv\fR\^(\|)",
+.IR "\fIrecvmsg\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_socket.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,342 @@
+'\" et
+.TH DELTA "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+delta
+\(em make a delta (change) to an SCCS file (\fBDEVELOPMENT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+delta \fB[\fR\(minps\fB] [\fR\(mig \fIlist\fB] [\fR\(mim \fImrlist\fB] [\fR\(mir \fISID\fB] [\fR\(miy\fB[\fIcomment\fB]] \fIfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR delta
+utility shall be used to permanently introduce into the named SCCS
+files changes that were made to the files retrieved by
+.IR get
+(called the
+.IR g-files ,
+or generated files).
+.SH OPTIONS
+The
+.IR delta
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that the
+.BR \(miy
+option has an optional option-argument. This optional option-argument
+shall not be presented as a separate argument.
+.P
+The following options shall be supported:
+.IP "\fB\(mir\ \fISID\fR" 10
+Uniquely identify which delta is to be made to the SCCS file. The use
+of this option shall be necessary only if two or more outstanding
+.IR get
+commands for editing (\c
+.IR get
+.BR \(mie )
+on the same SCCS file were done by the same person (login name). The
+SID value specified with the
+.BR \(mir
+option can be either the SID specified on the
+.IR get
+command line or the SID to be made as reported by the
+.IR get
+utility; see
+.IR "\fIget\fR\^".
+.IP "\fB\(mis\fP" 10
+Suppress the report to standard output of the activity associated with
+each
+.IR file .
+See the STDOUT section.
+.IP "\fB\(min\fP" 10
+Specify retention of the edited
+.IR g-file
+(normally removed at completion of delta processing).
+.IP "\fB\(mig\ \fIlist\fR" 10
+Specify a
+.IR list
+(see
+.IR "\fIget\fR\^"
+for the definition of
+.IR list )
+of deltas that shall be ignored when the file is accessed at the
+change level (SID) created by this delta.
+.IP "\fB\(mim\ \fImrlist\fR" 10
+Specify a modification request (MR) number that the application shall
+supply as the reason for creating the new delta. This shall be used if
+the SCCS file has the
+.BR v
+flag set; see
+.IR "\fIadmin\fR\^".
+.RS 10 
+.P
+If
+.BR \(mim
+is not used and
+.BR '\(mi' 
+is not specified as a file argument, and the standard input is a
+terminal, the prompt described in the STDOUT section shall be written
+to standard output before the standard input is read; if the standard
+input is not a terminal, no prompt shall be issued.
+.P
+MRs in a list shall be separated by
+<blank>
+characters or escaped
+<newline>
+characters. An unescaped
+<newline>
+shall terminate the MR list. The escape character is
+<backslash>.
+.P
+If the
+.BR v
+flag has a value, it shall be taken to be the name of a program which
+validates the correctness of the MR numbers. If a non-zero exit status
+is returned from the MR number validation program, the
+.IR delta
+utility shall terminate. (It is assumed that the MR numbers were not
+all valid.)
+.RE
+.IP "\fB\(miy\fB[\fIcomment\fB]\fR" 10
+Describe the reason for making the delta. The
+.IR comment
+shall be an arbitrary group of lines that would meet the definition of
+a text file. Implementations shall support
+.IR comment s
+from zero to 512 bytes and may support longer values. A null string
+(specified as either
+.BR \(miy ,
+.BR \(miy \c
+.BR \(dq\^\(dq ,
+or in response to a prompt for a comment) shall be considered a valid
+.IR comment .
+.RS 10 
+.P
+If
+.BR \(miy
+is not specified and
+.BR '\(mi' 
+is not specified as a file argument, and the standard input is a
+terminal, the prompt described in the STDOUT section shall be written
+to standard output before the standard input is read; if the standard
+input is not a terminal, no prompt shall be issued. An unescaped
+<newline>
+shall terminate the comment text. The escape character is
+<backslash>.
+.P
+The
+.BR \(miy
+option shall be required if the
+.IR file
+operand is specified as
+.BR '\(mi' .
+.RE
+.IP "\fB\(mip\fP" 10
+Write (to standard output) the SCCS file differences before and after
+the delta is applied in
+.IR diff
+format; see
+.IR "\fIdiff\fR\^".
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an existing SCCS file or a directory. If
+.IR file
+is a directory, the
+.IR delta
+utility shall behave as though each file in the directory were
+specified as a named file, except that non-SCCS files (last component
+of the pathname does not begin with
+.BR s. )
+and unreadable files shall be silently ignored.
+.RS 10 
+.P
+If exactly one
+.IR file
+operand appears, and it is
+.BR '\(mi' ,
+the standard input shall be read; each line of the standard input shall
+be taken to be the name of an SCCS file to be processed. Non-SCCS files
+and unreadable files shall be silently ignored.
+.RE
+.SH STDIN
+The standard input shall be a text file used only in the following
+cases:
+.IP " *" 4
+To read an
+.IR mrlist
+or a
+.IR comment
+(see the
+.BR \(mim
+and
+.BR \(miy
+options).
+.IP " *" 4
+A
+.IR file
+operand shall be specified as
+.BR '\(mi' .
+In this case, the
+.BR \(miy
+option must be used to specify the comment, and if the SCCS file has
+the
+.BR v
+flag set, the
+.BR \(mim
+option must also be used to specify the MR list.
+.SH "INPUT FILES"
+Input files shall be text files whose data is to be included in the
+SCCS files. If the first character of any line of an input file is
+<SOH>
+in the POSIX locale, the results are unspecified. If this file contains
+more than 99\|999 lines, the number of lines recorded in the header for
+this file shall be 99\|999 for this delta.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR delta :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error, and
+informative messages written to standard output.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.IP "\fITZ\fP" 10
+Determine the timezone in which the time and date are written in the
+SCCS file. If the
+.IR TZ
+variable is unset or NULL, an unspecified system default timezone is
+used.
+.SH "ASYNCHRONOUS EVENTS"
+If SIGINT is caught, temporary files shall be cleaned up and
+.IR delta
+shall exit with a non-zero exit code. The standard action shall
+be taken for all other signals; see
+.IR "Section 1.4" ", " "Utility Description Defaults".
+.SH STDOUT
+The standard output shall be used only for the following messages in
+the POSIX locale:
+.IP " *" 4
+Prompts (see the
+.BR \(mim
+and
+.BR \(miy
+options) in the following formats:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+"MRs? "
+.P
+"comments? "
+.fi \fR
+.P
+.RE
+.P
+The MR prompt, if written, shall always precede the comments prompt.
+.RE
+.IP " *" 4
+A report of each file's activities (unless the
+.BR \(mis
+option is specified) in the following format:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+"%s\en%d inserted\en%d deleted\en%d unchanged\en", <\fINew SID\fR>,
+    <\fInumber of lines inserted\fR>, <\fInumber of lines deleted\fR>,
+    <\fInumber of lines unchanged\fR>
+.fi \fR
+.P
+.RE
+.RE
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+Any SCCS files updated shall be files of an unspecified format.
+.SH "EXTENDED DESCRIPTION"
+.SS "System Date and Time"
+.P
+When a delta is added to an SCCS file, the system date and time shall
+be recorded for the new delta. If a
+.IR get
+is performed using an SCCS file with a date recorded apparently in the
+future, the behavior is unspecified.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Problems can arise if the system date and time have been modified (for
+example, put forward and then back again, or unsynchronized clocks
+across a network) and can also arise when different values of the
+.IR TZ
+environment variable are used.
+.P
+Problems of a similar nature can also arise for the operation of the
+.IR get
+utility, which records the date and time in the file body.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "Section 1.4" ", " "Utility Description Defaults",
+.IR "\fIadmin\fR\^",
+.IR "\fIdiff\fR\^",
+.IR "\fIget\fR\^",
+.IR "\fIprs\fR\^",
+.IR "\fIrmdel\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

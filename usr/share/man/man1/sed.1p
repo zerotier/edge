@@ -1,0 +1,1067 @@
+'\" et
+.TH SED "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+sed
+\(em stream editor
+.SH SYNOPSIS
+.LP
+.nf
+sed \fB[\fR\(min\fB] \fIscript \fB[\fIfile\fR...\fB]\fR
+.P
+sed \fB[\fR\(min\fB] \fR\(mie \fIscript \fB[\fR\(mie \fIscript\fB]\fR... \fB[\fR\(mif \fIscript_file\fB]\fR... \fB[\fIfile\fR...\fB]\fR
+.P
+sed \fB[\fR\(min\fB] [\fR\(mie \fIscript\fB]\fR... \(mif \fIscript_file\fR \fB[\fR\(mif \fIscript_file\fB]\fR... \fB[\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR sed
+utility is a stream editor that shall read one or more text files, make
+editing changes according to a script of editing commands, and write
+the results to standard output. The script shall be obtained from
+either the
+.IR script
+operand string or a combination of the option-arguments from the
+.BR \(mie
+.IR script
+and
+.BR \(mif
+.IR script_file
+options.
+.SH OPTIONS
+The
+.IR sed
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that the order of presentation of the
+.BR \(mie
+and
+.BR \(mif
+options is significant.
+.P
+The following options shall be supported:
+.IP "\fB\(mie\ \fIscript\fR" 10
+Add the editing commands specified by the
+.IR script
+option-argument to the end of the script of editing commands.
+.IP "\fB\(mif\ \fIscript_file\fR" 10
+Add the editing commands in the file
+.IR script_file
+to the end of the script of editing commands.
+.IP "\fB\(min\fP" 10
+Suppress the default output (in which each line, after it is examined
+for editing, is written to standard output). Only lines explicitly
+selected for output are written.
+.P
+If any
+.BR \(mie
+or
+.BR \(mif
+options are specified, the script of editing commands shall initially
+be empty. The commands specified by each
+.BR \(mie
+or
+.BR \(mif
+option shall be added to the script in the order specified. When each
+addition is made, if the previous addition (if any) was from a
+.BR \(mie
+option, a
+<newline>
+shall be inserted before the new addition. The resulting script shall
+have the same properties as the
+.IR script
+operand, described in the OPERANDS section.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a file whose contents are read and edited. If multiple
+.IR file
+operands are specified, the named files shall be read in the order
+specified and the concatenation shall be edited. If no
+.IR file
+operands are specified, the standard input shall be used.
+.IP "\fIscript\fR" 10
+A string to be used as the script of editing commands. The application
+shall not present a
+.IR script
+that violates the restrictions of a text file except that the final
+character need not be a
+<newline>.
+.SH STDIN
+The standard input shall be used if no
+.IR file
+operands are specified, and shall be used if a
+.IR file
+operand is
+.BR '\(mi' 
+and the implementation treats the
+.BR '\(mi' 
+as meaning standard input.
+Otherwise, the standard input shall not be used.
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be text files. The
+.IR script_file s
+named by the
+.BR \(mif
+option shall consist of editing commands.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR sed :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the behavior of ranges, equivalence classes,
+and multi-character collating elements within regular expressions.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files), and the behavior
+of character classes within regular expressions.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The input files shall be written to standard output, with the editing
+commands specified in the script applied. If the
+.BR \(min
+option is specified, only those input lines selected by the script
+shall be written to standard output.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The output files shall be text files whose formats are dependent on the
+editing commands given.
+.SH "EXTENDED DESCRIPTION"
+The
+.IR script
+shall consist of editing commands of the following form:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIaddress\fB[\fR,\fIaddress\fB]]\fIfunction\fR
+.fi \fR
+.P
+.RE
+.P
+where
+.IR function
+represents a single-character command verb from the list in
+.IR "Editing Commands in sed",
+followed by any applicable arguments.
+.P
+The command can be preceded by
+<blank>
+characters and/or
+<semicolon>
+characters. The function can be preceded by
+<blank>
+characters. These optional characters shall have no effect.
+.P
+In default operation,
+.IR sed
+cyclically shall append a line of input, less its terminating
+<newline>
+character, into the pattern space. Reading from input shall be skipped
+if a
+<newline>
+was in the pattern space prior to a
+.BR D
+command ending the previous cycle. The
+.IR sed
+utility shall then apply in sequence all commands whose addresses select
+that pattern space, until a command starts the next cycle or quits. If
+no commands explicitly started a new cycle, then at the end of the script
+the pattern space shall be copied to standard output (except when
+.BR \(min
+is specified) and the pattern space shall be deleted. Whenever the
+pattern space is written to standard output or a named file,
+.IR sed
+shall immediately follow it with a
+<newline>.
+.P
+Some of the editing commands use a hold space to save all or part of
+the pattern space for subsequent retrieval. The pattern and hold spaces
+shall each be able to hold at least 8\|192 bytes.
+.SS "Addresses in sed"
+.P
+An address is either a decimal number that counts input lines
+cumulatively across files, a
+.BR '$' 
+character that addresses the last line of input, or a context address
+(which consists of a BRE, as described in
+.IR "Regular Expressions in sed",
+preceded and followed by a delimiter, usually a
+<slash>).
+.P
+An editing command with no addresses shall select every pattern space.
+.P
+An editing command with one address shall select each pattern space
+that matches the address.
+.P
+An editing command with two addresses shall select the inclusive range
+from the first pattern space that matches the first address through the
+next pattern space that matches the second. (If the second address is a
+number less than or equal to the line number first selected, only one
+line shall be selected.) Starting at the first line following the
+selected range,
+.IR sed
+shall look again for the first address. Thereafter, the process shall
+be repeated. Omitting either or both of the address components in the
+following form produces undefined results:
+.sp
+.RS 4
+.nf
+\fB
+\fB[\fIaddress\fB[\fR,\fIaddress\fB]]\fR
+.fi \fR
+.P
+.RE
+.SS "Regular Expressions in sed"
+.P
+The
+.IR sed
+utility shall support the BREs described in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 9.3" ", " "Basic Regular Expressions",
+with the following additions:
+.IP " *" 4
+In a context address, the construction
+.BR \(dq\ecBREc\(dq ,
+where
+.IR c
+is any character other than
+<backslash>
+or
+<newline>,
+shall be identical to
+.BR \(dq/BRE/\(dq .
+If the character designated by
+.IR c
+appears following a
+<backslash>,
+then it shall be considered to be that literal character, which shall
+not terminate the BRE. For example, in the context address
+.BR \(dq\exabc\exdefx\(dq ,
+the second
+.IR x
+stands for itself, so that the BRE is
+.BR \(dqabcxdef\(dq .
+.IP " *" 4
+The escape sequence
+.BR '\en' 
+shall match a
+<newline>
+embedded in the pattern space. A literal
+<newline>
+shall not be used in the BRE of a context address or in the substitute
+function.
+.IP " *" 4
+If an RE is empty (that is, no pattern is specified)
+.IR sed
+shall behave as if the last RE used in the last command applied (either
+as an address or as part of a substitute command) was specified.
+.SS "Editing Commands in sed"
+.P
+In the following list of editing commands, the maximum number of
+permissible addresses for each function is indicated by [\c
+.IR 0addr ],
+[\c
+.IR 1addr ],
+or [\c
+.IR 2addr ],
+representing zero, one, or two addresses.
+.P
+The argument
+.IR text
+shall consist of one or more lines. Each embedded
+<newline>
+in the text shall be preceded by a
+<backslash>.
+Other
+<backslash>
+characters in text shall be removed, and the following character shall
+be treated literally.
+.P
+The
+.BR r
+and
+.BR w
+command verbs, and the
+.IR w
+flag to the
+.BR s
+command, take an
+.IR rfile
+(or
+.IR wfile )
+parameter, separated from the command verb letter or flag by one or
+more
+<blank>
+characters; implementations may allow zero separation as an extension.
+.P
+The argument
+.IR rfile
+or the argument
+.IR wfile
+shall terminate the editing command. Each
+.IR wfile
+shall be created before processing begins. Implementations shall
+support at least ten
+.IR wfile
+arguments in the script; the actual number (greater than or equal to
+10) that is supported by the implementation is unspecified. The
+use of the
+.IR wfile
+parameter shall cause that file to be initially created, if it does not
+exist, or shall replace the contents of an existing file.
+.P
+The
+.BR b ,
+.BR r ,
+.BR s ,
+.BR t ,
+.BR w ,
+.BR y ,
+and
+.BR :
+command verbs shall accept additional arguments. The following synopses
+indicate which arguments shall be separated from the command verbs by a
+single
+<space>.
+.P
+The
+.BR a
+and
+.BR r
+commands schedule text for later output. The text specified for the
+.BR a
+command, and the contents of the file specified for the
+.BR r
+command, shall be written to standard output just before the next
+attempt to fetch a line of input when executing the
+.BR N
+or
+.BR n
+commands, or when reaching the end of the script. If written when
+reaching the end of the script, and the
+.BR \(min
+option was not specified, the text shall be written after copying the
+pattern space to standard output. The contents of the file specified
+for the
+.BR r
+command shall be as of the time the output is written, not the time the
+.BR r
+command is applied. The text shall be output in the order in which the
+.BR a
+and
+.BR r
+commands were applied to the input.
+.P
+Command verbs other than
+.BR { ,
+.BR a ,
+.BR b ,
+.BR c ,
+.BR i ,
+.BR r ,
+.BR t ,
+.BR w ,
+.BR : ,
+and
+.BR #
+can be followed by a
+<semicolon>,
+optional
+<blank>
+characters, and another command verb. However, when the
+.BR s
+command verb is used with the
+.IR w
+flag, following it with another command in this manner produces
+undefined results.
+.P
+A function can be preceded by one or more
+.BR '!' 
+characters, in which case the function shall be applied if the
+addresses do not select the pattern space. Zero or more
+<blank>
+characters shall be accepted before the first
+.BR '!' 
+character. It is unspecified whether
+<blank>
+characters can follow a
+.BR '!' 
+character, and conforming applications shall not follow a
+.BR '!' 
+character with
+<blank>
+characters.
+.IP "\fB[\fI2addr\fB]\ {\fIediting command\fR" 10
+.IP "\fIediting command\fR" 10
+.IP ".\|.\|." 10
+.IP "\fB}\fR" 10
+Execute a list of
+.IR sed
+editing commands only when the pattern space is selected. The list of
+.IR sed
+editing commands shall be surrounded by braces and separated by
+<newline>
+characters, and conform to the following rules. The braces can be preceded
+or followed by
+<blank>
+characters. The editing commands can be preceded by
+<blank>
+characters, but shall not be followed by
+<blank>
+characters. The
+<right-brace>
+shall be preceded by a
+<newline>
+and can be preceded or followed by
+<blank>
+characters.
+.IP "\fB[\fI1addr\fB]a\e\fR" 10
+.IP "\fItext\fR" 10
+Write text to standard output as described previously.
+.IP "\fB[\fI2addr\fB]b\ [\fIlabel\fB]\fR" 10
+.br
+Branch to the
+.BR :
+function bearing the
+.IR label .
+If
+.IR label
+is not specified, branch to the end of the script. The implementation
+shall support
+.IR label s
+recognized as unique up to at least 8 characters; the actual length
+(greater than or equal to 8) that shall be supported by the
+implementation is unspecified. It is unspecified whether exceeding a
+label length causes an error or a silent truncation.
+.IP "\fB[\fI2addr\fB]c\e\fR" 10
+.IP "\fItext\fR" 10
+Delete the pattern space. With a 0 or 1 address or at the end of a
+2-address range, place
+.IR text
+on the output and start the next cycle.
+.IP "\fB[\fI2addr\fB]d\fR" 10
+Delete the pattern space and start the next cycle.
+.IP "\fB[\fI2addr\fB]D\fR" 10
+If the pattern space contains no
+<newline>,
+delete the pattern space and start a normal new cycle as if the
+.BR d
+command was issued. Otherwise, delete the initial segment of the
+pattern space through the first
+<newline>,
+and start the next cycle with the resultant pattern space and without
+reading any new input.
+.IP "\fB[\fI2addr\fB]g\fR" 10
+Replace the contents of the pattern space by the contents of the hold
+space.
+.IP "\fB[\fI2addr\fB]G\fR" 10
+Append to the pattern space a
+<newline>
+followed by the contents of the hold space.
+.IP "\fB[\fI2addr\fB]h\fR" 10
+Replace the contents of the hold space with the contents of the pattern
+space.
+.IP "\fB[\fI2addr\fB]H\fR" 10
+Append to the hold space a
+<newline>
+followed by the contents of the pattern space.
+.IP "\fB[\fI1addr\fB]i\e\fR" 10
+.IP "\fItext\fR" 10
+Write
+.IR text
+to standard output.
+.IP "\fB[\fI2addr\fB]l\fR" 10
+(The letter ell.) Write the pattern space to standard output in a
+visually unambiguous form. The characters listed in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Table 5-1" ", " "Escape Sequences and Associated Actions"
+(\c
+.BR '\e\e' ,
+.BR '\ea' ,
+.BR '\eb' ,
+.BR '\ef' ,
+.BR '\er' ,
+.BR '\et' ,
+.BR '\ev' )
+shall be written as the corresponding escape sequence; the
+.BR '\en' 
+in that table is not applicable. Non-printable characters not in that
+table shall be written as one three-digit octal number (with a
+preceding
+<backslash>)
+for each byte in the character (most significant byte first).
+.RS 10 
+.P
+Long lines shall be folded, with the point of folding indicated by
+writing a
+<backslash>
+followed by a
+<newline>;
+the length at which folding occurs is unspecified, but should be
+appropriate for the output device. The end of each line shall be marked
+with a
+.BR '$' .
+.RE
+.IP "\fB[\fI2addr\fB]n\fR" 10
+Write the pattern space to standard output if the default output has
+not been suppressed, and replace the pattern space with the next line
+of input, less its terminating
+<newline>.
+.RS 10 
+.P
+If no next line of input is available, the
+.BR n
+command verb shall branch to the end of the script and quit without
+starting a new cycle.
+.RE
+.IP "\fB[\fI2addr\fB]N\fR" 10
+Append the next line of input, less its terminating
+<newline>,
+to the pattern space, using an embedded
+<newline>
+to separate the appended material from the original material. Note that
+the current line number changes.
+.RS 10 
+.P
+If no next line of input is available, the
+.BR N
+command verb shall branch to the end of the script and quit without
+starting a new cycle or copying the pattern space to standard output.
+.RE
+.IP "\fB[\fI2addr\fB]p\fR" 10
+Write the pattern space to standard output.
+.IP "\fB[\fI2addr\fB]P\fR" 10
+Write the pattern space, up to the first
+<newline>,
+to standard output.
+.IP "\fB[\fI1addr\fB]q\fR" 10
+Branch to the end of the script and quit without starting a new cycle.
+.IP "\fB[\fI1addr\fB]r\ \fIrfile\fR" 10
+Copy the contents of
+.IR rfile
+to standard output as described previously. If
+.IR rfile
+does not exist or cannot be read, it shall be treated as if it were an
+empty file, causing no error condition.
+.IP "\fB[\fI2addr\fB]s/\fIBRE\fB/\fIreplacement\fB/\fIflags\fR" 10
+.br
+Substitute the replacement string for instances of the BRE in the
+pattern space. Any character other than
+<backslash>
+or
+<newline>
+can be used instead of a
+<slash>
+to delimit the BRE and the replacement. Within the BRE and the
+replacement, the BRE delimiter itself can be used as a literal character
+if it is preceded by a
+<backslash>.
+.RS 10 
+.P
+The replacement string shall be scanned from beginning to end. An
+<ampersand>
+(\c
+.BR '&' )
+appearing in the replacement shall be replaced by the string matching
+the BRE. The special meaning of
+.BR '&' 
+in this context can be suppressed by preceding it by a
+<backslash>.
+The characters \fR"\e\fIn"\fR, where
+.IR n
+is a digit, shall be replaced by the text matched by the corresponding
+back-reference expression. If the corresponding back-reference expression
+does not match, then the characters \fR"\e\fIn"\fR shall be replaced
+by the empty string. The special meaning of \fR"\e\fIn"\fR where
+.IR n
+is a digit in this context, can be suppressed by preceding it by a
+<backslash>.
+For each other
+<backslash>
+encountered, the following character shall lose its special meaning (if
+any). The meaning of a
+<backslash>
+immediately followed by any character other than
+.BR '&' ,
+<backslash>,
+a digit, or the delimiter character used for this command, is
+unspecified.
+.P
+A line can be split by substituting a
+<newline>
+into it. The application shall escape the
+<newline>
+in the replacement by preceding it by a
+<backslash>.
+A substitution shall be considered to have been performed even if the
+replacement string is identical to the string that it replaces. Any
+<backslash>
+used to alter the default meaning of a subsequent character shall be
+discarded from the BRE or the replacement before evaluating the BRE or
+using the replacement.
+.P
+The value of
+.IR flags
+shall be zero or more of:
+.IP "\fIn\fR" 10
+Substitute for the
+.IR n th
+occurrence only of the BRE found within the pattern space.
+.IP "\fBg\fR" 10
+Globally substitute for all non-overlapping instances of the BRE rather
+than just the first one. If both
+.BR g
+and
+.IR n
+are specified, the results are unspecified.
+.IP "\fBp\fR" 10
+Write the pattern space to standard output if a replacement was made.
+.IP "\fBw\ \fIwfile\fR" 10
+Write. Append the pattern space to
+.IR wfile
+if a replacement was made. A conforming application shall precede the
+.IR wfile
+argument with one or more
+<blank>
+characters. If the
+.BR w
+flag is not the last flag value given in a concatenation of multiple
+flag values, the results are undefined.
+.RE
+.IP "\fB[\fI2addr\fB]t\ [\fIlabel\fB]\fR" 10
+.br
+Test. Branch to the
+.BR :
+command verb bearing the
+.IR label
+if any substitutions have been made since the most recent reading of an
+input line or execution of a
+.BR t .
+If
+.IR label
+is not specified, branch to the end of the script.
+.IP "\fB[\fI2addr\fB]w\ \fIwfile\fR" 10
+.br
+Append (write) the pattern space to
+.IR wfile .
+.IP "\fB[\fI2addr\fB]x\fR" 10
+Exchange the contents of the pattern and hold spaces.
+.IP "\fB[\fI2addr\fB]y/\fIstring1\fB/\fIstring2\fB/\fR" 10
+.br
+Replace all occurrences of characters in
+.IR string1
+with the corresponding characters in
+.IR string2 .
+If a
+<backslash>
+followed by an
+.BR 'n' 
+appear in
+.IR string1
+or
+.IR string2 ,
+the two characters shall be handled as a single
+<newline>.
+If the number of characters in
+.IR string1
+and
+.IR string2
+are not equal, or if any of the characters in
+.IR string1
+appear more than once, the results are undefined. Any character other
+than
+<backslash>
+or
+<newline>
+can be used instead of
+<slash>
+to delimit the strings. If the delimiter is not
+.BR 'n' ,
+within
+.IR string1
+and
+.IR string2 ,
+the delimiter itself can be used as a literal character if it is
+preceded by a
+<backslash>.
+If a
+<backslash>
+character is immediately followed by a
+<backslash>
+character in
+.IR string1
+or
+.IR string2 ,
+the two
+<backslash>
+characters shall be counted as a single literal
+<backslash>
+character. The meaning of a
+<backslash>
+followed by any character that is not
+.BR 'n' ,
+a
+<backslash>,
+or the delimiter character is undefined.
+.IP "\fB[\fI0addr\fB]:\fIlabel\fR" 10
+Do nothing. This command bears a
+.IR label
+to which the
+.BR b
+and
+.BR t
+commands branch.
+.IP "\fB[\fI1addr\fB]=\fR" 10
+Write the following to standard output:
+.RS 10 
+.sp
+.RS 4
+.nf
+\fB
+"%d\en", <\fIcurrent line number\fR>
+.fi \fR
+.P
+.RE
+.RE
+.IP "\fB[\fI0addr\fB]\fR" 10
+Ignore this empty command.
+.IP "\fB[\fI0addr\fB]#\fR" 10
+Ignore the
+.BR '#' 
+and the remainder of the line (treat them as a comment), with the
+single exception that if the first two characters in the script are
+.BR \(dq#n\(dq ,
+the default output shall be suppressed; this shall be the equivalent of
+specifying
+.BR \(min
+on the command line.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Regular expressions match entire strings, not just individual lines,
+but a
+<newline>
+is matched by
+.BR '\en' 
+in a
+.IR sed
+RE; a
+<newline>
+is not allowed by the general definition of regular expression in
+POSIX.1\(hy2008. Also note that
+.BR '\en' 
+cannot be used to match a
+<newline>
+at the end of an arbitrary input line;
+<newline>
+characters appear in the pattern space as a result of the
+.BR N
+editing command.
+.SH EXAMPLES
+This
+.IR sed
+script simulates the BSD
+.IR cat
+.BR \(mis
+command, squeezing excess empty lines from standard input.
+.sp
+.RS 4
+.nf
+\fB
+sed \(min '
+# Write non-empty lines.
+/./ {
+    p
+    d
+    }
+# Write a single empty line, then look for more empty lines.
+/^$/    p
+# Get next line, discard the held <newline> (empty line),
+# and look for more empty lines.
+:Empty
+/^$/    {
+    N
+    s/.//
+    b Empty
+    }
+# Write the non-empty line before going back to search
+# for the first in a set of empty lines.
+    p
+\&'
+.fi \fR
+.P
+.RE
+.P
+The following
+.IR sed
+command is a much simpler method of squeezing empty lines, although
+it is not quite the same as
+.IR cat
+.BR \(mis
+since it removes any initial empty lines:
+.sp
+.RS 4
+.nf
+\fB
+sed \(min '/./,/^$/p'
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+This volume of POSIX.1\(hy2008 requires implementations to support at least ten distinct
+.IR wfile s,
+matching historical practice on many implementations. Implementations
+are encouraged to support more, but conforming applications should not
+exceed this limit.
+.P
+The exit status codes specified here are different from those in System
+V. System V returns 2 for garbled
+.IR sed
+commands, but returns zero with its usage message or if the input file
+could not be opened. The standard developers considered this to be a
+bug.
+.P
+The manner in which the
+.BR l
+command writes non-printable characters was changed to avoid
+the historical backspace-overstrike method, and other requirements to
+achieve unambiguous output were added. See the RATIONALE for
+.IR "\fIed\fR\^"
+for details of the format chosen, which is the same as that chosen for
+.IR sed .
+.P
+This volume of POSIX.1\(hy2008 requires implementations to provide pattern and hold spaces of at
+least 8\|192 bytes, larger than the 4\|000 bytes spaces used by some
+historical implementations, but less than the 20\|480 bytes limit used
+in an early proposal. Implementations are encouraged to allocate
+dynamically larger pattern and hold spaces as needed.
+.P
+The requirements for acceptance of
+<blank>
+and
+<space>
+characters in command lines has been made more explicit than in early
+proposals to describe clearly the historical practice and to remove
+confusion about the phrase ``protect initial blanks [\fIsic\fP] and tabs
+from the stripping that is done on every script line'' that appears in
+much of the historical documentation of the
+.IR sed
+utility description of text. (Not all implementations are known to have
+stripped
+<blank>
+characters from text lines, although they all have allowed leading
+<blank>
+characters preceding the address on a command line.)
+.P
+The treatment of
+.BR '#' 
+comments differs from the SVID which only allows a comment as the first
+line of the script, but matches BSD-derived implementations. The
+comment character is treated as a command, and it has the same
+properties in terms of being accepted with leading
+<blank>
+characters; the BSD implementation has historically supported this.
+.P
+Early proposals required that a
+.IR script_file
+have at least one non-comment line. Some historical implementations
+have behaved in unexpected ways if this were not the case. The standard
+developers considered that this was incorrect behavior and that
+application developers should not have to avoid this feature. A correct
+implementation of this volume of POSIX.1\(hy2008 shall permit
+.IR script_file s
+that consist only of comment lines.
+.P
+Early proposals indicated that if
+.BR \(mie
+and
+.BR \(mif
+options were intermixed, all
+.BR \(mie
+options were processed before any
+.BR \(mif
+options. This has been changed to process them in the order presented
+because it matches historical practice and is more intuitive.
+.P
+The treatment of the
+.BR p
+flag to the
+.BR s
+command differs between System V and BSD-based systems when the default
+output is suppressed. In the two examples:
+.sp
+.RS 4
+.nf
+\fB
+echo a | sed    's/a/A/p'
+echo a | sed \(min 's/a/A/p'
+.fi \fR
+.P
+.RE
+.P
+this volume of POSIX.1\(hy2008, BSD, System V documentation, and the SVID indicate that the
+first example should write two lines with
+.BR A ,
+whereas the second should write one. Some System V systems write the
+.BR A
+only once in both examples because the
+.BR p
+flag is ignored if the
+.BR \(min
+option is not specified.
+.P
+This is a case of a diametrical difference between systems that could
+not be reconciled through the compromise of declaring the behavior to
+be unspecified. The SVID/BSD/System V documentation behavior was
+adopted for this volume of POSIX.1\(hy2008 because:
+.IP " *" 4
+No known documentation for any historic system describes the
+interaction between the
+.BR p
+flag and the
+.BR \(min
+option.
+.IP " *" 4
+The selected behavior is more correct as there is no technical
+justification for any interaction between the
+.BR p
+flag and the
+.BR \(min
+option. A relationship between
+.BR \(min
+and the
+.BR p
+flag might imply that they are only used together, but this ignores
+valid scripts that interrupt the cyclical nature of the processing
+through the use of the
+.BR D ,
+.BR d ,
+.BR q ,
+or branching commands. Such scripts rely on the
+.BR p
+suffix to write the pattern space because they do not make use of the
+default output at the ``bottom'' of the script.
+.IP " *" 4
+Because the
+.BR \(min
+option makes the
+.BR p
+flag unnecessary, any interaction would only be useful if
+.IR sed
+scripts were written to run both with and without the
+.BR \(min
+option. This is believed to be unlikely. It is even more unlikely that
+programmers have coded the
+.BR p
+flag expecting it to be unnecessary. Because the interaction was not
+documented, the likelihood of a programmer discovering the interaction
+and depending on it is further decreased.
+.IP " *" 4
+Finally, scripts that break under the specified behavior produce too
+much output instead of too little, which is easier to diagnose and
+correct.
+.P
+The form of the substitute command that uses the
+.BR n
+suffix was limited to the first 512 matches in an early proposal. This
+limit has been removed because there is no reason an editor processing
+lines of
+{LINE_MAX}
+length should have this restriction. The command
+.BR "s/a/A/2047"
+should be able to substitute the 2\|047th occurrence of
+.BR a
+on a line.
+.P
+The
+.BR b ,
+.BR t ,
+and
+.BR :
+commands are documented to ignore leading white space, but no mention
+is made of trailing white space. Historical implementations of
+.IR sed
+assigned different locations to the labels
+.BR 'x' 
+and
+.BR \(dqx\ \(dq .
+This is not useful, and leads to subtle programming errors, but it is
+historical practice, and changing it could theoretically break working
+scripts. Implementors are encouraged to provide warning messages about
+labels that are never used or jumps to labels that do not exist.
+.P
+Historically, the
+.IR sed
+.BR !
+and
+.BR }
+editing commands did not permit multiple commands on a single line
+using a
+<semicolon>
+as a command delimiter. Implementations are permitted, but not required,
+to support this extension.
+.P
+Earlier versions of this standard allowed for implementations with
+bytes other than eight bits, but this has been modified in this
+version.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIawk\fR\^",
+.IR "\fIed\fR\^",
+.IR "\fIgrep\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Table 5-1" ", " "Escape Sequences and Associated Actions",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 9.3" ", " "Basic Regular Expressions",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

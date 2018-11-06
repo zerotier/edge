@@ -1,0 +1,507 @@
+'\" et
+.TH JOIN "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+join
+\(em relational database operator
+.SH SYNOPSIS
+.LP
+.nf
+join \fB[\fR\(mia \fIfile_number\fR|\(miv \fIfile_number\fB] [\fR\(mie \fIstring\fB] [\fR\(mio \fIlist\fB] [\fR\(mit \fIchar\fB]
+    [\fR\(mi1 \fIfield\fB] [\fR\(mi2 \fIfield\fB]\fI file1 file2\fR
+.fi
+.SH DESCRIPTION
+The
+.IR join
+utility shall perform an equality join on the files
+.IR file1
+and
+.IR file2 .
+The joined files shall be written to the standard output.
+.P
+The join field is a field in each file on which the files are
+compared. The
+.IR join
+utility shall write one line in the output for each pair of lines in
+.IR file1
+and
+.IR file2
+that have identical join fields. The output line by default shall
+consist of the join field, then the remaining fields from
+.IR file1 ,
+then the remaining fields from
+.IR file2 .
+This format can be changed by using the
+.BR \(mio
+option (see below). The
+.BR \(mia
+option can be used to add unmatched lines to the output. The
+.BR \(miv
+option can be used to output only unmatched lines.
+.P
+The files
+.IR file1
+and
+.IR file2
+shall be ordered in the collating sequence of
+.IR sort
+.BR \(mib
+on the fields on which they shall be joined, by default the first in
+each line. All selected output shall be written in the same collating
+sequence.
+.P
+The default input field separators shall be
+<blank>
+characters. In this case, multiple separators shall count as one field
+separator, and leading separators shall be ignored. The default output
+field separator shall be a
+<space>.
+.P
+The field separator and collating sequence can be changed by using the
+.BR \(mit
+option (see below).
+.P
+If the same key appears more than once in either file, all combinations
+of the set of remaining fields in
+.IR file1
+and the set of remaining fields in
+.IR file2
+are output in the order of the lines encountered.
+.P
+If the input files are not in the appropriate collating sequence, the
+results are unspecified.
+.SH OPTIONS
+The
+.IR join
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following options shall be supported:
+.IP "\fB\(mia\ \fIfile_number\fR" 10
+.br
+Produce a line for each unpairable line in file
+.IR file_number ,
+where
+.IR file_number
+is 1 or 2, in addition to the default output. If both
+.BR \(mia 1
+and
+.BR \(mia 2
+are specified, all unpairable lines shall be output.
+.IP "\fB\(mie\ \fIstring\fR" 10
+Replace empty output fields in the list selected by
+.BR \(mio
+with the string
+.IR string .
+.IP "\fB\(mio\ \fIlist\fR" 10
+Construct the output line to comprise the fields specified in
+.IR list ,
+each element of which shall have one of the following two forms:
+.RS 10 
+.IP " 1." 4
+\fIfile_number.field\fR, where
+.IR file_number
+is a file number and
+.IR field
+is a decimal integer field number
+.IP " 2." 4
+0 (zero), representing the join field
+.P
+The elements of
+.IR list
+shall be either
+<comma>-separated
+or
+<blank>-separated,
+as specified in Guideline 8 of the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+The fields specified by
+.IR list
+shall be written for all selected output lines. Fields selected by
+.IR list
+that do not appear in the input shall be treated as empty output
+fields. (See the
+.BR \(mie
+option.) Only specifically requested fields shall be written. The
+application shall ensure that
+.IR list
+is a single command line argument.
+.RE
+.IP "\fB\(mit\ \fIchar\fR" 10
+Use character
+.IR char
+as a separator, for both input and output. Every appearance of
+.IR char
+in a line shall be significant. When this option is specified, the
+collating sequence shall be the same as
+.IR sort
+without the
+.BR \(mib
+option.
+.IP "\fB\(miv\ \fIfile_number\fR" 10
+.br
+Instead of the default output, produce a line only for each unpairable
+line in
+.IR file_number ,
+where
+.IR file_number
+is 1 or 2. If both
+.BR \(miv 1
+and
+.BR \(miv 2
+are specified, all unpairable lines shall be output.
+.IP "\fB\(mi1\ \fIfield\fR" 10
+Join on the
+.IR field th
+field of file 1. Fields are decimal integers starting with 1.
+.IP "\fB\(mi2\ \fIfield\fR" 10
+Join on the
+.IR field th
+field of file 2. Fields are decimal integers starting with 1.
+.SH OPERANDS
+The following operands shall be supported:
+.IP "\fIfile1\fR,\ \fIfile2\fR" 10
+A pathname of a file to be joined. If either of the
+.IR file1
+or
+.IR file2
+operands is
+.BR '\(mi' ,
+the standard input shall be used in its place.
+.SH STDIN
+The standard input shall be used only if the
+.IR file1
+or
+.IR file2
+operand is
+.BR '\(mi' .
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be text files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR join :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale of the collating sequence
+.IR join
+expects to have been used when the input files were sorted.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The
+.IR join
+utility output shall be a concatenation of selected character fields.
+When the
+.BR \(mio
+option is not specified, the output shall be:
+.sp
+.RS 4
+.nf
+\fB
+"%s%s%s\en", <\fIjoin field\fR>, <\fIother file1 fields\fR>,
+    <\fIother file2 fields\fR>
+.fi \fR
+.P
+.RE
+.P
+If the join field is not the first field in a file, the
+<\fIother\ file\ fields\fP> for that file shall be:
+.sp
+.RS 4
+.nf
+\fB
+<\fIfields preceding join field\fR>, <\fIfields following join field\fR>
+.fi \fR
+.P
+.RE
+.P
+When the
+.BR \(mio
+option is specified, the output format shall be:
+.sp
+.RS 4
+.nf
+\fB
+"%s\en", <\fIconcatenation of fields\fR>
+.fi \fR
+.P
+.RE
+.P
+where the concatenation of fields is described by the
+.BR \(mio
+option, above.
+.P
+For either format, each field (except the last) shall be written with
+its trailing separator character. If the separator is the default (\c
+<blank>
+characters), a single
+<space>
+shall be written after each field (except the last).
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All input files were output successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+Pathnames consisting of numeric digits or of the form
+.IR string.string
+should not be specified directly following the
+.BR \(mio
+list.
+.SH EXAMPLES
+The
+.BR \(mio
+0 field essentially selects the union of the join fields. For example,
+given file
+.BR phone :
+.sp
+.RS 4
+.nf
+\fB
+!Name           Phone Number
+Don             +1 123-456-7890
+Hal             +1 234-567-8901
+Yasushi         +2 345-678-9012
+.fi \fR
+.P
+.RE
+.P
+and file
+.BR fax :
+.sp
+.RS 4
+.nf
+\fB
+!Name           Fax Number
+Don             +1 123-456-7899
+Keith           +1 456-789-0122
+Yasushi         +2 345-678-9011
+.fi \fR
+.P
+.RE
+.P
+(where the large expanses of white space are meant to each represent a
+single
+<tab>),
+the command:
+.sp
+.RS 4
+.nf
+\fB
+join \(mit "<tab>" \(mia 1 \(mia 2 \(mie '(unknown)' \(mio 0,1.2,2.2 phone fax
+.fi \fR
+.P
+.RE
+.P
+would produce:
+.sp
+.RS 4
+.nf
+\fB
+!Name           Phone Number            Fax Number
+Don             +1 123-456-7890         +1 123-456-7899
+Hal             +1 234-567-8901         (unknown)
+Keith           (unknown)               +1 456-789-0122
+Yasushi         +2 345-678-9012         +2 345-678-9011
+.fi \fR
+.P
+.RE
+.P
+Multiple instances of the same key will produce combinatorial results.
+The following:
+.sp
+.RS 4
+.nf
+\fB
+fa:
+    a x
+    a y
+    a z
+fb:
+    a p
+.fi \fR
+.P
+.RE
+.P
+will produce:
+.sp
+.RS 4
+.nf
+\fB
+a x p
+a y p
+a z p
+.fi \fR
+.P
+.RE
+.P
+And the following:
+.sp
+.RS 4
+.nf
+\fB
+fa:
+    a b c
+    a d e
+fb:
+    a w x
+    a y z
+    a o p
+.fi \fR
+.P
+.RE
+.P
+will produce:
+.sp
+.RS 4
+.nf
+\fB
+a b c w x
+a b c y z
+a b c o p
+a d e w x
+a d e y z
+a d e o p
+.fi \fR
+.P
+.RE
+.SH RATIONALE
+The
+.BR \(mie
+option is only effective when used with
+.BR \(mio
+because, unless specific fields are identified using
+.BR \(mio ,
+.IR join
+is not aware of what fields might be empty. The exception to this is
+the join field, but identifying an empty join field with the
+.BR \(mie
+string is not historical practice and some scripts might break if this
+were changed.
+.P
+The 0 field in the
+.BR \(mio
+list was adopted from the Tenth Edition version of
+.IR join
+to satisfy international objections that the
+.IR join
+in the base documents does not support the ``full join'' or ``outer
+join'' described in relational database literature. Although it has
+been possible to include a join field in the output (by default, or by
+field number using
+.BR \(mio ),
+the join field could not be included for an unpaired line selected by
+.BR \(mia .
+The
+.BR \(mio
+0 field essentially selects the union of the join fields.
+.P
+This sort of outer join was not possible with the
+.IR join
+commands in the base documents. The
+.BR \(mio
+0 field was chosen because it is an upwards-compatible change for
+applications. An alternative was considered: have the join field
+represent the union of the fields in the files (where they are
+identical for matched lines, and one or both are null for unmatched
+lines). This was not adopted because it would break some historical
+applications.
+.P
+The ability to specify
+.IR file2
+as
+.BR \(mi
+is not historical practice; it was added for completeness.
+.P
+The
+.BR \(miv
+option is not historical practice, but was considered necessary because
+it permitted the writing of
+.IR only
+those lines that do not match on the join field, as opposed to the
+.BR \(mia
+option, which prints both lines that do and do not match. This
+additional facility is parallel with the
+.BR \(miv
+option of
+.IR grep .
+.P
+Some historical implementations have been encountered where a blank
+line in one of the input files was considered to be the end of the
+file; the description in this volume of POSIX.1\(hy2008 does not cite this as an allowable case.
+.P
+Earlier versions of this standard allowed
+.BR \(mij ,
+.BR \(mij1 ,
+.BR \(mij2
+options, and a form of the
+.BR \(mio
+option that allowed the
+.IR list
+option-argument to be multiple arguments. These forms are no longer
+specified by POSIX.1\(hy2008 but may be present in some implementations.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIawk\fR\^",
+.IR "\fIcomm\fR\^",
+.IR "\fIsort\fR\^",
+.IR "\fIuniq\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

@@ -1,0 +1,180 @@
+'\" et
+.TH CXREF "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cxref
+\(em generate a C-language program cross-reference table
+(\fBDEVELOPMENT\fP)
+.SH SYNOPSIS
+.LP
+.nf
+cxref \fB[\fR\(mics\fB] [\fR\(mio \fIfile\fB] [\fR\(miw \fInum\fB] [\fR\(miD \fIname\fB[\fR=\fIdef\fB]]\fR...\fB [\fR\(miI \fIdir\fB]\fR...
+    \fB[\fR\(miU \fIname\fB]\fR... \fIfile\fR...
+.fi
+.SH DESCRIPTION
+The
+.IR cxref
+utility shall analyze a collection of C-language
+.IR file s
+and attempt to build a cross-reference table. Information from
+.BR #define
+lines shall be included in the symbol table. A sorted listing shall be
+written to standard output of all symbols (auto, static, and global) in
+each
+.IR file
+separately, or with the
+.BR \(mic
+option, in combination. Each symbol shall contain an
+<asterisk>
+before the declaring reference.
+.SH OPTIONS
+The
+.IR cxref
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines",
+except that the order of the
+.BR \(miD ,
+.BR \(miI ,
+and
+.BR \(miU
+options (which are identical to their interpretation by
+.IR c99 )
+is significant. The following options shall be supported:
+.IP "\fB\(mic\fP" 10
+Write a combined cross-reference of all input files.
+.IP "\fB\(mis\fP" 10
+Operate silently; do not print input filenames.
+.IP "\fB\(mio\ \fIfile\fR" 10
+Direct output to named
+.IR file .
+.IP "\fB\(miw\ \fInum\fR" 10
+Format output no wider than
+.IR num
+(decimal) columns. This option defaults to 80 if
+.IR num
+is not specified or is less than 51.
+.IP "\fB\(miD\fP" 10
+Equivalent to
+.IR c99 .
+.IP "\fB\(miI\fP" 10
+Equivalent to
+.IR c99 .
+.IP "\fB\(miU\fP" 10
+Equivalent to
+.IR c99 .
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of a C-language source file.
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+The input files are C-language source files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR cxref :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+.br
+Determine the locale for the ordering of the output.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be used for the cross-reference listing,
+unless the
+.BR \(mio
+option is used to select a different output file.
+.P
+The format of standard output is unspecified, except that the following
+information shall be included:
+.IP " *" 4
+If the
+.BR \(mic
+option is not specified, each portion of the listing shall start
+with the name of the input file on a separate line.
+.IP " *" 4
+The name line shall be followed by a sorted list of symbols, each with
+its associated location pathname, the name of the function in which it
+appears (if it is not a function name itself), and line number
+references.
+.IP " *" 4
+Each line number may be preceded by an
+<asterisk>
+(\c
+.BR '*' )
+flag, meaning that this is the declaring reference. Other
+single-character flags, with implementation-defined meanings, may be
+included.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+The output file named by the
+.BR \(mio
+option shall be used instead of standard output.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIc99\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

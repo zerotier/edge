@@ -1,0 +1,325 @@
+'\" et
+.TH CAT "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+cat
+\(em concatenate and print files
+.SH SYNOPSIS
+.LP
+.nf
+cat \fB[\fR\(miu\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR cat
+utility shall read files in sequence and shall write their contents
+to the standard output in the same sequence.
+.SH OPTIONS
+The
+.IR cat
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(miu\fP" 10
+Write bytes from the input file to the standard output without delay as
+each is read.
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+A pathname of an input file. If no
+.IR file
+operands are specified, the standard input shall be used. If a
+.IR file
+is
+.BR '\(mi' ,
+the
+.IR cat
+utility shall read from the standard input at that point in the
+sequence. The
+.IR cat
+utility shall not close and reopen standard input when it is referenced
+in this way, but shall accept multiple occurrences of
+.BR '\(mi' 
+as a
+.IR file
+operand.
+.SH STDIN
+The standard input shall be used only if no
+.IR file
+operands are specified, or if a
+.IR file
+operand is
+.BR '\(mi' .
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files can be any file type.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR cat :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall contain the sequence of bytes read from the
+input files. Nothing else shall be written to the standard output.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All input files were output successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+The
+.BR \(miu
+option has value in prototyping non-blocking reads from FIFOs. The
+intent is to support the following sequence:
+.sp
+.RS 4
+.nf
+\fB
+mkfifo foo
+cat \(miu foo > /dev/tty13 &
+cat \(miu > foo
+.fi \fR
+.P
+.RE
+.P
+It is unspecified whether standard output is or is not buffered in the
+default case. This is sometimes of interest when standard output is
+associated with a terminal, since buffering may delay the output. The
+presence of the
+.BR \(miu
+option guarantees that unbuffered I/O is available. It is
+implementation-defined whether the
+.IR cat
+utility buffers output if the
+.BR \(miu
+option is not specified. Traditionally, the
+.BR \(miu
+option is implemented using the equivalent of the
+\fIsetvbuf\fR()
+function defined in the System Interfaces volume of POSIX.1\(hy2008.
+.SH EXAMPLES
+The following command:
+.sp
+.RS 4
+.nf
+\fB
+cat myfile
+.fi \fR
+.P
+.RE
+.P
+writes the contents of the file
+.BR myfile
+to standard output.
+.P
+The following command:
+.sp
+.RS 4
+.nf
+\fB
+cat doc1 doc2 > doc.all
+.fi \fR
+.P
+.RE
+.P
+concatenates the files
+.BR doc1
+and
+.BR doc2
+and writes the result to
+.BR doc.all .
+.P
+Because of the shell language mechanism used to perform output
+redirection, a command such as this:
+.sp
+.RS 4
+.nf
+\fB
+cat doc doc.end > doc
+.fi \fR
+.P
+.RE
+.P
+causes the original data in
+.BR doc
+to be lost.
+.P
+The command:
+.sp
+.RS 4
+.nf
+\fB
+cat start \(mi middle \(mi end > file
+.fi \fR
+.P
+.RE
+.P
+when standard input is a terminal, gets two arbitrary pieces of input
+from the terminal with a single invocation of
+.IR cat .
+Note, however, that if standard input is a regular file, this would be
+equivalent to the command:
+.sp
+.RS 4
+.nf
+\fB
+cat start \(mi middle /dev/null end > file
+.fi \fR
+.P
+.RE
+.P
+because the entire contents of the file would be consumed by
+.IR cat
+the first time
+.BR '\(mi' 
+was used as a
+.IR file
+operand and an end-of-file condition would be detected immediately when
+.BR '\(mi' 
+was referenced the second time.
+.SH RATIONALE
+Historical versions of the
+.IR cat
+utility include the
+.BR \(mie ,
+.BR \(mit ,
+and
+.BR \(miv ,
+options which permit the ends of lines,
+<tab>
+characters, and invisible characters, respectively, to be rendered visible
+in the output. The standard developers omitted these options because
+they provide too fine a degree of control over what is made visible,
+and similar output can be obtained using a command such as:
+.sp
+.RS 4
+.nf
+\fB
+sed \(min l pathname
+.fi \fR
+.P
+.RE
+.P
+The latter also has the advantage that its output is unambiguous,
+whereas the output of historical
+.IR cat
+.BR \(mietv
+is not.
+.P
+The
+.BR \(mis
+option was omitted because it corresponds to different functions in BSD
+and System V-based systems. The BSD
+.BR \(mis
+option to squeeze blank lines can be accomplished by the shell script
+shown in the following example:
+.sp
+.RS 4
+.nf
+\fB
+sed \(min '
+# Write non-empty lines.
+/./   {
+      p
+      d
+      }
+# Write a single empty line, then look for more empty lines.
+/^$/  p
+# Get next line, discard the held <newline> (empty line),
+# and look for more empty lines.
+:Empty
+/^$/  {
+      N
+      s/.//
+      b Empty
+      }
+# Write the non-empty line before going back to search
+# for the first in a set of empty lines.
+      p
+\&'
+.fi \fR
+.P
+.RE
+.P
+The System V
+.BR \(mis
+option to silence error messages can be accomplished by redirecting the
+standard error. Note that the BSD documentation for
+.IR cat
+uses the term ``blank line'' to mean the same as the POSIX ``empty
+line'': a line consisting only of a
+<newline>.
+.P
+The BSD
+.BR \(min
+option was omitted because similar functionality can be obtained from
+the
+.BR \(min
+option of the
+.IR pr
+utility.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fImore\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIsetvbuf\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

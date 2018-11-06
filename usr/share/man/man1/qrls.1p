@@ -1,0 +1,279 @@
+'\" et
+.TH QRLS "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+qrls
+\(em release batch jobs
+.SH SYNOPSIS
+.LP
+.nf
+qrls \fB[\fR\(mih \fIhold_list\fB] \fIjob_identifier\fR...
+.fi
+.SH DESCRIPTION
+A batch job might have one or more holds, which prevent the batch job
+from executing. A batch job from which all the holds have been removed
+becomes eligible for execution and is said to have been released. A
+batch job hold is removed by sending a request to the batch server that
+manages the batch job. The
+.IR qrls
+utility is a user-accessible client of batch services that requests
+holds be removed from one or more batch jobs.
+.P
+The
+.IR qrls
+utility shall remove one or more holds from those batch jobs for which
+a batch
+.IR job_identifier
+is presented to the utility.
+.P
+The
+.IR qrls
+utility shall remove holds from batch jobs in the order in which their
+batch
+.IR job_identifier s
+are presented to the utility.
+.P
+If the
+.IR qrls
+utility fails to process a batch
+.IR job_identifier
+successfully, the utility shall proceed to process the remaining batch
+.IR job_identifier s,
+if any.
+.P
+The
+.IR qrls
+utility shall remove holds on each batch job by sending a
+.IR "Release Job Request"
+to the batch server that manages the batch job.
+.P
+The
+.IR qrls
+utility shall not exit until the holds have been removed from the batch
+job corresponding to each successfully processed batch
+.IR job_identifier .
+.SH OPTIONS
+The
+.IR qrls
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported by the implementation:
+.IP "\fB\(mih\ \fIhold_list\fR" 10
+Define the types of holds to be removed from the batch job.
+.RS 10 
+.P
+The
+.IR qrls
+.BR \(mih
+option shall accept a value for the
+.IR hold_list
+option-argument that is a string of alphanumeric characters in the
+portable character set (see the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.1" ", " "Portable Character Set").
+.P
+The
+.IR qrls
+utility shall accept a value for the
+.IR hold_list
+option-argument that is a string of one or more of the characters
+.BR 'u' ,
+.BR 's' ,
+or
+.BR 'o' ,
+or the single character
+.BR 'n' .
+.P
+For each unique character in the
+.IR hold_list
+option-argument, the
+.IR qrls
+utility shall add a value to the
+.IR Hold_Types
+attribute of the batch job as follows, each representing a different
+hold type:
+.IP "\fRu\fP" 6
+USER
+.IP "\fRs\fP" 6
+SYSTEM
+.IP "\fRo\fP" 6
+OPERATOR
+.P
+If any of these characters are duplicated in the
+.IR hold_list
+option-argument, the duplicates shall be ignored.
+.P
+An existing
+.IR Hold_Types
+attribute can be cleared by the following hold type:
+.IP "\fRn\fP" 6
+NO_HOLD
+.P
+The
+.IR qrls
+utility shall consider it an error if any hold type other than
+.BR 'n' 
+is combined with hold type
+.BR 'n' .
+.P
+Strictly conforming applications shall not repeat any of the characters
+.BR 'u' ,
+.BR 's' ,
+.BR 'o' ,
+or
+.BR 'n' 
+within the
+.IR hold_list
+option-argument. The
+.IR qrls
+utility shall permit the repetition of characters, but shall not assign
+additional meaning to the repeated characters.
+.P
+An implementation may define other hold types. The conformance document
+for an implementation shall describe any additional hold types, how
+they are specified, their internal behavior, and how they affect the
+behavior of the utility.
+.P
+If the
+.BR \(mih
+option is not presented to the
+.IR qrls
+utility, the implementation shall remove the USER hold in the
+.IR Hold_Types
+attribute.
+.RE
+.SH OPERANDS
+The
+.IR qrls
+utility shall accept one or more operands that conform to the syntax
+for a batch
+.IR job_identifier
+(see
+.IR "Section 3.3.1" ", " "Batch Job Identifier").
+.SH STDIN
+Not used.
+.SH "INPUT FILES"
+None.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR qrls :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+the precedence of internationalization variables used to determine the
+values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fILOGNAME\fP" 10
+Determine the login name of the user.
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+None.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+In addition to the default behavior, the
+.IR qrls
+utility shall not be required to write a diagnostic message to standard
+error when the error reply received from a batch server indicates that
+the batch
+.IR job_identifier
+does not exist on the server. Whether or not the
+.IR qrls
+utility waits to output the diagnostic message while attempting to
+locate the job on other servers is implementation-defined.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The
+.IR qrls
+utility allows users, operators, and administrators to remove holds
+from jobs.
+.P
+The
+.IR qrls
+utility does not support any job selection options or wildcard
+arguments. Users may acquire a list of jobs selected by attributes
+using the
+.IR qselect
+utility. For example, a user could select all of their held jobs.
+.P
+The
+.BR \(mih
+option allows the user to specify the type of hold that is to be
+removed. This option allows for USER, SYSTEM, OPERATOR, and
+implementation-defined hold types. The batch server that manages the
+batch job will verify whether the user is authorized to remove the
+specified hold for the batch job. If more than one type of hold has
+been placed on the batch job, a user may wish to remove only some of
+them.
+.P
+Mail is not required on release because the administrator has the tools
+and libraries to build this option if required.
+.P
+The
+.IR qrls
+utility is a new utility \fIvis-a-vis\fP existing practice; it has been
+defined in this volume of POSIX.1\(hy2008 as the natural complement to the
+.IR qhold
+utility.
+.SH "FUTURE DIRECTIONS"
+The
+.IR qrls
+utility may be removed in a future version.
+.SH "SEE ALSO"
+.IR "Chapter 3" ", " "Batch Environment Services",
+.IR "\fIqhold\fR\^",
+.IR "\fIqselect\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 6.1" ", " "Portable Character Set",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

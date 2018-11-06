@@ -1,0 +1,163 @@
+'\" et
+.TH dirent.h "0P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+dirent.h
+\(em format of directory entries
+.SH SYNOPSIS
+.LP
+.nf
+#include <dirent.h>
+.fi
+.SH DESCRIPTION
+The internal format of directories is unspecified.
+.P
+The
+.IR <dirent.h> 
+header shall define the following type:
+.IP "\fBDIR\fR" 8
+A type representing a directory stream. The
+.BR DIR
+type may be an incomplete type.
+.P
+It shall also define the structure
+.BR dirent
+which shall include the following members:
+.sp
+.RS 4
+.nf
+\fB
+ino_t  d_ino       \fRFile serial number.\fR
+char   d_name[]    \fRFilename string of entry.\fR
+.fi \fR
+.P
+.RE
+.P
+The
+.IR <dirent.h> 
+header shall define the
+.BR ino_t
+type as described in
+.IR <sys/types.h> .
+.P
+The array
+.IR d_name
+is of unspecified size, but shall contain a filename of at most
+{NAME_MAX}
+bytes followed by a terminating null byte.
+.P
+The following shall be declared as functions and may also be defined as
+macros. Function prototypes shall be provided.
+.sp
+.RS 4
+.nf
+\fB
+int            alphasort(const struct dirent **, const struct dirent **);
+int            closedir(DIR *);
+int            dirfd(DIR *);
+DIR           *fdopendir(int);
+DIR           *opendir(const char *);
+struct dirent *readdir(DIR *);
+int            readdir_r(DIR *restrict, struct dirent *restrict,
+                   struct dirent **restrict);
+void           rewinddir(DIR *);
+int            scandir(const char *, struct dirent ***,
+                   int (*)(const struct dirent *),
+                   int (*)(const struct dirent **,
+                   const struct dirent **));
+void           seekdir(DIR *, long);
+long           telldir(DIR *);
+.fi \fR
+.P
+.RE
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+Information similar to that in the
+.IR <dirent.h> 
+header is contained in a file
+.IR <sys/dir.h> 
+in 4.2 BSD and 4.3 BSD. The equivalent in these implementations of
+.BR "struct dirent"
+from this volume of POSIX.1\(hy2008 is
+.BR "struct direct" .
+The filename was changed because the name
+.IR <sys/dir.h> 
+was also used in earlier implementations to refer to definitions
+related to the older access method; this produced name conflicts. The
+name of the structure was changed because this volume of POSIX.1\(hy2008 does not completely
+define what is in the structure, so it could be different on some
+implementations from
+.BR "struct direct" .
+.P
+The name of an array of
+.BR char
+of an unspecified size should not be used as an lvalue. Use of:
+.sp
+.RS 4
+.nf
+\fB
+sizeof(d_name)
+.fi \fR
+.P
+.RE
+.P
+is incorrect; use:
+.sp
+.RS 4
+.nf
+\fB
+strlen(d_name)
+.fi \fR
+.P
+.RE
+.P
+instead.
+.P
+The array of
+.BR char
+.IR d_name
+is not a fixed size. Implementations may need to declare
+.BR "struct dirent"
+with an array size for
+.IR d_name
+of 1, but the actual number of bytes provided matches (or only slightly
+exceeds) the length of the filename string.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fB<sys_types.h>\fP"
+.P
+The System Interfaces volume of POSIX.1\(hy2008,
+.IR "\fIalphasort\fR\^(\|)",
+.IR "\fIclosedir\fR\^(\|)",
+.IR "\fIdirfd\fR\^(\|)",
+.IR "\fIfdopendir\fR\^(\|)",
+.IR "\fIreaddir\fR\^(\|)",
+.IR "\fIrewinddir\fR\^(\|)",
+.IR "\fIseekdir\fR\^(\|)",
+.IR "\fItelldir\fR\^(\|)"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

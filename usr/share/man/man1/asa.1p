@@ -1,0 +1,212 @@
+'\" et
+.TH ASA "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+asa
+\(em interpret carriage-control characters
+.SH SYNOPSIS
+.LP
+.nf
+asa \fB[\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR asa
+utility shall write its input files to standard output, mapping
+carriage-control characters from the text files to line-printer control
+sequences in an implementation-defined manner.
+.P
+The first character of every line shall be removed from the input, and
+the following actions are performed.
+.P
+If the character removed is:
+.IP <space> 10
+The rest of the line is output without change.
+.IP 0 10
+A
+<newline>
+is output, then the rest of the input line.
+.IP 1 10
+One or more implementation-defined characters that causes an advance
+to the next page shall be output, followed by the rest of the input
+line.
+.IP "\fR+\fP" 10
+The
+<newline>
+of the previous line shall be replaced with one or more
+implementation-defined characters that causes printing to return to
+column position 1, followed by the rest of the input line. If the
+.BR '\(pl' 
+is the first character in the input, it shall be equivalent to
+<space>.
+.P
+The action of the
+.IR asa
+utility is unspecified upon encountering any character other than those
+listed above as the first character in a line.
+.SH OPTIONS
+None.
+.SH OPERANDS
+.IP "\fIfile\fR" 10
+A pathname of a text file used for input. If no
+.IR file
+operands are specified, the standard input shall be used.
+.SH STDIN
+The standard input shall be used if no
+.IR file
+operands are specified, and shall be used if a
+.IR file
+operand is
+.BR '\(mi' 
+and the implementation treats the
+.BR '\(mi' 
+as meaning standard input.
+Otherwise, the standard input shall not be used.
+See the INPUT FILES section.
+.SH "INPUT FILES"
+The input files shall be text files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR asa :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files).
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be the text from the input file modified as
+described in the DESCRIPTION section.
+.SH STDERR
+None.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+All input files were output successfully.
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+Default.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+.IP " 1." 4
+The following command:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+asa \fIfile\fR
+.fi \fR
+.P
+.RE
+.P
+permits the viewing of
+.IR file
+(created by a program using FORTRAN-style carriage-control characters)
+on a terminal.
+.RE
+.IP " 2." 4
+The following command:
+.RS 4 
+.sp
+.RS 4
+.nf
+\fB
+a.out | asa | lp
+.fi \fR
+.P
+.RE
+.P
+formats the FORTRAN output of
+.BR a.out
+and directs it to the printer.
+.RE
+.SH RATIONALE
+The
+.IR asa
+utility is needed to map ``standard'' FORTRAN 77 output into a form
+acceptable to contemporary printers. Usually,
+.IR asa
+is used to pipe data to the
+.IR lp
+utility; see
+.IR lp .
+.P
+This utility is generally used only by FORTRAN programs. The
+standard developers decided to retain
+.IR asa
+to avoid breaking the historical large base of FORTRAN applications
+that put carriage-control characters in their output files. There is no
+requirement that a system have a FORTRAN compiler in order to run
+applications that need
+.IR asa .
+.P
+Historical implementations have used an ASCII
+<form-feed>
+in response to a 1 and an ASCII
+<carriage-return>
+in response to a
+.BR '\(pl' .
+It is suggested that implementations treat characters other than 0, 1,
+and
+.BR '\(pl' 
+as
+<space>
+in the absence of any compelling reason to do otherwise. However, the
+action is listed here as ``unspecified'', permitting an implementation
+to provide extensions to access fast multiple-line slewing and channel
+seeking in a non-portable manner.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIfort77\fR\^",
+.IR "\fIlp\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Chapter 8" ", " "Environment Variables"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

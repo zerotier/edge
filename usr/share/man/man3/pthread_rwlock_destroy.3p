@@ -1,0 +1,195 @@
+'\" et
+.TH PTHREAD_RWLOCK_DESTROY "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_rwlock_destroy,
+pthread_rwlock_init
+\(em destroy and initialize a read-write lock object
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+.P
+int pthread_rwlock_destroy(pthread_rwlock_t *\fIrwlock\fP);
+int pthread_rwlock_init(pthread_rwlock_t *restrict \fIrwlock\fP,
+    const pthread_rwlockattr_t *restrict \fIattr\fP);
+pthread_rwlock_t \fIrwlock\fR = PTHREAD_RWLOCK_INITIALIZER;
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_rwlock_destroy\fR()
+function shall destroy the read-write lock object referenced by
+.IR rwlock
+and release any resources used by the lock. The effect of subsequent
+use of the lock is undefined until the lock is reinitialized by
+another call to
+\fIpthread_rwlock_init\fR().
+An implementation may cause
+\fIpthread_rwlock_destroy\fR()
+to set the object referenced by
+.IR rwlock
+to an invalid value. Results are undefined if
+\fIpthread_rwlock_destroy\fR()
+is called when any thread holds
+.IR rwlock .
+Attempting to destroy an uninitialized read-write lock results in
+undefined behavior.
+.P
+The
+\fIpthread_rwlock_init\fR()
+function shall allocate any resources required to use the read-write
+lock referenced by
+.IR rwlock
+and initializes the lock to an unlocked state with attributes
+referenced by
+.IR attr .
+If
+.IR attr
+is NULL, the default read-write lock attributes shall be used; the
+effect is the same as passing the address of a default read-write lock
+attributes object. Once initialized, the lock can be used any number of
+times without being reinitialized. Results are undefined if
+\fIpthread_rwlock_init\fR()
+is called specifying an already initialized read-write lock. Results
+are undefined if a read-write lock is used without first being
+initialized.
+.P
+If the
+\fIpthread_rwlock_init\fR()
+function fails,
+.IR rwlock
+shall not be initialized and the contents of
+.IR rwlock
+are undefined.
+.P
+Only the object referenced by
+.IR rwlock
+may be used for performing synchronization. The result of referring to
+copies of that object in calls to
+\fIpthread_rwlock_destroy\fR(),
+\fIpthread_rwlock_rdlock\fR(),
+\fIpthread_rwlock_timedrdlock\fR(),
+\fIpthread_rwlock_timedwrlock\fR(),
+\fIpthread_rwlock_tryrdlock\fR(),
+\fIpthread_rwlock_trywrlock\fR(),
+\fIpthread_rwlock_unlock\fR(),
+or
+\fIpthread_rwlock_wrlock\fR()
+is undefined.
+.P
+In cases where default read-write lock attributes are appropriate, the
+macro PTHREAD_RWLOCK_INITIALIZER can be used to initialize read-write
+locks. The effect shall be equivalent to dynamic initialization by a
+call to
+\fIpthread_rwlock_init\fR()
+with the
+.IR attr
+parameter specified as NULL, except that no error checks are performed.
+.P
+The behavior is undefined if the value specified by the
+.IR attr
+argument to
+\fIpthread_rwlock_init\fR()
+does not refer to an initialized read-write lock attributes object.
+.SH "RETURN VALUE"
+If successful, the
+\fIpthread_rwlock_destroy\fR()
+and
+\fIpthread_rwlock_init\fR()
+functions shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_rwlock_init\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The system lacked the necessary resources (other than memory) to
+initialize another read-write lock.
+.TP
+.BR ENOMEM
+Insufficient memory exists to initialize the read-write lock.
+.TP
+.BR EPERM
+The caller does not have the privilege to perform the operation.
+.P
+These functions shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Applications using these and related read-write lock functions may be
+subject to priority inversion, as discussed in the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.287" ", " "Priority Inversion".
+.SH RATIONALE
+If an implementation detects that the value specified by the
+.IR rwlock
+argument to
+\fIpthread_rwlock_destroy\fR()
+does not refer to an initialized read-write lock object, it is
+recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.P
+If an implementation detects that the value specified by the
+.IR attr
+argument to
+\fIpthread_rwlockr_init\fR()
+does not refer to an initialized read-write lock attributes object,
+it is recommended that the function should fail and report an
+.BR [EINVAL] 
+error.
+.P
+If an implementation detects that the value specified by the
+.IR rwlock
+argument to
+\fIpthread_rwlock_destroy\fR()
+or
+\fIpthread_rwlock_init\fR()
+refers to a locked read-write lock object, or detects that the value
+specified by the
+.IR rwlock
+argument to
+\fIpthread_rwlock_init\fR()
+refers to an already initialized read-write lock object, it is recommended
+that the function should fail and report an
+.BR [EBUSY] 
+error.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.ad l
+.IR "\fIpthread_rwlock_rdlock\fR\^(\|)",
+.IR "\fIpthread_rwlock_timedrdlock\fR\^(\|)",
+.IR "\fIpthread_rwlock_timedwrlock\fR\^(\|)",
+.IR "\fIpthread_rwlock_trywrlock\fR\^(\|)",
+.IR "\fIpthread_rwlock_unlock\fR\^(\|)"
+.ad b
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.287" ", " "Priority Inversion",
+.IR "\fB<pthread.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

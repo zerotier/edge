@@ -1,0 +1,143 @@
+'\" et
+.TH ENDNETENT "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+endnetent,
+getnetbyaddr,
+getnetbyname,
+getnetent,
+setnetent
+\(em network database functions
+.SH SYNOPSIS
+.LP
+.nf
+#include <netdb.h>
+.P
+void endnetent(void);
+struct netent *getnetbyaddr(uint32_t \fInet\fP, int \fItype\fP);
+struct netent *getnetbyname(const char *\fIname\fP);
+struct netent *getnetent(void);
+void setnetent(int \fIstayopen\fP);
+.fi
+.SH DESCRIPTION
+These functions shall retrieve information about networks. This
+information is considered to be stored in a database that can be
+accessed sequentially or randomly. The implementation of this database
+is unspecified.
+.P
+The
+\fIsetnetent\fR()
+function shall open and rewind the database. If the
+.IR stayopen
+argument is non-zero, the connection to the
+.IR net
+database shall not be closed after each call to
+\fIgetnetent\fR()
+(either directly, or indirectly through one of the other
+.IR getnet* (\|)
+functions), and the implementation may maintain an open file descriptor
+to the database.
+.P
+The
+\fIgetnetent\fR()
+function shall read the next entry of the database, opening and
+closing a connection to the database as necessary.
+.P
+The
+\fIgetnetbyaddr\fR()
+function shall search the database from the beginning, and find the
+first entry for which the address family specified by
+.IR type
+matches the
+.IR n_addrtype
+member and the network number
+.IR net
+matches the
+.IR n_net
+member, opening and closing a connection to the database as necessary.
+The
+.IR net
+argument shall be the network number in host byte order.
+.P
+The
+\fIgetnetbyname\fR()
+function shall search the database from the beginning and find the
+first entry for which the network name specified by
+.IR name
+matches the
+.IR n_name
+member, opening and closing a connection to the database as necessary.
+.P
+The
+\fIgetnetbyaddr\fR(),
+\fIgetnetbyname\fR(),
+and
+\fIgetnetent\fR()
+functions shall each return a pointer to a
+.BR netent
+structure, the members of which shall contain the fields of an entry in
+the network database.
+.P
+The
+\fIendnetent\fR()
+function shall close the database, releasing any open file descriptor.
+.P
+These functions need not be thread-safe.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIgetnetbyaddr\fR(),
+\fIgetnetbyname\fR(),
+and
+\fIgetnetent\fR()
+shall return a pointer to a
+.BR netent
+structure if the requested entry was found, and a null pointer if the
+end of the database was reached or the requested entry was not found.
+Otherwise, a null pointer shall be returned.
+.P
+The application shall not modify the structure to which the return
+value points, nor any storage areas pointed to by pointers within the
+structure. The returned pointer, and pointers within the structure,
+might be invalidated or the structure or the storage areas might be
+overwritten by a subsequent call to
+\fIgetnetbyaddr\fR(),
+\fIgetnetbyname\fR(),
+or
+\fIgetnetent\fR().
+.SH ERRORS
+No errors are defined.
+.LP
+.IR "The following sections are informative."
+.SH "EXAMPLES"
+None.
+.SH "APPLICATION USAGE"
+None.
+.SH "RATIONALE"
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<netdb.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

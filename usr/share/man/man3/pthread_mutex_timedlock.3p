@@ -1,0 +1,195 @@
+'\" et
+.TH PTHREAD_MUTEX_TIMEDLOCK "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+pthread_mutex_timedlock
+\(em lock a mutex
+.SH SYNOPSIS
+.LP
+.nf
+#include <pthread.h>
+#include <time.h>
+.P
+int pthread_mutex_timedlock(pthread_mutex_t *restrict \fImutex\fP,
+    const struct timespec *restrict \fIabstime\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIpthread_mutex_timedlock\fR()
+function shall lock the mutex object referenced by
+.IR mutex .
+If the mutex is already locked, the calling thread shall block
+until the mutex becomes available as in the
+\fIpthread_mutex_lock\fR()
+function. If the mutex cannot be locked without waiting for another
+thread to unlock the mutex, this wait shall be terminated when the
+specified timeout expires.
+.P
+The timeout shall expire when the absolute time specified by
+.IR abstime
+passes, as measured by the clock on which timeouts are based (that is,
+when the value of that clock equals or exceeds
+.IR abstime ),
+or if the absolute time specified by
+.IR abstime
+has already been passed at the time of the call.
+.P
+The timeout shall be based on the CLOCK_REALTIME clock.
+The resolution of the timeout shall be the resolution of the clock on
+which it is based. The
+.BR timespec
+data type is defined in the
+.IR <time.h> 
+header.
+.P
+Under no circumstance shall the function fail with a timeout if the
+mutex can be locked immediately. The validity of the
+.IR abstime
+parameter need not be checked if the mutex can be locked immediately.
+.P
+As a consequence of the priority inheritance rules (for mutexes
+initialized with the PRIO_INHERIT protocol), if a timed mutex wait is
+terminated
+because its timeout expires, the priority of the owner of the mutex
+shall be adjusted as necessary to reflect the fact that this thread is
+no longer among the threads waiting for the mutex.
+.P
+If
+.IR mutex
+is a robust mutex and the process containing the owning thread
+terminated while holding the mutex lock, a call to
+\fIpthread_mutex_timedlock\fR()
+shall return the error value
+.BR [EOWNERDEAD] .
+If
+.IR mutex
+is a robust mutex and the owning thread terminated while holding the
+mutex lock, a call to
+\fIpthread_mutex_timedlock\fR()
+may return the error value
+.BR [EOWNERDEAD] 
+even if the process in which the owning thread resides has not
+terminated. In these cases, the mutex is locked by the thread but the
+state it protects is marked as inconsistent. The application should
+ensure that the state is made consistent for reuse and when that is
+complete call
+\fIpthread_mutex_consistent\fR().
+If the application is unable to recover the state, it should unlock the
+mutex without a prior call to
+\fIpthread_mutex_consistent\fR(),
+after which the mutex is marked permanently unusable.
+.P
+If
+.IR mutex
+does not refer to an initialized mutex object, the behavior is undefined.
+.SH "RETURN VALUE"
+If successful, the
+\fIpthread_mutex_timedlock\fR()
+function shall return zero; otherwise, an error number shall be
+returned to indicate the error.
+.SH ERRORS
+The
+\fIpthread_mutex_timedlock\fR()
+function shall fail if:
+.TP
+.BR EAGAIN
+The mutex could not be acquired because the maximum number of recursive
+locks for
+.IR mutex
+has been exceeded.
+.TP
+.BR EDEADLK
+The mutex type is PTHREAD_MUTEX_ERRORCHECK and the current
+thread already owns the mutex.
+.TP
+.BR EINVAL
+The mutex was created with the protocol attribute having the value
+PTHREAD_PRIO_PROTECT and the calling thread's priority is higher than
+the mutex' current priority ceiling.
+.TP
+.BR EINVAL
+The process or thread would have blocked, and the
+.IR abstime
+parameter specified a nanoseconds field value less than zero or greater
+than or equal to 1\|000 million.
+.TP
+.BR ENOTRECOVERABLE
+.br
+The state protected by the mutex is not recoverable.
+.TP
+.BR EOWNERDEAD
+.br
+The mutex is a robust mutex and the process containing the previous
+owning thread terminated while holding the mutex lock. The mutex lock
+shall be acquired by the calling thread and it is up to the new owner
+to make the state consistent.
+.TP
+.BR ETIMEDOUT
+The mutex could not be locked before the specified timeout expired.
+.P
+The
+\fIpthread_mutex_timedlock\fR()
+function may fail if:
+.TP
+.BR EDEADLK
+A deadlock condition was detected.
+.TP
+.BR EOWNERDEAD
+.br
+The mutex is a robust mutex and the previous owning thread terminated
+while holding the mutex lock. The mutex lock shall be acquired by the
+calling thread and it is up to the new owner to make the state consistent.
+.P
+This function shall not return an error code of
+.BR [EINTR] .
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+None.
+.SH "APPLICATION USAGE"
+Applications that have assumed that non-zero return values are errors
+will need updating for use with robust mutexes, since a valid return
+for a thread acquiring a mutex which is protecting a currently
+inconsistent state is
+.BR [EOWNERDEAD] .
+Applications that do not check the error returns, due to ruling out the
+possibility of such errors arising, should not use robust mutexes. If
+an application is supposed to work with normal and robust mutexes, it
+should check all return values for error conditions and if necessary
+take appropriate action.
+.SH RATIONALE
+Refer to
+.IR "\fIpthread_mutex_lock\fR\^(\|)".
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIpthread_mutex_destroy\fR\^(\|)",
+.IR "\fIpthread_mutex_lock\fR\^(\|)",
+.IR "\fItime\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 4.11" ", " "Memory Synchronization",
+.IR "\fB<pthread.h>\fP",
+.IR "\fB<time.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

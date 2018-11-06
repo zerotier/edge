@@ -1,0 +1,205 @@
+'\" et
+.TH EXPAND "1P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+expand
+\(em convert tabs to spaces
+.SH SYNOPSIS
+.LP
+.nf
+expand \fB[\fR\(mit \fItablist\fB] [\fIfile\fR...\fB]\fR
+.fi
+.SH DESCRIPTION
+The
+.IR expand
+utility shall write files or the standard input to the standard output
+with
+<tab>
+characters replaced with one or more
+<space>
+characters needed to pad to the next tab stop. Any
+<backspace>
+characters shall be copied to the output and cause the column position
+count for tab stop calculations to be decremented; the column position
+count shall not be decremented below zero.
+.SH OPTIONS
+The
+.IR expand
+utility shall conform to the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 12.2" ", " "Utility Syntax Guidelines".
+.P
+The following option shall be supported:
+.IP "\fB\(mit\ \fItablist\fR" 10
+Specify the tab stops. The application shall ensure that the argument
+.IR tablist
+consists of either a single positive decimal integer or a list of
+tabstops. If a single number is given, tabs shall be set that number of
+column positions apart instead of the default 8.
+.RS 10 
+.P
+If a list of tabstops is given, the application shall ensure that it
+consists of a list of two or more positive decimal integers, separated
+by
+<blank>
+or
+<comma>
+characters, in ascending order. The
+<tab>
+characters shall be set at those specific column positions. Each tab stop
+.IR N
+shall be an integer value greater than zero, and the list is in
+strictly ascending order. This is taken to mean that, from the start of
+a line of output, tabbing to position
+.IR N
+shall cause the next character output to be in the (\c
+.IR N +1)th
+column position on that line.
+.P
+In the event of
+.IR expand
+having to process a
+<tab>
+at a position beyond the last of those specified in a multiple tab-stop
+list, the
+<tab>
+shall be replaced by a single
+<space>
+in the output.
+.RE
+.SH OPERANDS
+The following operand shall be supported:
+.IP "\fIfile\fR" 10
+The pathname of a text file to be used as input.
+.SH STDIN
+See the INPUT FILES section.
+.SH "INPUT FILES"
+Input files shall be text files.
+.SH "ENVIRONMENT VARIABLES"
+The following environment variables shall affect the execution of
+.IR expand :
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are
+unset or null. (See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 8.2" ", " "Internationalization Variables"
+for the precedence of internationalization variables used to determine
+the values of locale categories.)
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the
+other internationalization variables.
+.IP "\fILC_CTYPE\fP" 10
+Determine the locale for the interpretation of sequences of bytes of
+text data as characters (for example, single-byte as opposed to
+multi-byte characters in arguments and input files), the processing of
+<tab>
+and
+<space>
+characters, and for the determination of the width in column positions
+each character would occupy on an output device.
+.IP "\fILC_MESSAGES\fP" 10
+.br
+Determine the locale that should be used to affect the format and
+contents of diagnostic messages written to standard error.
+.IP "\fINLSPATH\fP" 10
+Determine the location of message catalogs for the processing of
+.IR LC_MESSAGES .
+.SH "ASYNCHRONOUS EVENTS"
+Default.
+.SH STDOUT
+The standard output shall be equivalent to the input files with
+<tab>
+characters converted into the appropriate number of
+<space>
+characters.
+.SH STDERR
+The standard error shall be used only for diagnostic messages.
+.SH "OUTPUT FILES"
+None.
+.SH "EXTENDED DESCRIPTION"
+None.
+.SH "EXIT STATUS"
+The following exit values shall be returned:
+.IP "\00" 6
+Successful completion
+.IP >0 6
+An error occurred.
+.SH "CONSEQUENCES OF ERRORS"
+The
+.IR expand
+utility shall terminate with an error message and non-zero exit status
+upon encountering difficulties accessing one of the
+.IR file
+operands.
+.LP
+.IR "The following sections are informative."
+.SH "APPLICATION USAGE"
+None.
+.SH EXAMPLES
+None.
+.SH RATIONALE
+The
+.IR expand
+utility is useful for preprocessing text files (before sorting, looking
+at specific columns, and so on) that contain
+<tab>
+characters.
+.P
+See the Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.103" ", " "Column Position".
+.P
+The
+.IR tablist
+option-argument consists of integers in ascending order. Utility Syntax
+Guideline 8 mandates that
+.IR expand
+shall accept the integers (within the single argument) separated using
+either
+<comma>
+or
+<blank>
+characters.
+.P
+Earlier versions of this standard allowed the following form in
+the SYNOPSIS:
+.sp
+.RS 4
+.nf
+\fB
+expand \fB[\fR\(mitabstop\fB][\fR\(mitab1,tab2,...,tabn\fB][\fIfile\fR ...\fB]\fR
+.fi \fR
+.P
+.RE
+.P
+This form is no longer specified by POSIX.1\(hy2008 but may be present
+in some implementations.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fItabs\fR\^",
+.IR "\fIunexpand\fR\^"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "Section 3.103" ", " "Column Position",
+.IR "Chapter 8" ", " "Environment Variables",
+.IR "Section 12.2" ", " "Utility Syntax Guidelines"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .

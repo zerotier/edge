@@ -1,0 +1,233 @@
+'\" et
+.TH FSTATVFS "3P" 2013 "IEEE/The Open Group" "POSIX Programmer's Manual"
+.SH PROLOG
+This manual page is part of the POSIX Programmer's Manual.
+The Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux behavior),
+or the interface may not be implemented on Linux.
+
+.SH NAME
+fstatvfs,
+statvfs
+\(em get file system information
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/statvfs.h>
+.P
+int fstatvfs(int \fIfildes\fP, struct statvfs *\fIbuf\fP);
+int statvfs(const char *restrict \fIpath\fP, struct statvfs *restrict \fIbuf\fP);
+.fi
+.SH DESCRIPTION
+The
+\fIfstatvfs\fR()
+function shall obtain information about the file system containing
+the file referenced by
+.IR fildes .
+.P
+The
+\fIstatvfs\fR()
+function shall obtain information about the file system
+containing the file named by
+.IR path .
+.P
+For both functions, the
+.IR buf
+argument is a pointer to a
+.BR statvfs
+structure that shall be filled. Read, write, or execute permission of
+the named file is not required.
+.P
+The following flags can be returned in the
+.IR f_flag
+member:
+.IP ST_RDONLY 12
+Read-only file system.
+.IP ST_NOSUID 12
+Setuid/setgid bits ignored by
+.IR exec .
+.P
+It is unspecified whether all members of the
+.BR statvfs
+structure have meaningful values on all file systems.
+.SH "RETURN VALUE"
+Upon successful completion,
+\fIstatvfs\fR()
+shall return 0. Otherwise, it shall return \(mi1 and set
+.IR errno
+to indicate the error.
+.SH ERRORS
+The
+\fIfstatvfs\fR()
+and
+\fIstatvfs\fR()
+functions shall fail if:
+.TP
+.BR EIO
+An I/O error occurred while reading the file system.
+.TP
+.BR EINTR
+A signal was caught during execution of the function.
+.TP
+.BR EOVERFLOW
+One of the values to be returned cannot be represented correctly in
+the structure pointed to by
+.IR buf .
+.P
+The
+\fIfstatvfs\fR()
+function shall fail if:
+.TP
+.BR EBADF
+The
+.IR fildes
+argument is not an open file descriptor.
+.P
+The
+\fIstatvfs\fR()
+function shall fail if:
+.TP
+.BR EACCES
+Search permission is denied on a component of the path prefix.
+.TP
+.BR ELOOP
+A loop exists in symbolic links encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a component of a pathname is longer than
+{NAME_MAX}.
+.TP
+.BR ENOENT
+A component of
+.IR path
+does not name an existing file or
+.IR path
+is an empty string.
+.TP
+.BR ENOTDIR
+A component of the path prefix names an existing file that is neither
+a directory nor a symbolic link to a directory, or the
+.IR path
+argument contains at least one non-\c
+<slash>
+character and ends with one or more trailing
+<slash>
+characters and the last pathname component names an existing file
+that is neither a directory nor a symbolic link to a directory.
+.br
+.P
+The
+\fIstatvfs\fR()
+function may fail if:
+.TP
+.BR ELOOP
+More than
+{SYMLOOP_MAX}
+symbolic links were encountered during resolution of the
+.IR path
+argument.
+.TP
+.BR ENAMETOOLONG
+.br
+The length of a pathname exceeds
+{PATH_MAX},
+or pathname resolution of a symbolic link produced an intermediate
+result with a length that exceeds
+{PATH_MAX}.
+.LP
+.IR "The following sections are informative."
+.SH EXAMPLES
+.SS "Obtaining File System Information Using fstatvfs(\|)"
+.P
+The following example shows how to obtain file system information for
+the file system upon which the file named
+.BR /home/cnd/mod1
+resides, using the
+\fIfstatvfs\fR()
+function. The
+.BR /home/cnd/mod1
+file is opened with read/write privileges and the open file descriptor
+is passed to the
+\fIfstatvfs\fR()
+function.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/statvfs.h>
+#include <fcntl.h>
+.P
+struct statvfs buffer;
+int            status;
+\&...
+fildes = open("/home/cnd/mod1", O_RDWR);
+status  = fstatvfs(fildes, &buffer);
+.fi \fR
+.P
+.RE
+.SS "Obtaining File System Information Using statvfs(\|)"
+.P
+The following example shows how to obtain file system information for
+the file system upon which the file named
+.BR /home/cnd/mod1
+resides, using the
+\fIstatvfs\fR()
+function.
+.sp
+.RS 4
+.nf
+\fB
+#include <sys/statvfs.h>
+.P
+struct statvfs buffer;
+int            status;
+\&...
+status = statvfs("/home/cnd/mod1", &buffer);
+.fi \fR
+.P
+.RE
+.SH "APPLICATION USAGE"
+None.
+.SH RATIONALE
+None.
+.SH "FUTURE DIRECTIONS"
+None.
+.SH "SEE ALSO"
+.IR "\fIchmod\fR\^(\|)",
+.IR "\fIchown\fR\^(\|)",
+.IR "\fIcreat\fR\^(\|)",
+.IR "\fIdup\fR\^(\|)",
+.IR "\fIexec\fR\^",
+.IR "\fIfcntl\fR\^(\|)",
+.IR "\fIlink\fR\^(\|)",
+.IR "\fImknod\fR\^(\|)",
+.IR "\fIopen\fR\^(\|)",
+.IR "\fIpipe\fR\^(\|)",
+.IR "\fIread\fR\^(\|)",
+.IR "\fItime\fR\^(\|)",
+.IR "\fIunlink\fR\^(\|)",
+.IR "\fIutime\fR\^(\|)",
+.IR "\fIwrite\fR\^(\|)"
+.P
+The Base Definitions volume of POSIX.1\(hy2008,
+.IR "\fB<sys_statvfs.h>\fP"
+.SH COPYRIGHT
+Portions of this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2013 Edition, Standard for Information Technology
+-- Portable Operating System Interface (POSIX), The Open Group Base
+Specifications Issue 7, Copyright (C) 2013 by the Institute of
+Electrical and Electronics Engineers, Inc and The Open Group.
+(This is POSIX.1-2008 with the 2013 Technical Corrigendum 1 applied.) In the
+event of any discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open Group Standard
+is the referee document. The original Standard can be obtained online at
+http://www.unix.org/online.html .
+
+Any typographical or formatting errors that appear
+in this page are most likely
+to have been introduced during the conversion of the source files to
+man page format. To report such errors, see
+https://www.kernel.org/doc/man-pages/reporting_bugs.html .
