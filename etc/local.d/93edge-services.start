@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ ! -f /edge-debug ]; then
+	/opt/edge/run-mgr.sh &
+	/opt/edge/run-webui.sh &
+fi
+
+exit 0

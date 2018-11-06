@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Note: sleeps are important as some things take some time to init... :P
+
 echo >>/dev/console
 echo '** Starting Edge core startup...' >>/dev/console
 
@@ -11,10 +13,8 @@ chmod u+s /usr/bin/sudo
 # Set up GPIO pin for LED
 echo '** Initializing LED GPIO' >>/dev/console
 echo 484 >/sys/class/gpio/export 2>&1
-sleep 0.1
 echo out >/sys/class/gpio/gpio484/direction 2>&1
 echo 1 >/sys/class/gpio/gpio484/value 2>&1
-sleep 0.1
 ln -sf /sys/class/gpio/gpio484/value /dev/shm/led-gpio-value >>/dev/null 2>&1
 
 # Create swap file if it doesn't already exist. Might as well since we have plenty of space.
@@ -27,9 +27,11 @@ fi
 swapon /swap >>/dev/null 2>&1
 
 # Disable IPv6 on eth0 since we do not want it to send IPv6 probes, etc.
+# The eth0 port is the Marvell switch meta-interface, not an actual port.
 sysctl -w net.ipv6.conf.eth0.disable_ipv6=1 >>/dev/null
 
-# eth0 seems to have non-unique MAC on some boards, so generate one on first boot/init.
+# These boards don't always have unique MACs, especially if firmware has
+# been flashed, so generate one on first boot.
 echo '** Setting Ethernet MAC addresses' >>/dev/console
 eth0mac=
 if [ -f /etc/edge/eth0mac ]; then
@@ -38,7 +40,10 @@ else
 	eth0mac=f0:ad:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`:`head -c 64 /dev/urandom | md5sum | cut -c 0-2`
 	echo -n $eth0mac >/etc/edge/eth0mac
 fi
+
+echo '** Bringing up physical Ethernet port subsystem' >>/dev/console
 ip link set eth0 address $eth0mac promisc on up
+sleep 2
 
 # Change default port names
 ip link set wan name eth0p0
@@ -53,14 +58,13 @@ eth0p2mac=`echo $eth0mac | cut -d : -f 1-5`:`printf '%.2x' $(( (0x$eth0last + 3)
 ip link set eth0p0 address $eth0p0mac promisc on up
 ip link set eth0p1 address $eth0p1mac promisc on up
 ip link set eth0p2 address $eth0p2mac promisc on up
+sleep 2
 
 # This detects a direct crossover cable connecting eth0p1
 # and eth0p2 by using a change in transciever speed to convey
-# a single bit of information. It is run once on boot to place
-# the Edge into recovery mode if a cable loops these two ports.
-echo '** Determining if ports 1-2 are looped (invoking factory reset)...' >>/dev/console
+# a single bit of information.
+echo '** Determining if ports 1-2 are physically looped' >>/dev/console
 resetdevice=0
-sleep 2
 if [ -n "`ethtool eth0p2 | grep -F Speed | grep -F 1000`" ]; then
         ethtool -s eth0p1 speed 10 duplex half
         sleep 5
@@ -72,13 +76,13 @@ if [ -n "`ethtool eth0p2 | grep -F Speed | grep -F 1000`" ]; then
                 fi
         fi
 fi
-sleep 1
+sleep 0.5
 ethtool -s eth0p1 speed 1000 duplex full
 ethtool -s eth0p1 advertise 0x03f
-sleep 1
+sleep 0.5
 ip link set eth0p1 down
 ip link set eth0p2 down
-sleep 1
+sleep 0.5
 ip link set eth0p1 up
 ip link set eth0p2 up
 sleep 2
@@ -87,6 +91,7 @@ if [ "$resetdevice" = "1" ]; then
 	echo '** Factory reset!' >>/dev/console
 	/opt/edge/factory-reset.sh
 	while /bin/true; do
+		sync
 		sleep 1
 		/opt/edge/led-control reset
 	done
@@ -95,19 +100,17 @@ fi
 # Create bridge devices to act on behalf of each port
 brctl addbr phy0
 brctl stp phy0 off
-brctl setageing phy0 0
 brctl addif phy0 eth0p0
 brctl addbr phy1
 brctl stp phy1 off
-brctl setageing phy1 0
 brctl addif phy1 eth0p1
 brctl addbr phy2
 brctl stp phy2 off
-brctl setageing phy2 0
 brctl addif phy2 eth0p2
 ip link set phy0 up
 ip link set phy1 up
 ip link set phy2 up
+sleep 1
 
 # Set up various things on physical ports
 sysctl -w net.ipv6.conf.phy0.autoconf=0 >>/dev/null
@@ -133,7 +136,7 @@ iptables -A FORWARD -i zt+ -o wlan+ -j ACCEPT
 iptables -A FORWARD -i wlan+ -o zt+ -j ACCEPT
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A INPUT -p tcp --dport 9993 -j DROP
-iptables -A OUTPUT -d 204.80.128.1/32 -p tcp --dport 443 -j DROP
+iptables -A OUTPUT -d 204.80.128.1/32 -p tcp --dport 443 -j REJECT
 iptables -P FORWARD DROP
 iptables -P INPUT ACCEPT
 iptables -P OUTPUT ACCEPT
@@ -150,4 +153,4 @@ ip6tables -P FORWARD DROP
 ip6tables -P INPUT ACCEPT
 ip6tables -P OUTPUT ACCEPT
 
-echo '** Edge core startup done!' >>/dev/console
+echo '** Edge platform startup done!' >>/dev/console
