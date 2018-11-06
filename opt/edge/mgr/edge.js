@@ -389,6 +389,9 @@ rsn_pairwise=CCMP
 									cmd.get('brctl addbr '+physDev+'br',() => { next(); });
 								},
 								(next) => {
+									cmd.get('sysctl -w net.ipv6.conf.'+physDev+'br.disable_ipv6=1',() => { next(); });
+								},
+								(next) => {
 									cmd.get('brctl stp '+physDev+'br off',() => { next(); });
 								},
 								(next) => {
