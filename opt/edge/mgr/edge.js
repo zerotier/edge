@@ -306,23 +306,21 @@ function updateWirelessPorts(done)
 {
 	for (let physDev in wlanConfig) {
 		let p = physical[physDev];
-		let essid = sanitizeField((p.essid||'ZeroTierEdge').trim());
-		let channel = 40;
-		let mode = (p.mode == 'ap') ? 'ap' : 'client';
-
 		if (!deepequal(wlanConfig[physDev],p)) {
 			if (wlanDaemons[physDev]) {
 				wlanDaemons[physDev].kill('SIGTERM');
 				wlanDaemons[physDev] = null;
 			}
 
-			if (mode == 'ap') {
-				// Source of channel+6 magic:
-				// http://blog.fraggod.net/2017/04/27/wifi-hostapd-configuration-for-80211ac-networks.html
+			if ((p)&&(p.mode)&&(p.essid)) {
+				let essid = sanitizeField((p.essid||'ZeroTierEdge').trim());
+				let channel = 40;
 
-				console.log('Configurating wireless port '+physDev+' for AP mode');
-				fs.writeFileSync('/dev/shm/hostap-psk-'+physDev,'00:00:00:00:00:00 '+p.psk||'');
-				fs.writeFileSync('/dev/shm/hostap-'+physDev+'.conf',
+				if (p.mode == 'ap') {
+
+					console.log('Configurating wireless port '+physDev+' for AP mode');
+					fs.writeFileSync('/dev/shm/hostap-psk-'+physDev,'00:00:00:00:00:00 '+p.psk||'');
+					fs.writeFileSync('/dev/shm/hostap-'+physDev+'.conf',
 `interface=`+physDev+`
 logger_syslog=0
 logger_syslog_level=4
@@ -376,46 +374,46 @@ wpa_pairwise=TKIP CCMP
 rsn_pairwise=CCMP
 `);
 
-				cmd.get('ip link set '+physDev+' down',() => {
-					cmd.get('ip link set '+physDev+' up',() => {
-						wlanDaemons[physDev] = spawn('/usr/sbin/hostapd',['/dev/shm/hostap-'+physDev+'.conf'],{
-							stdio: 'inherit'
-						});
+					cmd.get('ip link set '+physDev+' down',() => {
+						cmd.get('ip link set '+physDev+' up',() => {
+							wlanDaemons[physDev] = spawn('/usr/sbin/hostapd',['/dev/shm/hostap-'+physDev+'.conf'],{
+								stdio: 'inherit'
+							});
 
-						/* For AP mode we have to create a bridge that will be used to connect virtual interfaces */
-						async.series([
-							(next) => {
-								cmd.get('sysctl -w net.ipv6.conf.'+physDev+'.disable_ipv6=1',() => { next(); });
-							},
-							(next) => {
-								cmd.get('brctl addbr '+physDev+'br',() => { next(); });
-							},
-							(next) => {
-								cmd.get('brctl stp '+physDev+'br off',() => { next(); });
-							},
-							(next) => {
-								cmd.get('brctl addif '+physDev+'br '+physDev,() => { next(); });
-							},
-							(next) => {
-								cmd.get('ip link set '+physDev+'br address '+physMac[physDev]+' up',() => { next(); });
-							}
-						],() => {
+							/* For AP mode we have to create a bridge that will be used to connect virtual interfaces */
+							async.series([
+								(next) => {
+									cmd.get('sysctl -w net.ipv6.conf.'+physDev+'.disable_ipv6=1',() => { next(); });
+								},
+								(next) => {
+									cmd.get('brctl addbr '+physDev+'br',() => { next(); });
+								},
+								(next) => {
+									cmd.get('brctl stp '+physDev+'br off',() => { next(); });
+								},
+								(next) => {
+									cmd.get('brctl addif '+physDev+'br '+physDev,() => { next(); });
+								},
+								(next) => {
+									cmd.get('ip link set '+physDev+'br address '+physMac[physDev]+' up',() => { next(); });
+								}
+							],() => {
+							});
 						});
 					});
-				});
 
-			} else { // mode == client
+				} else { // mode == client
 
-				console.log('Configuring wireless port '+physDev+' for client mode');
-				let psk = '';
-				if (typeof p.psk === 'string') {
-					for(let i=0;i<p.psk.length;i++) {
-						let c = p.psk.charAt(i);
-						if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{}_0123456789.-+=!@#$%^&*()~".indexOf(c) >= 0)
-							psk += c;
+					console.log('Configuring wireless port '+physDev+' for client mode');
+					let psk = '';
+					if (typeof p.psk === 'string') {
+						for(let i=0;i<p.psk.length;i++) {
+							let c = p.psk.charAt(i);
+							if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{}_0123456789.-+=!@#$%^&*()~".indexOf(c) >= 0)
+								psk += c;
+						}
 					}
-				}
-				fs.writeFileSync('/dev/shm/wpa_supplicant-'+physDev+'.conf',
+					fs.writeFileSync('/dev/shm/wpa_supplicant-'+physDev+'.conf',
 `ap_scan=1
 device_name=ZeroTier Edge
 manufacturer=ZeroTier, Inc.
@@ -433,19 +431,25 @@ network={
 }
 `);
 
-				/* For client mode we delete any bridges and reset port config to normal. */
-				cmd.get('ip link del '+physDev+'br',() => {
-					cmd.get('ip link set '+physDev+' down',() => {
-						cmd.get('sysctl -w net.ipv6.conf.'+physDev+'.disable_ipv6=0',() => {
-							cmd.get('ip link set '+physDev+' up',() => {
-								wlanDaemons[physDev] = spawn('/sbin/wpa_supplicant',['-i'+physDev,'-Dnl80211','-c/dev/shm/wpa_supplicant-'+physDev+'.conf'],{
-									stdio: 'inherit'
+					/* For client mode we delete any bridges and reset port config to normal. */
+					cmd.get('ip link del '+physDev+'br',() => {
+						cmd.get('ip link set '+physDev+' down',() => {
+							cmd.get('sysctl -w net.ipv6.conf.'+physDev+'.disable_ipv6=0',() => {
+								cmd.get('ip link set '+physDev+' up',() => {
+									wlanDaemons[physDev] = spawn('/sbin/wpa_supplicant',['-i'+physDev,'-Dnl80211','-c/dev/shm/wpa_supplicant-'+physDev+'.conf'],{
+										stdio: 'inherit'
+									});
 								});
 							});
 						});
 					});
-				});
 
+				}
+			} else { // no wireless config at all
+				cmd.get('ip link del '+physDev+'br',() => {
+					cmd.get('sysctl -w net.ipv6.conf.'+physDev+'.disable_ipv6=0',() => {
+					});
+				});
 			}
 
 			wlanConfig[physDev] = p;

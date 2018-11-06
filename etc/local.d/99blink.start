@@ -1,6 +1,6 @@
 #!/bin/bash
 
-/bin/bash -c '/bin/sleep 5; /bin/nice -n -20 /opt/edge/mgr/utils/led-control boot' &
+/bin/bash -c '/bin/sleep 5; /bin/nice -n -20 /opt/edge/led-control boot' &
 
 /opt/edge/monitor-network-access.sh >>/dev/null 2>&1 &
 
