@@ -13,4 +13,9 @@ A number of network diagnostic tools are available here including:
   arp-fingerprint, arp-scan, hping3, dnstracer, masscan,
   p0f, stunnel, drill, arping
 
+The "sudo" command has been configured to allow these. It may
+technically be possible to escape "sudo" into a root shell,
+but we discourage this since changes elsewhere will be lost in
+the update process or may prevent updates from working properly.
+
 --
