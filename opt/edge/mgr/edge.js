@@ -480,7 +480,7 @@ function refreshConfig()
 						let p = physicalList[ii];
 						if ((p)&&(p.name)) {
 							newPhysical[p.name] = p;
-							if ((typeof p.virtual === 'string')&&(p.virtual.length === 16)&&(p.mode != 'ap')) {
+							if ((typeof p.virtual === 'string')&&(p.virtual.length === 16)) {
 								let v = virtual[p.virtual];
 								if (!v) {
 									v = {
