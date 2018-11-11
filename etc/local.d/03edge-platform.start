@@ -153,4 +153,8 @@ ip6tables -P FORWARD DROP
 ip6tables -P INPUT ACCEPT
 ip6tables -P OUTPUT ACCEPT
 
+# Start ZeroTier service
+echo '** Starting ZeroTier service' >>/dev/console
+/usr/sbin/zerotier-one -d
+
 echo '** Edge platform startup done!' >>/dev/console
