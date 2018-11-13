@@ -84,7 +84,7 @@ while test $# -gt 0; do
         ;;
 
     --feature|--features)
-        for feature in SSL IPv6 UnixSockets libz AsynchDNS NTLM NTLM_WB HTTP2 HTTPS-proxy ""; do
+        for feature in SSL IPv6 UnixSockets libz AsynchDNS NTLM NTLM_WB TLS-SRP HTTP2 HTTPS-proxy ""; do
             test -n "$feature" && echo "$feature"
         done
         ;;
@@ -167,7 +167,7 @@ while test $# -gt 0; do
         fi
         ;;
     --ssl-backends)
-        echo "libressl"
+        echo "OpenSSL"
         ;;
 
     --static-libs)

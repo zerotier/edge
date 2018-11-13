@@ -1,0 +1,16 @@
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/bin/donuts
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/bin/donutsd
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/man/man1/donuts.1
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/man/man1/donutsd.1
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/man/man3/Net::DNS::SEC::Tools::Donuts.3pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/man/man3/Net::DNS::SEC::Tools::Donuts::Rule.3pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output/Format.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output/Format/HTML.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output/Format/JSON.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output/Format/Perl.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output/Format/Text.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output/Format/Text/Wrapped.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Output/Format/XML.pm
+/home/buildozer/aports/testing/dnssec-tools/pkg/dnssec-tools/usr/share/perl5/vendor_perl/Net/DNS/SEC/Tools/Donuts/Rule.pm

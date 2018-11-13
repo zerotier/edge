@@ -6,7 +6,7 @@
 # Distributed under GPL-2
 #
 
-program_version=3.3.0_pre1-r1
+program_version=3.3.0_pre1-r3
 datadir=/usr/share/abuild
 
 if ! [ -f "$datadir/functions.sh" ]; then

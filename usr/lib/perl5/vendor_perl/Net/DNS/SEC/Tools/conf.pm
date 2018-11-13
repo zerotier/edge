@@ -1,0 +1,1018 @@
+# -*- perl -*-
+# Copyright 2004-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details
+#
+# DNSSEC Tools
+#
+#	DNSSEC-Tools configuration routines.
+#
+#	The routines in this module perform configuration operations.
+#	Some routines access the DNSSEC-Tools configuration file, while
+#	others validate the execution environment.
+#
+#	Entries in the configuration file are of the "key value" format.
+#	Comments may be included by prefacing them with the '#' or ';'
+#	comment characters.
+#
+#	An example configuration file follows:
+#
+#		# Sample configuration entries.
+#		algorithm	rsasha1		# Encryption algorithm.
+#		ksk_length	2048		; KSK key length.
+#
+
+package Net::DNS::SEC::Tools::conf;
+
+require Exporter;
+use strict;
+
+our $VERSION = "2.1";
+our $MODULE_VERSION = "2.1.0";
+
+our @ISA = qw(Exporter);
+our @EXPORT = qw(
+			boolconvert
+			cmdcheck
+			dt_confcheck
+			getconfdir
+			getconffile
+			setconffile
+			getlocalstatedir
+			makelocalstatedir
+			getprefixdir
+			parseconfig
+			runpacked
+
+			erraction
+			err
+			ERR_EXIT
+			ERR_MSG 
+			ERR_SILENT
+		);
+
+our @COMMANDS = qw(
+			keyarch
+			keygen
+			rndc
+			rollchk
+			zonecheck
+			zonesign
+			zonesigner
+);
+
+our %CMD_PACKAGES = (
+			"dnssec-keygen"	  => "BIND (9.3.1 or later)",
+			"rndc"		  => "BIND (9.3.1 or later)",
+			"named-checkzone" => "BIND (9.3.1 or later)",
+			"dnssec-signzone" => "BIND (9.3.1 or later)",
+			"keyarch"	  => "DNSSEC-Tools (1.4 or later)",
+			"rollctl"	  => "DNSSEC-Tools (1.4 or later)",
+			"rollerd"	  => "DNSSEC-Tools (1.4 or later)",
+			"zonesigner"	  => "DNSSEC-Tools (1.4 or later)",
+);
+
+our $prefixdir  = $ENV{'DT_PREFIX'}     || "/usr";
+our $sysconfdir = $ENV{'DT_SYSCONFDIR'} || "/etc";
+
+# Local state directory.
+our $STATEDIR   = $ENV{'DT_STATEDIR'}   || "/usr/var";
+
+our $CONFFILE = "${sysconfdir}/dnssec-tools/dnssec-tools.conf"; # Configuration file.
+our $conffile = $CONFFILE;
+
+
+###############################################################################
+#
+# Error actions this is intended for use by DNSSEC-Tools library routines.
+#
+my $ERR_SILENT	= 1;				# Don't do anything on error.
+my $ERR_MSG	= 2;				# Print a message on error.
+my $ERR_EXIT	= 3;				# Print a message and exit.
+
+my $erraction = $ERR_SILENT;			# Action to take on errors.
+
+sub ERR_EXIT	{ return($ERR_EXIT);	};
+sub ERR_MSG 	{ return($ERR_MSG);	};
+sub ERR_SILENT 	{ return($ERR_SILENT);	};
+
+#--------------------------------------------------------------------------
+#
+# Routine:	parseconfig()
+#
+# Purpose:	Read a configuration file and parse it into pieces.  The
+#		lines are tokenized and then stored in the config hash table.
+#
+#		Config entries are of the "variable value" form.  The first
+#		non-blank token is taken as the name of the configuration
+#		parameter and is the hash key into %dnssec_conf.  Anything
+#		after that token is put into a space-separated tokenized form
+#		and added to the %dnssec_conf.  If a line contains a comment
+#		character (a '#' or a ';') then anything from that character
+#		to the end of the line is ignored.  Empty lines and lines
+#		starting with a comment character are entirely ignored.
+#
+sub parseconfig
+{
+	my $numargs  = @_;
+	my %dnssec_conf = ();
+
+	#
+	# Find the right configuration file to open.
+	#
+	my $conffiletoread = $conffile;
+	if($numargs != -1)
+	{
+		$conffiletoread = shift;
+		# allow for an undefined argument to still read the default
+		$conffiletoread = $conffile if (!defined($conffiletoread));
+	}
+
+	#
+	# Make sure the config file actually exists.  If not,
+	# we'll quietly return.
+	#
+	return if(! -e $conffiletoread);
+
+	#
+	# Open up the config file.
+	#
+	if(open(CONF,"< $conffiletoread") == 0)
+	{
+		err("unable to open $conffiletoread\n",-1);
+		return;
+	}
+
+	#
+	# Read each line from the file, tokenize the line, and add it
+	# to the config hash table.
+	#
+	while(<CONF>)
+	{
+		my $arrlen;	# Length of the token array.
+		my $val = "";	# Concatenated value tokens.
+		my $var;	# Variable token.
+		my @arr;	# Array of tokens from the config line.
+
+		#
+		# Split the line into a pile of tokens.
+		#
+		chop;
+		@arr = split(/[ \t]/);
+		$arrlen = @arr;
+		$var = shift @arr;
+
+		#
+		# Skip any comments.
+		#
+		if(($var =~ /^[;#]/) || ($var eq ""))
+		{
+			next;
+		}
+
+		#
+		# Concatenate the remaining tokens, separated by a single
+		# space.  If we hit a comment character, we'll stop there.
+		# We could use join() instead of an explicit loop, but this
+		# way we get to have mid-line comments.
+		#
+		for(my $ind=0;$ind<$arrlen;$ind++)
+		{
+			my $newval = $arr[$ind];	# New value chunk.
+
+			last if($newval =~ /^[#;]/);
+			next if(($newval eq "") || ($newval =~ /[ \t]+/));
+
+			$newval =~ s/^[ \t]+//;
+			$newval =~ s/[ \t]+$//;
+			$val .= $newval . " ";
+		}
+
+		#
+		# Get rid of any leading or trailing spaces.
+		#
+		$val =~ s/^[ \t]*//;
+		$val =~ s/[ \t]*$//;
+
+		#
+		# Add this variable/value pair to the configuration hash table.
+		#
+		$dnssec_conf{$var} = $val;
+	}
+
+	#
+	# Close the configuration file and return the config hash.
+	#
+	close(CONF);
+	return(%dnssec_conf);
+}
+
+#######################################################################
+#
+# Routine:	cmdcheck()
+#
+# Purpose:	Ensure that the needed commands are available and executable.
+#		If any of the commands either don't exist or aren't executable,
+#		then an error message will be given and the process will exit.
+#		If all is well, everything will proceed quietly onwards.
+#
+#		When running packed, we'll force the command paths to be in
+#		the package directory.  We'll also make them executable, since 
+#		PAR seems to ignore original file permissions.
+#
+#		Things that make you go "hmmm....":
+#			Is it *really* a good idea for a library routine
+#			to exit on error, rather than just giving an
+#			error return?
+#
+sub cmdcheck
+{
+	my $ropts = shift;			# Options hash reference.
+	my %opts = %$ropts;			# Options hash.
+	my $cmd;				# Command path.
+	my $packed = runpacked();		# Packed-running flag.
+
+	#
+	# Check each of these commands for existence and executability.
+	#
+	foreach my $bcmd (@COMMANDS)
+	{
+		my $pkg;			# Package for this command.
+
+		#
+		# Only check the defined commands.
+		#
+		next if(!exists($opts{$bcmd}));
+		$cmd = $opts{$bcmd};
+
+		#
+		# If we're running packed, check for the packed version of
+		# the command.
+		#
+		if($packed)
+		{
+			$cmd = "$ENV{'PAR_TEMP'}/inc/$cmd";
+		}
+
+		#
+		# Get the package for this command name.
+		#
+		$pkg = $CMD_PACKAGES{$opts{$bcmd}};
+
+		#
+		# Check command name's existence.
+		#
+		if($cmd eq "")
+		{
+			err("command \"$bcmd\" does not exist; please install $pkg\n",3);
+			return(0);
+		}
+
+		#
+		# Check command's existence.
+		#
+		if(! -e $cmd)
+		{
+			err("command \"$cmd\" does not exist; please install $pkg\n",3);
+			return(0);
+		}
+
+		#
+		# If we're running packed, force the packed BIND files
+		# to be executable.
+		#
+		if($packed)
+		{
+			chmod 0755, $cmd;
+		}
+
+		#
+		# Check command's executability.
+		#
+		if(! -x $cmd)
+		{
+			err("$cmd not executable\n",3);
+			return(0);
+		}
+	}
+
+	return(1);
+}
+
+#######################################################################
+#
+# Routine:	dt_confcheck()
+#
+# Purpose:	Ensure that some required conditions are met by the
+#		DNSSEC-Tools configuration.  A running count of violated
+#		conditions is kept, and that count is the return code.
+#		An err() error message may (or may not) be printed.
+#
+#		The following tests will be run:
+#
+#			- The dnssec-tools sysconf directory exists.
+#			- The dnssec-tools sysconf directory is a directory.
+#			- The dnssec-tools directory exists.
+#			- The dnssec-tools directory is a directory.
+#			- The dnssec-tools config file exists.
+#			- The dnssec-tools config file is a regular file.
+#			- The dnssec-tools config file isn't empty.
+#			- The local state directory name isn't longer than 75
+#			  characters (to allow for the rollmgr command socket.)
+#			- The local state directory is a directory.
+#			- The local state directory can be created if necessary.
+#			- The local state directory's dnssec-tools subdirectory
+#			  can be created if necessary, or is writable if it
+#			  already exists.
+#			- The local state directory's run subdirectory can be
+#			  created if necessary, or is writable if it already
+#			  exists.
+#
+#		Return Values:
+#			  0 - no errors were found
+#			> 0 - some number of configuration checks failed
+#
+sub dt_confcheck
+{
+	my $errout = shift;				# Error output flag.
+	my $olderr;					# Old error flag.
+	my $ret = 0;					# Return code.
+	my $sdir;					# Local state directory.
+
+	#
+	# Set the error flag according to the $errout argument.
+	#
+	$olderr = $errout ? ERR_MSG : ERR_SILENT;
+	$olderr = erraction($olderr);
+
+	#
+	# Ensure the DNSSEC-Tools system config directory exists and is
+	# a directory.
+	#
+	if(! -e $sysconfdir)
+	{
+		err("$sysconfdir does not exist\n",1);
+		$ret++;
+	}
+	elsif(! -d $sysconfdir)
+	{
+		err("$sysconfdir is not a directory\n",1);
+		$ret++;
+	}
+
+	#
+	# Ensure the DNSSEC-Tools config directory exists and is a directory.
+	#
+	if(! -e "$sysconfdir/dnssec-tools")
+	{
+		err("$sysconfdir/dnssec-tools does not exist\n",1);
+		$ret++;
+	}
+	elsif(! -d "$sysconfdir/dnssec-tools")
+	{
+		err("$sysconfdir/dnssec-tools is not a directory\n",1);
+		$ret++;
+	}
+
+	#
+	# Ensure the DNSSEC-Tools config file exists and is a file.
+	#
+	if(! -e $CONFFILE)
+	{
+		err("$CONFFILE does not exist\n",1);
+		$ret++;
+	}
+	elsif(! -f $CONFFILE)
+	{
+		err("$CONFFILE is not a regular file\n",1);
+		$ret++;
+	}
+	elsif(-z $CONFFILE)
+	{
+		err("$CONFFILE is empty\n",1);
+		$ret++;
+	}
+
+	#
+	# The local state directory must be shorter than 76 characters to
+	# allow for the rollmgr command socket.
+	#
+	# This only matters for rollerd and rollctl.  They use a Unix domain
+	# socket, which has a hard-coded maximum length of 104 characters.
+	# The local state directory name is appended with
+	# "/dnssec-tools/rollmgr.socket", so the two combined must be no more
+	# than 104 bytes.
+	#
+	$sdir = getlocalstatedir();
+	if(length($sdir) > 76)
+	{
+		err("local state directory name is too long, it must be less than 77 characters\n",1);
+		$ret++;
+	}
+
+	#
+	# Run a bunch of checks on the local state directory.  If it doesn't
+	# exist, we'll make sure the parent is writable so that we'll be
+	# able to create it.  If it does exist, we'll make sure that the
+	# directories already exist, may be created if they don't exist, and
+	# are writable if they do exist.
+	#
+	if(-e $sdir)
+	{
+		#
+		# Ensure the local state directory is a directory.
+		#
+		if(! -d "$sdir")
+		{
+			err("\"$sdir\" is not a directory\n",0);
+			$ret++;
+		}
+		else
+		{
+			#
+			# If we can't write the local state directory, we'll
+			# ensure its subdirectories exist and are writable.
+			#
+			if(! -w "$sdir")
+			{
+				if(! -e "$sdir/dnssec-tools")
+				{
+					err("unable to create $sdir/dnssec-tools\n",0);
+					$ret++;
+				}
+				elsif(! -w "$sdir/dnssec-tools")
+				{
+					err("unable to write $sdir/dnssec-tools\n",0);
+					$ret++;
+				}
+				if(! -e "$sdir/run")
+				{
+					err("unable to create $sdir/run\n",0);
+					$ret++;
+				}
+				elsif(! -w "$sdir/run")
+				{
+					err("unable to write $sdir/run\n",0);
+					$ret++;
+				}
+			}
+			else
+			{
+				#
+				# If we can write the local state directory,
+				# we'll be sure its subdirectories are writable
+				# if they already exist.
+				#
+				if((  -e "$sdir/dnssec-tools")	&&
+				   (! -w "$sdir/dnssec-tools"))
+				{
+					err("$sdir/dnssec-tools is not writable\n",0);
+					$ret++;
+				}
+				if((  -e "$sdir/run")	&&
+				   (! -w "$sdir/run"))
+				{
+					err("$sdir/run is not writable\n",0);
+					$ret++;
+				}
+			}
+		}
+	}
+	else
+	{
+		my $pdir = $sdir;		# State directory's parent.
+
+		#
+		# If the local state directory doesn't exist, we'll make
+		# sure we can write its parent.
+		#
+		$pdir =~ s/(\/[^\/]*?)$/\//;
+		if(! -w $pdir)
+		{
+			err("unable to create state directory $sdir\n",0);
+			$ret++;
+		}
+	}
+
+	#
+	# Reset the error flag to its previous value.
+	#
+	erraction($olderr);
+
+	#
+	# Return the count of failed tests.
+	#
+	return($ret);
+}
+
+#######################################################################
+#
+# Routine:	boolconvert()
+#
+# Purpose:	Converts a textual boolean value from the configuration file
+#		into a numeric boolean.
+#
+sub boolconvert
+{
+	my $bval = shift;				# Boolean to convert.
+
+	#
+	# Handle the simple case of zero.
+	#
+	return(0) if($bval eq "0");
+
+	#
+	# Now deal with the acceptable false text cases.
+	#
+	return(0) if(($bval =~ /no/i)	||
+		     ($bval =~ /n/i)	||
+		     ($bval =~ /f/i)	||
+		     ($bval =~ /false/i));
+
+	#
+	# Next we'll handle the acceptable true text cases.
+	#
+	return(1) if(($bval =~ /yes/i)	||
+		     ($bval =~ /y/i)	||
+		     ($bval =~ /t/i)	||
+		     ($bval =~ /true/i));
+
+	#
+	# And now the positive values.
+	#
+	return(1) if($bval > 0);
+
+	#
+	# Anything else is false.
+	return(0);
+}
+
+#######################################################################
+#
+# Routine:	getprefixdir()
+#
+# Purpose:	Return the prefix directory name.
+#
+sub getprefixdir
+{
+	my $dir;			# DNSSEC-Tools prefix directory.
+
+	$dir = $prefixdir;
+
+	return($dir);
+}
+
+#######################################################################
+#
+# Routine:	getconfdir()
+#
+# Purpose:	Return the configuration directory name.
+#
+sub getconfdir
+{
+	my $dir;			# DNSSEC-Tools configuration directory.
+
+	$conffile =~ /^(.*)\/.*$/;
+	$dir = $1;
+
+	return($dir);
+}
+
+#######################################################################
+#
+# Routine:	getconffile()
+#
+# Purpose:	Return the configuration file name.
+#
+sub getconffile
+{
+	return($conffile);
+}
+
+#######################################################################
+#
+# Routine:	setconffile()
+#
+# Purpose:	Set the configuration file name.
+#
+sub setconffile
+{
+	my $newconf = shift;
+
+	return(0) if(! -f $newconf);
+	$conffile = $newconf;
+	return(1);
+}
+
+#######################################################################
+#
+# Routine:	getlocalstatedir()
+#
+# Purpose:	Return the local state directory name.
+#
+sub getlocalstatedir
+{
+	return($STATEDIR);
+}
+
+#######################################################################
+#
+# Routine:	runpacked()
+#
+# Purpose:	Return a boolean indicating we're running packed or regular.
+#
+sub runpacked
+{
+	return(defined($ENV{'PAR_TEMP'}));
+}
+
+#######################################################################
+#
+# Routine:	makelocalstatedir(subpath)
+#
+# Purpose:	Create the local state directory (and an optional) subdirectory)
+#		and return its name.  Create the directory/subdirectory iff it
+#		doesn't exist and if the File::Path module is available.
+#
+sub makelocalstatedir
+{
+	my $subdir	= shift;			# Optional subdirectory.
+	my $statedir	= getlocalstatedir();		# Local state directory.
+	my $subpath	= $statedir;			# Path w/ subdirectory.
+	my $errorlist;					# Path creation errors.
+
+	#
+	# Build the path to the caller's subdirectory.
+	#
+	$subpath = "$statedir/$subdir" if(defined($subdir));
+
+	#
+	# Return success if the path exists and is a directory.
+	# Return failure if the path exists and isn't a directory.
+	#
+	if(-e $subpath)
+	{
+		return($subpath) if(-d $subpath);
+		return('');
+	}
+
+
+	#
+	# If File::Path is unavailable, we'll return an error.
+	#
+	if((eval { require File::Path; }) != 1)
+	{
+		print STDERR "Perl module File::Path is required, but could not be found\n";
+		exit(1);
+	}
+
+	import File::Path;
+
+	#
+	# Create the subdirectory.
+	#
+	mkpath($subpath, { error => \$errorlist });
+
+	#
+	# Display error messages for any problems encountered and
+	# return an error.
+	#
+	if($#$errorlist > -1)
+	{
+		my $errstr = '';			# Error string.
+
+		$errstr = "Errors creating path:  $subpath:\n";
+		$errstr .= "    (set DT_STATEDIR to change the location)\n";
+		foreach my $err (@$errorlist)
+		{
+			my ($file, $msg) = each %$err;
+			$errstr .= "  $file:  $msg\n";
+		}
+
+		err($errstr,1);
+	}
+
+	#
+	# Return the path of the subdirectory.
+	#
+	return($subpath);
+}
+
+#######################################################################
+#
+# Routine:	erraction()
+#
+# Purpose:	Set the action to take on error.
+#
+sub erraction
+{
+	my $newact = shift;			# Action to take on error.
+	my $curact;				# Current error action.
+
+	#
+	# Save the current error action.
+	#
+	$curact = $erraction;
+
+	#
+	# If this is a valid error action, we'll set the action.
+	#
+	if(($newact == $ERR_SILENT)	||
+	   ($newact == $ERR_MSG)	||
+	   ($newact == $ERR_EXIT))
+	{
+		$erraction = $newact;
+	}
+
+	#
+	# Return the saved action.
+	#
+	return($curact);
+}
+
+#######################################################################
+#
+# Routine:	err()
+#
+# Purpose:	Report an error.  Maybe.
+#
+sub err
+{
+	my $errstr = shift;			# Error message.
+	my $errret = shift;			# Error return code.
+
+	return if($erraction == $ERR_SILENT);
+
+	print STDERR "$errstr";
+
+	exit($errret) if(($erraction == $ERR_EXIT) && ($errret >= 0));
+}
+
+1;
+
+#############################################################################
+
+=pod
+
+=head1 NAME
+
+Net::DNS::SEC::Tools::conf - DNSSEC-Tools configuration routines.
+
+=head1 SYNOPSIS
+
+  use Net::DNS::SEC::Tools::conf;
+
+  %dtconf = parseconfig();
+
+  %dtconf = parseconfig("localzone.keyrec");
+
+  cmdcheck(\%options_hashref);
+
+  $conferrs = dt_confcheck();
+
+  $prefixdir = getprefixdir();
+
+  $confdir = getconfdir();
+
+  $conffile = getconffile();
+
+  setconffile("dt-local.conf");
+
+  $statedir = getlocalstatedir();
+
+  $statedir = makelocalstatedir();
+  $statesub = makelocalstatedir("logs/zones");
+
+
+  $packed = runpacked();
+
+  erraction(ERR_MSG);
+  err("unable to open keyrec file",1);
+
+=head1 DESCRIPTION
+
+The routines in this module perform configuration operations.  Some routines
+access the DNSSEC-Tools configuration file, while others validate the
+execution environment.
+
+The DNSSEC tools have a configuration file for commonly used values.  These
+values are the defaults for a variety of things, such as encryption algorithm
+and encryption key length.  The B<Net::DNS::SEC::Tools::conf> module provides
+methods for accessing the configuration data in this file.
+
+B<dnssec-tools.conf> is the filename for the DNSSEC tools configuration file.
+The full path depends on how DNSSEC-Tools was configured; see the DIRECTORIES
+section for the complete path.  The paths required by B<conf.pm> are set at
+DNSSEC-Tools configuration time.
+
+The DNSSEC tools configuration file consists of a set of configuration value
+entries, with only one entry per line.  Each entry has the "keyword value"
+format.  During parsing, the line is broken into tokens, with tokens being
+separated by spaces and tabs.  The first token in a line is taken to be the
+keyword.  All other tokens in that line are concatenated into a single string,
+with a space separating each token.  The untokenized string is added to a hash
+table, with the keyword as the value's key.
+
+Comments may be included by prefacing them with the '#' or ';' comment
+characters.  These comments can encompass an entire line or may follow a
+configuration entry.  If a comment shares a line with an entry, value
+tokenization stops just prior to the comment character.
+
+An example configuration file follows:
+
+    # Sample configuration entries.
+
+    algorithm       rsasha1     # Encryption algorithm.
+    ksk_length      2048        ; KSK key length.
+
+Another aspect of DNSSEC-Tools configuration is the error action used by the
+DNSSEC-Tools Perl modules.  The action dictates whether an error condition
+will only give an error return, print an error message to STDERR, or print an
+error message and exit.  The I<erraction()> and I<err()> interfaces are used
+for these operations.
+
+=head1 INTERFACES
+
+=over 4
+
+=item I<dt_confcheck(errflag)>
+
+This routine performs a number of configuration checks to ensure the
+environment is sufficient to support the DNSSEC-Tools configuration.
+If I<errflag> is 0, then the checks are performed quietly; otherwise,
+error messages will be printed.
+
+The checks are:
+
+	* The dnssec-tools sysconf directory exists.
+	* The dnssec-tools sysconf directory is a directory.
+	* The dnssec-tools directory exists.
+	* The dnssec-tools directory is a directory.
+	* The dnssec-tools config file exists.
+	* The dnssec-tools config file is a regular file.
+	* The dnssec-tools config file isn't empty.
+	* The local state directory name isn't longer than 75
+	  characters (to allow for the rollmgr command socket.)
+	* The local state directory is a directory.
+	* The local state directory can be created if necessary.
+	* The local state directory's dnssec-tools subdirectory
+	  can be created if necessary, or is writable if it
+	  already exists.
+	* The local state directory's run subdirectory
+	  can be created if necessary, or is writable if it
+	  already exists.
+
+Return Values:
+
+	0	no errors were found
+	>0	some number of configuration checks failed
+
+=item I<parseconfig()>
+
+This routine reads and parses the system's DNSSEC tools configuration file.
+The parsed contents are put into a hash table, which is returned to the caller.
+
+=item I<parseconfig(conffile)>
+
+This routine reads and parses a caller-specified DNSSEC tools configuration
+file.  The parsed contents are put into a hash table, which is returned to
+the caller.  The routine quietly returns if the configuration file does not
+exist. 
+
+=item I<cmdcheck(\%options_hashref)>
+
+This routine ensures that the needed commands are available and
+executable.  If any of the commands either don't exist or aren't executable,
+then an error message will be given and the process will exit.  If all is
+well, everything will proceed quietly onwards.
+
+The commands keys currently checked are I<zonecheck>, I<keygen>, and
+I<zonesign>.  The pathnames for these commands are found in the given options
+hash referenced by I<%options_hashref>.  If the hash doesn't contain an entry
+for one of those commands, it is not checked.
+
+If this routine is called from a PAR-packed script, then it will look in the
+package directory for the commands.  It will also set their file modes to
+0755, as PAR appears to ignore file modes when packaging programs.
+
+=item I<getconfdir()>
+
+This routine returns the name of the DNSSEC-Tools configuration directory.
+
+=item I<getconffile()>
+
+This routine returns the name of the DNSSEC-Tools configuration file.
+
+=item I<setconffile()>
+
+This routine sets the name of the DNSSEC-Tools configuration file.
+
+Return values:
+    1	returned on success
+    0	returned if the specified configuration file does not
+          exist or is not a regular file
+
+=item I<getprefixdir()>
+
+This routine returns the name of the DNSSEC-Tools prefix directory.
+
+=item I<getlocalstatedir()>
+
+This routine returns the name of the local state directory.
+
+=item I<runpacked()>
+
+This routine returns a boolean indicating if the executing command is running
+from a PAR-packed script.
+
+=item I<makelocalstatedir(subdir)>
+
+This routine makes the local state directory and returns its name.  The
+directory is created only if it doesn't exist already.
+
+If the optional I<subdir> subdirectory is specified, then that directory is
+created within the local state directory.  In this case, the path of I<subdir>
+is returned.  I<subdir> may consist of several intermediate directories, as
+well as the terminal directory.  For example,
+I<makelocalstatedir("logs/zones/errors")> will create the B<logs/zones/errors>
+hierarchy within the local state directory.
+
+I<makelocalstatedir(subdir)> uses the I<File::Path> module, which is available
+on all modern Perl versions.
+
+An empty string is returned if there are any errors.  The following errors may
+be encountered:
+
+    * I<File::Path> could not be loaded
+    * Unable to create the local state directory
+    * Unable to create a component of I<subdir>
+    * Full path (local state directory and I<subdir>) already
+      exists and is not a directory
+
+=item I<boolconvert(config-value)>
+
+This routine converts configuration values into appropriate boolean values.
+The following text conversions are made:
+
+    1 - 'true', 't', 'yes', 'y'
+    0 - 'false', 'f', 'no', 'n'
+
+All other text values are converted to 0.
+
+Positive values are converted to 1.  Negative values are converted to 0.
+
+=item I<erraction(error_action)>
+
+This interface sets the error action for DNSSEC-Tools Perl modules.
+The valid actions are:
+
+    ERR_SILENT		Do not print an error message, do not exit.
+    ERR_MSG		Print an error message, do not exit.
+    ERR_EXIT		Print an error message, exit.
+
+ERR_SILENT is the default action.
+
+The previously set error action is returned.
+
+=item I<err("error message",exit_code)>
+
+The I<err()> interface is used by the DNSSEC-Tools Perl modules to report
+an error and exit, depending on the error action.
+
+The first argument is an error message to print -- if the error action allows
+error messages to be printed.
+
+The second argument is an exit code -- if the error action requires that the
+process exit.
+
+=back
+
+=head1 DIRECTORIES
+
+The default directories for this installation are:
+
+  prefix                         : /usr
+  sysconf                        : /etc
+  localstatedir                  : /usr/var
+
+  DNSSEC-Tools configuration file: /etc/dnssec-tools
+
+These can be overridden using the following environmental variables:
+
+  prefix                         : DT_PREFIX
+  sysconf                        : DT_SYSCONFDIR
+  localstatedir                  : DT_STATEDIR
+
+=head1 COPYRIGHT
+
+Copyright 2004-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<dnssec-tools.conf(5)>
+
+=cut

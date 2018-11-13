@@ -1,0 +1,198 @@
+=head2 Fri Nov  9 09:43:08 2018: C<Module> L<Net::DNS::SEC::Tools::conf|Net::DNS::SEC::Tools::conf>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.1>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Nov  9 09:43:09 2018: C<Module> L<Net::DNS::SEC::Tools::Donuts::donuts|Net::DNS::SEC::Tools::Donuts::donuts>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: donuts donutsd>
+
+=back
+
+=head2 Fri Nov  9 09:43:09 2018: C<Module> L<Net::DNS::SEC::Tools::Mapper::mapper|Net::DNS::SEC::Tools::Mapper::mapper>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: mapper>
+
+=back
+
+=head2 Fri Nov  9 09:43:10 2018: C<Module> L<dnssec-tools|dnssec-tools>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: blinkenlights bubbles buildrealms check-zone-expiration cleanarch cleankrf dtck dtconf dtconfchk dtdefs dtinitconf dtrealms expchk fixkrf genkrf getdnskeys getds grandvizier keyarch keymod krfcheck lights lsdnssec lskrf lsrealm lsroll realmchk realmctl realminit realmset rollchk rollctl rollerd rollinit rolllog rollrec-editor rollset signset-editor tachk timetrans trustman zonesigner>
+
+=back
+
+=head2 Fri Nov  9 09:43:11 2018: C<Module> L<convertar|convertar>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: convertar>
+
+=back
+
+=head2 Fri Nov  9 09:43:11 2018: C<Module> L<Net::DNS::SEC::Tools::Dnspktflow::dnspktflow|Net::DNS::SEC::Tools::Dnspktflow::dnspktflow>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: dnspktflow>
+
+=back
+
+=head2 Fri Nov  9 09:43:12 2018: C<Module> L<Net::DNS::SEC::Tools::Maketestzone::maketestzone|Net::DNS::SEC::Tools::Maketestzone::maketestzone>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: maketestzone>
+
+=back
+
+=head2 Fri Nov  9 09:43:12 2018: C<Module> L<etc|etc>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Nov  9 09:43:13 2018: C<Module> L<Net::DNS::SEC::Tools::Drawvalmap::drawvalmap|Net::DNS::SEC::Tools::Drawvalmap::drawvalmap>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/share/perl5/vendor_perl>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: >
+
+=item *
+
+C<EXE_FILES: drawvalmap>
+
+=back
+

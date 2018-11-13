@@ -28,7 +28,7 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 supported_protocols="DICT FILE FTP FTPS GOPHER HTTP HTTPS IMAP IMAPS POP3 POP3S RTSP SCP SFTP SMB SMBS SMTP SMTPS TELNET TFTP"
-supported_features="SSL IPv6 UnixSockets libz AsynchDNS NTLM NTLM_WB HTTP2 HTTPS-proxy"
+supported_features="SSL IPv6 UnixSockets libz AsynchDNS NTLM NTLM_WB TLS-SRP HTTP2 HTTPS-proxy"
 
 Name: libcurl
 URL: https://curl.haxx.se/

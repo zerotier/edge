@@ -1,16 +1,11 @@
-#libssl pkg-config source file
-
 prefix=/usr
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
-Name: LibreSSL-libssl
+Name: OpenSSL-libssl
 Description: Secure Sockets Layer and cryptography libraries
-Version: 2.7.4
-Requires:
+Version: 1.1.1
 Requires.private: libcrypto
-Conflicts:
 Libs: -L${libdir} -lssl
-Libs.private:  -lcrypto -lpthread
 Cflags: -I${includedir}

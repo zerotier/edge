@@ -55,6 +55,9 @@ eth0last=`echo $eth0mac | cut -d : -f 6`
 eth0p0mac=`echo $eth0mac | cut -d : -f 1-5`:`printf '%.2x' $(( (0x$eth0last + 1) % 256 ))`
 eth0p1mac=`echo $eth0mac | cut -d : -f 1-5`:`printf '%.2x' $(( (0x$eth0last + 2) % 256 ))`
 eth0p2mac=`echo $eth0mac | cut -d : -f 1-5`:`printf '%.2x' $(( (0x$eth0last + 3) % 256 ))`
+sysctl -w net.ipv6.conf.eth0p0.disable_ipv6=1 >>/dev/null
+sysctl -w net.ipv6.conf.eth0p1.disable_ipv6=1 >>/dev/null
+sysctl -w net.ipv6.conf.eth0p2.disable_ipv6=1 >>/dev/null
 ip link set eth0p0 address $eth0p0mac promisc on up
 ip link set eth0p1 address $eth0p1mac promisc on up
 ip link set eth0p2 address $eth0p2mac promisc on up

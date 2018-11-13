@@ -1,6 +1,6 @@
 #!/bin/sh
 
-program_version=3.3.0_pre1-r1
+program_version=3.3.0_pre1-r3
 sysconfdir=/etc
 abuildrepo=/var/lib/buildlab/result
 datadir=/usr/share/abuild

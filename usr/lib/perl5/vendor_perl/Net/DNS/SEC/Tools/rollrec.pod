@@ -1,0 +1,254 @@
+#
+# Copyright 2006-2014 SPARTA, Inc.  All rights reserved.  See the COPYING
+# file distributed with this software for details
+#
+# DNSSEC Tools
+#
+#	Rollrec file format.
+#
+
+1;
+
+#############################################################################
+
+=pod
+
+=head1 NAME
+
+B<rollrec> - Rollover-related zone data used by DNSSEC-Tools programs.
+
+=head1 DESCRIPTION
+
+I<rollrec> files contain data used by the DNSSEC-Tools to manage key rollover.
+A I<rollrec> file is organized in sets of I<rollrec> records.  Each I<rollrec>
+record describes the rollover state of a single zone and must be either of
+I<roll> type or I<skip> type.  Roll I<rollrec>s record information about
+currently rolling zones.  Skip I<rollrec>s record information about zones that
+are not being rolled.  A I<rollrec> consists of a set of keyword/value
+entries.
+
+The DNSSEC-Tools B<rollrec.pm> module manipulates the contents of a I<rollrec>
+file.  Module interfaces exist for looking up I<rollrec> records, creating
+new records, and modifying existing records.
+
+Comment lines and blank lines are ignored by the DNSSEC-Tools programs.
+Comment lines start with either a '#' character or a ';' character.
+
+A I<rollrec>'s name may consist of alphabetic characters, numbers, and several
+special characters.  The special characters are the minus sign, the plus sign,
+the underscore, the comma, the period, the colon, the forward-slash, the
+space, and the tab.  This name is an identifier.  It is commonly set to be the
+same as the name of the zone which the I<rollrec> record describes, but this
+is not necessary.  If the name is not given, then B<rollerd> will create a new
+I<zonename> field using the name of the I<rollrec> record.
+
+The values in a I<rollrec>'s entries may consist of alphabetic characters,
+numbers, and several special characters.  The special characters are the minus
+sign, the plus sign, the underscore, the comma, the period, the colon, the
+forward-slash, the space, and the tab.
+
+There is a special I<rollrec> called the B<rollrec info> I<rollrec>.  It
+contains information about the I<rollrec> file, such as the version of
+I<rollrec>s stored within the file.  It is only accessible through the
+I<rollrec_info()> interface, and the I<rollrec_current()> interface will
+indicate if the file's version number is current.  The name of this I<rollrec>
+is "rollrec info", which is a reserved name.  It has its own set of fields,
+with only one overlap with regular I<rollrec>s.
+
+=head1 FILE VERSIONS
+
+The B<rollrec> file format will evolve from time to time.  The B<rollrec info>
+I<rollrec> was introduced specifically to account for changes between
+versions.  You should not manually change a B<rollrec> file's version, but let
+the DNSEC-Tools update the file for you.  The version differences are
+summarized below.
+
+B<Version 1>:  This was the original format of the I<rollrec> file.  At
+various times, additional fields were added to it, but the basic format of the
+file remained essentially the same.
+
+B<Version 2>:  The B<rollrec info> I<rollrec> was added for this version.  No
+other format changes were introduced.  The B<rollrec.pm> module was modified
+to recognize this I<rollrec> and not allow calling programs to modify it.  For
+this reason, versions 1 and 2 are considered functionally equivalent when it
+comes to whether or not a I<rollrec> file is considered current.
+(DNSSEC-Tools version 1.15; February 2013)
+
+=head1 FIELDS
+
+The fields in a I<rollrec> record are:
+
+ * administrator
+
+This is the email address for the zone's administrative user.  If it is not
+set, the default from the DNSSEC-Tools configuration file will be used.
+
+ * curerrors
+
+The count of consecutive errors for the zone.  This count is set to zero upon
+successful completion of a KSK or ZSK rollover.
+
+ * directory
+
+This field contains the name of the directory in which B<rollerd> will
+execute for the I<rollrec>'s zone.  If it is not specified, then the
+normal B<rollerd> execution directory will be used.
+
+ * display
+
+This boolean field indicates whether or not the zone should be displayed by
+the B<blinkenlights> program.
+
+ * keyrec
+
+The zone's I<keyrec> file.
+
+ * kskphase
+
+The zone's current KSK rollover phase.  A value of zero indicates that the
+zone is not in rollover, but is in normal operation.  A numeric value of 1-7
+indicates that the zone is in that phase of KSK rollover.
+
+ * ksk_rolldate
+
+The time at which the zone's last KSK rollover completed.  This is only used
+to provide a human-readable format of the timestamp.  It is derived from the
+I<ksk_rollsecs> field.
+
+ * ksk_rollsecs
+
+The time at which the zone's last KSK rollover completed.  This value is used
+to derive the I<ksk_rolldate> field.
+
+ * loglevel
+
+The B<rollerd> logging level for this zone.
+
+ * maxerrors
+
+The maximum number of consecutive errors for the zone.  After this count has
+been exceeded, the zone will be changed to be a I<skip> zone.  If a zone
+doesn't have this field set, the I<zone_errors> configuration value will be
+used instead.
+
+ * maxttl
+
+The maximum time-to-live for the zone.  This is measured in seconds.
+
+ * phasestart
+
+The time-stamp of the beginning of the zone's current phase.
+
+ * version
+
+This is the format version of the I<rollrec>s in the I<rollrec> file.
+The value of this field is a numeric value, such as "1.3" or "2".
+It should B<only> be modified by DNSSEC-Tools programs.
+This field is only available in the B<rollrec info> I<rollrec>.
+
+ * zonefile
+
+The zone's zone file.
+
+ * zonegroup
+
+The zone's zonegroup.  This is used to associate related zones for group
+I<rollctl> commands.  This field is optional.
+
+ * zonename
+
+The zone's name.  If this is not given, then B<rollerd> will create a new
+I<zonename> field using the name of the I<rollrec> record.
+
+ * zsargs
+
+The user-specified arguments for B<zonesigner>.  This field is set by the
+B<rollctl -zsargs> command to allow modification of a zone's rollover options
+without having to restart B<rollerd>.
+
+ * zskphase
+
+The zone's current ZSK rollover phase.  A value of zero indicates that the zone
+is not in rollover, but is in normal operation.  A value of 1, 2, 3, 4
+indicates that the zone is in that phase of ZSK rollover.
+
+ * zsk_rolldate
+
+The time at which the zone's last ZSK rollover completed.  This is only used
+to provide a human-readable format of the timestamp.  It is derived from the
+I<zsk_rollsecs> field.
+
+ * zsk_rollsecs
+
+The time at which the zone's last ZSK rollover completed.  This value is used
+to derive the I<zsk_rolldate> field.
+
+=head1 EXAMPLES
+
+The following is an example of a roll I<rollrec>:
+
+    roll "example"
+            zonename        "example.com"
+            zonefile        "example.signed"
+            keyrec          "example.krf"
+            zonegroup       "example zones"
+            kskphase        "1"
+            zskphase        "0"
+            administrator   "bob@bobbox.example.com"
+            loglevel        "info"
+            maxttl          "60"
+            display         "1"
+	    zsargs          "-zsklength 2048"
+            ksk_rollsecs    "1172614842"
+            ksk_rolldate    "Tue Feb 27 22:20:42 2007"
+            zsk_rollsecs    "1172615087"
+            zsk_rolldate    "Tue Feb 27 22:24:47 2007"
+            phasestart      "Mon Feb 20 12:34:56 2007"
+
+The following is an example of a skip I<rollrec>:
+
+    skip "test.com"
+            zonename        "test.com"
+            zonefile        "test.com.signed"
+            keyrec          "test.com.krf"
+            kskphase        "0"
+            zskphase        "2"
+            administrator   "tess@test.com"
+            loglevel        "info"
+            maxttl          "60"
+            display         "1"
+            ksk_rollsecs    "1172614800"
+            ksk_rolldate    "Tue Feb 27 22:20:00 2007"
+            zsk_rollsecs    "1172615070"
+            zsk_rolldate    "Tue Feb 27 22:24:30 2007"
+            phasestart      "Mon Feb 20 12:34:56 2007"
+
+The following is an example of a skip I<rollrec>:
+
+    roll "rollrec info"
+            version         "2"
+
+=head1 COPYRIGHT
+
+Copyright 2006-2014 SPARTA, Inc.  All rights reserved.
+See the COPYING file included with the DNSSEC-Tools package for details.
+
+=head1 AUTHOR
+
+Wayne Morrison, tewok@tislabs.com
+
+=head1 SEE ALSO
+
+B<lsroll(1)>
+
+B<blinkenlights(8)>,
+B<rollctl(8)>,
+B<rollerd(8)>,
+B<zonesigner(8)>
+
+B<Net::DNS::SEC::Tools::keyrec(3)>,
+B<Net::DNS::SEC::Tools::rollrec(3)>
+
+B<keyrec(5)>
+
+=cut
