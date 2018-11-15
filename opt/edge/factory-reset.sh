@@ -8,7 +8,7 @@ git reset --hard
 
 cd /var/lib/zerotier-one
 rm -rf networks.d peers.d controllers.d planet *.pid *.port identity.*
-cp /etc/edge/factory-identity/identity.* *
+cp /etc/edge/factory-identity/identity.* .
 chmod 0600 identity.secret
 
 rm -rf /var/lib/zerotier-edge
