@@ -10,11 +10,9 @@ fi
 echo
 echo '*** Getting latest revision history from update server...'
 echo
-if [ -z "`git remote show | grep -F edge-update-server`" ]; then
-	git remote rm edge-update-server >>/dev/null 2>&1
-	git remote add edge-update-server http://edge-update-server/edge-root.git >>/dev/null 2>&1
-fi
-git fetch edge-update-server master
+git remote rm edge-update-server >>/dev/null 2>&1
+git remote add edge-update-server http://edge-update-server/zerotier/edge-root.git >>/dev/null 2>&1
+git fetch edge-update-server master >>/dev/null 2>&1
 echo
 
 if [ -n "`git log HEAD..edge-update-server/master`" ]; then
