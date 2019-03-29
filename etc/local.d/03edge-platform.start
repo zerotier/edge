@@ -100,6 +100,12 @@ if [ "$resetdevice" = "1" ]; then
 	done
 fi
 
+# Make sure these are up again
+sleep 1
+ip link set eth0p0 promisc on up
+ip link set eth0p1 promisc on up
+ip link set eth0p2 promisc on up
+
 # Create bridge devices to act on behalf of each port
 brctl addbr phy0
 brctl stp phy0 off
